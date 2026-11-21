@@ -16,7 +16,24 @@
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common/style.css">
 <style>
-nav{grid-template-columns:repeat(4,1fr)}
+nav{grid-template-columns:repeat(5,1fr)}
+.gmach{width:210px;margin:0 auto;display:block}
+.gmach .hdl{transform-box:fill-box;transform-origin:center}
+.gmach.spin .hdl{animation:hspin .9s ease-in-out}
+@keyframes hspin{to{transform:rotate(360deg)}}
+.gmach.spin .dome{animation:shake .9s}
+@keyframes shake{0%,100%{transform:translate(0)}20%{transform:translate(-3px,1px)}40%{transform:translate(3px,-1px)}60%{transform:translate(-2px,1px)}80%{transform:translate(2px,0)}}
+.gmach .cap{opacity:0}
+.gmach.spin .cap{animation:drop .7s .9s forwards}
+@keyframes drop{0%{opacity:1;transform:translateY(-26px)}60%{opacity:1;transform:translateY(4px)}80%{transform:translateY(-3px)}100%{opacity:1;transform:translateY(0)}}
+.ginfo{text-align:center;font-weight:800;margin:6px 0 10px}
+.items .item.unk .n{color:#c9bcbc}
+.items .item.srbg{background:linear-gradient(160deg,#fff4fb,#f3ecff,#eaf7ff)}
+.pop.sr{background:linear-gradient(160deg,#ffe3f1,#fff6d6,#e3f4ff,#efe3ff);box-shadow:0 0 0 4px #fff,0 0 30px 6px #ffd6ef}
+.srlabel{font-weight:800;font-size:22px;background:linear-gradient(90deg,#ff6f9a,#ffb347,#4fc3f7,#a07cff);-webkit-background-clip:text;background-clip:text;color:transparent;animation:pop .4s}
+.gprev{width:170px;margin:0 auto}
+.gprev.sr{animation:glow 1.2s ease-in-out infinite alternate;border-radius:24px}
+@keyframes glow{from{filter:drop-shadow(0 0 4px #ffd6ef)}to{filter:drop-shadow(0 0 14px #ffe27a)}}
 .study{display:flex;align-items:center;gap:14px;background:#fff;border-radius:22px;padding:12px;margin-bottom:12px;text-decoration:none;color:inherit;box-shadow:0 4px 0 #f1d3d3}
 .study:active{transform:translateY(3px);box-shadow:none}
 .study .ic{width:72px;height:72px;border-radius:18px;flex:none;display:flex;align-items:center;justify-content:center;font-size:40px}
@@ -36,6 +53,7 @@ a.big{text-align:center;text-decoration:none}
   <nav>
     <button data-act="go" data-arg="home"><span>🏠</span>おへや</button>
     <button data-act="go" data-arg="study"><span>📚</span>おべんきょう</button>
+    <button data-act="go" data-arg="gacha"><span>🎰</span>ガチャ</button>
     <button data-act="go" data-arg="shop"><span>🛍️</span>おみせ</button>
     <button data-act="go" data-arg="dress"><span>🎀</span>きせかえ</button>
   </nav>
@@ -44,7 +62,7 @@ a.big{text-align:center;text-decoration:none}
 <script src="common/core.js"></script>
 <script>
 /* ---------- がめん ---------- */
-const VIEWS=['home','study','shop','dress','settings'];
+const VIEWS=['home','study','gacha','shop','dress','settings'];
 let view=VIEWS.includes(location.hash.slice(1))&&location.hash!=='#settings'?location.hash.slice(1):'home';
 let bubble='',homeMood='normal',shopCat='outfit',dressTab='moko',resetArm=false;
 if(location.hash==='#dress-room'){view='dress';dressTab='room'}
@@ -52,7 +70,7 @@ function go(v){view=v;history.replaceState(null,'',v==='home'||v==='settings'?lo
 function render(){
  updPts();
  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.arg===view));
- $('#view').innerHTML={home,study,shop,dress,settings}[view]();
+ $('#view').innerHTML={home,study,gacha,shop,dress,settings}[view]();
 }
 function home(){
  return `<div class="card room">${bubble?`<div class="bubble">${bubble}</div>`:''}${roomSVG(S,homeMood,homeMood==='happy'?'hop':'sway')}</div>
@@ -64,6 +82,54 @@ function study(){
  ${card('sansu/index.html','✏️','#ffe3ea','さんすう','#c8577f','たしざん・ひきざん、🏆テストで とくべつな アイテム')}
  ${card('kokugo/index.html','📖','#e3f4e8','こくご','#3f9a63','かん字の よみかき、ことば、おはなしの よみとり')}
  ${card('program/index.html','🤖','#dff3fc','プログラミング','#2b7fa8','ブロックを ならべて ロボットの ピコを うごかそう')}`}
+/* ---------- 🎰 ガチャ ---------- */
+let gSpin=false;
+const gToday=()=>{if(S.gacha.day!==today()){S.gacha.day=today();S.gacha.count=0}return S.gacha.count};
+const gLeft=()=>S.settings.gachaDaily>0?Math.max(0,S.settings.gachaDaily-gToday()):Infinity;
+function machineSVG(sr){
+ const caps=[[70,62,'#ff9ec0'],[100,50,'#8fc8ff'],[130,64,'#ffd34f'],[82,92,'#b6ec9c'],[118,94,'#c3a8ff'],[100,78,'#ffb38a'],[62,100,'#8fc8ff'],[138,100,'#ff9ec0'],[100,108,'#ffd34f']];
+ return `<svg class="gmach" id="gm" viewBox="0 0 200 250"><defs><linearGradient id="rbw" x1="0" x2="1"><stop offset="0" stop-color="#ff9ec0"/><stop offset=".35" stop-color="#ffe27a"/><stop offset=".7" stop-color="#8fe3c8"/><stop offset="1" stop-color="#b9a3ff"/></linearGradient></defs>
+ <rect x="48" y="132" width="104" height="106" rx="16" fill="#ff8fb1" stroke="#e0688f" stroke-width="4"/>
+ <g class="dome"><circle cx="100" cy="82" r="64" fill="#eaf7ff" stroke="#bfe3f3" stroke-width="4"/>
+ ${caps.map(([x,y,c])=>`<circle cx="${x}" cy="${y}" r="13" fill="#fff" stroke="#ddd" stroke-width="1.5"/><path d="M${x-13} ${y} a13 13 0 0 1 26 0z" fill="${c}"/>`).join('')}
+ <ellipse cx="78" cy="50" rx="12" ry="20" fill="#fff" opacity=".6" transform="rotate(30 78 50)"/></g>
+ <rect x="60" y="20" width="80" height="12" rx="6" fill="#ff8fb1" stroke="#e0688f" stroke-width="3"/>
+ <rect x="66" y="176" width="44" height="40" rx="8" fill="#b94f74"/>
+ <g class="cap"><circle cx="88" cy="204" r="12" fill="#fff" stroke="#ddd" stroke-width="1.5"/><path d="M76 204 a12 12 0 0 1 24 0z" fill="${sr?'url(#rbw)':'#8fc8ff'}"/></g>
+ <g class="hdl"><circle cx="132" cy="190" r="16" fill="#fff" stroke="#e0688f" stroke-width="3"/><rect x="128" y="176" width="8" height="28" rx="4" fill="#ff8fb1"/></g>
+ <text x="100" y="158" text-anchor="middle" font-size="15" font-weight="800" fill="#fff">GACHA</text></svg>`}
+const qCap=sr=>`<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="30" fill="#fff" stroke="#e6dada" stroke-width="3"/><path d="M20 50 a30 30 0 0 1 60 0z" fill="${sr?'#f3d9ff':'#e8eef5'}"/><text x="50" y="62" text-anchor="middle" font-size="34" font-weight="800" fill="#c9bcbc">?</text></svg>`;
+function gacha(){
+ const st=S.settings,cost=st.gachaCost,left=gLeft();
+ if(!st.gachaOn) return `<h2>🎰 ガチャ</h2><div class="card"><p class="muted">いまは おやすみ ちゅう だよ</p></div>`;
+ const own=l=>l.filter(i=>S.owned.includes(i.id)).length;
+ const grid=(list,sr)=>`<div class="items">${list.map(it=>{const o=S.owned.includes(it.id);return `<button class="item ${o?'':'unk'} ${sr?'srbg':''}" ${o?`data-act="buy" data-arg="${it.id}"`:''}>${o?thumb(it):qCap(sr)}<div class="n">${o?it.name:'？？？'}</div></button>`}).join('')}</div>`;
+ const can=S.points>=cost&&left>0&&!gSpin;
+ return `<h2>🎰 ガチャ</h2>
+ <div class="card" style="text-align:center">${machineSVG(false)}
+ <div class="ginfo">⭐${cost} で 1かい！ ✨ちょうレア✨ は 10かいに 1かい くらい</div>
+ <button class="big" data-act="spin" ${can?'':'disabled style="opacity:.5"'}>${gSpin?'ガラガラ…':`⭐${cost} で まわす`}</button>
+ <p class="muted">${left===0?'きょうは もう おしまい。また あした！':S.points<cost?`あと ⭐${cost-S.points} で まわせるよ`:left!==Infinity?`きょうは あと ${left}かい`:'おなじ ものが でたら ⭐10 に なるよ'}</p></div>
+ <h2 style="font-size:15px">✨ ちょうレア（${own(GACHA_SR)} / ${GACHA_SR.length}）</h2>${grid(GACHA_SR,true)}
+ <h2 style="font-size:15px;margin-top:14px">ふつう（${own(GACHA_N)} / ${GACHA_N.length}）</h2>${grid(GACHA_N,false)}`}
+function spin(){
+ const st=S.settings;if(gSpin||!st.gachaOn||S.points<st.gachaCost||gLeft()<=0)return;
+ const sr=Math.random()<.1,pool=sr?GACHA_SR:GACHA_N,it=pool[r(0,pool.length-1)],dup=S.owned.includes(it.id);
+ S.points-=st.gachaCost;gToday();S.gacha.count++;S.gacha.pulls++;
+ if(dup)S.points+=10;else S.owned.push(it.id);
+ save();gSpin=true;render();
+ const m=$('#gm');m.querySelector('.cap path').setAttribute('fill',sr?'url(#rbw)':['#ff9ec0','#8fc8ff','#ffd34f','#b6ec9c'][r(0,3)]);m.classList.add('spin');
+ [0,150,300,450,600].forEach(t=>setTimeout(()=>beep(300+r(0,200),.05,.08),t));setTimeout(()=>beep(520,.1),1300);
+ setTimeout(()=>{gSpin=false;reveal(it,sr,dup);render()},1900)}
+function reveal(it,sr,dup){
+ const pic=['char','outfit','hat','acc'].includes(it.cat)?charSVG({...S.equip,[it.cat]:it.id},'happy','hop'):thumb(it);
+ if(sr){sBuy();setTimeout(sBuy,450)}else if(dup)sTap();else sOk();
+ showPop(`${sr?'<div class="srlabel">✨ ちょうレア ✨</div>':`<div style="font-weight:800;color:#a88f8f">${dup?'もう もってた！':'でたよ！'}</div>`}
+ <div class="gprev ${sr?'sr':''}">${pic}</div><h3>${it.name}</h3>
+ ${dup?'<div>おなじ ものなので ⭐10 に なったよ</div>':`<div>${it.cat==='char'?'あたらしい なかまが きたよ！':'ゲット！'}</div>`}
+ <div class="btns"><button class="big gray" data-act="close">とじる</button>${dup?`<button class="big" data-act="close" data-arg="gacha">もういちど</button>`:`<button class="big" data-act="gwear" data-arg="${it.id}">${it.cat==='furn'?'おいてみる':it.cat==='wall'||it.cat==='floor'?'かえてみる':'つけてみる'}</button>`}</div>`);
+ if(sr)$('#ov .pop').classList.add('sr')}
+
 function shop(){
  const list=shopCat==='special'?ITEMS.filter(i=>i.special).sort((a,b)=>(b.cat==='char')-(a.cat==='char')):ITEMS.filter(i=>i.cat===shopCat&&i.price>0),tl=ITEMS.filter(i=>i.cat===shopCat&&i.test);
  return `<h2>おみせ</h2>${tabs(CATS,shopCat,'shopcat')}${shopCat==='special'?'<p class="muted">✨ とっても とくべつな アイテム。おべんきょうを がんばって ためよう！</p>':''}${shopCat==='char'?'<p class="muted">🐾 あたらしい なかまを むかえよう！ ふくも そのまま きられるよ</p>':''}<div class="items">
@@ -126,6 +192,9 @@ function settings(){
  <div class="row"><div class="lbl"><b>さんすう テストの せいげんじかん</b><small>きびしい＝0.8ばい／ゆっくり＝1.5ばい</small></div><div class="seg">${[[1.5,'ゆっくり'],[1,'ふつう'],[0.8,'きびしい']].map(([v,l])=>`<button class="${s.testScale===v?'on':''}" data-act="tscale" data-arg="${v}">${l}</button>`).join('')}</div></div>
  <div class="row"><div class="lbl"><b>れんしゅうの ポイント ばいりつ</b><small>テスト形式の れんしゅうで、もんだいごとの ポイント×この ばいりつ</small></div>${stepper('practiceMul','×'+s.practiceMul)}</div>
  <div class="row"><div class="lbl"><b>れんしゅうの ごうかくライン ボーナス</b></div>${stepper('practiceBonus','⭐'+s.practiceBonus)}</div>
+ <div class="row"><div class="lbl"><b>🎰 ガチャ</b><small>オフに すると ガチャが まわせなく なります</small></div><button class="sw ${s.gachaOn?'on':''}" data-act="gtg"></button></div>
+ <div class="row"><div class="lbl"><b>ガチャ 1かいの ポイント</b></div><div class="step"><button data-act="st" data-arg="gachaCost|-10">−</button><span>⭐${s.gachaCost}</span><button data-act="st" data-arg="gachaCost|10">＋</button></div></div>
+ <div class="row"><div class="lbl"><b>ガチャ 1日の かいすう</b><small>0 は せいげん なし</small></div>${stepper('gachaDaily',s.gachaDaily?s.gachaDaily+'かい':'なし')}</div>
  <div class="row"><div class="lbl"><b>おと</b></div><button class="sw ${s.sound?'on':''}" data-act="snd"></button></div>
  <div class="row"><div class="lbl"><b>ポイントを ちょうせい</b><small>いま ⭐${S.points}</small></div><div class="step"><button data-act="adj" data-arg="-10">−</button><span>10</span><button data-act="adj" data-arg="10">＋</button></div></div>
  </div>
@@ -140,7 +209,7 @@ function settings(){
 let bkArm=false;
 const bkEnc=o=>btoa(unescape(encodeURIComponent(JSON.stringify(o))));
 const bkDec=t=>JSON.parse(decodeURIComponent(escape(atob(t.replace(/\s/g,'')))));
-const LIM={perRound:[3,20],perfect:[0,50],daily:[0,50],t:[0,20],practiceMul:[1,5],practiceBonus:[0,50],progPts:[0,10]};
+const LIM={perRound:[3,20],perfect:[0,50],daily:[0,50],t:[0,20],practiceMul:[1,5],practiceBonus:[0,50],progPts:[0,10],gachaCost:[10,500],gachaDaily:[0,10]};
 function stepSet(arg){
  const [k,d]=arg.split('|'),dd=Number(d);
  if(k.startsWith('t:')||k.startsWith('k:')){const o=S.settings[k[0]==='t'?'types':'ktypes'][k.slice(2)];o.pts=Math.max(LIM.t[0],Math.min(LIM.t[1],o.pts+dd))}
@@ -170,6 +239,9 @@ Object.assign(ACT,{
  gate,gateok:gateOk,
  tg:a=>{S.settings.types[a].on=!S.settings.types[a].on;save();sTap();render()},
  ktg:a=>{S.settings.ktypes[a].on=!S.settings.ktypes[a].on;save();sTap();render()},
+ spin,
+ gtg:()=>{S.settings.gachaOn=!S.settings.gachaOn;save();sTap();render()},
+ gwear:a=>{closePop();const it=ITEM[a];if(it.cat==='furn'){if(!S.furn.includes(a))S.furn.push(a)}else S.equip[it.cat]=a;save();sTap();if(it.cat==='furn'||it.cat==='wall'||it.cat==='floor')go('home');else{dressTab='moko';go('dress')}},
  tscale:a=>{S.settings.testScale=Number(a);save();sTap();render()},
  snd:()=>{S.settings.sound=!S.settings.sound;save();render()},
  st:a=>stepSet(a),

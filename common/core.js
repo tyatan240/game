@@ -89,8 +89,43 @@ const ITEMS=[
  {id:'a_heart',cat:'acc',name:'ハートのステッキ',test:'sub22-1'},
  {id:'h_halo',cat:'hat',name:'てんしのわっか',test:'sub22-2'},
  {id:'o_rainbow',cat:'outfit',name:'にじいろドレス',test:'sub22-3'},
+
+ /* 🎰 ガチャ げんてい（sr＝ちょうレア／n＝ふつう）。おみせでは かえない */
+ {id:'c_princess',cat:'char',name:'おひめさまの ロゼ',gacha:'sr'},
+ {id:'c_unicorn',cat:'char',name:'ユニコーンの ゆめ',gacha:'sr'},
+ {id:'c_panda',cat:'char',name:'パンダの パンナ',gacha:'sr'},
+ {id:'o_royal',cat:'outfit',name:'ローズの プリンセスドレス',gacha:'sr'},
+ {id:'h_jewel',cat:'hat',name:'ほうせきの ティアラ',gacha:'sr'},
+ {id:'a_kitten',cat:'acc',name:'こねこを だっこ',gacha:'sr'},
+ {id:'w_castle',cat:'wall',name:'おしろの かべ',gacha:'sr'},
+ {id:'f_royal',cat:'floor',name:'おしろの ゆか',gacha:'sr'},
+ {id:'u_castle',cat:'furn',name:'おしろ',gacha:'sr',box:'230 84 132 134'},
+ {id:'u_carriage',cat:'furn',name:'かぼちゃの ばしゃ',gacha:'sr',box:'0 192 106 104'},
+ {id:'u_musicbox',cat:'furn',name:'メリーゴーランドの オルゴール',gacha:'sr',box:'142 226 58 76'},
+ {id:'u_unipl',cat:'furn',name:'ユニコーンの ぬいぐるみ',gacha:'sr',box:'192 234 50 68'},
+ {id:'o_tshirt',cat:'outfit',name:'しましまの Tシャツ',gacha:'n'},
+ {id:'o_pajama',cat:'outfit',name:'ほしの パジャマ',gacha:'n'},
+ {id:'o_cardigan',cat:'outfit',name:'きいろの カーディガン',gacha:'n'},
+ {id:'h_cap',cat:'hat',name:'あかい キャップ',gacha:'n'},
+ {id:'h_straw',cat:'hat',name:'むぎわらぼうし',gacha:'n'},
+ {id:'h_knit',cat:'hat',name:'ニットぼう',gacha:'n'},
+ {id:'h_catear',cat:'hat',name:'ねこみみ カチューシャ',gacha:'n'},
+ {id:'a_lollipop',cat:'acc',name:'ぐるぐる キャンディ',gacha:'n'},
+ {id:'a_book',cat:'acc',name:'えほん',gacha:'n'},
+ {id:'a_letter',cat:'acc',name:'おてがみ',gacha:'n'},
+ {id:'w_heart',cat:'wall',name:'ハートの かべ',gacha:'n'},
+ {id:'w_check',cat:'wall',name:'チェックの かべ',gacha:'n'},
+ {id:'w_leaf',cat:'wall',name:'はっぱの かべ',gacha:'n'},
+ {id:'f_blue',cat:'floor',name:'あおい じゅうたん',gacha:'n'},
+ {id:'f_stripe',cat:'floor',name:'しましまの ゆか',gacha:'n'},
+ {id:'u_cushion',cat:'furn',name:'ハートの クッション',gacha:'n',box:'0 260 46 42'},
+ {id:'u_clock',cat:'furn',name:'かべどけい',gacha:'n',box:'118 44 36 36'},
+ {id:'u_cactus',cat:'furn',name:'サボテン',gacha:'n',box:'120 160 36 58'},
+ {id:'u_cake',cat:'furn',name:'いちごの ケーキ',gacha:'n',box:'318 254 44 48'},
+ {id:'u_flowerbox',cat:'furn',name:'まどべの おはな',gacha:'n',box:'22 96 102 40'},
 ];
 const ITEM=Object.fromEntries(ITEMS.map(i=>[i.id,i]));
+const GACHA_SR=ITEMS.filter(i=>i.gacha==='sr'),GACHA_N=ITEMS.filter(i=>i.gacha==='n');
 const CATS=[['special','✨スペシャル'],['char','🐾キャラ'],['outfit','ふく'],['hat','ぼうし'],['acc','こもの'],['wall','かべ'],['floor','ゆか'],['furn','かぐ']];
 
 /* ---------- じょうたいと ほぞん ---------- */
@@ -100,8 +135,8 @@ function defState(){return{v:1,t:0,points:0,
  furn:[],
  settings:{types:Object.fromEntries(TYPES.map(t=>[t.id,{on:t.id.startsWith('add'),pts:t.pts}])),
   ktypes:Object.fromEntries(KTYPES.map(t=>[t.id,{on:true,pts:t.pts}])),
-  perRound:5,perfect:3,daily:5,sound:true,testScale:1,practiceMul:2,practiceBonus:5,progPts:3},
- lastDay:'',stats:{q:0,ok:0},kstats:{q:0,ok:0},tests:{}}}
+  perRound:5,perfect:3,daily:5,sound:true,testScale:1,practiceMul:2,practiceBonus:5,progPts:3,gachaOn:true,gachaCost:100,gachaDaily:0},
+ lastDay:'',stats:{q:0,ok:0},kstats:{q:0,ok:0},tests:{},gacha:{day:'',count:0,pulls:0}}}
 function merge(d){
  const s=defState(); if(!d||typeof d!=='object') return s;
  if(typeof d.points==='number') s.points=d.points;
@@ -110,8 +145,10 @@ function merge(d){
  if(d.equip) for(const k in s.equip) if(d.equip[k]&&ITEM[d.equip[k]]) s.equip[k]=d.equip[k];
  if(Array.isArray(d.furn)) s.furn=d.furn.filter(i=>ITEM[i]);
  const ds=d.settings||{};
- for(const k of ['perRound','perfect','daily','practiceMul','practiceBonus','testScale','progPts']) if(typeof ds[k]==='number') s.settings[k]=ds[k];
+ for(const k of ['perRound','perfect','daily','practiceMul','practiceBonus','testScale','progPts','gachaCost','gachaDaily']) if(typeof ds[k]==='number') s.settings[k]=ds[k];
  if(typeof ds.sound==='boolean') s.settings.sound=ds.sound;
+ if(typeof ds.gachaOn==='boolean') s.settings.gachaOn=ds.gachaOn;
+ if(d.gacha&&typeof d.gacha==='object') Object.assign(s.gacha,d.gacha);
  for(const g of ['types','ktypes']) if(ds[g]) for(const id in s.settings[g]) if(ds[g][id]) Object.assign(s.settings[g][id],ds[g][id]);
  if(d.stats) Object.assign(s.stats,d.stats);
  if(d.kstats) Object.assign(s.kstats,d.kstats);
@@ -234,8 +271,9 @@ Object.assign(HAT,{
 });
 function face(m,C={}){
  const big=C.bigEyes,ex=big?78:80,ex2=big?122:120;
- const eye=x=>`<ellipse cx="${x}" cy="110" rx="${big?8.5:6.5}" ry="${big?10:8.5}" fill="${INK}"/><circle cx="${x+2.5}" cy="106" r="${big?3.4:2.6}" fill="#fff"/>${big?`<circle cx="${x-2.5}" cy="114" r="1.6" fill="#fff"/>`:''}`;
- const happyEye=x=>`<path d="M${x-7} 113 Q${x} 102 ${x+7} 113" stroke="${INK}" stroke-width="4" fill="none" stroke-linecap="round"/>`;
+ const ring=x=>C.eyeRing?`<circle cx="${x}" cy="110" r="11" fill="#fff"/>`:'';
+ const eye=x=>ring(x)+`<ellipse cx="${x}" cy="110" rx="${big?8.5:6.5}" ry="${big?10:8.5}" fill="${INK}"/><circle cx="${x+2.5}" cy="106" r="${big?3.4:2.6}" fill="#fff"/>${big?`<circle cx="${x-2.5}" cy="114" r="1.6" fill="#fff"/>`:''}`;
+ const happyEye=x=>ring(x)+`<path d="M${x-7} 113 Q${x} 102 ${x+7} 113" stroke="${INK}" stroke-width="4" fill="none" stroke-linecap="round"/>`;
  const cw=C.cheek||10;
  let s=`<ellipse cx="66" cy="127" rx="${cw}" ry="${cw*.6}" fill="${C.blush||'#ffb3c4'}" opacity=".85"/><ellipse cx="134" cy="127" rx="${cw}" ry="${cw*.6}" fill="${C.blush||'#ffb3c4'}" opacity=".85"/>`;
  s+=m==='happy'?happyEye(ex)+happyEye(ex2):eye(ex)+eye(ex2);
@@ -289,7 +327,8 @@ const charSVG=(eq,mood='normal',cls='')=>`<svg viewBox="0 0 200 240"><g class="$
 const NIGHT_STARS=[[30,20],[150,30],[210,15],[330,40],[260,120],[180,150],[340,160],[20,150],[130,130],[300,90]];
 function wallSVG(id){
  let s='';
- if(id==='w_dots'){s+=`<rect width="360" height="200" fill="#ffe4ec"/>`;for(let y=15;y<200;y+=30)for(let x=(y/30|0)%2?30:15;x<360;x+=30)s+=`<circle cx="${x}" cy="${y}" r="5" fill="#ffc4d6"/>`}
+ if(WALLX[id])s+=WALLX[id]();
+ else if(id==='w_dots'){s+=`<rect width="360" height="200" fill="#ffe4ec"/>`;for(let y=15;y<200;y+=30)for(let x=(y/30|0)%2?30:15;x<360;x+=30)s+=`<circle cx="${x}" cy="${y}" r="5" fill="#ffc4d6"/>`}
  else if(id==='w_stripe'){s+=`<rect width="360" height="200" fill="#e6f4ff"/>`;for(let x=8;x<360;x+=32)s+=`<rect x="${x}" width="14" height="200" fill="#cde8ff"/>`}
  else if(id==='w_rainbow'){s+=`<rect width="360" height="200" fill="#fffaf0"/>`;['#ffadad','#ffd29a','#fff0a0','#bfeab0','#addcff','#d4c2ff'].forEach((c,i)=>{const R=150-i*12;s+=`<path d="M${250-R} 200 A${R} ${R} 0 0 1 ${250+R} 200" fill="none" stroke="${c}" stroke-width="12"/>`});
   s+=`<g fill="#fff"><circle cx="100" cy="190" r="14"/><circle cx="118" cy="182" r="16"/><circle cx="136" cy="192" r="12"/><circle cx="380" cy="190" r="14"/><circle cx="362" cy="184" r="15"/></g>`}
@@ -309,7 +348,8 @@ function wallSVG(id){
  return s}
 function floorSVG(id){
  let s='';
- if(id==='f_mint'){s+=`<rect y="200" width="360" height="100" fill="#c4ecdc"/>`;for(let y=214;y<300;y+=22)for(let x=(y%44?12:24);x<360;x+=24)s+=`<circle cx="${x}" cy="${y}" r="2.5" fill="#a5dcc6"/>`}
+ if(FLOORX[id])s+=FLOORX[id]();
+ else if(id==='f_mint'){s+=`<rect y="200" width="360" height="100" fill="#c4ecdc"/>`;for(let y=214;y<300;y+=22)for(let x=(y%44?12:24);x<360;x+=24)s+=`<circle cx="${x}" cy="${y}" r="2.5" fill="#a5dcc6"/>`}
  else if(id==='f_flower'){s+=`<rect y="200" width="360" height="100" fill="#c2eaa8"/>`;const c=['#ff9ec0','#ffd34f','#ffffff','#c3a8ff','#8fc8ff'];let k=0;for(let y=212;y<300;y+=22)for(let x=(y%44?14:30);x<360;x+=34){const cc=c[k++%5];s+=`<g fill="${cc}">${[0,72,144,216,288].map(a=>`<circle cx="${(x+4.5*Math.cos(a*Math.PI/180)).toFixed(1)}" cy="${(y+3.2*Math.sin(a*Math.PI/180)).toFixed(1)}" r="3"/>`).join('')}</g><circle cx="${x}" cy="${y}" r="2" fill="#ff9e3d"/>`}}
  else if(id==='f_cloud'){s+=`<rect y="200" width="360" height="100" fill="#d6eeff"/>`;[[40,230],[150,270],[270,226],[330,280],[90,290],[220,292]].forEach(([x,y])=>{s+=`<g fill="#fff" opacity=".95"><ellipse cx="${x}" cy="${y}" rx="22" ry="8"/><circle cx="${x-8}" cy="${y-5}" r="8"/><circle cx="${x+6}" cy="${y-7}" r="10"/></g>`})}
  else if(id==='f_tile'){for(let y=200,j=0;y<300;y+=25,j++)for(let x=0,i=0;x<360;x+=30,i++)s+=`<rect x="${x}" y="${y}" width="30" height="25" fill="${(i+j)%2?'#ffd6e2':'#fff0f4'}"/>`}
@@ -342,9 +382,118 @@ const FURN={
 };
 function roomSVG(st,mood='normal',cls='sway'){
  const has=id=>st.furn.includes(id),f=id=>has(id)&&!(id==='u_bed'&&has('u_canopy'))?FURN[id]():'';
- return `<svg viewBox="0 0 360 300">${wallSVG(st.equip.wall)}${f('u_poster')}${f('u_shelf')}${f('u_garland')}${f('u_chandelier')}${floorSVG(st.equip.floor)}${f('u_rug')}${f('u_bed')}${f('u_canopy')}${f('u_lamp')}${f('u_plant')}
- <g transform="translate(118 100) scale(.62)" data-act="pet"><g class="${cls}">${charInner(st.equip,mood)}</g></g>${f('u_bear')}${f('u_piano')}${f('u_trophy')}${f('u_fish')}</svg>`}
+ return `<svg viewBox="0 0 360 300">${wallSVG(st.equip.wall)}${f('u_poster')}${f('u_shelf')}${f('u_garland')}${f('u_chandelier')}${f('u_clock')}${f('u_flowerbox')}${floorSVG(st.equip.floor)}${f('u_castle')}${f('u_rug')}${f('u_bed')}${f('u_canopy')}${f('u_carriage')}${f('u_cactus')}${f('u_lamp')}${f('u_plant')}
+ <g transform="translate(118 100) scale(.62)" data-act="pet"><g class="${cls}">${charInner(st.equip,mood)}</g></g>${f('u_cushion')}${f('u_bear')}${f('u_piano')}${f('u_musicbox')}${f('u_unipl')}${f('u_trophy')}${f('u_fish')}${f('u_cake')}</svg>`}
 
+/* ---------- 🎰 ガチャ げんてい アイテムの え ---------- */
+const RB=['#ffb3cf','#ffd59a','#fff09a','#bdf0c0','#b3dcff','#d6c2ff'];
+Object.assign(CH,{
+ c_princess:{body:'#ffe6d8',line:'#e8b49e',
+  back:`<path d="M40 112 C36 52 66 36 100 36 C134 36 164 52 160 112 C164 150 172 182 160 208 C150 216 136 212 130 202 L70 202 C64 212 50 216 40 208 C28 182 36 150 40 112 Z" fill="#ffd66e" stroke="#e8b33a" stroke-width="3" stroke-linejoin="round"/>
+   <path d="M44 196 q-6 10 4 14 M156 196 q6 10 -4 14" stroke="#e8b33a" stroke-width="3" fill="none" stroke-linecap="round"/>`,
+  belly:`<path d="M64 168 Q100 150 136 168 L146 220 Q100 232 54 220 Z" fill="#ffc2d6" stroke="#f08aa8" stroke-width="3"/><path d="M84 160 Q100 170 116 160" fill="#fff" stroke="#f08aa8" stroke-width="2"/><g fill="#fff">${[[76,204],[100,212],[124,204]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="3"/>`).join('')}</g>`,
+  front:`<path d="M44 102 C44 62 70 46 100 46 C130 46 156 62 156 102 C146 88 136 80 126 76 C120 88 110 92 100 80 C90 92 80 88 74 76 C64 80 54 88 44 102 Z" fill="#ffd66e" stroke="#e8b33a" stroke-width="3" stroke-linejoin="round"/>
+   <polygon points="86,50 86,34 93,42 100,28 107,42 114,34 114,50" fill="#ffd34f" stroke="#e5a91c" stroke-width="2.5" stroke-linejoin="round"/><circle cx="100" cy="44" r="3.5" fill="#ff7ea6"/>
+   <g transform="translate(150 86) rotate(20)"><path d="M0 0 L-10 -7 L-10 7 Z M0 0 L10 -7 L10 7 Z" fill="#ff7ea6" stroke="#e05a86" stroke-width="2" stroke-linejoin="round"/><circle r="3.5" fill="#ff9ec0"/></g>`,
+  blush:'#ffb3c4',bigEyes:true},
+ c_unicorn:{body:'#fffafd',line:'#d9c3e6',
+  back:`${RB.map((c,i)=>`<circle cx="${48+i*1.5}" cy="${72+i*17}" r="15" fill="${c}"/><circle cx="${152-i*1.5}" cy="${72+i*17}" r="15" fill="${c}"/>`).join('')}
+   <g stroke="#d9c3e6" stroke-width="3" fill="#fffafd" stroke-linejoin="round"><path d="M62 70 L56 34 L86 56 Z"/><path d="M138 70 L144 34 L114 56 Z"/></g><path d="M64 62 L60 44 L78 56Z M136 62 L140 44 L122 56Z" fill="#ffd0e0"/>
+   ${RB.map((c,i)=>`<path d="M136 ${208-i*3} Q${176+i*2} ${206-i*4} ${170+i*2} ${160+i*5}" fill="none" stroke="${c}" stroke-width="7" stroke-linecap="round"/>`).join('')}`,
+  front:`${['#ffb3cf','#d6c2ff','#b3dcff'].map((c,i)=>`<circle cx="${86+i*14}" cy="${54+(i%2)*4}" r="10" fill="${c}"/>`).join('')}
+   <polygon points="92,52 100,10 108,52" fill="#ffe27a" stroke="#e5a91c" stroke-width="2.5" stroke-linejoin="round"/><g stroke="#e5a91c" stroke-width="2"><line x1="94" y1="42" x2="106" y2="37"/><line x1="96" y1="30" x2="104" y2="26"/></g>`,
+  blush:'#ffc2da',bigEyes:true},
+ c_panda:{body:'#ffffff',line:'#a8a4a8',feet:'#4a4549',footLine:'#2f2b2e',
+  back:`<g fill="#4a4549"><circle cx="62" cy="62" r="17"/><circle cx="138" cy="62" r="17"/></g>`,
+  front:`<g fill="#4a4549"><ellipse cx="78" cy="112" rx="16" ry="19" transform="rotate(25 78 112)"/><ellipse cx="122" cy="112" rx="16" ry="19" transform="rotate(-25 122 112)"/></g>`,
+  nose:'#4a4549',eyeRing:true,blush:'#ffc2cf'},
+});
+Object.assign(OUTFIT,{
+ o_royal:`<path d="M82 186 Q100 194 118 186 Q150 200 166 228 Q100 246 34 228 Q50 200 82 186 Z" fill="#ffc6dc" stroke="#e0608f" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M44 214 Q60 230 76 212 Q92 232 108 212 Q124 232 140 212 Q152 226 158 220" fill="none" stroke="#ff8fb8" stroke-width="6" stroke-linecap="round"/>
+  <path d="M38 228 Q100 246 162 228" fill="none" stroke="#ffd34f" stroke-width="4"/>
+  <path d="M78 158 Q100 148 122 158 L118 192 L82 192 Z" fill="#ff8fb8" stroke="#e0608f" stroke-width="3" stroke-linejoin="round"/>
+  <g fill="#fff">${[84,92,100,108,116].map(x=>`<circle cx="${x}" cy="190" r="3"/>`).join('')}</g>
+  ${[[56,218],[144,218],[100,226]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="6" fill="#ff6f9a" stroke="#fff" stroke-width="2"/><circle cx="${x}" cy="${y}" r="2" fill="#fff"/>`).join('')}
+  <path d="M100 178 C88 168 92 160 100 166 C108 160 112 168 100 178 Z" fill="#ffd34f" stroke="#e5a91c" stroke-width="1.5"/>`,
+ o_tshirt:`<path d="M70 160 Q100 152 130 160 L136 206 Q100 214 64 206 Z" fill="#fff" stroke="#e7a0a0" stroke-width="3" stroke-linejoin="round"/>
+  ${[172,186,200].map(y=>`<path d="M${68+(y-160)*.1} ${y} Q100 ${y+4} ${132-(y-160)*.1} ${y}" stroke="#ff7a7a" stroke-width="6" fill="none"/>`).join('')}
+  <path d="M88 158 Q100 166 112 158" fill="none" stroke="#e7a0a0" stroke-width="3"/>`,
+ o_pajama:`<path d="M68 160 Q100 152 132 160 L142 218 Q100 228 58 218 Z" fill="#bfe3ff" stroke="#7fb8e6" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M84 158 L100 174 L116 158" fill="#fff" stroke="#7fb8e6" stroke-width="2.5" stroke-linejoin="round"/>
+  <g fill="#fff">${[184,198,212].map(y=>`<circle cx="100" cy="${y}" r="2.6"/>`).join('')}</g>
+  <g fill="#ffe27a">${[[78,186],[122,194],[84,210],[118,214]].map(([x,y])=>`<polygon points="${star(x,y,5,2.2)}"/>`).join('')}</g>
+  <path d="M122 174 a7 7 0 1 0 6 10 a6 6 0 1 1 -6 -10z" fill="#ffe27a"/>`,
+ o_cardigan:`<path d="M68 160 Q100 152 132 160 L138 212 Q100 220 62 212 Z" fill="#ffe07a" stroke="#e5b82c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M90 158 L100 196 L110 158 Z" fill="#fff" stroke="#e5b82c" stroke-width="2"/>
+  <g fill="#ff9ec0" stroke="#e0688f" stroke-width="1.5">${[188,200].map(y=>`<circle cx="100" cy="${y+4}" r="3.2"/>`).join('')}</g>
+  <rect x="72" y="194" width="16" height="12" rx="3" fill="#ffd34f" stroke="#e5b82c" stroke-width="2"/><rect x="112" y="194" width="16" height="12" rx="3" fill="#ffd34f" stroke="#e5b82c" stroke-width="2"/>`,
+});
+Object.assign(HAT,{
+ h_jewel:`<path d="M66 64 Q100 50 134 64 L128 52 L118 42 L110 48 L100 22 L90 48 L82 42 L72 52 Z" fill="#fff3b0" stroke="#e5a91c" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M100 52 C90 44 92 36 100 41 C108 36 110 44 100 52 Z" fill="#ff5f95" stroke="#d93f75" stroke-width="1.5"/>
+  <circle cx="80" cy="54" r="3.5" fill="#9ad6ff"/><circle cx="120" cy="54" r="3.5" fill="#9ad6ff"/><circle cx="100" cy="26" r="3" fill="#c3a8ff"/>
+  <g fill="#fff">${[[70,40],[132,38],[100,12]].map(([x,y])=>`<polygon points="${star(x,y,5,1.6)}"/>`).join('')}</g>`,
+ h_cap:`<path d="M58 72 Q58 32 100 32 Q142 32 142 72 Z" fill="#ff6b6b" stroke="#d94c4c" stroke-width="3" stroke-linejoin="round"/><path d="M120 68 Q152 62 172 72 Q152 80 120 74 Z" fill="#ff6b6b" stroke="#d94c4c" stroke-width="3" stroke-linejoin="round"/><circle cx="100" cy="32" r="4.5" fill="#d94c4c"/><path d="M100 36 V70" stroke="#d94c4c" stroke-width="2"/>`,
+ h_straw:`<path d="M68 62 Q68 26 100 26 Q132 26 132 62Z" fill="#f5d98c" stroke="#d9b45a" stroke-width="3"/><ellipse cx="100" cy="62" rx="64" ry="13" fill="#f5d98c" stroke="#d9b45a" stroke-width="3"/><path d="M70 50 Q100 56 130 50 L131 59 Q100 65 69 59 Z" fill="#ff8fb1"/><circle cx="128" cy="55" r="6" fill="#fff" stroke="#ff8fb1" stroke-width="2"/>`,
+ h_knit:`<path d="M56 72 Q56 30 100 30 Q144 30 144 72 Z" fill="#9fe0c8" stroke="#62b89a" stroke-width="3"/><g stroke="#62b89a" stroke-width="2">${[76,88,100,112,124].map(x=>`<line x1="${x}" y1="${44+Math.abs(x-100)*.2}" x2="${x}" y2="62"/>`).join('')}</g><rect x="54" y="60" width="92" height="15" rx="7" fill="#7fd0b4" stroke="#62b89a" stroke-width="3"/><circle cx="100" cy="26" r="11" fill="#fff" stroke="#d9e8e2" stroke-width="2"/>`,
+ h_catear:`<path d="M50 86 Q52 44 100 42 Q148 44 150 86" fill="none" stroke="#ff8fb1" stroke-width="7" stroke-linecap="round"/><path d="M64 60 L60 28 L86 48 Z M136 60 L140 28 L114 48 Z" fill="#ff8fb1" stroke="#e05a86" stroke-width="2.5" stroke-linejoin="round"/><path d="M67 53 L65 38 L78 48 Z M133 53 L135 38 L122 48 Z" fill="#ffd0e0"/>`,
+});
+Object.assign(ACC,{
+ a_kitten:`<g transform="translate(150 178)"><ellipse cx="4" cy="18" rx="15" ry="12" fill="#ffd9a0" stroke="#e0a85a" stroke-width="2.5"/><path d="M-12 -8 L-13 -24 L-3 -15 Z M12 -8 L13 -24 L3 -15 Z" fill="#ffd9a0" stroke="#e0a85a" stroke-width="2.5" stroke-linejoin="round"/><circle cx="0" cy="-2" r="14" fill="#ffd9a0" stroke="#e0a85a" stroke-width="2.5"/><path d="M-6 -14 q6 4 12 0" stroke="#f0b76c" stroke-width="2.5" fill="none"/><circle cx="-5" cy="-2" r="2.2" fill="${INK}"/><circle cx="5" cy="-2" r="2.2" fill="${INK}"/><path d="M-2 3 Q0 5.5 2 3" stroke="${INK}" stroke-width="1.5" fill="none"/><circle cx="-9" cy="3" r="2.5" fill="#ffb3c4"/><circle cx="9" cy="3" r="2.5" fill="#ffb3c4"/><path d="M-5 10 l5 3 l5 -3 l-1 6 l-4 -2 l-4 2z" fill="#ff7ea6"/></g>`,
+ a_lollipop:`<line x1="56" y1="186" x2="32" y2="146" stroke="#fff" stroke-width="5" stroke-linecap="round"/><line x1="56" y1="186" x2="32" y2="146" stroke="#e9dede" stroke-width="1.5"/><circle cx="28" cy="134" r="17" fill="#ff9ec0" stroke="#e0688f" stroke-width="2.5"/><path d="M28 134 m0 -3 a3 3 0 1 1 -3 3 a6 6 0 1 1 6 6 a9 9 0 1 1 -9 -9 a12 12 0 0 1 12 12" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>`,
+ a_book:`<g transform="translate(150 196) rotate(-10)"><rect x="-17" y="-15" width="34" height="28" rx="3" fill="#8fc8ff" stroke="#5a96d8" stroke-width="2.5"/><line x1="0" y1="-15" x2="0" y2="13" stroke="#5a96d8" stroke-width="2"/><polygon points="${star(-8,-1,6,2.5)}" fill="#ffd34f"/><path d="M8 4 C3 0 4 -4 8 -1 C12 -4 13 0 8 4Z" fill="#ff8fb1"/></g>`,
+ a_letter:`<g transform="translate(150 196) rotate(8)"><rect x="-17" y="-12" width="34" height="24" rx="3" fill="#fff" stroke="#f08aa8" stroke-width="2.5"/><path d="M-17 -12 L0 2 L17 -12" fill="none" stroke="#f08aa8" stroke-width="2.5" stroke-linejoin="round"/><path d="M0 9 C-7 3 -5 -1 0 3 C5 -1 7 3 0 9Z" fill="#ff7ea6"/></g>`,
+});
+const WALLX={
+ w_castle:()=>{let s=`<rect width="360" height="200" fill="#f8e6f1"/>`;for(let y=0,k=0;y<200;y+=24,k++){s+=`<line x1="0" y1="${y}" x2="360" y2="${y}" stroke="#ecd0e1" stroke-width="2"/>`;for(let x=k%2?0:30;x<360;x+=60)s+=`<line x1="${x}" y1="${y}" x2="${x}" y2="${y+24}" stroke="#ecd0e1" stroke-width="2"/>`}
+  s+=`<path d="M250 160 L250 78 Q290 30 330 78 L330 160 Z" fill="#cfe9ff" stroke="#fff" stroke-width="7"/><line x1="290" y1="50" x2="290" y2="160" stroke="#fff" stroke-width="4"/><line x1="250" y1="110" x2="330" y2="110" stroke="#fff" stroke-width="4"/>`;
+  [150,206].forEach(x=>{s+=`<path d="M${x} 0 h26 v62 l-13 -11 l-13 11 z" fill="#ff8fb8" stroke="#e0608f" stroke-width="2"/><polygon points="${x+6},26 ${x+6},16 ${x+10},21 ${x+13},13 ${x+16},21 ${x+20},16 ${x+20},26" fill="#ffd34f"/>`});
+  return s+`<rect y="176" width="360" height="24" fill="#f0d3e4"/><line x1="0" y1="176" x2="360" y2="176" stroke="#ffd34f" stroke-width="3"/>`},
+ w_heart:()=>{let s=`<rect width="360" height="200" fill="#fff0f5"/>`;for(let y=18,k=0;y<200;y+=36,k++)for(let x=k%2?36:18;x<360;x+=36)s+=`<path d="M${x} ${y+6} C${x-9} ${y} ${x-7} ${y-7} ${x} ${y-2} C${x+7} ${y-7} ${x+9} ${y} ${x} ${y+6}Z" fill="#ffc9da"/>`;return s},
+ w_check:()=>{let s=`<rect width="360" height="200" fill="#f2fff8"/>`;for(let x=0;x<360;x+=40)s+=`<rect x="${x}" width="20" height="200" fill="#bfeedd" opacity=".55"/>`;for(let y=0;y<200;y+=40)s+=`<rect y="${y}" width="360" height="20" fill="#bfeedd" opacity=".55"/>`;return s},
+ w_leaf:()=>{let s=`<rect width="360" height="200" fill="#fbfbea"/>`;[[150,30,20],[200,90,-30],[260,40,40],[320,120,-10],[180,160,60],[300,180,20],[340,40,-40],[230,140,10],[140,110,-60]].forEach(([x,y,a])=>{s+=`<g transform="translate(${x} ${y}) rotate(${a})"><path d="M0 -14 Q11 0 0 14 Q-11 0 0 -14Z" fill="#a8dc9a"/><line x1="0" y1="-12" x2="0" y2="12" stroke="#7fbf70" stroke-width="1.5"/></g>`});return s},
+};
+const FLOORX={
+ f_royal:()=>{let s='';for(let y=200,j=0;y<300;y+=25,j++)for(let x=0,i=0;x<360;x+=30,i++)s+=`<rect x="${x}" y="${y}" width="30" height="25" fill="${(i+j)%2?'#f7e9f2':'#fffafd'}"/>`;
+  return s+`<path d="M150 200 L210 200 L252 300 L108 300 Z" fill="#e5546a"/><path d="M150 200 L108 300 M210 200 L252 300" stroke="#ffd34f" stroke-width="4"/>`},
+ f_blue:()=>{let s=`<rect y="200" width="360" height="100" fill="#c4d8f5"/>`;for(let y=214;y<300;y+=24)for(let x=(y%48?16:32);x<360;x+=32)s+=`<circle cx="${x}" cy="${y}" r="3" fill="#a5c0ea"/>`;return s},
+ f_stripe:()=>{let s='';for(let y=200,k=0;y<300;y+=14,k++)s+=`<rect y="${y}" width="360" height="14" fill="${k%2?'#ffe7a8':'#fff4cf'}"/>`;return s},
+};
+Object.assign(FURN,{
+ u_castle:()=>`<rect x="252" y="150" width="88" height="64" fill="#fff0f6" stroke="#f0a8c4" stroke-width="3"/>
+  ${[254,268,282,310,324].map(x=>`<rect x="${x}" y="140" width="9" height="11" fill="#fff0f6" stroke="#f0a8c4" stroke-width="2.5"/>`).join('')}
+  <rect x="238" y="128" width="26" height="86" fill="#fff0f6" stroke="#f0a8c4" stroke-width="3"/><polygon points="233,130 251,94 269,130" fill="#ff8fb8" stroke="#e0608f" stroke-width="2.5" stroke-linejoin="round"/>
+  <rect x="328" y="128" width="26" height="86" fill="#fff0f6" stroke="#f0a8c4" stroke-width="3"/><polygon points="323,130 341,94 359,130" fill="#ff8fb8" stroke="#e0608f" stroke-width="2.5" stroke-linejoin="round"/>
+  <rect x="280" y="116" width="32" height="36" fill="#fff0f6" stroke="#f0a8c4" stroke-width="3"/><polygon points="275,118 296,86 317,118" fill="#c3a8ff" stroke="#9b7fe0" stroke-width="2.5" stroke-linejoin="round"/>
+  <line x1="296" y1="86" x2="296" y2="70" stroke="#c99a6c" stroke-width="2"/><polygon points="296,70 312,75 296,80" fill="#ffd34f"/>
+  <path d="M284 214 V192 Q296 178 308 192 V214 Z" fill="#c98fb0"/><circle cx="304" cy="200" r="1.8" fill="#ffd34f"/>
+  <path d="M245 160 v-8 a6 6 0 0 1 12 0 v8z M335 160 v-8 a6 6 0 0 1 12 0 v8z" fill="#9ad6ff"/>
+  <path d="M296 140 C288 133 290 126 296 130 C302 126 304 133 296 140 Z" fill="#ff7ea6"/>`,
+ u_carriage:()=>`<g stroke="#e5a91c" stroke-width="2.5" fill="#fff"><circle cx="22" cy="276" r="14"/><circle cx="84" cy="276" r="14"/></g><g stroke="#e5a91c" stroke-width="2">${[[22,276],[84,276]].map(([x,y])=>`<line x1="${x-10}" y1="${y}" x2="${x+10}" y2="${y}"/><line x1="${x}" y1="${y-10}" x2="${x}" y2="${y+10}"/>`).join('')}</g>
+  <ellipse cx="53" cy="242" rx="46" ry="34" fill="#ffb15c" stroke="#e58a2e" stroke-width="3"/>
+  <g fill="none" stroke="#e58a2e" stroke-width="2.5"><ellipse cx="53" cy="242" rx="28" ry="34"/><ellipse cx="53" cy="242" rx="10" ry="34"/></g>
+  <rect x="38" y="226" width="30" height="24" rx="10" fill="#fff6d6" stroke="#e5a91c" stroke-width="2.5"/><path d="M42 238 h22 M53 228 v20" stroke="#ffd0a0" stroke-width="2"/>
+  <polygon points="41,210 41,196 47,203 53,192 59,203 65,196 65,210" fill="#ffd34f" stroke="#e5a91c" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M84 216 q12 -10 10 -22" stroke="#7fbf70" stroke-width="3" fill="none" stroke-linecap="round"/>`,
+ u_musicbox:()=>`<ellipse cx="171" cy="294" rx="24" ry="5" fill="#000" opacity=".08"/><rect x="150" y="272" width="42" height="22" rx="5" fill="#ffc2d6" stroke="#e0688f" stroke-width="2.5"/>
+  <g stroke="#ffd34f" stroke-width="3">${[158,171,184].map(x=>`<line x1="${x}" y1="250" x2="${x}" y2="272"/>`).join('')}</g>
+  ${[[158,262,'#fff'],[184,258,'#e3d4ff']].map(([x,y,c])=>`<ellipse cx="${x}" cy="${y}" rx="7" ry="4.5" fill="${c}" stroke="#c9a5d9" stroke-width="1.5"/><circle cx="${x+6}" cy="${y-4}" r="3.5" fill="${c}" stroke="#c9a5d9" stroke-width="1.5"/>`).join('')}
+  <polygon points="144,252 171,230 198,252" fill="#ff9ec0" stroke="#e0688f" stroke-width="2.5" stroke-linejoin="round"/><path d="M146 252 q6 6 12.5 0 q6 6 12.5 0 q6 6 12.5 0 q6 6 12.5 0" fill="#fff" stroke="#e0688f" stroke-width="1.5"/>
+  <polygon points="${star(171,229,6,2.6)}" fill="#ffd34f"/><circle cx="160" cy="283" r="2.5" fill="#fff"/><circle cx="171" cy="283" r="2.5" fill="#fff"/><circle cx="182" cy="283" r="2.5" fill="#fff"/>`,
+ u_unipl:()=>`<ellipse cx="217" cy="297" rx="18" ry="4" fill="#000" opacity=".08"/>${['#ffb3cf','#d6c2ff','#b3dcff'].map((c,i)=>`<circle cx="${205+i*2}" cy="${252+i*8}" r="7" fill="${c}"/>`).join('')}
+  <ellipse cx="218" cy="283" rx="17" ry="14" fill="#fffafd" stroke="#d9c3e6" stroke-width="2.5"/><circle cx="218" cy="260" r="14" fill="#fffafd" stroke="#d9c3e6" stroke-width="2.5"/>
+  <polygon points="214,248 218,232 222,248" fill="#ffe27a" stroke="#e5a91c" stroke-width="1.5" stroke-linejoin="round"/><path d="M208 250 l-3 -9 l8 5z M228 250 l3 -9 l-8 5z" fill="#fffafd" stroke="#d9c3e6" stroke-width="1.5"/>
+  <path d="M211 261 q3 -3 6 0 M220 261 q3 -3 6 0" stroke="${INK}" stroke-width="1.8" fill="none" stroke-linecap="round"/><circle cx="210" cy="266" r="2.5" fill="#ffc2da"/><circle cx="227" cy="266" r="2.5" fill="#ffc2da"/>`,
+ u_cushion:()=>`<path d="M22 299 C1 285 3 264 15 266 Q22 268 22 276 Q22 268 29 266 C41 264 43 285 22 299Z" fill="#ff9ec0" stroke="#e0688f" stroke-width="2.5" stroke-linejoin="round"/><path d="M12 276 q2 -5 6 -5" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round"/>`,
+ u_clock:()=>`<circle cx="136" cy="62" r="14" fill="#fff" stroke="#c99a6c" stroke-width="3.5"/><g stroke="${INK}" stroke-width="2" stroke-linecap="round"><line x1="136" y1="62" x2="136" y2="53"/><line x1="136" y1="62" x2="142" y2="65"/></g><circle cx="136" cy="62" r="1.8" fill="#ff7ea6"/>${[0,90,180,270].map(a=>`<circle cx="${(136+10*Math.cos(a*Math.PI/180)).toFixed(1)}" cy="${(62+10*Math.sin(a*Math.PI/180)).toFixed(1)}" r="1.3" fill="#c99a6c"/>`).join('')}`,
+ u_cactus:()=>`<ellipse cx="138" cy="184" rx="8" ry="17" fill="#8ed08a" stroke="#5fae5b" stroke-width="2.5"/><path d="M131 186 q-8 0 -8 -10" stroke="#5fae5b" stroke-width="8" fill="none" stroke-linecap="round"/><path d="M131 186 q-8 0 -8 -10" stroke="#8ed08a" stroke-width="4" fill="none" stroke-linecap="round"/><circle cx="138" cy="166" r="4" fill="#ff8fb1"/>
+  <path d="M126 198 L150 198 L146 214 L130 214 Z" fill="#8fc8ff" stroke="#5a96d8" stroke-width="2.5" stroke-linejoin="round"/>`,
+ u_cake:()=>`<ellipse cx="340" cy="296" rx="19" ry="4" fill="#fff" stroke="#e8dada" stroke-width="2"/><rect x="326" y="274" width="28" height="20" rx="3" fill="#fff8ee" stroke="#ebd6c0" stroke-width="2"/><rect x="326" y="282" width="28" height="4" fill="#ff9ec0"/>
+  <path d="M325 276 q3.5 5 7 0 q3.5 5 7 0 q3.5 5 7 0 q3.5 5 7 0" fill="#fff" stroke="#ebd6c0" stroke-width="1.5"/><path d="M340 264 q-6 2 -5 8 q5 4 10 0 q1 -6 -5 -8z" fill="#ff5a6e"/><path d="M337 263 l3 3 l3 -3" stroke="#6fc27a" stroke-width="2" fill="none"/>`,
+ u_flowerbox:()=>`${[38,51,64,77,90,103].map((x,i)=>`<path d="M${x} 118 v-8" stroke="#6fc27a" stroke-width="2.5"/><g fill="${['#ff8fb1','#ffd34f','#fff','#c3a8ff','#ff9e7a','#8fc8ff'][i]}">${[0,72,144,216,288].map(a=>`<circle cx="${(x+4*Math.cos(a*Math.PI/180)).toFixed(1)}" cy="${(106+4*Math.sin(a*Math.PI/180)).toFixed(1)}" r="3.2"/>`).join('')}</g><circle cx="${x}" cy="106" r="2" fill="#ff9e3d"/>`).join('')}
+  <rect x="28" y="116" width="90" height="16" rx="3" fill="#c99a6c" stroke="#a87a4c" stroke-width="2"/>`,
+});
 
 function thumb(it){
  if(['char','outfit','hat','acc'].includes(it.cat)){const eq={...S.equip,[it.cat]:it.id};return charSVG(eq,it.cat==='char'?'happy':'normal')}
