@@ -32,7 +32,7 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
   const pts = p => p.evaluate(() => JSON.parse(localStorage.getItem('moko-math-v1') || '{}').points || 0);
 
   console.log('1. どの ページも エラーなく ひらく');
-  for (const u of ['index.html', 'sansu/index.html', 'kokugo/index.html', 'program/index.html', 'abc/index.html']) {
+  for (const u of ['index.html', 'sansu/index.html', 'kokugo/index.html', 'program/index.html', 'eigo/index.html', 'abc/index.html']) {
     const p = await page(); await p.goto(B + u); await p.waitForTimeout(500);
     ok(p.errs.length === 0, `${u} ${p.errs.join(' / ')}`); await p.context().close();
   }
@@ -40,7 +40,7 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
   console.log('2. ポイントが へやを こえて きょうつう');
   {
     const p = await page();
-    await p.goto(B + 'index.html'); await p.waitForTimeout(400); await p.evaluate(() => closePop());
+    await p.goto(B + 'index.html'); await p.waitForTimeout(400); await p.evaluate(() => { closePop(); S.settings.goalPts = 0; S.settings.goalAll = 0; save(); }); // もくひょうの ごほうびは べつの テストで
     const p0 = await pts(p);
     await p.goto(B + 'sansu/index.html'); await p.click('[data-act=start] >> nth=0');
     for (let i = 0; i < 5; i++) {
@@ -113,6 +113,142 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     const r = await p.evaluate(() => ({ stars: __abc.S.stars, x: Math.floor(__abc.hero.x / 32), goal: __abc.objective().text, rec: __abc.S.records.A.correct, scarf: __abc.S.wear.scarf, bgm: __abc.S.settings.bgm }));
     ok(r.stars === 9 && r.rec === 3 && r.scarf && r.bgm === false, 'ほし・きろく・きがえ・せっていが のこる ' + JSON.stringify(r));
     ok(r.x < 28 && r.goal.includes('ラビ'), 'もんの てまえに もどり、つぎの もくてきが でる');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+  }
+
+  console.log('7. ABCぼうけん：つぎの エリアへ いける（F〜Z）');
+  {
+    const p = await page({ width: 844, height: 390 }); await p.goto(B + 'abc/index.html');
+    await p.evaluate(() => localStorage.setItem('abc-adventure-v1', JSON.stringify({ v: 1, t: 1, started: true, hero: { x: 53.5, y: 11.8, dir: 'right', area: 'island' }, stars: 20, learned: ['A', 'B', 'C', 'D', 'E'], flags: { intro: true, bossCleared: true, bridgeOpen: true }, quests: { apple: 'done', flowers: 'done', bee: 'done' }, world: { gate: 'open', flowerbed: 'bloom', vines: 'open', bees: true }, words: { apple: { at: 1 }, water: { at: 1 }, flower: { at: 1 }, bee: { at: 1 } } })));
+    await p.reload(); await p.waitForTimeout(400); await p.click('#cont'); await p.waitForTimeout(500);
+    await p.keyboard.down('ArrowRight'); for (let i = 0; i < 20 && await p.evaluate(() => __abc.area()) === 'island'; i++) await p.waitForTimeout(100); await p.keyboard.up('ArrowRight');
+    await p.waitForTimeout(800);
+    const r = await p.evaluate(() => ({ area: __abc.area(), goal: __abc.objective().text, areas: __abc.S.areas }));
+    ok(r.area === 'forest' && r.goal.includes('もじ'), 'しまの みぎはしから もりの こみちへ ' + JSON.stringify(r));
+    await p.evaluate(() => __abc.approach('frog')); await p.keyboard.press('Enter'); await p.waitForTimeout(300);
+    for (let k = 0; k < 10 && await p.$('.dlg'); k++) { await p.keyboard.press('Enter'); await p.waitForTimeout(60); }
+    ok(!!await p.$('.teach'), 'かえるさんが F を おしえてくれる');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+  }
+
+  console.log('8. おうち ⇄ ABCぼうけん（いりぐち・でぐち・ほしの うけとり）');
+  {
+    const p = await page({ width: 844, height: 390 });
+    const housePts = () => p.evaluate(() => JSON.parse(localStorage.getItem('moko-math-v1') || '{}').points || 0);
+    await p.goto(B + 'index.html'); await p.waitForTimeout(400);
+    await p.evaluate(() => { closePop(); S.points = 100; S.settings.goalPts = 0; S.settings.goalAll = 0; save(); go('study'); });
+    ok(!!await p.$('a.study[href="eigo/index.html"]'), 'おうちの おべんきょうに えいごの いりぐち');
+    await p.click('a.study[href="eigo/index.html"]'); await p.waitForLoadState(); await p.waitForTimeout(400);
+    ok(!!await p.$('a.bigchoice.adv') && !!await p.$('button.bigchoice.study'), 'えいごの へやで「ぼうけん」か「べんきょう」を えらべる');
+    await p.click('a.bigchoice.adv'); await p.waitForLoadState(); await p.waitForTimeout(400);
+    ok(p.url().endsWith('abc/index.html') && await p.isVisible('#title'), 'いりぐちから ABCぼうけんの タイトルへ');
+    ok(await p.textContent('#housePts') === '100', 'タイトルに おうちの ⭐が でる');
+    // まえの ばんの ABC データ（★20、まだ とどけていない）
+    await p.evaluate(() => localStorage.setItem('abc-adventure-v1', JSON.stringify({ v: 1, t: 1, started: true, hero: { x: 8.5, y: 12.8, dir: 'down', area: 'island' }, stars: 20, learned: ['A'], flags: { intro: true } })));
+    await p.reload(); await p.waitForTimeout(400); await p.click('#cont'); await p.waitForTimeout(800);
+    ok(await housePts() === 300, `たまっていた ★20 が ⭐200 に なって おうちに とどく（${await housePts()}）`);
+    await p.reload(); await p.waitForTimeout(400); await p.click('#cont'); await p.waitForTimeout(800);
+    ok(await housePts() === 300, 'もういちど ひらいても 2かい とどかない');
+    // ★を 1こ ふやす（ありさん）
+    await p.evaluate(() => __abc.approach('bear')); await p.keyboard.press('Enter'); await p.waitForTimeout(300);
+    for (let k = 0; k < 10 && await p.$('.dlg'); k++) { await p.keyboard.press('Enter'); await p.waitForTimeout(60); }
+    await p.click('.teach .go'); await p.waitForTimeout(300); await p.click(`.ch[data-v="${await p.evaluate(() => __abcQ.answer)}"]`);
+    await p.waitForFunction(() => __abc.S.stars === 21, null, { timeout: 5000 }).catch(() => {});
+    for (let k = 0; k < 20 && await p.$('.dlg, .notice, .flystar'); k++) { if (await p.$('.dlg')) await p.keyboard.press('Enter'); await p.waitForTimeout(150); }
+    await p.waitForTimeout(500);
+    ok(await housePts() === 310, `あたらしい ★1 も ⭐10 で とどく（${await housePts()}）`);
+    const idb = await p.evaluate(() => new Promise(ok => { const q = indexedDB.open('moko-house', 1); q.onsuccess = () => { const r = q.result.transaction('kv').objectStore('kv').get('moko-math-v1'); r.onsuccess = () => ok(r.result && r.result.points); }; }));
+    ok(idb === 310, 'IndexedDB にも かいている');
+    // メニューの「おうちへ」
+    await p.keyboard.press('Escape'); await p.waitForTimeout(200); await p.click('.menu [data-a=home]'); await p.waitForLoadState(); await p.waitForTimeout(500);
+    ok(p.url().endsWith('/index.html') && !p.url().includes('abc'), 'メニューの「おうちへ」で おうちに もどる');
+    ok(await p.evaluate(() => S.points) === 310, 'おうちの ⭐に はんえい されている');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+  }
+
+  console.log('9. ABCぼうけん：クリアしたら もういちど さいしょから あそべる');
+  {
+    const p = await page({ width: 844, height: 390 }); await p.goto(B + 'abc/index.html');
+    const ALL = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+    // おしろの もんの まえ（さいごの おさらい まえ）
+    await p.evaluate(ALL => localStorage.setItem('abc-adventure-v1', JSON.stringify({ v: 1, t: 1, started: true, hero: { x: 38.5, y: 10.8, dir: 'right', area: 'garden' }, stars: 70, starsSent: 70, learned: ALL, items: ['scarf'], wear: { scarf: true, hat: false },
+      flags: { intro: true, bossCleared: true, bridgeOpen: true }, records: { A: { asked: 5, correct: 5, streak: 5, level: 2, due: 0 } }, words: { apple: { at: 1 } },
+      quests: { apple: 'done', flowers: 'done', bee: 'done', sun: 'done', dog: 'done', pie: 'done', cat: 'done', fish: 'done', bird: 'done', colors: 'done' },
+      world: { gate: 'open', gate_forest: 'open', gate_village: 'open', gate_lake: 'open' }, areas: ['island', 'forest', 'village', 'lake', 'garden'] })), ALL);
+    await p.reload(); await p.waitForTimeout(400); await p.click('#cont'); await p.waitForTimeout(600);
+    await p.evaluate(() => __abc.approach('castle')); await p.keyboard.press('Enter'); await p.waitForTimeout(300);
+    for (let k = 0; k < 200 && !await p.$('.ending'); k++) {
+      if (await p.$('.dlg')) await p.keyboard.press('Enter');
+      else if (await p.$('.quiz') && !await p.$('.ch.ok')) await p.click(`.ch[data-v="${await p.evaluate(() => __abcQ.answer)}"]`, { timeout: 1000 }).catch(() => {});
+      await p.waitForTimeout(120);
+    }
+    ok(!!await p.$('.ending') && await p.evaluate(() => __abc.S.clears === 1), 'さいごの おさらいで クリア（1かいめ）');
+    await p.click('.ending [data-a=replay]'); await p.waitForTimeout(900);
+    for (let k = 0; k < 20 && await p.$('.dlg'); k++) { await p.keyboard.press('Enter'); await p.waitForTimeout(60); }
+    await p.waitForTimeout(400);
+    const r = await p.evaluate(() => { const S = __abc.S; return { area: __abc.area(), learned: S.learned.length, quests: Object.keys(S.quests).length, gate: S.world.gate, stars: S.stars, sent: S.starsSent, rec: S.records.A && S.records.A.correct, items: S.items, clears: S.clears, goal: __abc.objective().text }; });
+    ok(r.area === 'island' && r.learned === 0 && r.quests === 0 && !r.gate, 'すすみは さいしょに もどる ' + JSON.stringify(r));
+    ok(r.stars === 73 && r.sent === 73 && r.rec >= 5 && r.items.includes('scarf') && r.clears === 1, 'ほし・がくしゅう きろく・きがえ・クリア かいすうは のこる');
+    ok(r.goal.includes('もじ'), 'もういちど もじを おぼえる ところから');
+    await p.keyboard.press('Escape'); await p.click('.menu [data-a=title]'); await p.waitForTimeout(300);
+    ok(await p.textContent('#start') === 'もういちど ぼうけん' && (await p.textContent('#clears')).includes('1'), 'タイトルに クリア かいすう');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+  }
+
+  console.log('10. えいごの べんきょう（れんしゅう・テスト）');
+  {
+    const p = await page();
+    await p.goto(B + 'eigo/index.html');
+    await p.evaluate(() => localStorage.setItem('abc-adventure-v1', JSON.stringify({ v: 1, t: 1, started: true, learned: ['A', 'B'], words: { apple: { at: 1 }, water: { at: 1 }, flower: { at: 1 } }, records: {} })));
+    await p.reload(); await p.waitForTimeout(400); await p.click('button.bigchoice.study'); await p.waitForTimeout(300);
+    ok(!!await p.$('[data-act=start][data-arg=ewpic]') && !await p.$('[data-act=start][data-arg=ealisten]'), 'おぼえた かずが たりない もんだいは まだ えらべない');
+    await p.click('[data-act=start][data-arg=ewpic]'); const p0 = await p.evaluate(() => S.points);
+    for (let i = 0; i < 5; i++) { await p.waitForFunction(() => __eigo.quiz && !__eigo.quiz.lock && __eigo.view === 'quiz'); await p.click(`[data-act=pick][data-arg="${await p.evaluate(() => __eigo.quiz.cur.choicesId.indexOf(__eigo.quiz.cur.ans))}"]`); }
+    await p.waitForFunction(() => __eigo.view === 'result');
+    ok(await p.evaluate(() => S.points) > p0, 'せいかいで おうちの ⭐が ふえる');
+    const rec = await p.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('abc-adventure-v1')).records));
+    ok(rec.some(k => k.startsWith('w:')), 'けっかが ABCぼうけんの がくしゅう きろくに はいる ' + rec.join(','));
+    await p.evaluate(() => __eigo.go('tests')); ok(!!await p.$('[data-act=tready][data-arg="ewpic-1"]'), 'えいごの 🏆テストが ある');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+  }
+
+  console.log('11. きょうの もくひょう');
+  {
+    const p = await page();
+    const daily = () => p.evaluate(() => (JSON.parse(localStorage.getItem('moko-math-v1') || '{}').daily) || {});
+    await p.goto(B + 'index.html'); await p.waitForTimeout(400);
+    await p.evaluate(() => { closePop(); S.points = 0; save(); });
+    ok(!!await p.$('.goals') && (await p.$$('.goal')).length === 4, 'おうちに きょうの もくひょう（4つ）');
+    await p.evaluate(() => localStorage.setItem('abc-adventure-v1', JSON.stringify({ v: 1, t: 1, started: true, learned: ['A', 'B', 'C'], words: { apple: { at: 1 }, water: { at: 1 }, flower: { at: 1 } }, stars: 0, starsSent: 0 })));
+    // さんすう・こくご・えいごの 🏆テストを 2かいずつ（じかんぎれで おわらせる）
+    for (const [room, key, g] of [['sansu', 'add1-1', 0], ['kokugo', 'k1yomi-1', 0], ['eigo', 'ealisten-1', 1]]) {
+      await p.goto(B + room + '/index.html#tests'); await p.waitForTimeout(400);
+      for (let i = 0; i < 2; i++) {
+        await p.click(`[data-act=tready][data-arg="${key}"]`); await p.click('#ov [data-act=tstart]');
+        await p.waitForFunction(g => { const t = g ? __eigo.test : test; return t && t.phase === 'run'; }, g, { timeout: 8000 });
+        await p.evaluate(g => { const t = g ? __eigo.test : test; t.t0 = performance.now() - t.limit; }, g);
+        await p.waitForSelector('#ov .pop'); await p.click('#ov [data-act=close] >> nth=0');
+      }
+    }
+    // れんしゅうは かぞえない
+    await p.click('[data-act=tready][data-arg="ealisten-1|p"]'); await p.click('#ov [data-act=tstart]');
+    await p.waitForFunction(() => __eigo.test && __eigo.test.phase === 'run', null, { timeout: 8000 });
+    await p.evaluate(() => { __eigo.test.t0 = performance.now() - __eigo.test.limit; }); await p.waitForSelector('#ov .pop');
+    let d = await daily(); ok(d.sansu === 2 && d.kokugo === 2 && d.eigo === 2, 'テストの かいすう（れんしゅうは のぞく）' + JSON.stringify(d));
+    // プログラミング
+    await p.goto(B + 'program/index.html'); await p.evaluate(() => { openLv(0); prog = [{ t: 'R' }, { t: 'R' }, { t: 'R' }, { t: 'R' }]; render(); run(); });
+    await p.waitForSelector('#pop', { timeout: 10000 }); await p.waitForTimeout(600);
+    // ABCぼうけん（クリア まえ → ★2こ で たっせい）
+    await p.evaluate(() => { const a = JSON.parse(localStorage.getItem('abc-adventure-v1')); a.stars = 2; a.hero = { x: 8.5, y: 12.8, area: 'island' }; a.flags = { intro: true }; localStorage.setItem('abc-adventure-v1', JSON.stringify(a)); });
+    await p.goto(B + 'abc/index.html'); await p.waitForTimeout(400); await p.click('#cont'); await p.waitForTimeout(900);
+    d = await daily(); ok(d.prog === 1 && d.abc === 2, 'プログラミング・ぼうけんも かぞえる ' + JSON.stringify(d));
+    // おうちに もどると ごほうび
+    await p.goto(B + 'index.html'); await p.waitForTimeout(800);
+    for (let k = 0; k < 5 && await p.$('#ov .pop'); k++) { await p.click('#ov [data-act=close] >> nth=0'); await p.waitForTimeout(400); }
+    const r = await p.evaluate(() => ({ pts: S.points, got: S.daily.got, all: S.daily.all }));
+    ok(r.all && Object.keys(r.got).length === 4, 'ぜんぶ たっせいで ごほうび ' + JSON.stringify(r));
+    await p.reload(); await p.waitForTimeout(800);
+    ok(await p.evaluate(() => S.points) === r.pts && !await p.$('#ov .pop'), 'ごほうびは 1かいだけ');
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
   }
 

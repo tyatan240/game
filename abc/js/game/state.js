@@ -9,6 +9,8 @@ export function defaultState() {
     started: false,
     hero: { x: 0, y: 0, dir: 'down' },
     stars: 0,
+    starsSent: 0,
+    clears: 0,            // ワールド1（A〜Z）を クリアした かいすう         // おうちの ⭐に とどけおわった ★の かず（おうちとの つなぎ）
     learned: [],          // おぼえた もじ（どうぶつの クイズに こたえた もの）
     flags: {},            // intro / bridgeOpen / bossCleared / ending など
     chests: {},           // あけた たからばこ
@@ -43,6 +45,14 @@ export function load() {
 export function save(st) {
   st.t = Date.now();
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(st)); } catch (e) { /* ほぞん できない ときは なにも しない */ }
+}
+
+// もういちど さいしょから：ぼうけんの すすみは もどすが、がくしゅう きろく・ほし・きがえ・せってい・クリア かいすうは のこす
+export const KEEP_ON_REPLAY = ['settings', 'records', 'stars', 'starsSent', 'items', 'wear', 'clears'];
+export function replayState(old) {
+  const s = defaultState();
+  for (const k of KEEP_ON_REPLAY) if (old[k] !== undefined) s[k] = old[k];
+  return s;
 }
 
 export function getRecord(st, id) { return st.records[id] || newRecord(); }

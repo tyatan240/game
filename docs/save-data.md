@@ -7,7 +7,7 @@
 |---|---|---|---|
 | `moko-math-v1` | localStorage ＋ IndexedDB（DB `moko-house`、ストア `kv`、キー `moko-math-v1`） | おうち共通の状態（下記） | `common/core.js` の `save()`、`program/` の `houseAdd()` |
 | `piko-prog-v1` | localStorage | プログラミングの進み具合 `{best:{ステージ番号:★数}}` | `program/` |
-| `abc-adventure-v1` | localStorage | ABCぼうけんの進行・学習記録（`abc/js/game/state.js`） | `abc/` |
+| `abc-adventure-v1` | localStorage | ABCぼうけんの進行・学習記録（`abc/js/game/state.js`）。`stars`＝ABCで集めた★の合計、`starsSent`＝おうちに届け終わった★ | `abc/` |
 
 ## `moko-math-v1` の形
 ```js
@@ -16,14 +16,15 @@
   points: 星（共通ポイント）,
   owned: [持っているアイテムid…], equip:{char,outfit,hat,acc,wall,floor}, furn:[置いている家具id…],
   settings:{
-    types:{add1:{on,pts},…}, ktypes:{k1yomi:{on,pts},…},
+    types:{add1:{on,pts},…}, ktypes:{k1yomi:{on,pts},…}, etypes:{ealisten:{on,pts},…},
     perRound, perfect, daily, sound, testScale, practiceMul, practiceBonus,
-    progPts, gachaOn, gachaCost, gachaDaily
+    progPts, gachaOn, gachaCost, gachaDaily, abcPts, goalPts, goalAll
   },
   lastDay:'YYYY-M-D'（ログインボーナス）,
-  stats:{q,ok}（さんすう）, kstats:{q,ok}（こくご）,
+  stats:{q,ok}（さんすう）, kstats:{q,ok}（こくご）, estats:{q,ok}（えいご）,
   tests:{'add1-1':{pass,best}, 'k1yomi-2':{…}, …},
-  gacha:{day,count,pulls}
+  gacha:{day,count,pulls},
+  daily:{day,sansu,kokugo,eigo,abc,prog,got:{sansu,kokugo,eigo,prog},all}（きょうの もくひょう。day が変わるとリセット）
 }
 ```
 
@@ -41,4 +42,8 @@
 
 ## 他のゲームから星を足す方法
 core.js を読める部屋は `S.points += n; save();`。
-読めない部屋（program・abc など）は、localStorage と IndexedDB のうち `t` が新しいほうを読み、`points` を足して `t=Date.now()` にし、両方に書く（`program/index.html` の `houseAdd()` が見本）。データの他の項目には触れない。
+読めない部屋（program・abc）は、localStorage と IndexedDB のうち `t` が新しいほうを読み、`points` を足して `t=Date.now()` にし、両方に書く（見本：`program/index.html` の `houseAdd()`、`abc/js/game/house.js` の `sendStars()`）。データの他の項目には触れない。
+
+## ABCぼうけんの ★ → おうちの ⭐
+- ABC の `stars` − `starsSent` の差（まだ届けていない★）× おうちの `settings.abcPts`（既定10）を `points` に加算し、`starsSent` を進める。ABC の保存のたびに実行。
+- 旧版の ABC データ（`starsSent` なし）は、新版を最初に開いたときに それまでの★がまとめて届く（1回だけ）。

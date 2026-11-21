@@ -4,7 +4,7 @@
 - 1つのホーム画面アプリ（`manifest.json` の scope は `/game/`）。トップ＝おうち、各部屋はフォルダ。
 - `index.html`・`sansu/`・`kokugo/` は `common/core.js`（classic script、グローバル定義）と `common/style.css` を読み込む。
 - `program/` は core.js を読まない独自コード（グローバル名 `S`・`$`・`save` などが core.js と衝突するため）。共通ポイントだけ `moko-math-v1` を直接読み書きする。
-- `abc/` は ES Modules の独立モジュール。core.js も共通ポイントも使わない（詳細は `abc/README.md`）。
+- `abc/` は ES Modules の独立モジュール。core.js は使わず、★だけ `abc/js/game/house.js` が `moko-math-v1` の `points` に届ける（詳細は `abc/README.md`）。入口は おうちの「おべんきょう」、出口は ABC のタイトルとメニューの「おうちへ」。
 
 ## common/core.js の主な定義
 | 種類 | 名前 |
@@ -29,12 +29,18 @@
 - 🏆テスト：種類×3段階。制限時間＝問題数×`TBASE[種類]`×段階倍率×`testScale`。間違えるとやり直しなし。合格で限定アイテム（`ITEMS` の `test:'種類-段階'`）。前の段階に合格すると次が開く。練習モードはポイント×`practiceMul`、合格ライン到達で `practiceBonus`。
 - こくごの問題データは `kokugo/index.html` 内の `K1`・`K2`（漢字語 [漢字,よみ]）、`KOTOBA`（[問題,正解,誤答…]）、`STORIES`（よみとり）。`makeQ(種類)` が4択を作る。
 
+### えいご（`eigo/`）
+- 最初の画面で「ぼうけんに いく」（`abc/`）か「べんきょう する」を選ぶ。べんきょうは さんすう・こくごと同じ（練習＋🏆テスト、限定アイテム）。
+- 問題の種類は core.js の `ETYPES`（もじを きいて えらぶ／もじの よみかた／ことばを きいて えらぶ／えを みて えいご）。問題は ABCぼうけんで覚えた文字・単語（`abc-adventure-v1` の `learned`・`words`）から、苦手優先で出す。3つ以上覚えた種類だけ遊べる。
+- ページの処理は `<script type="module">`（abc の `letters.js`・`words.js`・`art.js`・`audio.js`・`learning.js` を import）。core.js のグローバル（`S`・`ACT` など）もそのまま使う。
+- 結果は ABCぼうけんの学習記録（`records`）にも書く（records 以外は触らない）。テスト用の入口は `window.__eigo`。
+
 ### プログラミング（`program/`）
 - 12ステージ（`LEVELS`：`#`壁 `S`スタート `G`ゴール `*`星。`loop:true` で「くりかえし」ブロック解禁）。
 - クリアの★（1〜3）は `piko-prog-v1` の `best`。初めて取った★1つにつき `settings.progPts`（既定3）の共通ポイント。
 
 ## 星（共通ポイント）
-- `S.points`。さんすう・こくごの正解、ボーナス、テスト練習、プログラミングの★、ログインボーナスで増える。
+- `S.points`。さんすう・こくごの正解、ボーナス、テスト練習、プログラミングの★、ABCぼうけんの★（×`abcPts`）、ログインボーナスで増える。
 - 使い道：おみせ（`price`）、ガチャ。⚙️設定で各ポイント量を調整可能。
 
 ## おみせ・きせかえ
@@ -44,6 +50,11 @@
   - `gacha:'sr'|'n'`：ガチャ限定（買えない）
 - 持ち物は `S.owned`、装備は `S.equip[cat]`、部屋に置いた家具は `S.furn`。家具の位置は種類ごとに固定（`roomSVG` の描画順で重なりを決める。家具を足したら `roomSVG` にも追加）。
 - キャラは体の形が共通なので、どのキャラにも服・帽子・小物が付く。
+
+## きょうの もくひょう
+- おうちの「おへや」に表示（`goalsCard()`）。目標は core.js の `goals()`：さんすう🏆テスト2回・こくご🏆テスト2回・えいご（ABCぼうけん未クリアなら ぼうけんで★2こ、クリア後は えいご🏆テスト2回）・プログラミング1ステージクリア。
+- 数え方：各部屋の `finishTest`（練習は除く）で `dailyOf(S).sansu++` など。プログラミングは `houseDaily()`、ABC は `house.js` の `sendStars()` が おうちのデータの `daily` を直接増やす。
+- ごほうび：おうちに戻ったとき `goalsCheck()` が達成済み・未受け取りの目標に ⭐`goalPts`（既定10）、全部達成で さらに ⭐`goalAll`（既定50）。`daily.got`・`daily.all` で1回だけ。
 
 ## ガチャ
 - `S.settings.gachaCost`（既定100）で1回。10% で ちょうレア（`GACHA_SR` 12種）、それ以外は ふつう（`GACHA_N` 20種）から等確率。

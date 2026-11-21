@@ -9,7 +9,7 @@ import * as input from '../engine/input.js';
 const $ = s => document.querySelector(s);
 const layer = () => $('#layer');
 const h = (html) => { const d = document.createElement('div'); d.innerHTML = html.trim(); return d.firstElementChild; };
-const SPEAKER_KIND = { 'ラビ': 'rabbit', 'ありさん': 'ant', 'くまさん': 'bear', 'ねこさん': 'cat', 'いぬさん': 'dog', 'ぞうさん': 'elephant', 'ドラコ': 'dragon', 'チュチュ': 'mouse', 'きみ': 'fox' };
+export const SPEAKER_KIND = { 'ラビ': 'rabbit', 'ありさん': 'ant', 'くまさん': 'bear', 'ねこさん': 'cat', 'いぬさん': 'dog', 'ぞうさん': 'elephant', 'ドラコ': 'dragon', 'チュチュ': 'mouse', 'きみ': 'fox' };
 const SPEAKER_ICON = `<svg viewBox="0 0 24 24" width="30" height="30"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
 export const STAR_SVG = `<svg viewBox="0 0 24 24"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3 6.1 20.6l1.3-6.6L2.5 9.4l6.6-.8z" fill="#ffd34f" stroke="#e5a91c" stroke-width="1.5" stroke-linejoin="round"/></svg>`;
 
@@ -149,10 +149,10 @@ export function letterBoard(ids, learned) {
 }
 
 /* ---------- メニュー ---------- */
-export function menu(st, { ids, levelOf, onSettings, onTitle, itemsInfo, onWear, invInfo = {} }) {
+export function menu(st, { ids, levelOf, onSettings, onTitle, itemsInfo, onWear, invInfo = {}, onHome }) {
   return new Promise(resolve => {
     let tab = 'abc';
-    const el = open(h(`<div class="modal"><div class="card menu"><div class="tabs"><button data-t="abc">もじ</button><button data-t="words">ことばずかん</button><button data-t="wear">もちもの</button><button data-t="set">せってい</button></div><div class="pane"></div><div class="row2"><button class="go gray" data-a="title">タイトルへ</button><button class="go" data-a="close">とじる</button></div></div></div>`), null);
+    const el = open(h(`<div class="modal"><div class="card menu"><div class="tabs"><button data-t="abc">もじ</button><button data-t="words">ことばずかん</button><button data-t="wear">もちもの</button><button data-t="set">せってい</button></div><div class="pane"></div><div class="row2"><button class="go gray" data-a="title">タイトルへ</button><button class="go home" data-a="home">おうちへ</button><button class="go" data-a="close">とじる</button></div></div></div>`), null);
     const pane = el.querySelector('.pane');
     const draw = () => {
       el.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
@@ -180,6 +180,7 @@ export function menu(st, { ids, levelOf, onSettings, onTitle, itemsInfo, onWear,
     el.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; sfx.tap(); draw(); });
     el.querySelector('[data-a=close]').onclick = () => { sfx.tap(); close(); resolve('close'); };
     el.querySelector('[data-a=title]').onclick = () => { sfx.tap(); close(); onTitle(); resolve('title'); };
+    el.querySelector('[data-a=home]').onclick = () => { sfx.tap(); close(); resolve('home'); onHome && onHome(); };
     current.onAction = null; current.onMenu = () => { close(); resolve('close'); };
     draw();
   });
@@ -190,11 +191,13 @@ export function closeByMenuKey() { if (current && current.onMenu) { current.onMe
 export function ending(info, st) {
   return new Promise(resolve => {
     const el = open(h(`<div class="modal"><div class="card ending"><div class="pic"></div><h2>${info.title}</h2><p>${info.text}</p>
-      <div class="sum"><div>おぼえた もじ<b>${st.learned.join(' ')}</b></div><div>あつめた ほし<b><span class="st">${STAR_SVG}</span>${st.stars}</b></div></div>
-      <div class="row2"><button class="go gray" data-a="title">タイトルへ</button><button class="go" data-a="stay">もっと あそぶ</button></div></div></div>`), null);
+      <div class="sum"><div>おぼえた もじ<b>${st.learned.length}こ</b></div><div>あつめた ほし<b><span class="st">${STAR_SVG}</span>${st.stars}</b></div>${st.clears ? `<div>クリア<b>${st.clears}かいめ</b></div>` : ''}</div>
+      <div class="row2"><button class="go gray" data-a="title">タイトルへ</button><button class="go" data-a="stay">もっと あそぶ</button><button class="go replay" data-a="replay">もういちど さいしょから</button></div>
+      <p class="muted">もういちど あそんでも、おぼえた もじの きろく・ほし・きがえは のこるよ</p></div></div>`), null);
     el.querySelector('.pic').appendChild(heroPic(st.wear, 120));
     el.querySelector('[data-a=title]').onclick = () => { sfx.tap(); close(); resolve('title'); };
     el.querySelector('[data-a=stay]').onclick = () => { sfx.tap(); close(); resolve('stay'); };
+    el.querySelector('[data-a=replay]').onclick = () => { sfx.tap(); close(); resolve('replay'); };
   });
 }
 

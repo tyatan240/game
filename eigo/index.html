@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>えいご ― モコの おべんきょうハウス</title>
+<link rel="manifest" href="../manifest.json">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<link rel="icon" href="../icon-192.png">
+<meta name="theme-color" content="#ffd9e3">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="おべんきょうハウス">
+<meta name="sw" content="../sw.js">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../common/style.css">
+<style>
+nav{grid-template-columns:repeat(4,1fr)}
+nav a{text-decoration:none;padding:8px 0 10px;font-weight:800;font-size:12px;color:#b89a9a;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav a span{font-size:24px}
+a.big{text-align:center;text-decoration:none}
+.kq{display:flex;align-items:center;gap:10px}
+.kq svg{width:80px;flex:none}
+.kq .qt{flex:1;text-align:center}
+.qlabel{font-weight:800;font-size:14px;color:#a88f8f}
+.qmain{font-weight:800;font-size:44px;color:#5a4646;line-height:1.25;margin:4px 0;word-break:keep-all}
+.qmain.mid{font-size:26px}
+.qmain.small{font-size:19px}
+.story{background:#fffdf7;border:2px solid #f3e3c8;border-radius:16px;padding:12px 14px;font-size:17px;line-height:1.9;margin-bottom:10px;font-weight:500}
+.story b{display:block;color:#c8577f;font-size:15px;margin-bottom:2px}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.choices.one{grid-template-columns:1fr}
+.ch{border:0;border-radius:18px;padding:14px 8px;font:inherit;font-weight:800;font-size:24px;background:#fff;color:#5a4646;box-shadow:0 4px 0 #f1cfd8;min-height:64px}
+.ch.long{font-size:17px}
+.ch:active{transform:translateY(3px);box-shadow:none}
+.ch.ng{background:#eee3e3;color:#c3b2b2;box-shadow:none;text-decoration:line-through}
+.ch.ok{background:#8fd3a8;color:#fff;box-shadow:0 4px 0 #5fb37f}
+.ch.pic{display:flex;align-items:center;justify-content:center;padding:8px 0}
+.ch.pic canvas{width:84px!important;height:84px!important}
+.ch.letter{font-size:44px}
+.ch.ok canvas,.ch.ng canvas{opacity:.85}
+.qart canvas{width:120px!important;height:120px!important;display:block;margin:0 auto}
+.saybtn{border:0;border-radius:999px;background:#6cc3f0;color:#fff;font:inherit;font-weight:800;font-size:16px;padding:6px 16px;box-shadow:0 3px 0 #3f9ac9;margin-top:6px}
+.saybtn:active{transform:translateY(2px);box-shadow:none}
+.choose{display:flex;flex-direction:column;gap:14px}
+.bigchoice{display:flex;align-items:center;gap:14px;border:0;border-radius:24px;padding:14px;font:inherit;text-align:left;text-decoration:none;color:inherit;background:#fff;box-shadow:0 5px 0 #f1d3d3}
+.bigchoice:active{transform:translateY(3px);box-shadow:none}
+.bigchoice .ic{width:96px;height:96px;flex:none;border-radius:20px;display:flex;align-items:center;justify-content:center}
+.bigchoice .ic canvas{width:88px!important;height:88px!important}
+.bigchoice b{display:block;font-size:22px}
+.bigchoice span{font-size:13px;color:#a88f8f;display:block}
+.bigchoice .prog{display:block;margin-top:4px;font-weight:800;color:#e0719a;font-size:13px}
+.bigchoice.adv .ic{background:#e3f4e8}.bigchoice.adv b{color:#3f9a63}
+.bigchoice.study .ic{background:#fff0d6}.bigchoice.study b{color:#d9822b}
+.tbtn.off{opacity:.55}
+.tbtn.off small{color:#a88f8f}
+.lockcard{opacity:.6}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="pts">⭐ <span id="pts">0</span></div>
+    <div class="ttl">🔤 えいご</div>
+    <a id="tohub" href="../index.html" aria-label="おうちに もどる">🏠</a>
+  </header>
+  <main id="view"></main>
+  <nav>
+    <button data-act="go" data-arg="home"><span>🗺️</span>えらぶ</button>
+    <button data-act="go" data-arg="select"><span>✏️</span>もんだい</button>
+    <button data-act="go" data-arg="tests"><span>🏆</span>テスト</button>
+    <a href="../index.html"><span>🏠</span>おうち</a>
+  </nav>
+</div>
+<div id="ov" class="hide"></div>
+<script src="../common/core.js"></script>
+<script type="module">
+/* えいごの へや：ABCぼうけんで おぼえた もじ・ことばで れんしゅう と テスト（さんすう・こくごと おなじ ルール）
+   もんだいの データ・え・おとは ABCぼうけん（../abc/）の ものを つかう。けっかは ABCぼうけんの がくしゅう きろくにも かく */
+import { LETTERS, LETTER } from '../abc/js/data/letters.js';
+import { WORDS, WORD } from '../abc/js/data/words.js';
+import { wordArt, drawCritter } from '../abc/js/engine/art.js';
+import '../abc/js/engine/art2.js';
+import { sayLetter, unlockAudio, setAudioSettings } from '../abc/js/engine/audio.js';
+import { record, newRecord, levelOf, pickTargets } from '../abc/js/game/learning.js';
+
+/* ========== ABCぼうけんの データ ========== */
+const ABC_KEY = 'abc-adventure-v1';
+const abcSave = () => { try { return JSON.parse(localStorage.getItem(ABC_KEY) || 'null') || {}; } catch (e) { return {}; } };
+const learnedLetters = () => (abcSave().learned || []).filter(id => LETTER[id]);
+const learnedWords = () => Object.keys(abcSave().words || {}).filter(id => WORD[id] && !WORD[id].future);
+const recKey = (tid, id) => tid.startsWith('ea') ? id : 'w:' + id;
+// がくしゅう きろくを ABCぼうけんの セーブに かく（records だけ。ほかは さわらない）
+function logAbc(key, ok, first) {
+  try {
+    const d = JSON.parse(localStorage.getItem(ABC_KEY) || 'null'); if (!d) return;
+    d.records = d.records || {};
+    d.records[key] = record(d.records[key] || newRecord(), ok, first);
+    d.t = Date.now(); localStorage.setItem(ABC_KEY, JSON.stringify(d));
+  } catch (e) { }
+}
+const avail = t => (t.need === 'letters' ? learnedLetters() : learnedWords()).length;
+const MIN = 3;
+
+/* ========== もんだいを つくる ========== */
+const shuf = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = r(0, i); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+function makeQ(tid) {
+  const isL = tid.startsWith('ea'), pool = isL ? learnedLetters() : learnedWords();
+  const recs = abcSave().records || {}, keyed = Object.fromEntries(pool.map(id => [id, recs[recKey(tid, id)]]));
+  const target = pickTargets(pool, keyed, 1)[0];
+  const n = levelOf(keyed[target]) >= 2 ? 4 : 3;
+  const all = isL ? LETTERS.map(l => l.id) : WORDS.filter(w => !w.future).map(w => w.id);
+  const dist = shuf(pool.filter(x => x !== target)).concat(shuf(all.filter(x => x !== target && !pool.includes(x)))).slice(0, n - 1);
+  const ids = shuf([target, ...dist]);
+  const L = LETTER[target], Wd = WORD[target];
+  const base = { tid, key: target, id: target, choicesId: ids, ans: target };
+  if (tid === 'ealisten') return { ...base, label: 'きこえた もじは どれかな？', main: '', voice: L, listen: true, render: 'letter', disp: id => LETTER[id].upper, name: id => `${LETTER[id].upper}（${LETTER[id].name}）` };
+  if (tid === 'eaname') return { ...base, label: 'この もじの よみかたは？', main: L.upper, voice: L, render: 'text', disp: id => LETTER[id].name, name: id => `${LETTER[id].upper}（${LETTER[id].name}）` };
+  if (tid === 'ewlisten') return { ...base, label: 'きこえた ことばは どれかな？', main: '', voice: Wd, listen: true, render: 'pic', disp: () => '', name: id => `${WORD[id].word}（${WORD[id].ja}）` };
+  return { ...base, label: 'この えは えいごで なに？', main: '', art: Wd.art, voice: Wd, render: 'word', disp: id => WORD[id].word, name: id => `${WORD[id].word}（${WORD[id].ja}）` };
+}
+// クイズの もんだいぶぶん と せんたくし
+const qTop = c => `${c.label ? `<div class="qlabel">${c.label}</div>` : ''}${c.art ? `<div class="qart" data-art="${c.art}"></div>` : ''}${c.main ? `<div class="qmain" style="font-size:64px">${c.main}</div>` : ''}${c.listen ? `<button class="saybtn" data-act="say">🔊 もういちど きく</button>` : ''}`;
+const chBtn = (c, id, i, cls, act) => `<button class="ch ${c.render} ${cls}" data-act="${act}" data-arg="${i}">${c.render === 'pic' ? `<span data-art="${WORD[id].art}"></span>` : c.disp(id)}</button>`;
+function fillArt() { document.querySelectorAll('[data-art]').forEach(el => { if (!el.firstChild) el.appendChild(wordArt(el.dataset.art, el.classList.contains('qart') ? 120 : 84)); }); }
+const curQ = () => view === 'test' && test ? test.cur : quiz && quiz.cur;
+const sayQ = () => { const c = curQ(); if (c) sayLetter(c.voice); };
+setAudioSettings({ bgm: false, se: false, voice: S.settings.sound });
+document.addEventListener('pointerdown', unlockAudio, { once: true });
+
+/* ========== えらぶ がめん（ぼうけん か べんきょう）========== */
+function home() {
+  const L = learnedLetters().length, Wn = learnedWords().length, total = WORDS.filter(w => !w.future).length;
+  return `<h2>えいごの へや</h2><div class="choose">
+  <a class="bigchoice adv" href="../abc/index.html"><div class="ic" data-fox></div><div><b>🗺️ ぼうけんに いく</b><span>ABCぼうけん。もじと ことばを おぼえて、まほうで みんなを たすけよう！</span><span class="prog">おぼえた もじ ${L}/26 ・ ことば ${Wn}/${total}</span></div></a>
+  <button class="bigchoice study" data-act="go" data-arg="select"><div class="ic" data-art="apple"></div><div><b>✏️ べんきょう する</b><span>ぼうけんで おぼえた もじと ことばで、れんしゅうと 🏆テスト</span><span class="prog">せいかいで おうちの ⭐が もらえるよ</span></div></button>
+  </div>${L < MIN ? '<p class="muted">まずは ぼうけんで もじを 3つ おぼえよう！ おぼえた もじと ことばで べんきょう できるよ</p>' : ''}`;
+}
+function drawFox() {
+  const el = document.querySelector('[data-fox]'); if (!el || el.firstChild) return;
+  const c = document.createElement('canvas'), d = window.devicePixelRatio || 1; c.width = c.height = 88 * d; c.style.width = c.style.height = '88px';
+  const x = c.getContext('2d'); x.scale(88 * d / 40, 88 * d / 40); drawCritter(x, 'fox', 20, 37, 'down', 0, { happy: true }); el.appendChild(c);
+}
+
+/* ========== がめん ========== */
+let view=location.hash==='#tests'?'tests':location.hash==='#study'?'select':'home',quiz=null;
+function go(v){if(view==='test')stopTest();view=v;render();$('main').scrollTop=0}
+function render(){
+ updPts();
+ document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.arg===view||(view==='quiz'||view==='result')&&b.dataset.arg==='select'||view==='test'&&b.dataset.arg==='tests'));
+ $('#view').innerHTML={home,select,quiz:quizV,result,tests,test:testV}[view]();
+ fillArt(); drawFox();
+}
+const onTypes=()=>ETYPES.filter(t=>S.settings.etypes[t.id].on);
+const enabled=()=>onTypes().filter(t=>avail(t)>=MIN);
+function select(){
+ const on=onTypes(),en=enabled();
+ if(!on.length) return `<div class="card"><p class="muted">もんだいが えらばれていません。<br>おうちのひとに おうちの ⚙️ せってい で えらんでもらってね</p></div>`;
+ return `<h2>どの もんだいに する？</h2><div class="tgrid">
+ ${on.map(t=>{const a=avail(t);return a>=MIN?`<button class="tbtn" data-act="start" data-arg="${t.id}"><b>${t.name}</b>れい：${t.ex}<small>せいかいで ⭐${S.settings.etypes[t.id].pts}（${a}こ から でるよ）</small></button>`:`<button class="tbtn off" data-act="go" data-arg="home"><b>${t.name}</b>れい：${t.ex}<small>ぼうけんで ${t.need==='letters'?'もじ':'ことば'}を あと ${MIN-a}こ おぼえると できるよ</small></button>`}).join('')}
+ ${en.length>1?`<button class="tbtn mix" data-act="start" data-arg="mix"><b>🎲 まぜまぜ</b>いろんな もんだいが でるよ</button>`:''}
+ </div><p class="muted">${S.settings.perRound}もん ぜんぶ せいかいで ボーナス ⭐${S.settings.perfect}！</p>`}
+function startQuiz(sel){
+ const pool=sel==='mix'?enabled().map(t=>t.id):[sel];
+ quiz={pool,sel,i:0,n:S.settings.perRound,ok:0,earned:0,res:[],cur:null,tries:0,ng:[],mood:'normal',msg:'',lock:false,used:new Set()};
+ nextQ();view='quiz';render();$('main').scrollTop=0}
+function nextQ(){
+ let q,g=0;
+ do{q=makeQ(quiz.pool[r(0,quiz.pool.length-1)])}while((quiz.used.has(q.key)||q.key===quiz.lastKey)&&g++<30);
+ quiz.used.add(q.key);quiz.lastKey=q.key;quiz.cur=q;quiz.tries=0;quiz.ng=[];quiz.mood='normal';quiz.msg='';$('main').scrollTop=0;
+ if(quiz.used.size>=4)quiz.used.clear();
+ if(q.listen)setTimeout(sayQ,350)}
+function quizV(){
+ const q=quiz,c=q.cur,done=q.lock;
+ const dots=Array.from({length:q.n},(_,i)=>`<i class="${q.res[i]===true?'ok':q.res[i]===false?'ng':i===q.i?'now':''}"></i>`).join('');
+ return `<div class="dots">${dots}</div>
+ <div class="card qcard kq">${charSVG(S.equip,q.mood,q.mood==='happy'?'hop':'')}<div class="qt">${qTop(c)}</div></div>
+ <div class="msg">${q.msg||'⭐'+S.settings.etypes[c.tid].pts+' の もんだい'}</div>
+ <div class="choices">${c.choicesId.map((x,i)=>chBtn(c,x,i,`${q.ng.includes(i)?'ng':''} ${done&&x===c.ans?'ok':''}`,'pick')).join('')}</div>`}
+function pick(i){
+ const q=quiz;if(!q||q.lock||q.ng.includes(i))return;
+ const c=q.cur,tp=S.settings.etypes[c.tid].pts;
+ logAbc(recKey(c.tid,c.ans),c.choicesId[i]===c.ans,q.tries===0);
+ if(c.choicesId[i]===c.ans){sayLetter(c.voice);
+  const pts=q.tries===0?tp:Math.ceil(tp/2);
+  q.ok++;q.earned+=pts;q.res[q.i]=true;S.points+=pts;S.estats.q++;S.estats.ok++;save();
+  q.mood='happy';q.msg=`せいかい！ ⭐＋${pts}`;sOk();q.lock=true;render();
+  setTimeout(advance,1200);
+ }else if(q.tries===0){
+  q.tries=1;q.ng.push(i);q.mood='oops';q.msg='おしい！ もういちど えらんでね';sNg();render();
+ }else{
+  q.ng.push(i);q.res[q.i]=false;S.estats.q++;save();q.mood='oops';q.msg=`こたえは「${c.name(c.ans)}」だよ。つぎ がんばろう！`;sNg();sayLetter(c.voice);q.lock=true;render();
+  setTimeout(advance,2200);
+ }}
+function advance(){
+ const q=quiz;if(!q||view!=='quiz')return;q.lock=false;q.i++;
+ if(q.i>=q.n){
+  q.bonus=(q.ok===q.n&&S.settings.perfect>0)?S.settings.perfect:0;
+  if(q.bonus){S.points+=q.bonus;save()}
+  view='result';if(q.bonus)sBuy();render();return}
+ nextQ();render()}
+function result(){
+ const q=quiz,perfect=q.ok===q.n;
+ return `<div class="card" style="text-align:center"><div style="width:150px;margin:0 auto">${charSVG(S.equip,'happy','hop')}</div>
+ <h2 style="font-size:24px">${perfect?'ぜんもん せいかい！すごい！':q.ok>=q.n/2?'よく がんばったね！':'チャレンジ えらい！'}</h2>
+ <div>${q.n}もん ちゅう <b style="font-size:24px;color:#e0719a">${q.ok}</b>もん せいかい</div>
+ <div class="stars" style="margin:10px 0">⭐＋${q.earned}${q.bonus?` <small style="font-size:16px">（ボーナス＋${q.bonus}）</small>`:''}</div></div>
+ <button class="big" data-act="start" data-arg="${q.sel}">もういちど</button><div style="height:10px"></div>
+ <a class="big sub" href="../index.html#shop">おみせに いく 🛍️</a>`}
+
+/* ========== テスト（さんすうと おなじ ルール）========== */
+let test=null,tTimer=null;
+function tests(){
+ const en=enabled();
+ if(!en.length) return `<div class="card"><p class="muted">ぼうけんで もじを 3つ おぼえると テストに ちょうせん できるよ！</p></div>`;
+ return `<h2>🏆 テスト</h2><p class="muted" style="text-align:left">じかん ないに ごうかく すると、ここでしか もらえない とくべつな アイテムが もらえるよ！</p>`+
+ en.map(t=>`<div class="card"><b>${t.name}</b>${TLV.map((L,lv)=>{const key=t.id+'-'+(lv+1),st=S.tests[key]||{},it=testItem(key),open=testUnlocked(key);
+  return `<div class="trow ${st.pass?'pass':''}"><div class="tth">${thumb(it)}</div><div class="lbl"><b>${L.medal} ${L.name}　<span style="color:#e0719a">${it.name}</span></b><small>${L.n}もん ／ ⏱${testLimit(t.id,lv)}びょう ／ ${passRule(L)}で ごうかく</small><small>${st.pass?'✔ ごうかく ずみ！':open?(st.best!=null?'さいこう：'+st.best+'もん':'ちょうせん できるよ！'):'🔒 まえの テストに ごうかく すると ひらくよ'}</small>
+   <div class="tbtns"><button class="prac" data-act="tready" data-arg="${key}|p">✏️ れんしゅう <span>⭐×${S.settings.practiceMul}</span></button><button class="${open?'':'off'}" data-act="${open?'tready':'tlock'}" data-arg="${key}">🏆 テスト</button></div></div></div>`}).join('')}</div>`).join('')}
+const pracPts=tid=>S.settings.etypes[tid].pts*S.settings.practiceMul;
+function testReady(arg){
+ const [key,p]=arg.split('|'),prac=p==='p',{tid,lv}=parseKey(key),L=TLV[lv],it=testItem(key);
+ showPop(`<div class="medal">${prac?'✏️':L.medal}</div><h3>${ETYPE[tid].name}<br>${L.name}${prac?' の れんしゅう':''}</h3>
+ <div style="text-align:left;line-height:1.8;margin:8px 0">・もんだい：${L.n}もん<br>・じかん：<b>${testLimit(tid,lv)}びょう</b><br>・まちがえても やりなおしは できないよ<br>${prac?`・せいかい 1もんで <b>⭐${pracPts(tid)}</b>（ふだんの ${S.settings.practiceMul}ばい！）<br>・${passRule(L)}で ボーナス ⭐${S.settings.practiceBonus}`:`・${passRule(L)}で ごうかく`}</div>
+ ${prac?'':`<div style="width:90px;margin:0 auto">${thumb(it)}</div><div>ごほうび：<b>${it.name}</b></div>`}
+ <div class="btns"><button class="big gray" data-act="close">やめる</button><button class="big ${prac?'sub':''}" data-act="tstart" data-arg="${arg}">スタート！</button></div>`)}
+function stopTest(){clearInterval(tTimer);tTimer=null}
+function startTest(arg){
+ closePop();stopTest();
+ const [key,p]=arg.split('|'),{tid,lv}=parseKey(key),L=TLV[lv];
+ test={key,tid,lv,prac:p==='p',earned:0,n:L.n,need:L.need,limit:testLimit(tid,lv)*1000,i:0,ok:0,cur:null,used:new Set(),pick:-1,lock:false,phase:'count',count:3,msg:'',t0:0};
+ view='test';tNext();render();$('main').scrollTop=0;beep(660,.1);
+ tTimer=setInterval(()=>{
+  if(!test){stopTest();return}
+  if(test.phase==='count'){test.count--;if(test.count<=0){test.phase='run';test.t0=performance.now();stopTest();beep(990,.2);render();tTimer=setInterval(tTick,100);if(test.cur.listen)setTimeout(sayQ,300)}else{beep(660,.1);render()}}
+ },800)}
+function tNext(){let q,g=0;do{q=makeQ(test.tid)}while((q.key===test.lastKey)&&g++<30);test.lastKey=q.key;test.cur=q;test.pick=-1;test.msg='';if(q.listen&&test.phase==='run')setTimeout(sayQ,250)}
+function tLeft(){return Math.max(0,test.limit-(performance.now()-test.t0))}
+function tTick(){
+ if(!test||test.phase!=='run')return;
+ const left=tLeft(),pct=left/test.limit*100,bar=$('#tbar'),sec=$('#tsec');
+ if(bar){bar.style.width=pct+'%';bar.classList.toggle('low',pct<25)}
+ if(sec)sec.textContent=Math.ceil(left/1000);
+ if(left<=0)finishTest(true)}
+function testV(){
+ const t=test;
+ if(t.phase==='count') return `<div class="card" style="text-align:center"><div class="medal">${t.prac?'✏️':TLV[t.lv].medal}</div><b>${ETYPE[t.tid].name} ${TLV[t.lv].name}${t.prac?' の れんしゅう':''}</b><div class="count">${t.count}</div><div class="muted">よーい…</div></div>`;
+ const c=t.cur,left=tLeft(),pct=left/t.limit*100;
+ return `<div class="tbarw"><div class="tbar ${pct<25?'low':''}" id="tbar" style="width:${pct}%"></div></div>
+ <div class="tinfo"><span>⏱ <b id="tsec">${Math.ceil(left/1000)}</b>びょう</span><span>${t.prac?'✏️ ':''}${t.i+1} / ${t.n}もんめ</span><span>⭕ ${t.ok}</span></div>
+ <div class="card qcard" style="text-align:center">${qTop(c)}</div>
+ <div class="msg">${t.msg||'&nbsp;'}</div>
+ <div class="choices">${c.choicesId.map((x,i)=>chBtn(c,x,i,`${t.lock&&x===c.ans?'ok':''} ${t.lock&&i===t.pick&&x!==c.ans?'ng':''}`,'tpick')).join('')}</div>`}
+function testPick(i){
+ const t=test;if(!t||t.phase!=='run'||t.lock)return;
+ const c=t.cur,right=c.choicesId[i]===c.ans;t.pick=i;
+ logAbc(recKey(c.tid,c.ans),right,true);if(right)sayLetter(c.voice);
+ S.estats.q++;
+ if(right){t.ok++;S.estats.ok++;
+  if(t.prac){const pts=pracPts(t.tid);t.earned+=pts;S.points+=pts;t.msg=`⭕ せいかい！ ⭐＋${pts}`}else t.msg='⭕ せいかい！';
+  beep(1046,.08)}
+ else{t.msg=`❌ こたえは「${c.name(c.ans)}」`;sNg()}
+ save();t.i++;
+ if(t.i>=t.n||(!t.prac&&(t.i-t.ok)>(t.n-t.need))){t.lock=true;stopTest();t.i--;render();t.i++;setTimeout(()=>finishTest(false),right?500:1000);return}
+ t.lock=true;t.i--;render();t.i++;
+ setTimeout(()=>{if(!test||view!=='test'||test!==t)return;t.lock=false;tNext();render();$('main').scrollTop=0},right?350:1000)}
+function finishTest(timeout){
+ const t=test;if(!t||t.phase==='done')return;
+ t.phase='done';stopTest();
+ if(t.prac){
+  const okLine=t.ok>=t.need,bonus=okLine?S.settings.practiceBonus:0;
+  if(bonus){S.points+=bonus}save();view='tests';render();
+  okLine?sBuy():sNg();
+  showPop(`${charSVG(S.equip,okLine?'happy':'oops',okLine?'hop':'')}<h3>${timeout?'じかん ぎれ！':'れんしゅう おわり！'}</h3><div>${timeout?`${t.n}もん ちゅう ${t.i}もん まで こたえて ${t.ok}もん せいかい`:`${t.n}もん ちゅう ${t.ok}もん せいかい`}</div>
+  <div class="stars" style="margin:8px 0">⭐＋${t.earned+bonus}${bonus?` <small style="font-size:15px">（ボーナス＋${bonus}）</small>`:''}</div>
+  <div class="muted">${okLine?'テストなら ごうかく できる ちょうし！🏆':`テストの ごうかくまで あと ${t.need-t.ok}もん！`}</div>
+  <div class="btns"><button class="big sub" data-act="tstart" data-arg="${t.key}|p">もういちど</button>${testUnlocked(t.key)?`<button class="big" data-act="tready" data-arg="${t.key}">テストへ 🏆</button>`:''}</div>
+  <div class="btns"><button class="big gray" data-act="close">とじる</button></div>`);
+  test=null;return}
+ const L=TLV[t.lv],it=testItem(t.key),pass=t.ok>=t.need,st=S.tests[t.key]||{},first=pass&&!st.pass;
+ dailyOf(S).eigo++; // きょうの もくひょう
+ S.tests[t.key]={pass:!!(st.pass||pass),best:Math.max(st.best||0,t.ok)};
+ if(first&&!S.owned.includes(it.id)){S.owned.push(it.id);if(it.cat==='furn'&&!S.furn.includes(it.id))S.furn.push(it.id)}
+ save();view='tests';render();
+ if(pass){sBuy();
+  showPop(`<div class="medal">${L.medal}</div><h3>ごうかく！</h3><div>${t.n}もん ちゅう ${t.ok}もん せいかい</div>
+  ${first?`<div style="width:110px;margin:8px auto">${it.cat==='furn'||it.cat==='wall'||it.cat==='floor'?thumb(it):charSVG({...S.equip,[it.cat]:it.id},'happy','hop')}</div><div><b>${it.name}</b> を ゲット！</div>
+  <div class="btns"><button class="big gray" data-act="close">あとで</button><button class="big" data-act="twear" data-arg="${it.id}">${it.cat==='furn'||it.cat==='wall'||it.cat==='floor'?'おへやを みる':'つけてみる'}</button></div>`
+  :`<div class="btns"><button class="big" data-act="close">OK</button></div>`}`)}
+ else{sNg();
+  showPop(`${charSVG(S.equip,'oops')}<h3>${timeout?'じかん ぎれ！':'ざんねん！'}</h3><div>${timeout?`${t.n}もん ちゅう ${t.i}もん まで こたえて `:''}${t.ok}もん せいかい（ごうかくは ${t.need}もん）</div><div class="muted">れんしゅう して また ちょうせん しよう！</div>
+  <div class="btns"><button class="big gray" data-act="close">とじる</button><button class="big" data-act="tstart" data-arg="${t.key}">もういちど</button></div>`)}
+ test=null}
+
+Object.assign(ACT,{
+ tready:a=>{sTap();testReady(a)},
+ tlock:()=>{sNg();showPop(`<h3>🔒</h3><div>まえの テストに ごうかく すると ちょうせん できるよ！</div><div class="btns"><button class="big" data-act="close">OK</button></div>`)},
+ tstart:a=>startTest(a),
+ tpick:a=>testPick(Number(a)),
+ twear:a=>{closePop();const it=ITEM[a];if(it.cat!=='furn')S.equip[it.cat]=a;save();location.href=it.cat==='furn'?'../index.html':['outfit','hat','acc'].includes(it.cat)?'../index.html#dress':'../index.html#dress-room'},
+ close:a=>{closePop();if(a)go(a)},
+ go:a=>{sTap();go(a)},
+ start:a=>{sTap();startQuiz(a)},
+ pick:a=>pick(Number(a)),
+ say:()=>{sTap();sayQ()},
+});
+window.render = render; // core.js の resync から よばれる
+window.__eigo = { get quiz() { return quiz; }, get test() { return test; }, get view() { return view; }, go, makeQ }; // テスト よう
+render();
+</script>
+</body>
+</html>

@@ -8,6 +8,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="icon" href="../icon-192.png">
+<link rel="manifest" href="../manifest.json">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<meta name="apple-mobile-web-app-title" content="おべんきょうハウス">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
@@ -32,17 +35,23 @@
 <div id="title">
   <div class="logo"><span>A</span><span>B</span><span>C</span><em>ぼうけん</em></div>
   <p class="sub">もじを おぼえて せかいを たすけよう！</p>
+  <p id="clears" class="clears" style="display:none"></p>
   <div class="tbtns">
     <button id="cont">つづきから</button>
     <button id="start">はじめから</button>
   </div>
+  <p class="house">あつめた ★は おうちの ⭐に とどくよ（いま おうちの ⭐ <b id="housePts">0</b>）</p>
   <p class="tip">PC：やじるしキー で あるく ／ スペース で はなす</p>
-  <a class="back" href="../index.html">おべんきょうハウスへ もどる</a>
+  <a class="back" href="../eigo/index.html">← えいごの へやへ もどる</a>
 </div>
 
 <div id="goal" class="hide"></div>
+<div id="areaName"></div>
+<div id="fade"></div>
+<div id="toast"></div>
 <div id="rotate">よこむきに すると あそびやすいよ</div>
 <div id="layer"></div>
 <script type="module" src="js/main.js"></script>
+<script>if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('../sw.js').catch(() => {});</script>
 </body>
 </html>

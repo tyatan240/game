@@ -2,7 +2,7 @@
 import { SPELLS } from '../data/combos.js';
 import { QUESTS } from '../data/quests.js';
 import { WORD } from '../data/words.js';
-import { activeQuest, currentStep } from './quests.js';
+import { activeQuests, currentStep, stepFor } from './quests.js';
 
 // じゅんばんに かんけい なく おなじに する
 export const comboKey = ids => [...ids].sort().join('+');
@@ -10,15 +10,15 @@ const SPELL_BY_KEY = Object.fromEntries(SPELLS.filter(s => !s.future).map(s => [
 
 export function condMet(when, S) {
   if (!when) return true;
-  if (when.quest) { const q = QUESTS.find(x => x.id === when.quest); if (activeQuest(S) !== q || currentStep(S, q).id !== when.step) return false; }
+  if (when.quest) { const q = QUESTS.find(x => x.id === when.quest); if (!activeQuests(S).includes(q) || currentStep(S, q).id !== when.step) return false; }
   if (when.world) for (const k in when.world) if (S.world[k] !== when.world[k]) return false;
   return true;
 }
 
 // この ばしょで いま つかえる まほう（なければ null）
 export function spellHere(target, S) {
-  const q = activeQuest(S), st = currentStep(S, q);
-  if (st && st.on === 'spell' && st.target === target) return SPELLS.find(s => s.id === st.spell) || null;
+  const f = stepFor(S, target);
+  if (f && f.st.on === 'spell') return SPELLS.find(s => s.id === f.st.spell) || null;
   return null;
 }
 
