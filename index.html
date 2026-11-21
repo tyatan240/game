@@ -214,7 +214,7 @@ function settings(){
 let bkArm=false;
 const bkEnc=o=>btoa(unescape(encodeURIComponent(JSON.stringify(o))));
 const bkDec=t=>JSON.parse(decodeURIComponent(escape(atob(t.replace(/\s/g,'')))));
-const LIM={perRound:[3,20],perfect:[0,50],daily:[0,50],t:[0,20],practiceMul:[1,5],practiceBonus:[0,50],progPts:[0,10],abcPts:[0,10],gachaCost:[10,500],gachaDaily:[0,10]};
+const LIM={perRound:[3,20],perfect:[0,50],daily:[0,50],t:[0,20],practiceMul:[1,5],practiceBonus:[0,50],progPts:[0,10],abcPts:[0,30],gachaCost:[10,500],gachaDaily:[0,10]};
 function stepSet(arg){
  const [k,d]=arg.split('|'),dd=Number(d);
  if(k.startsWith('t:')||k.startsWith('k:')){const o=S.settings[k[0]==='t'?'types':'ktypes'][k.slice(2)];o.pts=Math.max(LIM.t[0],Math.min(LIM.t[1],o.pts+dd))}

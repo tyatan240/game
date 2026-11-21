@@ -18,7 +18,7 @@ export async function sendStars(S, saveFn) {
     let d = null; try { d = JSON.parse(localStorage.getItem(HOUSE) || 'null'); } catch (e) { }
     let db = null; try { db = await idbOpen(); const v = await idbGet(db); if (v && (!d || (v.t || 0) > (d.t || 0))) d = v; } catch (e) { }
     d = d && typeof d === 'object' ? d : {};
-    const mul = d.settings && typeof d.settings.abcPts === 'number' ? d.settings.abcPts : 1;
+    const mul = d.settings && typeof d.settings.abcPts === 'number' ? d.settings.abcPts : 10; // おうちの ⚙️せってい（しょきち 10）
     const add = pending * mul;
     d.points = (d.points || 0) + add; d.t = Date.now();
     try { localStorage.setItem(HOUSE, JSON.stringify(d)); } catch (e) { }

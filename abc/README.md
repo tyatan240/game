@@ -78,7 +78,7 @@ abc/
 
 ## 保存データ
 - `localStorage` の `abc-adventure-v1`（おべんきょうハウスの `moko-math-v1` とは別）
-- **おうちとの つなぎ**：入口は おうちの「おべんきょう」、出口は タイトルの「おうちへ もどる」とメニューの「おうちへ」。ABC で集めた★は `js/game/house.js` が おうちの ⭐（`points`）に届ける（`stars − starsSent` 分 × おうちの⚙️設定 `abcPts`）
+- **おうちとの つなぎ**：入口は おうちの「おべんきょう」、出口は タイトルの「おうちへ もどる」とメニューの「おうちへ」。ABC で集めた★は `js/game/house.js` が おうちの ⭐（`points`）に届ける（`stars − starsSent` 分 × おうちの⚙️設定 `abcPts`、既定10）
 - エリア：`hero.area`（今いるエリア）。`areas` に行ったことのあるエリア、`world` に `gate_forest` などの もんの状態
 - ことばの まほうで追加した項目：`words`（覚えた単語）・`combos`（見つけた組み合わせ）・`quests`（クエスト進行）・`inv`（持ち物）・`world`（マップの変化）・`areas`（行ける場所）。単語の学習記録は `records['w:apple']`
 - 項目を増やすときは `state.js` の `defaultState()` に初期値を足す（`load()` が古いデータを補う）。名前の変更・削除はしない

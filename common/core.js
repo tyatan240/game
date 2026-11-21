@@ -155,7 +155,7 @@ function defState(){return{v:1,t:0,points:0,
  furn:[],
  settings:{types:Object.fromEntries(TYPES.map(t=>[t.id,{on:t.id.startsWith('add'),pts:t.pts}])),
   ktypes:Object.fromEntries(KTYPES.map(t=>[t.id,{on:true,pts:t.pts}])),
-  perRound:5,perfect:3,daily:5,sound:true,testScale:1,practiceMul:2,practiceBonus:5,progPts:3,gachaOn:true,gachaCost:100,gachaDaily:0,abcPts:1},
+  perRound:5,perfect:3,daily:5,sound:true,testScale:1,practiceMul:2,practiceBonus:5,progPts:3,gachaOn:true,gachaCost:100,gachaDaily:0,abcPts:10},
  lastDay:'',stats:{q:0,ok:0},kstats:{q:0,ok:0},tests:{},gacha:{day:'',count:0,pulls:0}}}
 function merge(d){
  const s=defState(); if(!d||typeof d!=='object') return s;

@@ -44,5 +44,5 @@ core.js を読める部屋は `S.points += n; save();`。
 読めない部屋（program・abc）は、localStorage と IndexedDB のうち `t` が新しいほうを読み、`points` を足して `t=Date.now()` にし、両方に書く（見本：`program/index.html` の `houseAdd()`、`abc/js/game/house.js` の `sendStars()`）。データの他の項目には触れない。
 
 ## ABCぼうけんの ★ → おうちの ⭐
-- ABC の `stars` − `starsSent` の差（まだ届けていない★）× おうちの `settings.abcPts`（既定1）を `points` に加算し、`starsSent` を進める。ABC の保存のたびに実行。
+- ABC の `stars` − `starsSent` の差（まだ届けていない★）× おうちの `settings.abcPts`（既定10）を `points` に加算し、`starsSent` を進める。ABC の保存のたびに実行。
 - 旧版の ABC データ（`starsSent` なし）は、新版を最初に開いたときに それまでの★がまとめて届く（1回だけ）。
