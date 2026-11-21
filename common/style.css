@@ -1,5 +1,5 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%;background:#fff3ec}
+html,body{margin:0;height:100%;background:#fff3ec;touch-action:manipulation}
 body{font-family:"M PLUS Rounded 1c",system-ui,sans-serif;color:#5a4646;-webkit-user-select:none;user-select:none}
 #app{max-width:520px;margin:0 auto;height:100dvh;display:flex;flex-direction:column;background:#fff8f3}
 header{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#ffd9e3;box-shadow:0 2px 0 #f6b9ca}

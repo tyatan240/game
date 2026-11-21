@@ -1,5 +1,6 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%;overflow:hidden;background:#3f8f4a;font-family:"M PLUS Rounded 1c",system-ui,sans-serif;color:#4a3a3a;-webkit-user-select:none;user-select:none;touch-action:none;overscroll-behavior:none}
+html,body{margin:0;height:100%;overflow:hidden;background:#3f8f4a;font-family:"M PLUS Rounded 1c",system-ui,sans-serif;color:#4a3a3a;-webkit-user-select:none;user-select:none;touch-action:manipulation;overscroll-behavior:none}
+#cv{touch-action:none}
 button{font:inherit;cursor:pointer}
 #cv{position:fixed;inset:0;display:block}
 
