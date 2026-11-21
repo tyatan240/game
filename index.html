@@ -82,7 +82,8 @@ function study(){
  return `<h2>📚 おべんきょう</h2><p class="muted" style="text-align:left">どの へやでも ⭐ポイントが もらえるよ。ためた ポイントは おみせで つかえるよ！</p>
  ${card('sansu/index.html','✏️','#ffe3ea','さんすう','#c8577f','たしざん・ひきざん、🏆テストで とくべつな アイテム')}
  ${card('kokugo/index.html','📖','#e3f4e8','こくご','#3f9a63','かん字・ことば・よみとり、🏆テストで とくべつな アイテム')}
- ${card('program/index.html','🤖','#dff3fc','プログラミング','#2b7fa8','ブロックを ならべて ロボットの ピコを うごかそう')}`}
+ ${card('program/index.html','🤖','#dff3fc','プログラミング','#2b7fa8','ブロックを ならべて ロボットの ピコを うごかそう')}
+ ${card('abc/index.html','🔤','#fff0d6','えいご（ABCぼうけん）','#d9822b','えいごの もじと ことばで ぼうけん！ よこむきが おすすめ')}`}
 /* ---------- 🎰 ガチャ ---------- */
 let gSpin=false;
 const gToday=()=>{if(S.gacha.day!==today()){S.gacha.day=today();S.gacha.count=0}return S.gacha.count};
@@ -186,6 +187,8 @@ function settings(){
  ${KTYPES.map(t=>`<div class="row"><button class="sw ${s.ktypes[t.id].on?'on':''}" data-act="ktg" data-arg="${t.id}" aria-label="${t.name}"></button><div class="lbl"><b>${t.name}</b><small>れい：${t.ex}</small></div>${stepper('k:'+t.id,'⭐'+s.ktypes[t.id].pts)}</div>`).join('')}</div>
  <div class="card"><b>🤖 プログラミング</b>
  <div class="row"><div class="lbl"><b>ステージの ★1つ あたりの ポイント</b><small>はじめて とった ★ だけ もらえます（1ステージ さいだい ★3）</small></div>${stepper('progPts','⭐'+s.progPts)}</div></div>
+ <div class="card"><b>🔤 えいご（ABCぼうけん）</b>
+ <div class="row"><div class="lbl"><b>ABCぼうけんの ★1つ あたりの ポイント</b><small>ABCぼうけんで あつめた ★が、この かずの ⭐に なって とどきます</small></div>${stepper('abcPts','⭐'+s.abcPts)}</div></div>
  <div class="card">
  <div class="row"><div class="lbl"><b>1かいの もんだいすう</b><small>さんすう・こくご</small></div>${stepper('perRound',s.perRound)}</div>
  <div class="row"><div class="lbl"><b>ぜんもんせいかい ボーナス</b></div>${stepper('perfect','⭐'+s.perfect)}</div>
@@ -211,7 +214,7 @@ function settings(){
 let bkArm=false;
 const bkEnc=o=>btoa(unescape(encodeURIComponent(JSON.stringify(o))));
 const bkDec=t=>JSON.parse(decodeURIComponent(escape(atob(t.replace(/\s/g,'')))));
-const LIM={perRound:[3,20],perfect:[0,50],daily:[0,50],t:[0,20],practiceMul:[1,5],practiceBonus:[0,50],progPts:[0,10],gachaCost:[10,500],gachaDaily:[0,10]};
+const LIM={perRound:[3,20],perfect:[0,50],daily:[0,50],t:[0,20],practiceMul:[1,5],practiceBonus:[0,50],progPts:[0,10],abcPts:[0,10],gachaCost:[10,500],gachaDaily:[0,10]};
 function stepSet(arg){
  const [k,d]=arg.split('|'),dd=Number(d);
  if(k.startsWith('t:')||k.startsWith('k:')){const o=S.settings[k[0]==='t'?'types':'ktypes'][k.slice(2)];o.pts=Math.max(LIM.t[0],Math.min(LIM.t[1],o.pts+dd))}

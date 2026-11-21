@@ -149,10 +149,10 @@ export function letterBoard(ids, learned) {
 }
 
 /* ---------- メニュー ---------- */
-export function menu(st, { ids, levelOf, onSettings, onTitle, itemsInfo, onWear, invInfo = {} }) {
+export function menu(st, { ids, levelOf, onSettings, onTitle, itemsInfo, onWear, invInfo = {}, onHome }) {
   return new Promise(resolve => {
     let tab = 'abc';
-    const el = open(h(`<div class="modal"><div class="card menu"><div class="tabs"><button data-t="abc">もじ</button><button data-t="words">ことばずかん</button><button data-t="wear">もちもの</button><button data-t="set">せってい</button></div><div class="pane"></div><div class="row2"><button class="go gray" data-a="title">タイトルへ</button><button class="go" data-a="close">とじる</button></div></div></div>`), null);
+    const el = open(h(`<div class="modal"><div class="card menu"><div class="tabs"><button data-t="abc">もじ</button><button data-t="words">ことばずかん</button><button data-t="wear">もちもの</button><button data-t="set">せってい</button></div><div class="pane"></div><div class="row2"><button class="go gray" data-a="title">タイトルへ</button><button class="go home" data-a="home">おうちへ</button><button class="go" data-a="close">とじる</button></div></div></div>`), null);
     const pane = el.querySelector('.pane');
     const draw = () => {
       el.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
@@ -180,6 +180,7 @@ export function menu(st, { ids, levelOf, onSettings, onTitle, itemsInfo, onWear,
     el.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; sfx.tap(); draw(); });
     el.querySelector('[data-a=close]').onclick = () => { sfx.tap(); close(); resolve('close'); };
     el.querySelector('[data-a=title]').onclick = () => { sfx.tap(); close(); onTitle(); resolve('title'); };
+    el.querySelector('[data-a=home]').onclick = () => { sfx.tap(); close(); resolve('home'); onHome && onHome(); };
     current.onAction = null; current.onMenu = () => { close(); resolve('close'); };
     draw();
   });

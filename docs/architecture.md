@@ -4,7 +4,7 @@
 - 1つのホーム画面アプリ（`manifest.json` の scope は `/game/`）。トップ＝おうち、各部屋はフォルダ。
 - `index.html`・`sansu/`・`kokugo/` は `common/core.js`（classic script、グローバル定義）と `common/style.css` を読み込む。
 - `program/` は core.js を読まない独自コード（グローバル名 `S`・`$`・`save` などが core.js と衝突するため）。共通ポイントだけ `moko-math-v1` を直接読み書きする。
-- `abc/` は ES Modules の独立モジュール。core.js も共通ポイントも使わない（詳細は `abc/README.md`）。
+- `abc/` は ES Modules の独立モジュール。core.js は使わず、★だけ `abc/js/game/house.js` が `moko-math-v1` の `points` に届ける（詳細は `abc/README.md`）。入口は おうちの「おべんきょう」、出口は ABC のタイトルとメニューの「おうちへ」。
 
 ## common/core.js の主な定義
 | 種類 | 名前 |
@@ -34,7 +34,7 @@
 - クリアの★（1〜3）は `piko-prog-v1` の `best`。初めて取った★1つにつき `settings.progPts`（既定3）の共通ポイント。
 
 ## 星（共通ポイント）
-- `S.points`。さんすう・こくごの正解、ボーナス、テスト練習、プログラミングの★、ログインボーナスで増える。
+- `S.points`。さんすう・こくごの正解、ボーナス、テスト練習、プログラミングの★、ABCぼうけんの★（×`abcPts`）、ログインボーナスで増える。
 - 使い道：おみせ（`price`）、ガチャ。⚙️設定で各ポイント量を調整可能。
 
 ## おみせ・きせかえ

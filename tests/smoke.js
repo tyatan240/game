@@ -131,6 +131,39 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
   }
 
+  console.log('8. おうち ⇄ ABCぼうけん（いりぐち・でぐち・ほしの うけとり）');
+  {
+    const p = await page({ width: 844, height: 390 });
+    const housePts = () => p.evaluate(() => JSON.parse(localStorage.getItem('moko-math-v1') || '{}').points || 0);
+    await p.goto(B + 'index.html'); await p.waitForTimeout(400);
+    await p.evaluate(() => { closePop(); S.points = 100; save(); go('study'); });
+    ok(!!await p.$('a.study[href="abc/index.html"]'), 'おうちの おべんきょうに ABCぼうけんの いりぐち');
+    await p.click('a.study[href="abc/index.html"]'); await p.waitForLoadState(); await p.waitForTimeout(400);
+    ok(p.url().endsWith('abc/index.html') && await p.isVisible('#title'), 'いりぐちから ABCぼうけんの タイトルへ');
+    ok(await p.textContent('#housePts') === '100', 'タイトルに おうちの ⭐が でる');
+    // まえの ばんの ABC データ（★20、まだ とどけていない）
+    await p.evaluate(() => localStorage.setItem('abc-adventure-v1', JSON.stringify({ v: 1, t: 1, started: true, hero: { x: 8.5, y: 12.8, dir: 'down', area: 'island' }, stars: 20, learned: ['A'], flags: { intro: true } })));
+    await p.reload(); await p.waitForTimeout(400); await p.click('#cont'); await p.waitForTimeout(800);
+    ok(await housePts() === 120, `たまっていた ★20 が おうちに とどく（${await housePts()}）`);
+    await p.reload(); await p.waitForTimeout(400); await p.click('#cont'); await p.waitForTimeout(800);
+    ok(await housePts() === 120, 'もういちど ひらいても 2かい とどかない');
+    // ★を 1こ ふやす（ありさん）
+    await p.evaluate(() => __abc.approach('bear')); await p.keyboard.press('Enter'); await p.waitForTimeout(300);
+    for (let k = 0; k < 10 && await p.$('.dlg'); k++) { await p.keyboard.press('Enter'); await p.waitForTimeout(60); }
+    await p.click('.teach .go'); await p.waitForTimeout(300); await p.click(`.ch[data-v="${await p.evaluate(() => __abcQ.answer)}"]`);
+    await p.waitForFunction(() => __abc.S.stars === 21, null, { timeout: 5000 }).catch(() => {});
+    for (let k = 0; k < 20 && await p.$('.dlg, .notice, .flystar'); k++) { if (await p.$('.dlg')) await p.keyboard.press('Enter'); await p.waitForTimeout(150); }
+    await p.waitForTimeout(500);
+    ok(await housePts() === 121, `あたらしい ★も とどく（${await housePts()}）`);
+    const idb = await p.evaluate(() => new Promise(ok => { const q = indexedDB.open('moko-house', 1); q.onsuccess = () => { const r = q.result.transaction('kv').objectStore('kv').get('moko-math-v1'); r.onsuccess = () => ok(r.result && r.result.points); }; }));
+    ok(idb === 121, 'IndexedDB にも かいている');
+    // メニューの「おうちへ」
+    await p.keyboard.press('Escape'); await p.waitForTimeout(200); await p.click('.menu [data-a=home]'); await p.waitForLoadState(); await p.waitForTimeout(500);
+    ok(p.url().endsWith('/index.html') && !p.url().includes('abc'), 'メニューの「おうちへ」で おうちに もどる');
+    ok(await p.evaluate(() => S.points) === 121, 'おうちの ⭐に はんえい されている');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+  }
+
   await browser.close(); server.close();
   console.log(failed ? `\n${failed}こ しっぱい` : '\nぜんぶ OK');
   process.exit(failed ? 1 : 0);

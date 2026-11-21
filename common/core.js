@@ -155,7 +155,7 @@ function defState(){return{v:1,t:0,points:0,
  furn:[],
  settings:{types:Object.fromEntries(TYPES.map(t=>[t.id,{on:t.id.startsWith('add'),pts:t.pts}])),
   ktypes:Object.fromEntries(KTYPES.map(t=>[t.id,{on:true,pts:t.pts}])),
-  perRound:5,perfect:3,daily:5,sound:true,testScale:1,practiceMul:2,practiceBonus:5,progPts:3,gachaOn:true,gachaCost:100,gachaDaily:0},
+  perRound:5,perfect:3,daily:5,sound:true,testScale:1,practiceMul:2,practiceBonus:5,progPts:3,gachaOn:true,gachaCost:100,gachaDaily:0,abcPts:1},
  lastDay:'',stats:{q:0,ok:0},kstats:{q:0,ok:0},tests:{},gacha:{day:'',count:0,pulls:0}}}
 function merge(d){
  const s=defState(); if(!d||typeof d!=='object') return s;
@@ -165,7 +165,7 @@ function merge(d){
  if(d.equip) for(const k in s.equip) if(d.equip[k]&&ITEM[d.equip[k]]) s.equip[k]=d.equip[k];
  if(Array.isArray(d.furn)) s.furn=d.furn.filter(i=>ITEM[i]);
  const ds=d.settings||{};
- for(const k of ['perRound','perfect','daily','practiceMul','practiceBonus','testScale','progPts','gachaCost','gachaDaily']) if(typeof ds[k]==='number') s.settings[k]=ds[k];
+ for(const k of ['perRound','perfect','daily','practiceMul','practiceBonus','testScale','progPts','gachaCost','gachaDaily','abcPts']) if(typeof ds[k]==='number') s.settings[k]=ds[k];
  if(typeof ds.sound==='boolean') s.settings.sound=ds.sound;
  if(typeof ds.gachaOn==='boolean') s.settings.gachaOn=ds.gachaOn;
  if(d.gacha&&typeof d.gacha==='object') Object.assign(s.gacha,d.gacha);

@@ -9,6 +9,7 @@ export function defaultState() {
     started: false,
     hero: { x: 0, y: 0, dir: 'down' },
     stars: 0,
+    starsSent: 0,         // おうちの ⭐に とどけおわった ★の かず（おうちとの つなぎ）
     learned: [],          // おぼえた もじ（どうぶつの クイズに こたえた もの）
     flags: {},            // intro / bridgeOpen / bossCleared / ending など
     chests: {},           // あけた たからばこ

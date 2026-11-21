@@ -17,6 +17,7 @@ import { letterQuestion, wordQuestion, shuffle } from './game/quiz.js';
 import { activeQuests, currentStep, stepFor, advance, objective, QUEST } from './game/quests.js';
 import { tryCast, hintFor, applyEffects, comboKey } from './game/magic.js';
 import * as ui from './ui/ui.js';
+import { sendStars, housePoints } from './game/house.js';
 
 const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
 // かいわの かおアイコン：なまえ → どうぶつ
@@ -344,7 +345,13 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
-function persist() { S.hero = { x: hero.x / TS, y: hero.y / TS, dir: hero.dir, area: area().id }; save(S); }
+function persist() {
+  S.hero = { x: hero.x / TS, y: hero.y / TS, dir: hero.dir, area: area().id }; save(S);
+  // ★が ふえたら おうちの ⭐にも とどける
+  if ((S.stars || 0) > (S.starsSent || 0)) sendStars(S, () => save(S)).then(n => { if (n) toast(`おうちの ⭐に ＋${n} とどいたよ`); });
+}
+function toast(text) { const e = document.getElementById('toast'); e.textContent = text; e.classList.remove('show'); void e.offsetWidth; e.classList.add('show'); }
+addEventListener('pagehide', () => { if (mode !== 'title' && S.started) persist(); });
 
 /* ---------- イベント ---------- */
 const sayH = lines => ui.say(lines, S.wear);
@@ -553,6 +560,7 @@ function toTitle() {
   mode = 'title';
   titleEl.classList.remove('hide');
   document.getElementById('cont').style.display = S.started ? '' : 'none';
+  document.getElementById('housePts').textContent = housePoints();
   document.body.classList.add('intitle');
 }
 async function startGame(fresh) {
@@ -601,6 +609,7 @@ async function openMenu() {
     onSettings: () => { setAudioSettings(S.settings); persist(); },
     onWear: k => { S.wear[k] = !S.wear[k]; persist(); },
     onTitle: () => toTitle(),
+    onHome: () => { persist(); location.href = '../index.html'; },
   });
   if (mode === 'event') mode = 'play';
 }
