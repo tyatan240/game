@@ -157,12 +157,37 @@ function merge(d){
 const LS='moko-math-v1';
 const loadState=()=>merge((()=>{try{return JSON.parse(localStorage.getItem(LS)||'null')}catch(e){return null}})());
 let S=loadState();
-function save(){S.t=Date.now();try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}updPts()}
+/* IndexedDB にも ほぞん（iPhone・iPad の Safari は localStorage の かきこみが おくれて、
+   アプリを すぐ とじると きえる ことが あるため。2かしょに ほぞんして あたらしい ほうを つかう） */
+const IDB=(()=>{let dbp=null;const open=()=>dbp||(dbp=new Promise((ok,ng)=>{try{const q=indexedDB.open('moko-house',1);q.onupgradeneeded=()=>q.result.createObjectStore('kv');q.onsuccess=()=>ok(q.result);q.onerror=()=>ng(q.error)}catch(e){ng(e)}}));
+ const tx=(mode,fn)=>open().then(db=>new Promise((ok,ng)=>{const t=db.transaction('kv',mode),st=t.objectStore('kv'),r=fn(st);t.oncomplete=()=>ok(r&&r.result);t.onerror=()=>ng(t.error)}));
+ return{get:()=>tx('readonly',st=>st.get(LS)).catch(()=>null),put:v=>tx('readwrite',st=>st.put(JSON.parse(JSON.stringify(v)),LS)).catch(()=>{})}})();
+const lsHad=(()=>{try{return !!localStorage.getItem(LS)}catch(e){return false}})();
+let idbT=null;
+function save(){S.t=Date.now();try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}IDB.put(S).then(()=>{idbT=S.t});updPts()}
+// ページを ひらいたら IndexedDB の ほうが あたらしければ そちらを つかう
+const ready=IDB.get().then(d=>{
+ if(d&&typeof d.points==='number'&&(!lsHad||(d.t||0)>(S.t||0))){S=merge(d);try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}idbT=S.t;if(typeof render==='function')render();else updPts()}
+ else{idbT=d?d.t:null;if(lsHad)IDB.put(S).then(()=>{idbT=S.t})}
+}).catch(()=>{});
+// アプリを とじる・うらに まわる ときにも ほぞん
+const flush=()=>{try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}IDB.put(S)};
+window.addEventListener('pagehide',flush);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')flush()});
+// ほぞんの じょうたい（せっていで みる よう）
+async function storageInfo(){
+ const st=window.matchMedia&&matchMedia('(display-mode: standalone)').matches||navigator.standalone?'ホームがめん アプリ':'ブラウザの タブ';
+ let per='ふめい';try{if(navigator.storage&&navigator.storage.persisted)per=(await navigator.storage.persisted())?'はい':'いいえ'}catch(e){}
+ const d=await IDB.get(),fmt=t=>t?new Date(t).toLocaleString('ja-JP'):'なし';
+ let ls=null;try{ls=JSON.parse(localStorage.getItem(LS)||'null')}catch(e){}
+ return `ひらきかた：${st}<br>けされにくい ほぞん：${per}<br>ほぞん①（localStorage）：⭐${ls?ls.points:'-'}／${fmt(ls&&ls.t)}<br>ほぞん②（IndexedDB）：⭐${d?d.points:'-'}／${fmt(d&&d.t)}<br>サイト：${location.host}`}
 function updPts(){const p=$('#pts');if(p)p.textContent=S.points}
 // ほかの へやで ふえた ポイントを とりこむ（もどるボタン・べつタブ）
-function resync(){S=loadState();if(typeof render==='function')render();else updPts()}
+function resync(){const n=loadState();if((n.t||0)>=(S.t||0))S=n;if(typeof render==='function')render();else updPts()}
 window.addEventListener('pageshow',e=>{if(e.persisted)resync()});
 window.addEventListener('storage',e=>{if(e.key===LS)resync()});
+// ブラウザに「この データは けさないで」と おねがいする（ホーム画面に ついかすると みとめられやすい）
+try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{})}catch(e){}
 const today=()=>{const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()};
 
 /* ---------- おと ---------- */

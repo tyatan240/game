@@ -71,6 +71,7 @@ function render(){
  updPts();
  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.arg===view));
  $('#view').innerHTML={home,study,gacha,shop,dress,settings}[view]();
+ if(view==='settings')storageInfo().then(h=>{const e=$('#stinfo');if(e)e.innerHTML=h});
 }
 function home(){
  return `<div class="card room">${bubble?`<div class="bubble">${bubble}</div>`:''}${roomSVG(S,homeMood,homeMood==='happy'?'hop':'sway')}</div>
@@ -199,6 +200,7 @@ function settings(){
  <div class="row"><div class="lbl"><b>ポイントを ちょうせい</b><small>いま ⭐${S.points}</small></div><div class="step"><button data-act="adj" data-arg="-10">−</button><span>10</span><button data-act="adj" data-arg="10">＋</button></div></div>
  </div>
  <div class="card"><div class="lbl"><b>きろく</b><small style="display:block;color:#a88f8f">さんすう：といた かず ${S.stats.q}もん ／ せいかい ${S.stats.ok}もん${S.stats.q?`（${Math.round(S.stats.ok/S.stats.q*100)}%）`:''}<br>こくご：といた かず ${S.kstats.q}もん ／ せいかい ${S.kstats.ok}もん${S.kstats.q?`（${Math.round(S.kstats.ok/S.kstats.q*100)}%）`:''}</small></div></div>
+ <div class="card"><b>ほぞんの じょうたい</b><div class="muted" style="text-align:left" id="stinfo">しらべています…</div></div>
  <div class="card"><b>データの ひきつぎ（バックアップ）</b><div class="muted" style="text-align:left">べつの たんまつに うつす ときや、バックアップ したい ときに つかいます。「コードを つくる」で でた もじを コピーして、うつしさきの この がめんに はりつけて「よみこむ」を おしてください。</div>
  <div class="tbtns"><button class="prac" data-act="bkmake">コードを つくる</button><button data-act="bkcopy">コピー</button></div>
  <textarea id="bkout" readonly style="width:100%;height:60px;margin-top:8px;font-size:11px;border:2px solid #ffd0dc;border-radius:10px"></textarea>
@@ -256,7 +258,7 @@ Object.assign(ACT,{
 });
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&$('#gatein'))gateOk()});
 render();
-dailyCheck();
+ready.then(dailyCheck);
 </script>
 </body>
 </html>

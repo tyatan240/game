@@ -142,7 +142,15 @@ const HOUSE='moko-math-v1';
 function houseGet(){try{return JSON.parse(localStorage.getItem(HOUSE)||'null')||{}}catch(e){return {}}}
 function housePts(){return houseGet().points||0}
 function starPts(){const v=(houseGet().settings||{}).progPts;return typeof v==='number'?v:3}
-function houseAdd(n){if(n<=0)return;const d=houseGet();d.points=(d.points||0)+n;d.t=Date.now();try{localStorage.setItem(HOUSE,JSON.stringify(d))}catch(e){}}
+// IndexedDB と localStorage の あたらしい ほうに たして、りょうほうに ほぞん
+function idbOpen(){return new Promise((ok,ng)=>{try{const q=indexedDB.open('moko-house',1);q.onupgradeneeded=()=>q.result.createObjectStore('kv');q.onsuccess=()=>ok(q.result);q.onerror=()=>ng(q.error)}catch(e){ng(e)}})}
+async function houseAdd(n){if(n<=0)return;let d=houseGet(),db=null;
+ try{db=await idbOpen();const v=await new Promise(ok=>{const r=db.transaction('kv').objectStore('kv').get(HOUSE);r.onsuccess=()=>ok(r.result);r.onerror=()=>ok(null)});if(v&&(v.t||0)>(d.t||0))d=v}catch(e){}
+ d.points=(d.points||0)+n;d.t=Date.now();try{localStorage.setItem(HOUSE,JSON.stringify(d))}catch(e){}
+ try{if(db)db.transaction('kv','readwrite').objectStore('kv').put(d,HOUSE)}catch(e){}
+ const c=document.querySelector('.hbtn.pts');if(c)c.textContent='⭐ '+d.points}
+// ひらいた とき：IndexedDB の ほうが あたらしければ localStorage に もどす
+idbOpen().then(db=>{const r=db.transaction('kv').objectStore('kv').get(HOUSE);r.onsuccess=()=>{const v=r.result,d=houseGet();if(v&&(v.t||0)>(d.t||0)){try{localStorage.setItem(HOUSE,JSON.stringify(v))}catch(e){}const c=document.querySelector('.hbtn.pts');if(c)c.textContent='⭐ '+v.points}}}).catch(()=>{});
 const ptsChip=()=>`<span class="hbtn pts">⭐ ${housePts()}</span>`;
 const cleared=i=>(S.best[i]||0)>0;
 const unlocked=i=>i===0||cleared(i-1);
