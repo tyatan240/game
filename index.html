@@ -81,7 +81,7 @@ function study(){
  const card=(href,ic,bg,name,col,desc)=>`<a class="study" href="${href}"><div class="ic" style="background:${bg}">${ic}</div><div><b style="color:${col}">${name}</b><span>${desc}</span></div></a>`;
  return `<h2>📚 おべんきょう</h2><p class="muted" style="text-align:left">どの へやでも ⭐ポイントが もらえるよ。ためた ポイントは おみせで つかえるよ！</p>
  ${card('sansu/index.html','✏️','#ffe3ea','さんすう','#c8577f','たしざん・ひきざん、🏆テストで とくべつな アイテム')}
- ${card('kokugo/index.html','📖','#e3f4e8','こくご','#3f9a63','かん字の よみかき、ことば、おはなしの よみとり')}
+ ${card('kokugo/index.html','📖','#e3f4e8','こくご','#3f9a63','かん字・ことば・よみとり、🏆テストで とくべつな アイテム')}
  ${card('program/index.html','🤖','#dff3fc','プログラミング','#2b7fa8','ブロックを ならべて ロボットの ピコを うごかそう')}`}
 /* ---------- 🎰 ガチャ ---------- */
 let gSpin=false;
@@ -138,9 +138,9 @@ function shop(){
  </div>${tl.length?`<h2 style="font-size:15px;margin-top:16px">🏆 テストで もらえる アイテム</h2><div class="items">
  ${tl.map(it=>{const own=S.owned.includes(it.id);return `<button class="item ${own?'own':'lock'}" data-act="${own?'buy':'tinfo'}" data-arg="${own?it.id:it.test}">${thumb(it)}<div class="n">${it.name}</div><div class="p">${own?'✔ もってる':'🏆 テストで ゲット'}</div></button>`}).join('')}</div>`:''}`}
 function testInfo(key){
- const {tid,lv}=parseKey(key),it=testItem(key),on=S.settings.types[tid].on;
- showPop(`<div style="width:110px;margin:0 auto">${thumb(it)}</div><h3>${it.name}</h3><div>「${TYPE[tid].name}」（さんすう）の<br>${TLV[lv].medal} ${TLV[lv].name}に ごうかく すると もらえるよ！</div>${on?'':'<div class="muted">（いまは この もんだいが オフに なっています）</div>'}
- <div class="btns"><button class="big gray" data-act="close">とじる</button>${on?'<a class="big" href="sansu/index.html#tests">テストへ 🏆</a>':''}</div>`)}
+ const {tid,lv}=parseKey(key),it=testItem(key),k=!!KTYPE[tid],on=(k?S.settings.ktypes:S.settings.types)[tid].on;
+ showPop(`<div style="width:110px;margin:0 auto">${thumb(it)}</div><h3>${it.name}</h3><div>「${(k?KTYPE:TYPE)[tid].name}」（${k?'こくご':'さんすう'}）の<br>${TLV[lv].medal} ${TLV[lv].name}に ごうかく すると もらえるよ！</div>${on?'':'<div class="muted">（いまは この もんだいが オフに なっています）</div>'}
+ <div class="btns"><button class="big gray" data-act="close">とじる</button>${on?`<a class="big" href="${k?'kokugo':'sansu'}/index.html#tests">テストへ 🏆</a>`:''}</div>`)}
 function buy(id){
  const it=ITEM[id];
  if(S.owned.includes(id)){wear(id);showPop(`${it.cat==='furn'||it.cat==='wall'||it.cat==='floor'?'':charSVG(S.equip,'happy','hop')}<h3>${it.name}</h3><div>${it.cat==='furn'?(S.furn.includes(id)?'おへやに おいたよ！':'おへやから しまったよ'):it.cat==='char'?'いっしょに あそぼう！':'つけたよ！'}</div><div class="btns"><button class="big" data-act="close">OK</button></div>`);return}

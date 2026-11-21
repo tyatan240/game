@@ -16,7 +16,7 @@
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../common/style.css">
 <style>
-nav{grid-template-columns:repeat(2,1fr)}
+nav{grid-template-columns:repeat(3,1fr)}
 nav a{text-decoration:none;padding:8px 0 10px;font-weight:800;font-size:12px;color:#b89a9a;display:flex;flex-direction:column;align-items:center;gap:2px}
 nav a span{font-size:24px}
 a.big{text-align:center;text-decoration:none}
@@ -48,6 +48,7 @@ a.big{text-align:center;text-decoration:none}
   <main id="view"></main>
   <nav>
     <button data-act="go" data-arg="select"><span>📖</span>もんだい</button>
+    <button data-act="go" data-arg="tests"><span>🏆</span>テスト</button>
     <a href="../index.html"><span>🏠</span>おうち</a>
   </nav>
 </div>
@@ -164,12 +165,12 @@ function makeQ(tid){
  return {tid,key:'s'+si+'-'+qi,story:st,label:'',main:q,ans:a,choices:shuffle([a,...ng]),size:'small'}}
 
 /* ========== がめん ========== */
-let view='select',quiz=null;
-function go(v){view=v;render();$('main').scrollTop=0}
+let view=location.hash==='#tests'?'tests':'select',quiz=null;
+function go(v){if(view==='test')stopTest();view=v;render();$('main').scrollTop=0}
 function render(){
  updPts();
- document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.arg==='select'));
- $('#view').innerHTML={select,quiz:quizV,result}[view]();
+ document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.arg===view||(view==='quiz'||view==='result')&&b.dataset.arg==='select'||view==='test'&&b.dataset.arg==='tests'));
+ $('#view').innerHTML={select,quiz:quizV,result,tests,test:testV}[view]();
 }
 const enabled=()=>KTYPES.filter(t=>S.settings.ktypes[t.id].on);
 function select(){
@@ -226,7 +227,96 @@ function result(){
  <button class="big" data-act="start" data-arg="${q.sel}">もういちど</button><div style="height:10px"></div>
  <a class="big sub" href="../index.html#shop">おみせに いく 🛍️</a>`}
 
+/* ========== テスト（さんすうと おなじ ルール）========== */
+let test=null,tTimer=null;
+function tests(){
+ const en=enabled();
+ if(!en.length) return `<div class="card"><p class="muted">もんだいが えらばれていません</p></div>`;
+ return `<h2>🏆 テスト</h2><p class="muted" style="text-align:left">じかん ないに ごうかく すると、ここでしか もらえない とくべつな アイテムが もらえるよ！</p>`+
+ en.map(t=>`<div class="card"><b>${t.name}</b>${TLV.map((L,lv)=>{const key=t.id+'-'+(lv+1),st=S.tests[key]||{},it=testItem(key),open=testUnlocked(key);
+  return `<div class="trow ${st.pass?'pass':''}"><div class="tth">${thumb(it)}</div><div class="lbl"><b>${L.medal} ${L.name}　<span style="color:#e0719a">${it.name}</span></b><small>${L.n}もん ／ ⏱${testLimit(t.id,lv)}びょう ／ ${passRule(L)}で ごうかく</small><small>${st.pass?'✔ ごうかく ずみ！':open?(st.best!=null?'さいこう：'+st.best+'もん':'ちょうせん できるよ！'):'🔒 まえの テストに ごうかく すると ひらくよ'}</small>
+   <div class="tbtns"><button class="prac" data-act="tready" data-arg="${key}|p">✏️ れんしゅう <span>⭐×${S.settings.practiceMul}</span></button><button class="${open?'':'off'}" data-act="${open?'tready':'tlock'}" data-arg="${key}">🏆 テスト</button></div></div></div>`}).join('')}</div>`).join('')}
+const pracPts=tid=>S.settings.ktypes[tid].pts*S.settings.practiceMul;
+function testReady(arg){
+ const [key,p]=arg.split('|'),prac=p==='p',{tid,lv}=parseKey(key),L=TLV[lv],it=testItem(key);
+ showPop(`<div class="medal">${prac?'✏️':L.medal}</div><h3>${KTYPE[tid].name}<br>${L.name}${prac?' の れんしゅう':''}</h3>
+ <div style="text-align:left;line-height:1.8;margin:8px 0">・もんだい：${L.n}もん<br>・じかん：<b>${testLimit(tid,lv)}びょう</b><br>・まちがえても やりなおしは できないよ<br>${prac?`・せいかい 1もんで <b>⭐${pracPts(tid)}</b>（ふだんの ${S.settings.practiceMul}ばい！）<br>・${passRule(L)}で ボーナス ⭐${S.settings.practiceBonus}`:`・${passRule(L)}で ごうかく`}</div>
+ ${prac?'':`<div style="width:90px;margin:0 auto">${thumb(it)}</div><div>ごほうび：<b>${it.name}</b></div>`}
+ <div class="btns"><button class="big gray" data-act="close">やめる</button><button class="big ${prac?'sub':''}" data-act="tstart" data-arg="${arg}">スタート！</button></div>`)}
+function stopTest(){clearInterval(tTimer);tTimer=null}
+function startTest(arg){
+ closePop();stopTest();
+ const [key,p]=arg.split('|'),{tid,lv}=parseKey(key),L=TLV[lv];
+ test={key,tid,lv,prac:p==='p',earned:0,n:L.n,need:L.need,limit:testLimit(tid,lv)*1000,i:0,ok:0,cur:null,used:new Set(),pick:-1,lock:false,phase:'count',count:3,msg:'',t0:0};
+ view='test';tNext();render();$('main').scrollTop=0;beep(660,.1);
+ tTimer=setInterval(()=>{
+  if(!test){stopTest();return}
+  if(test.phase==='count'){test.count--;if(test.count<=0){test.phase='run';test.t0=performance.now();stopTest();beep(990,.2);render();tTimer=setInterval(tTick,100)}else{beep(660,.1);render()}}
+ },800)}
+function tNext(){let q,g=0;do{q=makeQ(test.tid)}while(test.used.has(q.key)&&g++<30);test.used.add(q.key);test.cur=q;test.pick=-1;test.msg=''}
+function tLeft(){return Math.max(0,test.limit-(performance.now()-test.t0))}
+function tTick(){
+ if(!test||test.phase!=='run')return;
+ const left=tLeft(),pct=left/test.limit*100,bar=$('#tbar'),sec=$('#tsec');
+ if(bar){bar.style.width=pct+'%';bar.classList.toggle('low',pct<25)}
+ if(sec)sec.textContent=Math.ceil(left/1000);
+ if(left<=0)finishTest(true)}
+function testV(){
+ const t=test;
+ if(t.phase==='count') return `<div class="card" style="text-align:center"><div class="medal">${t.prac?'✏️':TLV[t.lv].medal}</div><b>${KTYPE[t.tid].name} ${TLV[t.lv].name}${t.prac?' の れんしゅう':''}</b><div class="count">${t.count}</div><div class="muted">よーい…</div></div>`;
+ const c=t.cur,left=tLeft(),pct=left/t.limit*100,long=c.choices.some(x=>x.length>6),small=c.choices.some(y=>y.length>4);
+ return `<div class="tbarw"><div class="tbar ${pct<25?'low':''}" id="tbar" style="width:${pct}%"></div></div>
+ <div class="tinfo"><span>⏱ <b id="tsec">${Math.ceil(left/1000)}</b>びょう</span><span>${t.prac?'✏️ ':''}${t.i+1} / ${t.n}もんめ</span><span>⭕ ${t.ok}</span></div>
+ ${c.story?`<div class="story"><b>📖 ${c.story.t}</b>${c.story.s}</div>`:''}
+ <div class="card qcard" style="text-align:center">${c.label?`<div class="qlabel">${c.label}</div>`:''}<div class="qmain ${c.size||''}">${c.main}</div></div>
+ <div class="msg">${t.msg||'&nbsp;'}</div>
+ <div class="choices ${long?'one':''}">${c.choices.map((x,i)=>`<button class="ch ${small?'long':''} ${t.lock&&x===c.ans?'ok':''} ${t.lock&&i===t.pick&&x!==c.ans?'ng':''}" data-act="tpick" data-arg="${i}">${x}</button>`).join('')}</div>`}
+function testPick(i){
+ const t=test;if(!t||t.phase!=='run'||t.lock)return;
+ const c=t.cur,right=c.choices[i]===c.ans;t.pick=i;
+ S.kstats.q++;
+ if(right){t.ok++;S.kstats.ok++;
+  if(t.prac){const pts=pracPts(t.tid);t.earned+=pts;S.points+=pts;t.msg=`⭕ せいかい！ ⭐＋${pts}`}else t.msg='⭕ せいかい！';
+  beep(1046,.08)}
+ else{t.msg=`❌ こたえは「${c.ans}」`;sNg()}
+ save();t.i++;
+ if(t.i>=t.n||(!t.prac&&(t.i-t.ok)>(t.n-t.need))){t.lock=true;stopTest();t.i--;render();t.i++;setTimeout(()=>finishTest(false),right?500:1000);return}
+ t.lock=true;t.i--;render();t.i++;
+ setTimeout(()=>{if(!test||view!=='test'||test!==t)return;t.lock=false;tNext();render();$('main').scrollTop=0},right?350:1000)}
+function finishTest(timeout){
+ const t=test;if(!t||t.phase==='done')return;
+ t.phase='done';stopTest();
+ if(t.prac){
+  const okLine=t.ok>=t.need,bonus=okLine?S.settings.practiceBonus:0;
+  if(bonus){S.points+=bonus}save();view='tests';render();
+  okLine?sBuy():sNg();
+  showPop(`${charSVG(S.equip,okLine?'happy':'oops',okLine?'hop':'')}<h3>${timeout?'じかん ぎれ！':'れんしゅう おわり！'}</h3><div>${timeout?`${t.n}もん ちゅう ${t.i}もん まで こたえて ${t.ok}もん せいかい`:`${t.n}もん ちゅう ${t.ok}もん せいかい`}</div>
+  <div class="stars" style="margin:8px 0">⭐＋${t.earned+bonus}${bonus?` <small style="font-size:15px">（ボーナス＋${bonus}）</small>`:''}</div>
+  <div class="muted">${okLine?'テストなら ごうかく できる ちょうし！🏆':`テストの ごうかくまで あと ${t.need-t.ok}もん！`}</div>
+  <div class="btns"><button class="big sub" data-act="tstart" data-arg="${t.key}|p">もういちど</button>${testUnlocked(t.key)?`<button class="big" data-act="tready" data-arg="${t.key}">テストへ 🏆</button>`:''}</div>
+  <div class="btns"><button class="big gray" data-act="close">とじる</button></div>`);
+  test=null;return}
+ const L=TLV[t.lv],it=testItem(t.key),pass=t.ok>=t.need,st=S.tests[t.key]||{},first=pass&&!st.pass;
+ S.tests[t.key]={pass:!!(st.pass||pass),best:Math.max(st.best||0,t.ok)};
+ if(first&&!S.owned.includes(it.id)){S.owned.push(it.id);if(it.cat==='furn'&&!S.furn.includes(it.id))S.furn.push(it.id)}
+ save();view='tests';render();
+ if(pass){sBuy();
+  showPop(`<div class="medal">${L.medal}</div><h3>ごうかく！</h3><div>${t.n}もん ちゅう ${t.ok}もん せいかい</div>
+  ${first?`<div style="width:110px;margin:8px auto">${it.cat==='furn'||it.cat==='wall'||it.cat==='floor'?thumb(it):charSVG({...S.equip,[it.cat]:it.id},'happy','hop')}</div><div><b>${it.name}</b> を ゲット！</div>
+  <div class="btns"><button class="big gray" data-act="close">あとで</button><button class="big" data-act="twear" data-arg="${it.id}">${it.cat==='furn'||it.cat==='wall'||it.cat==='floor'?'おへやを みる':'つけてみる'}</button></div>`
+  :`<div class="btns"><button class="big" data-act="close">OK</button></div>`}`)}
+ else{sNg();
+  showPop(`${charSVG(S.equip,'oops')}<h3>${timeout?'じかん ぎれ！':'ざんねん！'}</h3><div>${timeout?`${t.n}もん ちゅう ${t.i}もん まで こたえて `:''}${t.ok}もん せいかい（ごうかくは ${t.need}もん）</div><div class="muted">れんしゅう して また ちょうせん しよう！</div>
+  <div class="btns"><button class="big gray" data-act="close">とじる</button><button class="big" data-act="tstart" data-arg="${t.key}">もういちど</button></div>`)}
+ test=null}
+
 Object.assign(ACT,{
+ tready:a=>{sTap();testReady(a)},
+ tlock:()=>{sNg();showPop(`<h3>🔒</h3><div>まえの テストに ごうかく すると ちょうせん できるよ！</div><div class="btns"><button class="big" data-act="close">OK</button></div>`)},
+ tstart:a=>startTest(a),
+ tpick:a=>testPick(Number(a)),
+ twear:a=>{closePop();const it=ITEM[a];if(it.cat!=='furn')S.equip[it.cat]=a;save();location.href=it.cat==='furn'?'../index.html':['outfit','hat','acc'].includes(it.cat)?'../index.html#dress':'../index.html#dress-room'},
+ close:a=>{closePop();if(a)go(a)},
  go:a=>{sTap();go(a)},
  start:a=>{sTap();startQuiz(a)},
  pick:a=>pick(Number(a)),
