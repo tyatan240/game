@@ -600,7 +600,7 @@ function testAnswer(){
   beep(1046,.08)}
  else{t.msg=`❌ こたえは ${t.cur.ans}`;sNg()}
  save();t.i++;
- if(t.i>=t.n||(!t.prac&&(t.i-t.ok)>(t.n-t.need))){t.lock=true;render();setTimeout(()=>finishTest(false),500);return}
+ if(t.i>=t.n||(!t.prac&&(t.i-t.ok)>(t.n-t.need))){t.lock=true;stopTest();render();setTimeout(()=>finishTest(false),500);return}
  const wrong=t.msg.startsWith('❌');
  if(wrong){t.lock=true;t.input=String(t.cur.ans);t.i--;render();t.i++;setTimeout(()=>{if(!test||view!=='test')return;t.lock=false;tNext();render()},700)}
  else{tNext();render()}}
@@ -611,10 +611,11 @@ function finishTest(timeout){
   const okLine=t.ok>=t.need,bonus=okLine?S.settings.practiceBonus:0;
   if(bonus){S.points+=bonus}save();view='tests';render();
   okLine?sBuy():sNg();
-  showPop(`${charSVG(S.equip,okLine?'happy':'oops',okLine?'hop':'')}<h3>${timeout?'じかん ぎれ！':'れんしゅう おわり！'}</h3><div>${t.n}もん ちゅう ${t.ok}もん せいかい</div>
+  showPop(`${charSVG(S.equip,okLine?'happy':'oops',okLine?'hop':'')}<h3>${timeout?'じかん ぎれ！':'れんしゅう おわり！'}</h3><div>${timeout?`${t.n}もん ちゅう ${t.i}もん まで こたえて ${t.ok}もん せいかい`:`${t.n}もん ちゅう ${t.ok}もん せいかい`}</div>
   <div class="stars" style="margin:8px 0">⭐＋${t.earned+bonus}${bonus?` <small style="font-size:15px">（ボーナス＋${bonus}）</small>`:''}</div>
   <div class="muted">${okLine?'テストなら ごうかく できる ちょうし！🏆':`テストの ごうかくまで あと ${t.need-t.ok}もん！`}</div>
-  <div class="btns"><button class="big sub" data-act="tstart" data-arg="${t.key}|p">もういちど</button>${testUnlocked(t.key)?`<button class="big" data-act="tready" data-arg="${t.key}">テストへ 🏆</button>`:'<button class="big gray" data-act="close">とじる</button>'}</div>`);
+  <div class="btns"><button class="big sub" data-act="tstart" data-arg="${t.key}|p">もういちど</button>${testUnlocked(t.key)?`<button class="big" data-act="tready" data-arg="${t.key}">テストへ 🏆</button>`:''}</div>
+  <div class="btns"><button class="big gray" data-act="close">とじる</button></div>`);
   test=null;return}
  const L=TLV[t.lv],it=testItem(t.key),pass=t.ok>=t.need,st=S.tests[t.key]||{},first=pass&&!st.pass;
  S.tests[t.key]={pass:!!(st.pass||pass),best:Math.max(st.best||0,t.ok)};
@@ -626,7 +627,7 @@ function finishTest(timeout){
   <div class="btns"><button class="big gray" data-act="close">あとで</button><button class="big" data-act="twear" data-arg="${it.id}">${it.cat==='furn'?'おへやを みる':'つけてみる'}</button></div>`
   :`<div class="btns"><button class="big" data-act="close">OK</button></div>`}`)}
  else{sNg();
-  showPop(`${charSVG(S.equip,'oops')}<h3>${timeout?'じかん ぎれ！':'ざんねん！'}</h3><div>${t.ok}もん せいかい（ごうかくは ${t.need}もん）</div><div class="muted">れんしゅう して また ちょうせん しよう！</div>
+  showPop(`${charSVG(S.equip,'oops')}<h3>${timeout?'じかん ぎれ！':'ざんねん！'}</h3><div>${timeout?`${t.n}もん ちゅう ${t.i}もん まで こたえて `:''}${t.ok}もん せいかい（ごうかくは ${t.need}もん）</div><div class="muted">れんしゅう して また ちょうせん しよう！</div>
   <div class="btns"><button class="big gray" data-act="close">とじる</button><button class="big" data-act="tstart" data-arg="${t.key}">もういちど</button></div>`)}
  test=null}
 function thumb(it){
