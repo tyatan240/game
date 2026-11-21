@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>ピコの プログラミング</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<meta name="theme-color" content="#cdeffd">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="プログラミング">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:#eaf7fd}
+body{font-family:"M PLUS Rounded 1c",system-ui,sans-serif;color:#3f5566;-webkit-user-select:none;user-select:none}
+#app{max-width:520px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;background:#f5fbff}
+header{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#cdeffd;box-shadow:0 2px 0 #9fd9f2}
+header .ttl{flex:1;font-weight:800;font-size:17px;color:#2b7fa8;text-align:center}
+.hbtn{border:0;background:#fff;border-radius:999px;min-width:44px;height:40px;padding:0 12px;font:inherit;font-weight:800;font-size:15px;color:#2b7fa8;box-shadow:0 2px 0 #9fd9f2}
+.hbtn.ghost{visibility:hidden}
+main{flex:1;padding:12px;display:flex;flex-direction:column;gap:12px}
+.card{background:#fff;border-radius:20px;box-shadow:0 3px 0 #d3e9f3;padding:12px}
+.muted{color:#7d95a5;font-size:13px;text-align:center;margin:6px 0}
+
+/* タイトル */
+.hero{text-align:center;padding:18px 12px}
+.hero h1{font-size:26px;margin:8px 0 4px;color:#2b7fa8}
+.hero svg{width:120px;height:120px}
+.stages{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.sbtn{border:0;border-radius:16px;aspect-ratio:1;font:inherit;font-weight:800;font-size:22px;background:#fff;color:#2b7fa8;box-shadow:0 4px 0 #bfe3f3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.sbtn small{font-size:11px;letter-spacing:-1px;color:#f2b400}
+.sbtn.lock{background:#e8eef2;color:#b5c2cb;box-shadow:0 4px 0 #d3dde3}
+.sbtn.loop{background:#fff6e0;box-shadow:0 4px 0 #f1d79a}
+.sbtn:active:not(.lock){transform:translateY(3px);box-shadow:none}
+.sec{font-weight:800;color:#2b7fa8;margin:2px 0 8px;font-size:15px}
+
+/* ばめん */
+.hint{background:#fff;border-radius:14px;padding:8px 12px;font-weight:800;font-size:14px;color:#2b7fa8;box-shadow:0 2px 0 #d3e9f3;text-align:center}
+.boardwrap{position:relative;width:100%;margin:0 auto}
+.board{display:grid;gap:3px;background:#bfe3f3;padding:3px;border-radius:14px;position:relative}
+.cell{background:#f4fbff;border-radius:8px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:min(7vw,30px)}
+.cell.wall{background:#8fb3c7;box-shadow:inset 0 -4px 0 #6f97ad}
+.cell.goal{background:#e4f8e0}
+.robot{position:absolute;transition:left .32s ease,top .32s ease;pointer-events:none;display:flex;align-items:center;justify-content:center;z-index:2}
+.robot svg{width:86%;height:86%;transition:transform .2s}
+.robot.bonk svg{animation:bonk .4s}
+.robot.yay svg{animation:yay .6s 2}
+@keyframes bonk{0%,100%{transform:translateX(0)}25%{transform:translateX(-12%) rotate(-8deg)}75%{transform:translateX(12%) rotate(8deg)}}
+@keyframes yay{0%,100%{transform:translateY(0)}50%{transform:translateY(-22%)}}
+.star.got{animation:pop .35s forwards}
+@keyframes pop{to{transform:scale(1.8);opacity:0}}
+
+.prog{min-height:76px;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:10px;border-radius:16px;background:#f4fbff;border:3px dashed #bfe3f3}
+.prog.target{border-color:#5bbbe6;background:#eaf7fd}
+.prog .empty{color:#9fb6c4;font-size:13px;font-weight:800}
+.blk{border:0;border-radius:12px;width:44px;height:44px;font:inherit;font-weight:800;font-size:24px;color:#fff;background:#5bbbe6;box-shadow:0 3px 0 #3c98c2;display:flex;align-items:center;justify-content:center;padding:0}
+.blk.run{outline:4px solid #ffcf3f;outline-offset:1px}
+.loopbox{position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding:6px;border-radius:14px;background:#fff1cc;border:3px solid #f6c453;min-height:58px}
+.loopbox.target{border-color:#f08c00;box-shadow:0 0 0 3px #ffe08a}
+.loopbox.run{outline:4px solid #ffcf3f}
+.loophd{border:0;border-radius:10px;background:#f6b41f;color:#fff;font:inherit;font-weight:800;font-size:15px;padding:6px 8px;box-shadow:0 3px 0 #d18f00;white-space:nowrap}
+.loopx{position:absolute;top:-10px;right:-10px;width:28px;height:28px;border:0;border-radius:50%;background:#e5484d;color:#fff;font:inherit;font-weight:800;font-size:14px;box-shadow:0 2px 0 #b8343a;padding:0}
+.loopbox .slot{color:#c59a2c;font-size:12px;font-weight:800;padding:0 4px}
+.counter{font-weight:800;font-size:13px;color:#7d95a5;display:flex;justify-content:space-between;margin:0 4px 6px}
+.counter b.over{color:#e5484d}
+
+.pal{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.pbtn{border:0;border-radius:16px;height:58px;font:inherit;font-weight:800;font-size:30px;color:#fff;background:#5bbbe6;box-shadow:0 4px 0 #3c98c2}
+.pbtn.lp{background:#f6b41f;box-shadow:0 4px 0 #d18f00;font-size:15px;line-height:1.1}
+.pbtn.sub{background:#b8c7d1;box-shadow:0 4px 0 #94a6b2;font-size:17px}
+.pbtn:active,.big:active{transform:translateY(3px);box-shadow:none}
+.pbtn:disabled{opacity:.4}
+.row{display:grid;grid-template-columns:1fr 2fr;gap:8px}
+.big{border:0;border-radius:18px;padding:14px;font:inherit;font-weight:800;font-size:20px;color:#fff;background:#3ccf8e;box-shadow:0 4px 0 #22a56b}
+.big.gray{background:#b8c7d1;box-shadow:0 4px 0 #94a6b2}
+.big.blue{background:#5bbbe6;box-shadow:0 4px 0 #3c98c2}
+.big:disabled{opacity:.5}
+
+/* ポップアップ */
+.pop{position:fixed;inset:0;background:rgba(40,70,90,.45);display:flex;align-items:center;justify-content:center;padding:20px;z-index:10}
+.pop .card{width:100%;max-width:360px;text-align:center;padding:20px}
+.pop h3{margin:6px 0;font-size:22px;color:#2b7fa8}
+.pop .stars{font-size:40px;letter-spacing:4px;margin:6px 0}
+.pop .stars .off{filter:grayscale(1);opacity:.3}
+.pop .btns{display:grid;gap:10px;margin-top:14px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// ===== ステージ =====
+// # かべ / S スタート / G ゴール / * ほし（ぜんぶ あつめてから ゴール）
+// loop:true のステージから「くりかえし」ブロックが つかえる
+// par … ⭐3 に なる ブロックの かず（loop なしは じどうで けいさん）
+// max … おける ブロックの かず（loop なしは par+4）
+const LEVELS=[
+ {map:['.....','.....','S...G','.....','.....'],hint:'→ を ならべて 🏁 まで いこう！'},
+ {map:['.....','...G.','.....','.....','S....'],hint:'↑ と → を くみあわせよう'},
+ {map:['.....','S.#.G','.....'],hint:'かべ には ぶつからないように'},
+ {map:['..*..','.....','S...G'],hint:'⭐ を ひろってから 🏁 へ'},
+ {map:['S.#..','..#.*','..#..','.....','*...G'],hint:'⭐ を 2こ あつめよう'},
+ {map:['S.#...','..#.#.','..#.#.','....#G'],hint:'めいろを ぬけよう'},
+ {map:['S.......G'],loop:true,par:2,max:3,hint:'🔁 くりかえし の なかに → を いれてみよう'},
+ {map:['.....G','....*.','...*..','..*...','.*....','S.....'],loop:true,par:3,max:4,hint:'↑→ を くりかえすと かいだんに なるよ'},
+ {map:['S.*..','.....','..*.*','.....','....G'],loop:true,par:5,max:6,hint:'おなじ うごきを みつけよう'},
+ {map:['.....','.###.','.###.','.###.','S###G'],loop:true,par:6,max:7,hint:'🔁 を 3つ つかおう'},
+ {map:['S.....','#####.','......','.#####','.....G'],loop:true,par:10,max:11,hint:'ながい みち！ 🔁 で みじかく しよう'},
+ {map:['S......','..*....','....*..','......G'],loop:true,par:4,max:5,hint:'→→↓ の くりかえし かな？'},
+];
+const DIR={U:[0,-1,'↑'],D:[0,1,'↓'],L:[-1,0,'←'],R:[1,0,'→']};
+
+function parse(lv){
+ const g=lv.map.map(r=>r.split(''));const H=g.length,W=g[0].length;let s,goal,stars=[];
+ g.forEach((r,y)=>r.forEach((c,x)=>{if(c==='S')s=[x,y];if(c==='G')goal=[x,y];if(c==='*')stars.push([x,y])}));
+ return {g,W,H,s,goal,stars};
+}
+// ⭐ を ぜんぶ ひろって ゴールする さいたん てすう（loop なし ステージ よう）
+function shortest(lv){
+ const P=parse(lv),full=(1<<P.stars.length)-1,key=(x,y,m)=>x+','+y+','+m;
+ const q=[[P.s[0],P.s[1],0,0]],seen=new Set([key(P.s[0],P.s[1],0)]);
+ while(q.length){const [x,y,m,d]=q.shift();
+  for(const k in DIR){const nx=x+DIR[k][0],ny=y+DIR[k][1];
+   if(nx<0||ny<0||nx>=P.W||ny>=P.H||P.g[ny][nx]==='#')continue;
+   let nm=m;P.stars.forEach((s,i)=>{if(s[0]===nx&&s[1]===ny)nm|=1<<i});
+   if(nx===P.goal[0]&&ny===P.goal[1]&&nm===full)return d+1;
+   const kk=key(nx,ny,nm);if(!seen.has(kk)){seen.add(kk);q.push([nx,ny,nm,d+1])}}}
+ return 99;
+}
+LEVELS.forEach(lv=>{if(!lv.par)lv.par=shortest(lv);if(!lv.max)lv.max=lv.par+4});
+
+// ===== ほぞん =====
+const LS='piko-prog-v1';
+let S=(()=>{try{return JSON.parse(localStorage.getItem(LS)||'null')}catch(e){return null}})()||{best:{}};
+if(!S.best)S.best={};
+function save(){try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}}
+const cleared=i=>(S.best[i]||0)>0;
+const unlocked=i=>i===0||cleared(i-1);
+
+// ===== おと =====
+let AC=null;
+function beep(f,t=.12,type='sine',v=.15){try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(v,AC.currentTime);g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+t);o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+t)}catch(e){}}
+const sfx={tap:()=>beep(660,.06),step:()=>beep(520,.07,'triangle',.1),star:()=>{beep(880,.1);setTimeout(()=>beep(1320,.15),80)},bonk:()=>beep(140,.25,'square',.12),win:()=>[523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,.2,'triangle'),i*110))};
+
+// ===== ピコ（ロボット）=====
+function robotSVG(face=1){
+ const ex=face*3;
+ return `<svg viewBox="0 0 100 100"><line x1="50" y1="8" x2="50" y2="22" stroke="#7aa9c0" stroke-width="4" stroke-linecap="round"/><circle cx="50" cy="8" r="6" fill="#ff8fb1"/>
+ <rect x="18" y="22" width="64" height="50" rx="18" fill="#7fd0f2" stroke="#3c98c2" stroke-width="4"/>
+ <rect x="27" y="32" width="46" height="28" rx="12" fill="#fff"/>
+ <circle cx="${41+ex}" cy="46" r="5" fill="#2f4858"/><circle cx="${59+ex}" cy="46" r="5" fill="#2f4858"/>
+ <circle cx="${32+ex}" cy="55" r="3" fill="#ffb3c7"/><circle cx="${68+ex}" cy="55" r="3" fill="#ffb3c7"/>
+ <rect x="30" y="72" width="40" height="16" rx="6" fill="#5bbbe6" stroke="#3c98c2" stroke-width="4"/>
+ <circle cx="36" cy="92" r="5" fill="#3c98c2"/><circle cx="64" cy="92" r="5" fill="#3c98c2"/></svg>`;
+}
+
+// ===== がめん =====
+const $=s=>document.querySelector(s);
+const app=$('#app');
+let view='title',cur=0;
+
+function render(){app.innerHTML=view==='title'?titleV():playV();if(view==='play')drawRobot(true)}
+
+function titleV(){
+ const btn=(lv,i)=>{const lk=!unlocked(i),b=S.best[i]||0;
+  return `<button class="sbtn ${lk?'lock':lv.loop?'loop':''}" ${lk?'disabled':`onclick="openLv(${i})"`}>${lk?'🔒':i+1}<small>${lk?'':'★'.repeat(b)+'<span style="color:#d7e2e8">'+'★'.repeat(3-b)+'</span>'}</small></button>`};
+ const a=LEVELS.map((l,i)=>[l,i]);
+ return `<header><a class="hbtn" href="../" style="text-decoration:none;display:flex;align-items:center">🏠</a><div class="ttl">ピコの プログラミング</div><span class="hbtn ghost"></span></header>
+ <main>
+ <div class="card hero">${robotSVG(0)}<h1>ピコを うごかそう！</h1><div class="muted">めいれいブロックを ならべて ▶ を おすと、ピコが そのとおりに うごくよ</div></div>
+ <div class="card"><div class="sec">➡️ ならべて うごかす</div><div class="stages">${a.filter(([l])=>!l.loop).map(([l,i])=>btn(l,i)).join('')}</div></div>
+ <div class="card"><div class="sec">🔁 くりかえし</div><div class="stages">${a.filter(([l])=>l.loop).map(([l,i])=>btn(l,i)).join('')}</div></div>
+ </main>`;
+}
+
+// ===== プレイ =====
+let P,prog,target,running=false,pos,face,got,timer=null;
+function openLv(i){cur=i;P=parse(LEVELS[i]);prog=[];target=null;view='play';resetRun();render();sfx.tap()}
+function resetRun(){clearTimeout(timer);running=false;pos=[...P.s];face=1;got=new Set()}
+function count(){return prog.reduce((n,b)=>n+(b.t==='loop'?1+b.body.length:1),0)}
+
+function playV(){
+ const lv=LEVELS[cur],cs=[];
+ for(let y=0;y<P.H;y++)for(let x=0;x<P.W;x++){const c=P.g[y][x];
+  cs.push(`<div class="cell ${c==='#'?'wall':c==='G'?'goal':''}">${c==='G'?'🏁':c==='*'?`<span class="star" id="st${x}_${y}" style="${got.has(x+'_'+y)?'opacity:0':''}">⭐</span>`:''}</div>`)}
+ const n=count();
+ return `<header><button class="hbtn" onclick="back()">◀</button><div class="ttl">ステージ ${cur+1}</div><span class="hbtn ghost"></span></header>
+ <main>
+ <div class="hint">${lv.hint}</div>
+ <div class="boardwrap" id="bw" style="max-width:${P.H>P.W?Math.round(P.W/P.H*100)+'%':'100%'}">
+  <div class="board" id="board" style="grid-template-columns:repeat(${P.W},1fr)">${cs.join('')}</div>
+  <div class="robot" id="robot"></div>
+ </div>
+ <div class="card">
+  <div class="counter"><span>プログラム</span><span>ブロック <b class="${n>lv.max?'over':''}">${n}</b> / ${lv.max}　⭐3 は ${lv.par} こ</span></div>
+  <div class="prog ${target===null&&lv.loop?'target':''}" onclick="setTarget(event,-1)" id="prog">${progHTML()}</div>
+ </div>
+ <div class="pal">
+  ${['U','D','L','R'].map(k=>`<button class="pbtn" onclick="add('${k}')" ${running?'disabled':''}>${DIR[k][2]}</button>`).join('')}
+  ${lv.loop?`<button class="pbtn lp" onclick="addLoop()" ${running?'disabled':''}>🔁<br><span style="font-size:12px">くりかえし</span></button>`:''}
+  <button class="pbtn sub" onclick="undo()" ${running?'disabled':''} style="grid-column:${lv.loop?'span 1':'span 2'}">⌫ けす</button>
+  <button class="pbtn sub" onclick="clearAll()" ${running?'disabled':''} style="grid-column:span 2">🗑 ぜんぶ けす</button>
+ </div>
+ <div class="row">
+  <button class="big gray" onclick="stop()">↺ もどす</button>
+  <button class="big" onclick="run()" ${running||!n?'disabled':''}>▶ じっこう</button>
+ </div>
+ <div class="muted">ブロックを タップすると けせるよ${lv.loop?'。🔁 の かずを タップすると かいすうが かわるよ':''}</div>
+ </main>`;
+}
+function progHTML(){
+ if(!prog.length)return `<span class="empty">↓ の ボタンで ブロックを いれてね</span>`;
+ return prog.map((b,i)=>{
+  if(b.t!=='loop')return `<button class="blk" id="b${i}" onclick="del(event,${i})">${DIR[b.t][2]}</button>`;
+  return `<div class="loopbox ${target===i?'target':''}" id="b${i}" onclick="setTarget(event,${i})">
+   <button class="loophd" onclick="cycle(event,${i})">🔁 ${b.n}かい</button>
+   ${b.body.map((c,j)=>`<button class="blk" id="b${i}_${j}" onclick="del(event,${i},${j})">${DIR[c.t][2]}</button>`).join('')}
+   ${b.body.length?'':`<span class="slot">${target===i?'ここに はいるよ':'タップで えらぶ'}</span>`}
+   <button class="loopx" onclick="del(event,${i})">✕</button></div>`}).join('');
+}
+function refresh(){if(!running){const sc=window.scrollY;render();window.scrollTo(0,sc)}}
+function full(){if(count()>=LEVELS[cur].max){sfx.bonk();flash('これいじょう おけないよ');return true}return false}
+function add(k){if(running||full())return;sfx.tap();stopIfMoved();
+ if(target!==null&&prog[target])prog[target].body.push({t:k});else prog.push({t:k});refresh()}
+function addLoop(){if(running||full())return;sfx.tap();stopIfMoved();prog.push({t:'loop',n:2,body:[]});target=prog.length-1;refresh()}
+function setTarget(e,i){e.stopPropagation();if(running)return;target=i<0?null:(target===i?null:i);refresh()}
+function cycle(e,i){e.stopPropagation();if(running)return;sfx.tap();prog[i].n=prog[i].n>=9?2:prog[i].n+1;target=i;refresh()}
+function del(e,i,j){e.stopPropagation();if(running)return;sfx.tap();stopIfMoved();
+ if(j===undefined){prog.splice(i,1);if(target===i)target=null;else if(target>i)target--}else prog[i].body.splice(j,1);refresh()}
+function undo(){if(running)return;stopIfMoved();
+ if(target!==null&&prog[target]&&prog[target].body.length){prog[target].body.pop()}
+ else if(prog.length){prog.pop();if(target!==null&&target>=prog.length)target=null}
+ sfx.tap();refresh()}
+function clearAll(){if(running)return;prog=[];target=null;stopIfMoved();sfx.tap();refresh()}
+function stopIfMoved(){if(pos[0]!==P.s[0]||pos[1]!==P.s[1]||got.size){resetRun()}}
+function back(){resetRun();view='title';render()}
+function stop(){resetRun();render()}
+
+function drawRobot(instant){
+ const r=$('#robot');if(!r)return;
+ if(instant)r.style.transition='none';
+ const b=$('#board'),pad=3,gap=3,w=(b.clientWidth-pad*2-gap*(P.W-1))/P.W,h=(b.clientHeight-pad*2-gap*(P.H-1))/P.H;
+ r.style.width=w+'px';r.style.height=h+'px';r.style.left=(pad+pos[0]*(w+gap))+'px';r.style.top=(pad+pos[1]*(h+gap))+'px';
+ r.innerHTML=robotSVG(face);
+ if(instant){r.offsetWidth;r.style.transition=''}
+}
+window.addEventListener('resize',()=>{if(view==='play')drawRobot(true)});
+
+// プログラムを 1ぽずつの れつに する
+function steps(){const out=[];prog.forEach((b,i)=>{
+ if(b.t!=='loop')out.push({d:b.t,id:'b'+i});
+ else for(let k=0;k<b.n;k++)b.body.forEach((c,j)=>out.push({d:c.t,id:'b'+i+'_'+j,box:'b'+i}))});return out}
+
+function run(){
+ if(running||!prog.length)return;
+ if(count()>LEVELS[cur].max){flash('ブロックが おおすぎるよ');return}
+ resetRun();target=null;render();running=true;
+ document.querySelectorAll('.pal button,.big').forEach(b=>{if(!b.classList.contains('gray'))b.disabled=true});
+ const st=steps();let k=0;
+ const tick=()=>{
+  document.querySelectorAll('.run').forEach(e=>e.classList.remove('run'));
+  if(k>=st.length){end(false,'🏁 に とどかなかった…');return}
+  const s=st[k++],el=document.getElementById(s.id);if(el)el.classList.add('run');if(s.box)document.getElementById(s.box).classList.add('run');
+  const [dx,dy]=DIR[s.d],nx=pos[0]+dx,ny=pos[1]+dy;if(dx)face=dx;
+  if(nx<0||ny<0||nx>=P.W||ny>=P.H||P.g[ny][nx]==='#'){
+   drawRobot();const r=$('#robot');r.classList.add('bonk');sfx.bonk();timer=setTimeout(()=>end(false,nx<0||ny<0||nx>=P.W||ny>=P.H?'そとに でちゃう！':'かべに ぶつかっちゃった！'),450);return}
+  pos=[nx,ny];drawRobot();sfx.step();
+  const sk=nx+'_'+ny;if(P.g[ny][nx]==='*'&&!got.has(sk)){got.add(sk);const se=$('#st'+sk);if(se)se.classList.add('got');setTimeout(sfx.star,150)}
+  if(nx===P.goal[0]&&ny===P.goal[1]&&got.size===P.stars.length){timer=setTimeout(()=>end(true),380);return}
+  timer=setTimeout(tick,420)};
+ timer=setTimeout(tick,250);
+}
+function end(win,msg){
+ running=false;document.querySelectorAll('.run').forEach(e=>e.classList.remove('run'));
+ document.querySelectorAll('.pal button,.big').forEach(b=>b.disabled=false);
+ const lv=LEVELS[cur];
+ if(!win){
+  const left=P.stars.length-got.size;
+  showPop(`<div style="font-size:48px">🤔</div><h3>${msg}</h3><div class="muted">${left&&!msg.includes('ぶつ')&&!msg.includes('そと')?`⭐ が あと ${left}こ のこってるよ。`:''}ブロックを なおして もういちど！</div>
+   <div class="btns"><button class="big blue" onclick="closePop();stop()">なおす</button></div>`);return}
+ const n=count(),stars=n<=lv.par?3:n<=lv.par+2?2:1;
+ const prev=S.best[cur]||0;if(stars>prev){S.best[cur]=stars;save()}
+ $('#robot').classList.add('yay');sfx.win();
+ const last=cur>=LEVELS.length-1;
+ setTimeout(()=>showPop(`<div style="font-size:48px">🎉</div><h3>クリア！</h3>
+  <div class="stars">${[1,2,3].map(i=>`<span class="${i<=stars?'':'off'}">⭐</span>`).join('')}</div>
+  <div class="muted">ブロック ${n}こ で できたよ${stars<3?`<br>${lv.par}こ で できたら ⭐3！`:'<br>さいこうの プログラム！'}</div>
+  <div class="btns">${last?'':`<button class="big" onclick="closePop();openLv(${cur+1})">つぎの ステージ ▶</button>`}
+  ${stars<3?`<button class="big blue" onclick="closePop();stop()">もういちど ちょうせん</button>`:''}
+  <button class="big gray" onclick="closePop();back()">ステージ いちらん</button></div>`),700);
+}
+
+// ===== ポップアップ =====
+function showPop(h){closePop();const d=document.createElement('div');d.className='pop';d.id='pop';d.innerHTML=`<div class="card">${h}</div>`;document.body.appendChild(d)}
+function closePop(){const p=$('#pop');if(p)p.remove()}
+let flT;function flash(t){const h=$('.hint');if(!h)return;const o=LEVELS[cur].hint;h.textContent=t;h.style.color='#e5484d';clearTimeout(flT);flT=setTimeout(()=>{const hh=$('.hint');if(hh){hh.textContent=o;hh.style.color=''}},1400)}
+
+render();
+if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
