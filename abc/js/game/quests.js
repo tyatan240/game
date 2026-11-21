@@ -1,41 +1,54 @@
-// クエストの すすみかた（データは data/quests.js）。ひょうじとは べつ
+// クエストと チャプターの すすみかた（データは data/quests.js・data/areas.js）。ひょうじとは べつ
 import { QUESTS } from '../data/quests.js';
-import { WORLD1_LETTERS } from '../data/letters.js';
-import { NPCS, GOAL } from '../data/world1.js';
+import { AREAS, CHAPTERS, CHAPTER } from '../data/areas.js';
 
-const reqMet = (r, S) => !r || ((!r.flag || S.flags[r.flag]) && (!r.quest || S.quests[r.quest] === 'done'));
+export const QUEST = Object.fromEntries(QUESTS.map(q => [q.id, q]));
+export const lettersDone = (S, areaId) => CHAPTER[areaId].letters.every(id => S.learned.includes(id));
+const reqMet = (r, S) => !r || ((!r.flag || S.flags[r.flag]) && (!r.quest || S.quests[r.quest] === 'done') && (!r.letters || lettersDone(S, r.letters)));
 
-// いま すすめられる クエスト（じゅんばんに 1つ）
-export function activeQuest(S) {
-  return QUESTS.find(q => !q.future && S.quests[q.id] !== 'done' && reqMet(q.requires, S)) || null;
-}
+// いま すすめられる クエスト（いくつでも）
+export function activeQuests(S) { return QUESTS.filter(q => !q.future && S.quests[q.id] !== 'done' && reqMet(q.requires, S)); }
+export function activeQuest(S) { return activeQuests(S)[0] || null; }
 export function currentStep(S, q) {
   if (!q) return null;
   const id = S.quests[q.id];
   return q.steps.find(s => s.id === id) || q.steps[0];
 }
-// つぎの だんかいへ。さいごなら 'done'
+// この あいてを めあてに している クエストの だんかい
+export function stepFor(S, targetId) {
+  for (const q of activeQuests(S)) { const st = currentStep(S, q); if (st.target === targetId) return { q, st }; }
+  return null;
+}
 export function advance(S, q) {
   const i = q.steps.indexOf(currentStep(S, q));
   S.quests[q.id] = i + 1 < q.steps.length ? q.steps[i + 1].id : 'done';
   return S.quests[q.id] === 'done';
 }
-export const isStep = (S, questId, stepId) => {
-  const q = QUESTS.find(x => x.id === questId);
-  return !!q && activeQuest(S) === q && currentStep(S, q).id === stepId;
-};
+export const isStep = (S, questId, stepId) => { const q = QUEST[questId]; return !!q && activeQuests(S).includes(q) && currentStep(S, q).id === stepId; };
+export const gateOpen = (S, ch) => ch.gate ? S.world['gate_' + ch.area] === 'open' : true;
+export function chapterDone(S, ch) {
+  return ch.letters.every(id => S.learned.includes(id)) && (!ch.boss || S.flags.bossCleared) && ch.quests.every(q => S.quests[q] === 'done') && gateOpen(S, ch);
+}
 
-// がめん うえの「つぎは」と、めじるしを つける ばしょ
+// がめん うえの「つぎは」と、めじるしを つける ばしょ（ちがう エリアなら でぐちを さす）
 export function objective(S) {
   if (!S.flags.intro) return null;
-  const left = WORLD1_LETTERS.filter(id => !S.learned.includes(id));
-  if (left.length) {
-    const ids = NPCS.filter(n => n.letter && left.includes(n.letter)).map(n => n.id);
-    return { text: `どうぶつに あって もじを おぼえよう！（あと ${left.length}）`, targets: ids };
+  for (const ch of CHAPTERS) {
+    const left = ch.letters.filter(id => !S.learned.includes(id));
+    if (left.length) {
+      const ids = AREAS[ch.area].NPCS.filter(n => n.letter && left.includes(n.letter)).map(n => n.id);
+      return { text: `どうぶつに あって もじを おぼえよう！（あと ${left.length}）`, targets: ids, area: ch.area };
+    }
+    if (ch.boss && !S.flags.bossCleared) return { text: 'はしの まえの ドラコに はなしかけよう！', targets: ['boss'], area: ch.area };
+    for (const id of ch.quests) {
+      if (S.quests[id] === 'done') continue;
+      const q = QUEST[id];
+      if (!reqMet(q.requires, S)) continue;
+      const st = currentStep(S, q);
+      return { text: st.goal, targets: [st.target], quest: q.title, area: ch.area };
+    }
+    if (ch.gate && !gateOpen(S, ch)) return { text: ch.final ? 'おしろの もんで さいごの おさらいを しよう！' : 'もじの もんで おさらいを しよう！', targets: [ch.gate], area: ch.area };
+    if (ch.next && !S.areas.includes(ch.next)) return { text: `つぎの ばしょ「${AREAS[ch.next].name}」へ いこう！`, targets: ['area:' + ch.next], area: ch.area };
   }
-  if (!S.flags.bossCleared) return { text: 'はしの まえの ドラコに はなしかけよう！', targets: ['boss'] };
-  const q = activeQuest(S);
-  if (q) { const st = currentStep(S, q); return { text: st.goal, targets: [st.target], quest: q.title }; }
-  if (S.quests.bee === 'done' && !S.flags.world1Clear) return { text: 'みぎの もりの いりぐちへ いこう！', targets: ['goal'], goal: GOAL };
   return { text: 'じゆうに たんけん しよう！ どうぶつに おさらいも できるよ', targets: [] };
 }

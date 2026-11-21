@@ -116,6 +116,21 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
   }
 
+  console.log('7. ABCぼうけん：つぎの エリアへ いける（F〜Z）');
+  {
+    const p = await page({ width: 844, height: 390 }); await p.goto(B + 'abc/index.html');
+    await p.evaluate(() => localStorage.setItem('abc-adventure-v1', JSON.stringify({ v: 1, t: 1, started: true, hero: { x: 53.5, y: 11.8, dir: 'right', area: 'island' }, stars: 20, learned: ['A', 'B', 'C', 'D', 'E'], flags: { intro: true, bossCleared: true, bridgeOpen: true }, quests: { apple: 'done', flowers: 'done', bee: 'done' }, world: { gate: 'open', flowerbed: 'bloom', vines: 'open', bees: true }, words: { apple: { at: 1 }, water: { at: 1 }, flower: { at: 1 }, bee: { at: 1 } } })));
+    await p.reload(); await p.waitForTimeout(400); await p.click('#cont'); await p.waitForTimeout(500);
+    await p.keyboard.down('ArrowRight'); for (let i = 0; i < 20 && await p.evaluate(() => __abc.area()) === 'island'; i++) await p.waitForTimeout(100); await p.keyboard.up('ArrowRight');
+    await p.waitForTimeout(800);
+    const r = await p.evaluate(() => ({ area: __abc.area(), goal: __abc.objective().text, areas: __abc.S.areas }));
+    ok(r.area === 'forest' && r.goal.includes('もじ'), 'しまの みぎはしから もりの こみちへ ' + JSON.stringify(r));
+    await p.evaluate(() => __abc.approach('frog')); await p.keyboard.press('Enter'); await p.waitForTimeout(300);
+    for (let k = 0; k < 10 && await p.$('.dlg'); k++) { await p.keyboard.press('Enter'); await p.waitForTimeout(60); }
+    ok(!!await p.$('.teach'), 'かえるさんが F を おしえてくれる');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+  }
+
   await browser.close(); server.close();
   console.log(failed ? `\n${failed}こ しっぱい` : '\nぜんぶ OK');
   process.exit(failed ? 1 : 0);

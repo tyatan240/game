@@ -190,10 +190,34 @@ const KIND = {
   elephant: { body: '#b6c4e0', light: '#d8e1f2', line: '#7f8fb5', ear: 'big', trunk: true },
   dragon: { body: '#8fd88a', light: '#fff3b0', line: '#5aa65a', ear: 'horn', wings: true },
   mouse: { body: '#d9d3e0', light: '#f7f3fa', line: '#9f97ab', ear: 'mouse', inner: '#ffc2d1', whisker: true, tail: 'mouse' },
+  // F〜Z の どうぶつ
+  frog: { body: '#8fd46a', light: '#e9f8c8', line: '#5a9a3a', ear: 'frog', noNose: true },
+  goat: { body: '#f6f2ea', light: '#ffffff', line: '#b8b0a0', ear: 'tri', inner: '#f0d0c8', horns: '#c9b48a', beard: true },
+  hippo: { body: '#b8a6cc', light: '#ddd0ea', line: '#8a77a3', ear: 'round', inner: '#e9b8cf', muzzle: '#d9cce6' },
+  squirrel: { body: '#d98a4a', light: '#ffe6c8', line: '#a85f2a', ear: 'tri', inner: '#ffc2a8', tail: 'squirrel' },
+  chick: { body: '#ffe066', light: '#fff4b0', line: '#e5b82c', ear: 'tuft', beak: '#ff9a3c', feet: '#ff9a3c' },
+  koala: { body: '#b9bcc6', light: '#e9eaf0', line: '#878b98', ear: 'koala', inner: '#f2f2f6', bignose: true },
+  lion: { body: '#f5c35a', light: '#fff0c8', line: '#c9922a', ear: 'round', inner: '#e8a85a', mane: '#d9782c' },
+  monkey: { body: '#b07a4a', light: '#f5d6b0', line: '#7f5230', ear: 'side', inner: '#f5d6b0', face: '#f5d6b0' },
+  sheep: { body: '#fbf8f2', light: '#ffffff', line: '#c9c2b6', ear: 'flop', inner: '#e9cfc3', wool: true, face: '#f3e1cf' },
+  owl: { body: '#b08560', light: '#f3e3c8', line: '#7f5a3a', ear: 'tufts', beak: '#ffb347', face: '#f3e3c8' },
+  penguin: { body: '#4d5d8c', light: '#ffffff', line: '#33406b', beak: '#ffb347', feet: '#ffb347', face: '#ffffff' },
+  duck: { body: '#ffffff', light: '#ffffff', line: '#c9c2b6', beak: '#ffa53a', feet: '#ffa53a' },
+  raccoon: { body: '#a98a6a', light: '#efe0c8', line: '#7a5f45', ear: 'round', inner: '#6a5440', mask: '#6a5440' },
+  turtle: { body: '#9fd48a', light: '#e9f8c8', line: '#5a9a3a', shell: '#b98a4a' },
+  tiger: { body: '#ffb04a', light: '#fff4e0', line: '#d97a1c', ear: 'round', inner: '#fff4e0', stripes: '#5a3a2a' },
+  zebra: { body: '#ffffff', light: '#ffffff', line: '#9a9a9a', ear: 'tri', inner: '#e0e0e0', stripes: '#3a3a3a', muzzle: '#d8d8d8' },
+  deer: { body: '#c98f55', light: '#f5e0c0', line: '#9a6a3a', ear: 'tri', inner: '#f5d0b0', antlers: '#8a5a2a', spots: '#f5e6cc' },
+  wolf: { body: '#a9b0bf', light: '#eef0f5', line: '#7a8090', ear: 'tri', inner: '#e9c8d0', muzzle: '#eef0f5' },
+  hedgehog: { body: '#f0d8b8', light: '#fff2e0', line: '#b8946a', ear: 'round', inner: '#e8b8a0', spikes: '#8a6a4a' },
+  pig: { body: '#ffc2cf', light: '#ffe0e8', line: '#e08aa0', ear: 'tri', inner: '#ff9fb4', snout: '#ff9fb4' },
+  cow: { body: '#ffffff', light: '#ffffff', line: '#b0a8a0', ear: 'flop', inner: '#e9c3c3', horns: '#e8d8b8', spots: '#4a4040', snout: '#ffc8cf' },
+  bird: { body: '#7ac8ff', light: '#e8f6ff', line: '#4a98d0', beak: '#ffb347', ear: 'tuft', feet: '#ffb347', smallwing: true },
+  polar: { body: '#fbfbff', light: '#ffffff', line: '#c0c8d6', ear: 'round', inner: '#e9eef8', muzzle: '#ffffff' },
 };
 // cx,cy：あしもとの まんなか（ろんり たんい）。dir：up/down/left/right。step：あるく アニメ
 export function drawCritter(ctx, kind, cx, cy, dir = 'down', step = 0, opts = {}) {
-  const K = KIND[kind] || KIND.fox, sc = opts.scale || 1;
+  const K = KIND[kind] || KIND.fox, sc = (opts.scale || 1) * (opts.small ? 0.78 : 1);
   ctx.save(); ctx.translate(cx, cy); ctx.scale(sc, sc);
   const bob = Math.abs(Math.sin(step * Math.PI)) * -1.5, side = dir === 'left' ? -1 : dir === 'right' ? 1 : 0, back = dir === 'up';
   // かげ
@@ -203,18 +227,29 @@ export function drawCritter(ctx, kind, cx, cy, dir = 'down', step = 0, opts = {}
   // しっぽ・はね（うしろ）
   if (K.tail === 'fox') { ctx.fillStyle = K.body; ctx.save(); ctx.translate(side ? -side * 6 : 5, -6); ctx.rotate(side ? -side * 0.5 : 0.6); ctx.beginPath(); ctx.ellipse(0, -4, 4, 7, 0, 0, 7); ctx.fill(); ctx.stroke(); ctx.fillStyle = K.light; ctx.beginPath(); ctx.ellipse(0, -9, 2.5, 3, 0, 0, 7); ctx.fill(); ctx.restore(); }
   if (K.tail === 'mouse') { ctx.strokeStyle = '#c7a8b8'; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(side ? -side * 5 : 5, -4); ctx.quadraticCurveTo(side ? -side * 14 : 14, -2, side ? -side * 11 : 12, -12); ctx.stroke(); ctx.lineWidth = 1.3; ctx.strokeStyle = K.line; }
+  if (K.tail === 'squirrel') { ctx.fillStyle = K.body; ctx.save(); ctx.translate(side ? -side * 7 : 7, -10); ctx.rotate(side ? -side * 0.3 : 0.3); ctx.beginPath(); ctx.ellipse(0, -5, 5.5, 10, 0, 0, 7); ctx.fill(); ctx.stroke(); ctx.fillStyle = K.light; ctx.beginPath(); ctx.ellipse(0, -9, 2.5, 4, 0, 0, 7); ctx.fill(); ctx.restore(); }
+  if (K.shell) { ctx.fillStyle = K.shell; ctx.beginPath(); ctx.ellipse(side * -1, -8, 11, 9, 0, 0, 7); ctx.fill(); ctx.strokeStyle = '#8a6a34'; ctx.stroke(); ctx.strokeStyle = K.line; }
   if (K.wings) { ctx.fillStyle = '#b9ecb4'; [-1, 1].forEach(s => { ctx.beginPath(); ctx.moveTo(s * 5, -12); ctx.quadraticCurveTo(s * 15, -22, s * 14, -9); ctx.quadraticCurveTo(s * 10, -10, s * 5, -7); ctx.fill(); ctx.stroke(); }); }
   // あし
   const lf = Math.sin(step * Math.PI * 2) * 1.6;
-  ctx.fillStyle = K.body;
+  ctx.fillStyle = K.feet || K.body;
   ctx.beginPath(); ctx.ellipse(-3.5, -1.5 + (side ? 0 : lf * 0.4), 3, 2.2, 0, 0, 7); ctx.ellipse(3.5, -1.5 - (side ? 0 : lf * 0.4), 3, 2.2, 0, 0, 7); ctx.fill(); ctx.stroke();
   // からだ
   ctx.beginPath(); ctx.ellipse(side * 0.5, -7, 6.5, 6, 0, 0, 7); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = K.body;
   if (!back) { ctx.fillStyle = K.light; ctx.beginPath(); ctx.ellipse(side * 1.5, -6.5, 4, 4, 0, 0, 7); ctx.fill(); }
+  if (K.spots) { ctx.fillStyle = K.spots; [[-4, -9, 1.8], [3.5, -5, 1.5], [-1, -3.5, 1.2]].forEach(([x, y, r]) => { ctx.beginPath(); ctx.ellipse(x + side, y, r * 1.2, r, 0, 0, 7); ctx.fill(); }); }
+  if (K.stripes) { ctx.strokeStyle = K.stripes; ctx.lineWidth = 1.2; [-4, 0, 4].forEach(x => { ctx.beginPath(); ctx.moveTo(x - 1.5 + side, -11.5); ctx.lineTo(x + side, -8.5); ctx.stroke(); }); ctx.lineWidth = 1.3; ctx.strokeStyle = K.line; }
+  if (K.smallwing) { ctx.fillStyle = '#5ab0ec'; [-1, 1].forEach(s => { if (side && s === side) return; ctx.beginPath(); ctx.ellipse(s * 6.5, -7, 2.4, 4.2, s * 0.4, 0, 7); ctx.fill(); }); }
   // スカーフ
   if (opts.scarf) { ctx.fillStyle = '#ff5a5a'; ctx.beginPath(); ctx.ellipse(0, -12, 6.5, 2.3, 0, 0, 7); ctx.fill(); if (!back) { ctx.fillRect(side >= 0 ? 1 : -4, -12, 3, 6); } }
   // みみ（うしろの ぶぶん）
   const hy = -19;
+  if (K.mane) { ctx.fillStyle = K.mane; ctx.beginPath(); for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2; ctx.arc(side + Math.cos(a) * 9.5, hy + Math.sin(a) * 9.5, 3.6, 0, 7); } ctx.fill(); }
+  if (K.wool) { ctx.fillStyle = K.body; ctx.beginPath(); for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; ctx.arc(side + Math.cos(a) * 8.5, hy + Math.sin(a) * 8.5, 3.4, 0, 7); } ctx.fill(); ctx.stroke(); }
+  if (K.spikes) { ctx.fillStyle = K.spikes; ctx.beginPath(); for (let i = 0; i < 11; i++) { const a = Math.PI * (0.95 + i * 0.11), b = a + 0.12; ctx.moveTo(side + Math.cos(a - 0.12) * 8, hy + Math.sin(a - 0.12) * 8); ctx.lineTo(side + Math.cos(a) * 14, hy + Math.sin(a) * 14); ctx.lineTo(side + Math.cos(b) * 8, hy + Math.sin(b) * 8); } ctx.fill(); }
+  if (K.ear === 'koala') { [-1, 1].forEach(s => { ctx.fillStyle = K.body; ctx.beginPath(); ctx.arc(s * 9 + side, hy - 4, 5.5, 0, 7); ctx.fill(); ctx.stroke(); ctx.fillStyle = K.inner; ctx.beginPath(); ctx.arc(s * 9 + side, hy - 4, 3.3, 0, 7); ctx.fill(); }); }
+  if (K.ear === 'side') { [-1, 1].forEach(s => { if (side && s === side) return; ctx.fillStyle = K.body; ctx.beginPath(); ctx.arc(s * 9.5 + side, hy + 1, 3.6, 0, 7); ctx.fill(); ctx.stroke(); ctx.fillStyle = K.inner; ctx.beginPath(); ctx.arc(s * 9.5 + side, hy + 1, 2, 0, 7); ctx.fill(); }); }
   if (K.ear === 'big') { ctx.fillStyle = K.body; [-1, 1].forEach(s => { if (side && s !== -side) return; ctx.beginPath(); ctx.ellipse(s * 10, hy + 1, 6, 7.5, 0, 0, 7); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#e9c3d6'; ctx.beginPath(); ctx.ellipse(s * 10, hy + 1, 3.5, 4.8, 0, 0, 7); ctx.fill(); ctx.fillStyle = K.body; }); }
   if (K.ear === 'mouse') { [-1, 1].forEach(s => { ctx.fillStyle = K.body; ctx.beginPath(); ctx.arc(s * 7.5 + side, hy - 6, 5.5, 0, 7); ctx.fill(); ctx.stroke(); if (!back) { ctx.fillStyle = K.inner; ctx.beginPath(); ctx.arc(s * 7.5 + side, hy - 6, 3.4, 0, 7); ctx.fill(); } }); }
   if (K.ear === 'long') { [-1, 1].forEach(s => { ctx.fillStyle = K.body; ctx.save(); ctx.translate(s * 4 - side * 2, hy - 8); ctx.rotate(s * 0.15); ctx.beginPath(); ctx.ellipse(0, -2, 3.3, 8.5, 0, 0, 7); ctx.fill(); ctx.stroke(); if (!back) { ctx.fillStyle = K.inner; ctx.beginPath(); ctx.ellipse(0, -1.5, 1.6, 6, 0, 0, 7); ctx.fill(); } ctx.restore(); }); }
@@ -226,16 +261,31 @@ export function drawCritter(ctx, kind, cx, cy, dir = 'down', step = 0, opts = {}
   const ear = (x, y, rot) => { ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.fillStyle = K.body; ctx.beginPath(); ctx.moveTo(-3.5, 2); ctx.lineTo(0, -6); ctx.lineTo(3.5, 2); ctx.closePath(); ctx.fill(); ctx.stroke(); if (K.inner && !back) { ctx.fillStyle = K.inner; ctx.beginPath(); ctx.moveTo(-1.8, 1); ctx.lineTo(0, -3.5); ctx.lineTo(1.8, 1); ctx.fill(); } ctx.restore(); };
   if (K.ear === 'tri') { ear(-5 + side, hy - 6.5, -0.35); ear(5 + side, hy - 6.5, 0.35); if (kind === 'fox' && !back) { ctx.fillStyle = '#6b4030'; [-1, 1].forEach(s => { ctx.beginPath(); ctx.arc(s * 5.6 + side, hy - 11.5, 1.3, 0, 7); ctx.fill(); }); } }
   if (K.ear === 'round') { ctx.fillStyle = K.body; [-1, 1].forEach(s => { ctx.beginPath(); ctx.arc(s * 6.5 + side, hy - 6.5, 3.3, 0, 7); ctx.fill(); ctx.stroke(); ctx.fillStyle = K.inner; ctx.beginPath(); ctx.arc(s * 6.5 + side, hy - 6.5, 1.6, 0, 7); ctx.fill(); ctx.fillStyle = K.body; }); }
+  if (K.ear === 'frog') { [-1, 1].forEach(s => { ctx.fillStyle = K.body; ctx.beginPath(); ctx.arc(s * 4.5 + side, hy - 7, 3.8, 0, 7); ctx.fill(); ctx.stroke(); if (!back) { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(s * 4.5 + side, hy - 7, 2.6, 0, 7); ctx.fill(); ctx.fillStyle = C.ink; ctx.beginPath(); ctx.arc(s * 4.5 + side * 1.6, hy - 7, 1.4, 0, 7); ctx.fill(); } }); }
+  if (K.ear === 'tuft') { ctx.fillStyle = K.body; ctx.beginPath(); ctx.moveTo(side - 2, hy - 8); ctx.quadraticCurveTo(side - 1, hy - 14, side + 2, hy - 12); ctx.quadraticCurveTo(side + 1, hy - 10, side + 2, hy - 8); ctx.fill(); ctx.stroke(); }
+  if (K.ear === 'tufts') { ctx.fillStyle = K.body; [-1, 1].forEach(s => { ctx.beginPath(); ctx.moveTo(s * 3 + side, hy - 8); ctx.lineTo(s * 8 + side, hy - 13); ctx.lineTo(s * 7.5 + side, hy - 5); ctx.fill(); ctx.stroke(); }); }
+  if (K.horns) { ctx.fillStyle = K.horns; [-1, 1].forEach(s => { ctx.beginPath(); ctx.moveTo(s * 2.5 + side, hy - 7.5); ctx.quadraticCurveTo(s * 5 + side, hy - 14, s * 7 + side, hy - 12); ctx.lineTo(s * 5 + side, hy - 7); ctx.fill(); ctx.stroke(); }); }
+  if (K.antlers) { ctx.strokeStyle = K.antlers; ctx.lineWidth = 1.6; [-1, 1].forEach(s => { ctx.beginPath(); ctx.moveTo(s * 3 + side, hy - 8); ctx.lineTo(s * 6 + side, hy - 16); ctx.moveTo(s * 4.5 + side, hy - 12); ctx.lineTo(s * 8.5 + side, hy - 13); ctx.moveTo(s * 5.5 + side, hy - 14.5); ctx.lineTo(s * 3.5 + side, hy - 18); ctx.stroke(); }); ctx.lineWidth = 1.3; ctx.strokeStyle = K.line; }
   if (K.ear === 'flop') { ctx.fillStyle = K.inner; [-1, 1].forEach(s => { if (side && s === side) return; ctx.beginPath(); ctx.ellipse(s * 8.5 + side, hy, 3, 6.5, s * 0.25, 0, 7); ctx.fill(); }); }
   // かお
   if (!back) {
     const fx = side * 3.5, eyeY = hy + 0.5;
     if (kind === 'fox' || kind === 'dog' || kind === 'bear') { ctx.fillStyle = K.light; ctx.beginPath(); ctx.ellipse(fx * 1.1, hy + 4, 4.5, 3.3, 0, 0, 7); ctx.fill(); }
+    if (K.face) { ctx.fillStyle = K.face; ctx.beginPath(); ctx.ellipse(fx, hy + 1.5, 6.5, 6, 0, 0, 7); ctx.fill(); }
+    if (K.muzzle) { ctx.fillStyle = K.muzzle; ctx.beginPath(); ctx.ellipse(fx * 1.1, hy + 4.5, 5.5, 3.8, 0, 0, 7); ctx.fill(); }
+    if (K.mask) { ctx.fillStyle = K.mask; [-1, 1].forEach(s => { ctx.beginPath(); ctx.ellipse(fx + s * 3.6, hy + 0.8, 3.2, 2.6, s * -0.3, 0, 7); ctx.fill(); }); }
+    if (K.stripes) { ctx.strokeStyle = K.stripes; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(side - 2, hy - 8.5); ctx.lineTo(side - 1, hy - 5); ctx.moveTo(side + 2, hy - 8.5); ctx.lineTo(side + 1, hy - 5); ctx.moveTo(side - 8.5, hy - 2); ctx.lineTo(side - 6, hy - 1); ctx.moveTo(side + 8.5, hy - 2); ctx.lineTo(side + 6, hy - 1); ctx.stroke(); ctx.lineWidth = 1.3; ctx.strokeStyle = K.line; }
     ctx.fillStyle = C.ink;
     const eye = x => { ctx.beginPath(); ctx.ellipse(x, eyeY, 1.4, 1.8, 0, 0, 7); ctx.fill(); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x + 0.5, eyeY - 0.7, 0.55, 0, 7); ctx.fill(); ctx.fillStyle = C.ink; };
     if (opts.happy) { ctx.strokeStyle = C.ink; ctx.lineWidth = 1.2; [-3.5, 3.5].forEach(x => { ctx.beginPath(); ctx.arc(fx + x, eyeY + 1, 1.6, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke(); }); ctx.lineWidth = 1.3; ctx.strokeStyle = K.line; }
+    else if (K.ear === 'frog') { /* かえるの めは あたまの うえ */ }
     else if (side) { eye(fx + 1.5); eye(fx - 3.5); } else { eye(-3.5); eye(3.5); }
-    ctx.fillStyle = C.ink; ctx.beginPath(); ctx.ellipse(fx * 1.2, hy + 3.2, 1.2, 0.9, 0, 0, 7); ctx.fill();
+    if (K.beak) { ctx.fillStyle = K.beak; ctx.beginPath(); ctx.moveTo(fx - 2.5, hy + 2.5); ctx.lineTo(fx + 2.5 + side * 2, hy + 2.5); ctx.lineTo(fx + side * 3, hy + 5.5); ctx.closePath(); ctx.fill(); }
+    else if (K.snout) { ctx.fillStyle = K.snout; ctx.beginPath(); ctx.ellipse(fx * 1.2, hy + 4, 3, 2.2, 0, 0, 7); ctx.fill(); ctx.fillStyle = C.ink; [-1, 1].forEach(s => { ctx.beginPath(); ctx.arc(fx * 1.2 + s * 1, hy + 4, 0.55, 0, 7); ctx.fill(); }); }
+    else if (K.bignose) { ctx.fillStyle = '#4a4550'; ctx.beginPath(); ctx.ellipse(fx * 1.2, hy + 3.5, 2.2, 2.8, 0, 0, 7); ctx.fill(); }
+    else if (K.ear === 'frog') { ctx.strokeStyle = C.ink; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(fx, hy + 1, 3.5, 0.3, Math.PI - 0.3); ctx.stroke(); ctx.lineWidth = 1.3; ctx.strokeStyle = K.line; }
+    else { ctx.fillStyle = C.ink; ctx.beginPath(); ctx.ellipse(fx * 1.2, hy + 3.2, 1.2, 0.9, 0, 0, 7); ctx.fill(); }
+    if (K.beard) { ctx.fillStyle = K.light; ctx.beginPath(); ctx.moveTo(fx - 1.5, hy + 7); ctx.lineTo(fx + 1.5, hy + 7); ctx.lineTo(fx, hy + 11); ctx.fill(); }
     ctx.fillStyle = 'rgba(255,140,160,.55)'; [-1, 1].forEach(s => { if (side && s === -side) return; ctx.beginPath(); ctx.ellipse(fx + s * 6, hy + 3.5, 1.9, 1.2, 0, 0, 7); ctx.fill(); });
     if (K.whisker) { ctx.strokeStyle = '#8d93a3'; ctx.lineWidth = 0.6; [-1, 1].forEach(s => { ctx.beginPath(); ctx.moveTo(fx + s * 4, hy + 3); ctx.lineTo(fx + s * 9, hy + 2); ctx.moveTo(fx + s * 4, hy + 4); ctx.lineTo(fx + s * 9, hy + 5); ctx.stroke(); }); ctx.lineWidth = 1.3; }
     if (K.trunk) { ctx.strokeStyle = K.body; ctx.lineWidth = 3.4; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(fx, hy + 3); ctx.quadraticCurveTo(fx + side * 3, hy + 9, fx + (side || 1) * 4, hy + 10); ctx.stroke(); ctx.lineWidth = 1.3; }

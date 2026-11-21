@@ -14,7 +14,7 @@ export const MAP = [
   'T.T...r.....:.TT.....:....~~TTT:.,...fffffff....TT.....T',
   'T....,......:...b.b.....T.~~TTT:.....fffffff..b.TT.,r..T',
   'T...........:...,....:....~~TTT:.....fffffff.....v.....T',
-  'T..:::::::::::::::::::::::==g:::.....fffffff...::v:::::T',
+  'T..:::::::::::::::::::::::==g:::.....fffffff...::v::::::',
   'T.,.....:....,.....:......~~TTT:...,.fffffff...:.v.....T',
   'T...,...:,......T..:..TT..~~TTT:.,...fffffff..,:TT..,..T',
   'T....b..:..T.....r.:..T...~~TTT:...............:TT.....T',
@@ -30,12 +30,15 @@ export const MAP = [
 ];
 
 export const START = { x: 4, y: 12, dir: 'down' };
+export const entries = { start: START, east: { x: 54, y: 11, dir: 'left' } };
+// ハチの クエストの あと、みぎはしから もりの こみちへ
+export const exits = [{ x: 55, y: 11, to: 'forest', entry: 'west', needs: { quest: 'bee' } }];
 
 // キャラクター（at：じょうたいで ばしょが かわる ときの ルール）
 export const NPCS = [
   { id: 'rabbit', kind: 'rabbit', x: 6, y: 12, name: 'ラビ', after: { flag: 'bossCleared', x: 22, y: 12 } },
   { id: 'ant', kind: 'ant', x: 5, y: 7, name: 'ありさん', letter: 'A' },
-  { id: 'bear', kind: 'bear', x: 16, y: 4, name: 'くまさん', letter: 'B' },
+  { id: 'bear', kind: 'bear', x: 16, y: 4, name: 'くまさん', letter: 'B', talk: [['くまさん', 'はちみつ、あまくて おいしかった！ ありがとう！']], talkWhen: { quest: 'honey' } },
   { id: 'cat', kind: 'cat', x: 22, y: 4, name: 'ねこさん', letter: 'C' },
   { id: 'dog', kind: 'dog', x: 5, y: 19, name: 'いぬさん', letter: 'D' },
   { id: 'elephant', kind: 'elephant', x: 21, y: 20, name: 'ぞうさん', letter: 'E' },
@@ -79,6 +82,8 @@ export const ITEMS = {
 export const INV = {
   apple: { name: 'りんご', art: 'apple' },
   bridgeKey: { name: 'はしの かぎ', art: 'key' },
+  honey: { name: 'はちみつ', art: 'honey' },
+  applebasket: { name: 'りんごの かご', art: 'basket' },
 };
 
 export const STORY = {
@@ -113,5 +118,5 @@ export const STORY = {
   chestLocked: [['', 'たからばこ だ。でも まだ あかない みたい……'], ['', 'もじを 2つ おぼえてから きてね。']],
   chestStart: [['', 'たからばこ だ！ もじの クイズに 3もん こたえると あくよ。']],
   chestOpened: [['', 'たからばこは からっぽ。']],
-  ending: { title: 'つづきは またこんど！', text: 'ことばの まほうで はなばたけを げんきに して、ハチさんも よべたね！ つぎは こもじの もりの ぼうけん！' },
+  ending: { title: 'アルファベット ぜんぶ クリア！', text: 'A から Z まで ぜんぶの もじを おぼえて、ことばの まほうで みんなを たすけたね！ つぎは「こもじの もり」の ぼうけん！ つづきは またこんど！' },
 };

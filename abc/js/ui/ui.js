@@ -9,7 +9,7 @@ import * as input from '../engine/input.js';
 const $ = s => document.querySelector(s);
 const layer = () => $('#layer');
 const h = (html) => { const d = document.createElement('div'); d.innerHTML = html.trim(); return d.firstElementChild; };
-const SPEAKER_KIND = { 'ラビ': 'rabbit', 'ありさん': 'ant', 'くまさん': 'bear', 'ねこさん': 'cat', 'いぬさん': 'dog', 'ぞうさん': 'elephant', 'ドラコ': 'dragon', 'チュチュ': 'mouse', 'きみ': 'fox' };
+export const SPEAKER_KIND = { 'ラビ': 'rabbit', 'ありさん': 'ant', 'くまさん': 'bear', 'ねこさん': 'cat', 'いぬさん': 'dog', 'ぞうさん': 'elephant', 'ドラコ': 'dragon', 'チュチュ': 'mouse', 'きみ': 'fox' };
 const SPEAKER_ICON = `<svg viewBox="0 0 24 24" width="30" height="30"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
 export const STAR_SVG = `<svg viewBox="0 0 24 24"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3 6.1 20.6l1.3-6.6L2.5 9.4l6.6-.8z" fill="#ffd34f" stroke="#e5a91c" stroke-width="1.5" stroke-linejoin="round"/></svg>`;
 

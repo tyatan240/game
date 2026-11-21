@@ -193,3 +193,14 @@ body.portrait #goal{top:max(96px,calc(env(safe-area-inset-top) + 90px))}
 .go{white-space:nowrap}
 .magic .row2{flex-wrap:wrap}
 @media (max-width:480px){.magic .row2 .go{padding:8px 12px;font-size:16px}.magic h2{font-size:20px}}
+
+/* エリアの なまえ・きりかえ */
+#areaName{position:fixed;top:38%;left:50%;transform:translate(-50%,-50%);font-weight:800;font-size:min(9vh,40px);color:#fff;-webkit-text-stroke:2.5px #4a3a3a;paint-order:stroke fill;opacity:0;pointer-events:none;white-space:nowrap}
+#areaName.show{animation:areaShow 2.6s ease forwards}
+@keyframes areaShow{0%{opacity:0;transform:translate(-50%,-30%)}15%,75%{opacity:1;transform:translate(-50%,-50%)}100%{opacity:0;transform:translate(-50%,-60%)}}
+#fade{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .3s}
+#fade.on{opacity:1}
+#slots em{font-style:normal;font-weight:800;font-size:13px;color:#fff;background:rgba(0,0,0,.25);border-radius:999px;padding:2px 8px;align-self:center}
+.menu .tiles{max-height:46vh;overflow:auto}
+.magic .wcards{max-height:34vh;overflow:auto;padding:4px}
+@media (min-height:700px){.magic .wcards{max-height:40vh}}

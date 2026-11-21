@@ -157,16 +157,16 @@ areas:    ['meadow','flowerfield']      // 解放済みエリア
 - 習得した単語の場所（井戸など）を調べると、おさらいクイズを「する／しない」で選べる（強制しない）。
 - 旧MVPのセーブ（門の向こうにいた場合）は、続きから始めると門の手前に戻る。
 
+## 11-3. 追加実装：アルファベット F〜Z と組み合わせ（実装済み）
+- 「A〜Zを4〜5文字ずつ段階的に」の方針どおり、しまの先に4つのエリアを追加（F〜J／K〜O／P〜T／U〜Z）。各エリア：文字を教える動物 → クエスト → もじの もん（5問のおさらい）
+- 12章の組み合わせのうち、SUN＋FLOWER・APPLE＋BASKET・KEY＋DOOR・DOG＋BONE・FISH＋WATER・CAT＋MILK・BIRD＋TREE・RED／BLUE＋FLOWER・BEE＋HONEY を実装（単語は全17語）
+- FLOWER・WATER・APPLE は後のエリアでも再び使う（自然な復習）
+- 最後は おしろの もんで A〜Z から苦手を優先した6問 →「アルファベット ぜんぶ クリア！」。次は ワールド2「こもじの もり」
+
 ## 12. 将来の単語・組み合わせの例
 | 組み合わせ | 効果 | 場所の例 |
 |---|---|---|
-| BEE + HONEY | ハチミツを集める（第4クエスト候補） | 花畑の巣箱 |
-| SUN + FLOWER | しおれた花を元気にする | 日陰の花壇 |
-| APPLE + BASKET | りんごをたくさん運ぶ | りんご園 |
-| KEY + DOOR | 扉を開ける | お城・小屋 |
-| DOG + BONE | 犬が道案内してくれる | どうぶつ村 |
-| FISH + WATER | 魚を池に戻す | 池 |
-| CAT + MILK | ねこが仲間になる | 村の家 |
-| BIRD + TREE | 鳥が巣を作り、高い所の物を取ってくれる | 森 |
-| RED / BLUE + FLOWER | 花の色を変える（色の単語） | フルーツタウン手前 |
+| ~~BEE＋HONEY・SUN＋FLOWER・APPLE＋BASKET・KEY＋DOOR・DOG＋BONE・FISH＋WATER・CAT＋MILK・BIRD＋TREE・RED／BLUE＋FLOWER~~ | 実装済み（11-3） | |
+| YELLOW / PINK + FLOWER | 花の色を増やす | にわ |
+| MOON + STAR | 夜の道を照らす | こもじの もり |
 | CAKE + CANDLE | お誕生日会（ことばのお城の総復習） | お城 |
