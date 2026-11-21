@@ -1,5 +1,5 @@
 // オフラインで あそべるように ファイルを キャッシュする（ぜんぶの へや きょうつう）
-const CACHE='moko-house-v1';
+const CACHE='moko-house-v2';
 const ASSETS=['./','./index.html','./manifest.json','./icon-180.png','./icon-192.png','./icon-512.png',
   './common/core.js','./common/style.css','./common/piko-192.png',
   './sansu/','./sansu/index.html','./kokugo/','./kokugo/index.html','./program/','./program/index.html'];
