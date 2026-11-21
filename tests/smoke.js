@@ -105,6 +105,17 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
   }
 
+  console.log('6. ABCぼうけん：まえの ばんの セーブ（MVP クリアずみ）から つづきを あそべる');
+  {
+    const p = await page({ width: 844, height: 390 }); await p.goto(B + 'abc/index.html');
+    await p.evaluate(() => localStorage.setItem('abc-adventure-v1', JSON.stringify({ v: 1, t: 1, started: true, hero: { x: 33.5, y: 11.8, dir: 'right' }, stars: 9, learned: ['A', 'B', 'C', 'D', 'E'], flags: { intro: true, bossCleared: true, bridgeOpen: true, ending: true }, chests: { chest1: true }, items: ['scarf'], wear: { scarf: true, hat: false }, records: { A: { asked: 3, correct: 3, streak: 3, level: 2, due: 0 } }, settings: { bgm: false, se: true, voice: true } })));
+    await p.reload(); await p.waitForTimeout(400); await p.click('#cont'); await p.waitForTimeout(400);
+    const r = await p.evaluate(() => ({ stars: __abc.S.stars, x: Math.floor(__abc.hero.x / 32), goal: __abc.objective().text, rec: __abc.S.records.A.correct, scarf: __abc.S.wear.scarf, bgm: __abc.S.settings.bgm }));
+    ok(r.stars === 9 && r.rec === 3 && r.scarf && r.bgm === false, 'ほし・きろく・きがえ・せっていが のこる ' + JSON.stringify(r));
+    ok(r.x < 28 && r.goal.includes('ラビ'), 'もんの てまえに もどり、つぎの もくてきが でる');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+  }
+
   await browser.close(); server.close();
   console.log(failed ? `\n${failed}こ しっぱい` : '\nぜんぶ OK');
   process.exit(failed ? 1 : 0);

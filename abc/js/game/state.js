@@ -14,7 +14,14 @@ export function defaultState() {
     chests: {},           // あけた たからばこ
     items: [],            // もっている アイテム
     wear: { scarf: false, hat: false },
-    records: {},          // がくしゅう きろく（もじ ごと）
+    records: {},          // がくしゅう きろく（もじ ごと。たんごは 'w:apple' の ように w: を つける）
+    // ↓ ことばの まほう（v1 の あとから ついか。ふるい データには load() で おぎなう）
+    words: {},            // おぼえた たんご { water: { at: じこく } }（＝まほうが つかえる）
+    combos: [],           // みつけた くみあわせ
+    quests: {},           // クエストの すすみ { apple: 'harvest', flowers: 'done' }（がくしゅう きろくとは べつ）
+    inv: {},              // クエストの もちもの { apple: 1, bridgeKey: 1 }（きがえの items とは べつ）
+    world: {},            // マップの へんか { gate: 'open', flowerbed: 'bloom', vines: 'open', bees: true }
+    areas: ['meadow'],    // いける ばしょ
     settings: { bgm: true, se: true, voice: true },
   };
 }
@@ -27,7 +34,9 @@ export function load() {
     // たりない こうもくは しょきち で おぎなう（ふるい データでも こわれない）
     return { ...base, ...d, hero: { ...base.hero, ...d.hero }, flags: { ...d.flags }, chests: { ...d.chests },
       wear: { ...base.wear, ...d.wear }, records: { ...d.records }, settings: { ...base.settings, ...d.settings },
-      learned: Array.isArray(d.learned) ? d.learned : [], items: Array.isArray(d.items) ? d.items : [] };
+      learned: Array.isArray(d.learned) ? d.learned : [], items: Array.isArray(d.items) ? d.items : [],
+      words: { ...d.words }, quests: { ...d.quests }, inv: { ...d.inv }, world: { ...d.world },
+      combos: Array.isArray(d.combos) ? d.combos : [], areas: Array.isArray(d.areas) ? d.areas : ['meadow'] };
   } catch (e) { return base; }
 }
 

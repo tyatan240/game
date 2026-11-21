@@ -1,19 +1,22 @@
 // ちず・あたりはんてい・しらべる あいて（ひょうじは しない）
 import { TS } from '../engine/art.js';
-import { MAP, NPCS, SIGNS, CHESTS } from '../data/world1.js';
+import { MAP, NPCS, SIGNS, CHESTS, OBJECTS } from '../data/world1.js';
 
 export const W = MAP[0].length, H = MAP.length;
 export const tileAt = (x, y) => (x < 0 || y < 0 || x >= W || y >= H) ? 'T' : MAP[y][x];
 const SOLID = new Set(['T', 'b', 'r', 'F', 'h', '~']);
 export const isWater = (x, y) => { const c = tileAt(x, y); return c === '~' || c === '=' || c === 'p'; };
-export const isPath = (x, y) => tileAt(x, y) === ':';
+export const isPath = (x, y) => { const c = tileAt(x, y); return c === ':' || c === 'g' || c === 'v'; };
 
-export function bossPos(st) { const b = NPCS.find(n => n.boss); return st.flags.bossCleared ? { x: b.x, y: b.y - 1 } : { x: b.x, y: b.y }; }
+// じょうたいで ばしょが かわる キャラ（after）
+export function npcPos(n, st) { return n.after && st.flags[n.after.flag] ? { x: n.after.x, y: n.after.y } : { x: n.x, y: n.y }; }
+export function bossPos(st) { return npcPos(NPCS.find(n => n.boss), st); }
 
 // しらべられる もの（キャラ・かんばん・たからばこ）
 export function things(st) {
   return [
-    ...NPCS.map(n => ({ type: 'npc', ref: n, ...(n.boss ? bossPos(st) : { x: n.x, y: n.y }) })),
+    ...NPCS.map(n => ({ type: 'npc', ref: n, ...npcPos(n, st) })),
+    ...OBJECTS.map(o => ({ type: 'obj', ref: o, x: o.x, y: o.y, w: o.w || 1, h: o.h || 1 })),
     ...SIGNS.map(s => ({ type: 'sign', ref: s, x: s.x, y: s.y })),
     ...CHESTS.map(c => ({ type: 'chest', ref: c, x: c.x, y: c.y })),
   ];
@@ -22,8 +25,11 @@ export function things(st) {
 export function solidAt(tx, ty, st) {
   const c = tileAt(tx, ty);
   if (c === '=') return !st.flags.bridgeOpen;
+  if (c === 'g') return st.world.gate !== 'open';
+  if (c === 'v') return st.world.vines !== 'open';
+  if (c === 'f') return true;
   if (SOLID.has(c)) return true;
-  return things(st).some(t => t.x === tx && t.y === ty);
+  return things(st).some(t => t.ref.kind !== 'gate' && inside(t, tx, ty));
 }
 
 // しゅじんこう：x はまんなか、y はあしもと（ろんり たんい）
@@ -55,18 +61,23 @@ export function move(hero, dir, dist, st) {
   return moved;
 }
 
+export const inside = (t, x, y) => x >= t.x && x < t.x + (t.w || 1) && y >= t.y && y < t.y + (t.h || 1);
+// めじるしを だす いち（ひろい ものは まんなかの うえ）
+export const markPos = t => ({ x: t.x + (t.w || 1) / 2, y: t.y });
 export const heroTile = hero => ({ x: Math.floor(hero.x / TS), y: Math.floor((hero.y - 4) / TS) });
 
 // まえに ある しらべられる もの
 export function facing(hero, st) {
   const t = heroTile(hero), [dx, dy] = DIRV[hero.dir];
   const list = things(st);
-  const front = list.find(o => o.x === t.x + dx && o.y === t.y + dy);
+  const front = list.find(o => inside(o, t.x + dx, t.y + dy) && !(o.ref.kind === 'gate' && st.world.gate === 'open'));
   if (front) return front;
   // ちかくに いれば むきが ずれていても OK
   let best = null, bd = 1.35;
   for (const o of list) {
-    const d = Math.hypot((o.x + 0.5) * TS - hero.x, (o.y + 0.8) * TS - hero.y) / TS;
+    if (o.ref.kind === 'gate' && st.world.gate === 'open') continue;
+    const cx = Math.max(o.x, Math.min(o.x + (o.w || 1) - 1, Math.floor(hero.x / TS))), cy = Math.max(o.y, Math.min(o.y + (o.h || 1) - 1, Math.floor((hero.y - 4) / TS)));
+    const d = Math.hypot((cx + 0.5) * TS - hero.x, (cy + 0.8) * TS - hero.y) / TS;
     if (d < bd) { bd = d; best = o; }
   }
   return best;

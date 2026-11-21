@@ -25,7 +25,7 @@ docs/           詳細仕様（下記）
 - `docs/save-data.md` … セーブデータの形式と互換ルール
 - `docs/dev-guide.md` … 実行・テスト・公開・新しいゲームの追加手順
 - `abc/README.md` … ABCぼうけんの構成・学習記録・データの足し方
-- `docs/abc-kotoba-mahou-spec.md` … ABCぼうけん次期仕様「ことばの まほう」＋「くみあわせ」（未実装・11章の確認事項あり）
+- `docs/abc-kotoba-mahou-spec.md` … ABCぼうけん「ことばの まほう」＋「くみあわせ」の仕様・決定事項・実装メモ（実装済み）
 
 ## 実行・テスト
 - ローカル実行：`python3 -m http.server 8000` → `http://localhost:8000/`（`file://` では部屋間のリンクが動かない）
@@ -51,5 +51,6 @@ docs/           詳細仕様（下記）
 星を共通化する場合は `moko-math-v1` の `points` に加算するだけ（形は変えない）。詳細は `docs/dev-guide.md`。
 
 ## 未対応・メモ
-- ABCぼうけん：おうちからの入口・星の共通化・manifest の向き（今は portrait 固定）・`sw.js` の ASSETS 追加と SW 登録は未実装（PR #5 で提案済み、ユーザー確認待ち）
+- ABCぼうけん：おうちからの入口・星の共通化（最終的に おべんきょうハウスへ移す方針、今は繋げない）・manifest の向き（今は portrait 固定）・`sw.js` の ASSETS 追加と SW 登録は未実装
+- ABCぼうけん：単語・組み合わせ・クエストはデータ追加だけで増やせる（`abc/README.md`）。HONEY クエストはデータの入れ物のみ
 - iPad でホーム画面アプリが別スコープになる問題があったため、アイコンは必ずトップ（`/game/`）から追加してもらう
