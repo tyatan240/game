@@ -1,0 +1,109 @@
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; overflow: hidden; touch-action: manipulation; }
+body {
+  font-family: "M PLUS Rounded 1c", system-ui, sans-serif; color: #3f5566;
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+  background: linear-gradient(#bfe6ff, #eaf7ff 70%, #f4fbff);
+}
+#app { position: fixed; inset: 0; }
+#cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+button { font: inherit; }
+
+/* うえの バー */
+.top {
+  position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 8px;
+  padding: calc(8px + env(safe-area-inset-top)) calc(10px + env(safe-area-inset-right)) 8px calc(10px + env(safe-area-inset-left));
+  pointer-events: none;
+}
+.top > * { pointer-events: auto; }
+.ttl { flex: 0 1 auto; margin: 0 auto; padding: 4px 14px; border-radius: 999px; background: rgba(255,255,255,.75); text-align: center; font-weight: 800; font-size: 16px; color: #2b7fa8; pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+  border: 0; background: #fff; border-radius: 999px; min-width: 44px; height: 44px; padding: 0 12px;
+  font-weight: 800; font-size: 15px; color: #2b7fa8; box-shadow: 0 3px 0 #9fd9f2; text-decoration: none; cursor: pointer;
+}
+.btn.ic { padding: 0; width: 44px; }
+.btn:active, .mode:active, .blk:active, .okbtn:active, .big:active { transform: translateY(2px); box-shadow: 0 1px 0 #9fd9f2; }
+.btn:disabled { opacity: .4; }
+
+/* よこの ボタン */
+.side { position: absolute; top: calc(64px + env(safe-area-inset-top)); display: flex; flex-direction: column; gap: 8px; }
+.side.left { left: calc(10px + env(safe-area-inset-left)); }
+.side.right { right: calc(10px + env(safe-area-inset-right)); }
+.mode {
+  width: 60px; height: 56px; border: 3px solid transparent; border-radius: 16px; background: #fff; color: #2b7fa8;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
+  font-weight: 800; font-size: 13px; box-shadow: 0 3px 0 #9fd9f2; cursor: pointer;
+}
+.mode.on { border-color: #2b9fd6; background: #e3f5ff; }
+#mErase.on { border-color: #e2575f; background: #ffe9ea; color: #c63d46; }
+.mode[hidden] { display: none; }
+
+/* ここに おく */
+.okbtn {
+  position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(108px + env(safe-area-inset-bottom));
+  display: flex; align-items: center; gap: 6px; border: 0; border-radius: 999px; padding: 0 22px; height: 52px;
+  background: #3dbb6a; color: #fff; font-weight: 800; font-size: 18px; box-shadow: 0 4px 0 #2a8a4c; cursor: pointer;
+}
+.okbtn:active { transform: translateX(-50%) translateY(2px); }
+.okbtn.erase { background: #e2575f; box-shadow: 0 4px 0 #a93a41; }
+.okbtn[hidden] { display: none; }
+
+/* パレット */
+.palette {
+  position: absolute; left: 0; right: 0; bottom: 0; display: flex; gap: 6px; overflow-x: auto; overscroll-behavior: contain;
+  padding: 8px calc(10px + env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) calc(10px + env(safe-area-inset-left));
+  background: rgba(255, 255, 255, .88); box-shadow: 0 -3px 0 #cfe9f6; touch-action: pan-x; scrollbar-width: none;
+  justify-content: safe center;
+}
+.palette::-webkit-scrollbar { display: none; }
+.blk {
+  flex: none; width: 70px; height: 84px; border: 3px solid transparent; border-radius: 16px; background: #f1f8fc;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2px; cursor: pointer;
+  font-weight: 800; font-size: 13px; color: #3f5566;
+}
+.blk canvas { width: 52px; height: 52px; }
+.blk.on { border-color: #2b9fd6; background: #e3f5ff; box-shadow: 0 3px 0 #9fd9f2; }
+
+/* おしらせ */
+.toast {
+  position: absolute; left: 50%; top: calc(64px + env(safe-area-inset-top)); transform: translateX(-50%);
+  background: #fff; color: #c63d46; border-radius: 999px; padding: 8px 18px; font-weight: 800; font-size: 16px;
+  box-shadow: 0 3px 0 #f1c3c6; pointer-events: none; white-space: nowrap;
+}
+.toast.good { color: #2a8a4c; box-shadow: 0 3px 0 #bfe6cb; }
+.toast[hidden] { display: none; }
+
+/* ダイアログ */
+.help { position: absolute; inset: 0; background: rgba(40, 70, 90, .35); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 10; }
+.help[hidden] { display: none; }
+.help .card { background: #fff; border-radius: 22px; padding: 16px 18px; width: min(380px, 100%); max-height: 100%; overflow: auto; box-shadow: 0 4px 0 #cfe9f6; display: flex; flex-direction: column; gap: 10px; }
+.help .h { font-weight: 800; font-size: 19px; color: #2b7fa8; text-align: center; }
+.help ol { margin: 0; padding-left: 1.4em; line-height: 1.7; font-weight: 800; }
+.help p { margin: 0; font-size: 14px; line-height: 1.6; text-align: center; }
+.big { border: 0; border-radius: 16px; height: 50px; background: #2b9fd6; color: #fff; font-weight: 800; font-size: 17px; box-shadow: 0 3px 0 #1f7aa6; cursor: pointer; }
+.big.warn { background: #e2575f; box-shadow: 0 3px 0 #a93a41; }
+.big.sub { background: #eef4f8; color: #3f5566; box-shadow: 0 3px 0 #cfdde6; }
+.nojs { position: absolute; top: 40%; width: 100%; text-align: center; }
+
+/* ひくい がめん（スマホ よこ） */
+@media (max-height: 460px) {
+  .top { padding-top: calc(4px + env(safe-area-inset-top)); padding-bottom: 4px; }
+  .btn { height: 38px; min-width: 38px; font-size: 14px; } .btn.ic { width: 38px; }
+  .side { top: calc(48px + env(safe-area-inset-top)); gap: 5px; }
+  .mode { width: 54px; height: 46px; font-size: 12px; }
+  .side.right .btn.ic { width: 36px; height: 36px; }
+  .blk { width: 58px; height: 64px; font-size: 11px; border-radius: 12px; }
+  .blk canvas { width: 40px; height: 40px; }
+  .palette { padding-top: 5px; padding-bottom: calc(5px + env(safe-area-inset-bottom)); }
+  .okbtn { bottom: calc(84px + env(safe-area-inset-bottom)); height: 44px; font-size: 16px; }
+  .toast { top: calc(48px + env(safe-area-inset-top)); }
+}
+/* せまい がめん（スマホ たて） */
+@media (max-width: 480px) {
+  .ttl { font-size: 13px; }
+  .top .btn span { display: none; }
+  #back { width: 44px; padding: 0; }
+  .palette { justify-content: flex-start; }
+}

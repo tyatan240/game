@@ -252,6 +252,82 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
   }
 
+  console.log('12. ブロックタウン（program/build/）');
+  {
+    const ctx = await browser.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true, serviceWorkers: 'block' });
+    const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
+    await p.goto(B + 'program/build/index.html');
+    await p.waitForSelector('body[data-ready="1"]', { timeout: 15000 });
+    ok(await p.evaluate(() => __build.world.count()) === 256 && await p.isVisible('#help'), 'ひらく（くさの じめん 16×16・あそびかた）');
+    await p.click('#helpOk');
+    const W = () => p.evaluate(() => __build.world.toJSON().blocks.filter(b => b[1] > 0).map(b => b.join(':')).sort().join(' '));
+    // タッチ：1かいめ プレビュー → 2かいめ おく
+    const tapTop = async (x, y, z) => { const s = await p.evaluate(a => __build.toScreen(...a), [x + .5, y + 1, z + .5]); await p.touchscreen.tap(s.x, s.y); await p.waitForTimeout(60); };
+    await p.click('.blk[data-id=stone]');
+    await tapTop(8, 0, 8);
+    ok(await p.evaluate(() => { const t = __build.ui.pending; return t && t.ok && t.x === 8 && t.y === 1 && t.z === 8 && __build.world.count() === 256; }) && await p.isVisible('#ok'), 'タップで プレビュー（まだ おかない）');
+    await tapTop(8, 0, 8);
+    ok(await W() === '8:1:8:stone', 'もういちど タップで おく');
+    await p.click('.blk[data-id=wood]'); await tapTop(8, 1, 8); await p.click('#ok');
+    await tapTop(8, 2, 8); await tapTop(8, 2, 8);
+    ok(await W() === '8:1:8:stone 8:2:8:wood 8:3:8:wood', 'つみあげる（「ここに おく」ボタンも）');
+    // おけない ところ：はなの うえ
+    await p.evaluate(() => __build.world.place(3, 1, 3, 'flower'));
+    const fl = await p.evaluate(() => __build.toScreen(3.5, 1.72, 3.5));
+    await p.touchscreen.tap(fl.x, fl.y);
+    ok(await p.evaluate(() => __build.ui.pending && !__build.ui.pending.ok && __build.ui.pending.reason === 'top') && !await p.isVisible('#ok'), 'おけない ところは あかい プレビュー ' + await p.evaluate(() => JSON.stringify(__build.ui.pending)));
+    await p.touchscreen.tap(fl.x, fl.y);
+    ok(!/3:2:3/.test(await W()), 'おけない ところには おかない');
+    // けす
+    await p.click('#mErase'); await tapTop(8, 2, 8); await tapTop(8, 2, 8);
+    ok(await W() === '3:1:3:flower 8:1:8:stone 8:2:8:wood', 'けす ' + await W());
+    await p.click('#undo');
+    ok(/8:3:8:wood/.test(await W()), 'もどす');
+    await p.click('#redo');
+    ok(!/8:3:8:wood/.test(await W()), 'やりなおす');
+    // やね（まわす）
+    await p.click('.blk[data-id=roof]'); ok(await p.isVisible('#rot'), 'やねは まわせる');
+    await p.click('#rot'); await tapTop(10, 0, 10); await tapTop(10, 0, 10);
+    ok(/10:1:10:roof:1/.test(await W()), 'むきも ほぞん');
+    // カメラ
+    const c0 = await p.evaluate(() => __build.scene.camState());
+    await p.click('#turnR'); await p.waitForTimeout(500);
+    const c1 = await p.evaluate(() => __build.scene.camState());
+    await p.click('#zIn');
+    const c2 = await p.evaluate(() => __build.scene.camState());
+    ok(Math.abs(c1.az - c0.az - Math.PI / 2) < .01 && c2.zoom > c1.zoom, 'カメラ：90ど かいてん・ズーム');
+    // まわしたあとも タップの ばしょが あう
+    await p.click('.blk[data-id=brick]'); await tapTop(2, 0, 12); await tapTop(2, 0, 12);
+    ok(/2:1:12:brick/.test(await W()), 'まわしたあとも おける');
+    await p.click('#camReset'); await p.waitForTimeout(600);
+    const c3 = await p.evaluate(() => __build.scene.camState());
+    ok(Math.abs(c3.az - Math.PI / 4) < .01 && c3.zoom === 1, 'カメラを もとに もどす');
+    // ドラッグで まわす（ブロックは おかない）
+    const before = await W();
+    await p.mouse.move(400, 200); await p.mouse.down(); await p.mouse.move(480, 200, { steps: 5 }); await p.mouse.up();
+    ok(await W() === before && Math.abs((await p.evaluate(() => __build.scene.camState())).az - c3.az) > .1, 'ドラッグは かいてんだけ');
+    // とじて また ひらいても のこる
+    const saved = await W();
+    await p.waitForTimeout(500); await p.reload(); await p.waitForSelector('body[data-ready="1"]');
+    ok(await W() === saved && !await p.isVisible('#help'), 'とじても のこる（' + saved.split(' ').length + 'こ）');
+    // IndexedDB だけ のこっていても よめる
+    await p.evaluate(() => localStorage.removeItem('robomoko-build-v1')); await p.reload(); await p.waitForSelector('body[data-ready="1"]');
+    ok(await W() === saved, 'IndexedDB からも よめる');
+    // はじめから（かくにん つき）
+    await p.click('#menu'); await p.click('#askNew'); await p.click('#newNo');
+    ok(await W() === saved, '「やめる」なら そのまま');
+    await p.click('#menu'); await p.click('#askNew'); await p.click('#newYes');
+    ok(await W() === '' && await p.evaluate(() => __build.world.count()) === 256, 'はじめから');
+    await p.click('#undo'); ok(await W() === saved, 'はじめからも もどせる');
+    // ロボット用：batch は 1かいの もどすで まとめて もどる
+    await p.evaluate(() => __build.world.batch(w => { for (let i = 0; i < 3; i++) w.place(0, 1 + i, 0, 'stone'); }));
+    await p.click('#undo'); ok(!/0:1:0/.test(await W()), 'batch は まとめて もどる');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / '));
+    // ほかの セーブには さわらない
+    ok(await p.evaluate(() => !localStorage.getItem('moko-math-v1') && !localStorage.getItem('piko-prog-v1')), 'ほかの ゲームの データに さわらない');
+    await ctx.close();
+  }
+
   await browser.close(); server.close();
   console.log(failed ? `\n${failed}こ しっぱい` : '\nぜんぶ OK');
   process.exit(failed ? 1 : 0);

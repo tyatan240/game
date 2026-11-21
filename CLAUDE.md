@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-小学1〜2年生向け学習アプリ「モコの おべんきょうハウス」。ビルドなしの静的サイト（HTML/CSS/JS のみ、外部ライブラリなし）。
+小学1〜2年生向け学習アプリ「モコの おべんきょうハウス」。ビルドなしの静的サイト（HTML/CSS/JS のみ、外部ライブラリなし。例外：`program/build/` だけ Three.js を同梱）。
 公開URL：`https://tyatan240.github.io/game/`（iPad の Safari で「ホーム画面に追加」して使われている）。
 
 **まずこのファイルと `docs/` を読む。必要がなければリポジトリ全体を再調査しない。**
@@ -11,6 +11,7 @@ index.html      おうち（トップ）：おへや（🎯きょうの もく�
 sansu/          さんすう：たし算ひき算の問題＋🏆テスト
 kokugo/         こくご：漢字よみかき・ことば・よみとり＋🏆テスト
 program/        プログラミング：ブロックでロボットを動かすパズル（独自コード）
+program/build/  ロボモコの ブロックタウン：3Dでブロックを置く町づくり（ES Modules＋Three.js。まだ未リンク。program/build/README.md）
 eigo/           えいご：「ぼうけん（abc/）」か「べんきょう（練習＋🏆テスト）」を選ぶ部屋。core.js ＋ abc のデータ・絵・音声を module で使う
 abc/            ABCぼうけん：英語の2Dアドベンチャー（独立モジュール、ES Modules。eigo/ の「ぼうけん」から入る）
 common/core.js  共通：保存・ポイント・アイテム定義・キャラ/部屋のSVG・音・ポップアップ
@@ -26,6 +27,7 @@ docs/           詳細仕様（下記）
 - `docs/save-data.md` … セーブデータの形式と互換ルール
 - `docs/dev-guide.md` … 実行・テスト・公開・新しいゲームの追加手順
 - `abc/README.md` … ABCぼうけんの構成・学習記録・データの足し方
+- `program/build/README.md` … ブロックタウンの構成・データ・保存・フェーズ2（ロボット）への準備
 - `docs/abc-kotoba-mahou-spec.md` … ABCぼうけん「ことばの まほう」＋「くみあわせ」の仕様・決定事項・実装メモ（実装済み）
 
 ## 実行・テスト
@@ -37,7 +39,7 @@ docs/           詳細仕様（下記）
 `main` にマージすると GitHub Pages（main / root）が数分で反映。作業はブランチ → PR → ユーザーがマージ。
 
 ## ⚠️ 守ること（子どものデータを壊さない）
-1. 保存キーを変えない：`moko-math-v1`（localStorage と IndexedDB `moko-house`/`kv` の両方）、`piko-prog-v1`、`abc-adventure-v1`
+1. 保存キーを変えない：`moko-math-v1`（localStorage と IndexedDB `moko-house`/`kv` の両方）、`piko-prog-v1`、`abc-adventure-v1`、`robomoko-build-v1`（localStorage と IndexedDB `robomoko-build`/`kv`）
 2. データの形は追加のみ。新項目は `defState()` に初期値＋`merge()` で補う。項目名の変更・削除をしない
 3. `ITEMS` の `id` を変えない・消さない（未知の id は持ち物から外れる）
 4. 公開URL・リポジトリ名・Pages 設定を変えない。データを消す処理を足さない（リセットは ⚙️設定のみ）
@@ -54,4 +56,5 @@ docs/           詳細仕様（下記）
 ## 未対応・メモ
 - ABCぼうけん：おうちと接続済み（入口・「おうちへ」・★→おうちの ⭐。`abc/js/game/house.js`、⚙️設定の `abcPts`）。manifest の向きは `any`。ABC のファイルを増やしたら `sw.js` の ASSETS にも足す
 - ABCぼうけん：ワールド1 は A〜Z まで実装済み（5エリア・クエスト11・組み合わせ11）。単語・組み合わせ・クエスト・エリアはデータ追加で増やせる（`abc/README.md`）。次はワールド2「こもじの もり」
+- ブロックタウン（`program/build/`）：フェーズ1（手で置く・消す・もどす・カメラ・保存）まで。入口リンクはまだない。次はフェーズ2（ロボモコにプログラムで作らせる）
 - iPad でホーム画面アプリが別スコープになる問題があったため、アイコンは必ずトップ（`/game/`）から追加してもらう
