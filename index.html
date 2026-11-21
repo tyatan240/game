@@ -83,7 +83,7 @@ function study(){
  ${card('sansu/index.html','✏️','#ffe3ea','さんすう','#c8577f','たしざん・ひきざん、🏆テストで とくべつな アイテム')}
  ${card('kokugo/index.html','📖','#e3f4e8','こくご','#3f9a63','かん字・ことば・よみとり、🏆テストで とくべつな アイテム')}
  ${card('program/index.html','🤖','#dff3fc','プログラミング','#2b7fa8','ブロックを ならべて ロボットの ピコを うごかそう')}
- ${card('abc/index.html','🔤','#fff0d6','えいご（ABCぼうけん）','#d9822b','えいごの もじと ことばで ぼうけん！ よこむきが おすすめ')}`}
+ ${card('eigo/index.html','🔤','#fff0d6','えいご','#d9822b','ぼうけん（ABCぼうけん）と、れんしゅう・🏆テスト')}`}
 /* ---------- 🎰 ガチャ ---------- */
 let gSpin=false;
 const gToday=()=>{if(S.gacha.day!==today()){S.gacha.day=today();S.gacha.count=0}return S.gacha.count};
@@ -139,9 +139,10 @@ function shop(){
  </div>${tl.length?`<h2 style="font-size:15px;margin-top:16px">🏆 テストで もらえる アイテム</h2><div class="items">
  ${tl.map(it=>{const own=S.owned.includes(it.id);return `<button class="item ${own?'own':'lock'}" data-act="${own?'buy':'tinfo'}" data-arg="${own?it.id:it.test}">${thumb(it)}<div class="n">${it.name}</div><div class="p">${own?'✔ もってる':'🏆 テストで ゲット'}</div></button>`}).join('')}</div>`:''}`}
 function testInfo(key){
- const {tid,lv}=parseKey(key),it=testItem(key),k=!!KTYPE[tid],on=(k?S.settings.ktypes:S.settings.types)[tid].on;
- showPop(`<div style="width:110px;margin:0 auto">${thumb(it)}</div><h3>${it.name}</h3><div>「${(k?KTYPE:TYPE)[tid].name}」（${k?'こくご':'さんすう'}）の<br>${TLV[lv].medal} ${TLV[lv].name}に ごうかく すると もらえるよ！</div>${on?'':'<div class="muted">（いまは この もんだいが オフに なっています）</div>'}
- <div class="btns"><button class="big gray" data-act="close">とじる</button>${on?`<a class="big" href="${k?'kokugo':'sansu'}/index.html#tests">テストへ 🏆</a>`:''}</div>`)}
+ const {tid,lv}=parseKey(key),it=testItem(key),sub=KTYPE[tid]?'k':ETYPE[tid]?'e':'t';
+ const T={t:[TYPE,'types','さんすう','sansu'],k:[KTYPE,'ktypes','こくご','kokugo'],e:[ETYPE,'etypes','えいご','eigo']}[sub],on=S.settings[T[1]][tid].on;
+ showPop(`<div style="width:110px;margin:0 auto">${thumb(it)}</div><h3>${it.name}</h3><div>「${T[0][tid].name}」（${T[2]}）の<br>${TLV[lv].medal} ${TLV[lv].name}に ごうかく すると もらえるよ！</div>${on?'':'<div class="muted">（いまは この もんだいが オフに なっています）</div>'}
+ <div class="btns"><button class="big gray" data-act="close">とじる</button>${on?`<a class="big" href="${T[3]}/index.html#tests">テストへ 🏆</a>`:''}</div>`)}
 function buy(id){
  const it=ITEM[id];
  if(S.owned.includes(id)){wear(id);showPop(`${it.cat==='furn'||it.cat==='wall'||it.cat==='floor'?'':charSVG(S.equip,'happy','hop')}<h3>${it.name}</h3><div>${it.cat==='furn'?(S.furn.includes(id)?'おへやに おいたよ！':'おへやから しまったよ'):it.cat==='char'?'いっしょに あそぼう！':'つけたよ！'}</div><div class="btns"><button class="big" data-act="close">OK</button></div>`);return}
@@ -187,6 +188,8 @@ function settings(){
  ${KTYPES.map(t=>`<div class="row"><button class="sw ${s.ktypes[t.id].on?'on':''}" data-act="ktg" data-arg="${t.id}" aria-label="${t.name}"></button><div class="lbl"><b>${t.name}</b><small>れい：${t.ex}</small></div>${stepper('k:'+t.id,'⭐'+s.ktypes[t.id].pts)}</div>`).join('')}</div>
  <div class="card"><b>🤖 プログラミング</b>
  <div class="row"><div class="lbl"><b>ステージの ★1つ あたりの ポイント</b><small>はじめて とった ★ だけ もらえます（1ステージ さいだい ★3）</small></div>${stepper('progPts','⭐'+s.progPts)}</div></div>
+ <div class="card"><b>🔤 えいごの もんだいと ポイント</b><div class="muted" style="text-align:left">ABCぼうけんで おぼえた もじ・ことばから でます（3こ いじょう おぼえると あそべます）</div>
+ ${ETYPES.map(t=>`<div class="row"><button class="sw ${s.etypes[t.id].on?'on':''}" data-act="etg" data-arg="${t.id}" aria-label="${t.name}"></button><div class="lbl"><b>${t.name}</b><small>れい：${t.ex}</small></div>${stepper('e:'+t.id,'⭐'+s.etypes[t.id].pts)}</div>`).join('')}</div>
  <div class="card"><b>🔤 えいご（ABCぼうけん）</b>
  <div class="row"><div class="lbl"><b>ABCぼうけんの ★1つ あたりの ポイント</b><small>ABCぼうけんで あつめた ★が、この かずの ⭐に なって とどきます</small></div>${stepper('abcPts','⭐'+s.abcPts)}</div></div>
  <div class="card">
@@ -217,7 +220,7 @@ const bkDec=t=>JSON.parse(decodeURIComponent(escape(atob(t.replace(/\s/g,'')))))
 const LIM={perRound:[3,20],perfect:[0,50],daily:[0,50],t:[0,20],practiceMul:[1,5],practiceBonus:[0,50],progPts:[0,10],abcPts:[0,30],gachaCost:[10,500],gachaDaily:[0,10]};
 function stepSet(arg){
  const [k,d]=arg.split('|'),dd=Number(d);
- if(k.startsWith('t:')||k.startsWith('k:')){const o=S.settings[k[0]==='t'?'types':'ktypes'][k.slice(2)];o.pts=Math.max(LIM.t[0],Math.min(LIM.t[1],o.pts+dd))}
+ if(k.startsWith('t:')||k.startsWith('k:')||k.startsWith('e:')){const o=S.settings[{t:'types',k:'ktypes',e:'etypes'}[k[0]]][k.slice(2)];o.pts=Math.max(LIM.t[0],Math.min(LIM.t[1],o.pts+dd))}
  else{const [lo,hi]=LIM[k];S.settings[k]=Math.max(lo,Math.min(hi,S.settings[k]+dd))}
  save();sTap();render()}
 
@@ -244,6 +247,7 @@ Object.assign(ACT,{
  gate,gateok:gateOk,
  tg:a=>{S.settings.types[a].on=!S.settings.types[a].on;save();sTap();render()},
  ktg:a=>{S.settings.ktypes[a].on=!S.settings.ktypes[a].on;save();sTap();render()},
+ etg:a=>{S.settings.etypes[a].on=!S.settings.etypes[a].on;save();sTap();render()},
  spin,
  gtg:()=>{S.settings.gachaOn=!S.settings.gachaOn;save();sTap();render()},
  gwear:a=>{closePop();const it=ITEM[a];if(it.cat==='furn'){if(!S.furn.includes(a))S.furn.push(a)}else S.equip[it.cat]=a;save();sTap();if(it.cat==='furn'||it.cat==='wall'||it.cat==='floor')go('home');else{dressTab='moko';go('dress')}},

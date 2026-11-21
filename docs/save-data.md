@@ -16,12 +16,12 @@
   points: 星（共通ポイント）,
   owned: [持っているアイテムid…], equip:{char,outfit,hat,acc,wall,floor}, furn:[置いている家具id…],
   settings:{
-    types:{add1:{on,pts},…}, ktypes:{k1yomi:{on,pts},…},
+    types:{add1:{on,pts},…}, ktypes:{k1yomi:{on,pts},…}, etypes:{ealisten:{on,pts},…},
     perRound, perfect, daily, sound, testScale, practiceMul, practiceBonus,
     progPts, gachaOn, gachaCost, gachaDaily, abcPts
   },
   lastDay:'YYYY-M-D'（ログインボーナス）,
-  stats:{q,ok}（さんすう）, kstats:{q,ok}（こくご）,
+  stats:{q,ok}（さんすう）, kstats:{q,ok}（こくご）, estats:{q,ok}（えいご）,
   tests:{'add1-1':{pass,best}, 'k1yomi-2':{…}, …},
   gacha:{day,count,pulls}
 }

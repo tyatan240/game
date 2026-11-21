@@ -11,7 +11,8 @@ index.html      おうち（トップ）：おへや・おべんきょう入口�
 sansu/          さんすう：たし算ひき算の問題＋🏆テスト
 kokugo/         こくご：漢字よみかき・ことば・よみとり＋🏆テスト
 program/        プログラミング：ブロックでロボットを動かすパズル（独自コード）
-abc/            ABCぼうけん：英語の2Dアドベンチャー（独立モジュール、ES Modules。おうちの おべんきょうから入る）
+eigo/           えいご：「ぼうけん（abc/）」か「べんきょう（練習＋🏆テスト）」を選ぶ部屋。core.js ＋ abc のデータ・絵・音声を module で使う
+abc/            ABCぼうけん：英語の2Dアドベンチャー（独立モジュール、ES Modules。eigo/ の「ぼうけん」から入る）
 common/core.js  共通：保存・ポイント・アイテム定義・キャラ/部屋のSVG・音・ポップアップ
 common/style.css 共通の見た目
 sw.js           Service Worker（全部屋のオフライン用）。sansu/sw.js・program/sw.js は旧版の片付け専用

@@ -29,6 +29,12 @@
 - 🏆テスト：種類×3段階。制限時間＝問題数×`TBASE[種類]`×段階倍率×`testScale`。間違えるとやり直しなし。合格で限定アイテム（`ITEMS` の `test:'種類-段階'`）。前の段階に合格すると次が開く。練習モードはポイント×`practiceMul`、合格ライン到達で `practiceBonus`。
 - こくごの問題データは `kokugo/index.html` 内の `K1`・`K2`（漢字語 [漢字,よみ]）、`KOTOBA`（[問題,正解,誤答…]）、`STORIES`（よみとり）。`makeQ(種類)` が4択を作る。
 
+### えいご（`eigo/`）
+- 最初の画面で「ぼうけんに いく」（`abc/`）か「べんきょう する」を選ぶ。べんきょうは さんすう・こくごと同じ（練習＋🏆テスト、限定アイテム）。
+- 問題の種類は core.js の `ETYPES`（もじを きいて えらぶ／もじの よみかた／ことばを きいて えらぶ／えを みて えいご）。問題は ABCぼうけんで覚えた文字・単語（`abc-adventure-v1` の `learned`・`words`）から、苦手優先で出す。3つ以上覚えた種類だけ遊べる。
+- ページの処理は `<script type="module">`（abc の `letters.js`・`words.js`・`art.js`・`audio.js`・`learning.js` を import）。core.js のグローバル（`S`・`ACT` など）もそのまま使う。
+- 結果は ABCぼうけんの学習記録（`records`）にも書く（records 以外は触らない）。テスト用の入口は `window.__eigo`。
+
 ### プログラミング（`program/`）
 - 12ステージ（`LEVELS`：`#`壁 `S`スタート `G`ゴール `*`星。`loop:true` で「くりかえし」ブロック解禁）。
 - クリアの★（1〜3）は `piko-prog-v1` の `best`。初めて取った★1つにつき `settings.progPts`（既定3）の共通ポイント。
