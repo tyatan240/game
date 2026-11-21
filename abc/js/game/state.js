@@ -1,0 +1,39 @@
+// セーブデータ（この たんまつの なかに ほぞん）
+// ※ おべんきょうハウス の データ（moko-math-v1）とは べつ。ほしの きょうつうかは あとの こうていで おこなう
+import { newRecord } from './learning.js';
+export const SAVE_KEY = 'abc-adventure-v1';
+
+export function defaultState() {
+  return {
+    v: 1, t: 0,
+    started: false,
+    hero: { x: 0, y: 0, dir: 'down' },
+    stars: 0,
+    learned: [],          // おぼえた もじ（どうぶつの クイズに こたえた もの）
+    flags: {},            // intro / bridgeOpen / bossCleared / ending など
+    chests: {},           // あけた たからばこ
+    items: [],            // もっている アイテム
+    wear: { scarf: false, hat: false },
+    records: {},          // がくしゅう きろく（もじ ごと）
+    settings: { bgm: true, se: true, voice: true },
+  };
+}
+
+export function load() {
+  const base = defaultState();
+  try {
+    const d = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
+    if (!d || typeof d !== 'object') return base;
+    // たりない こうもくは しょきち で おぎなう（ふるい データでも こわれない）
+    return { ...base, ...d, hero: { ...base.hero, ...d.hero }, flags: { ...d.flags }, chests: { ...d.chests },
+      wear: { ...base.wear, ...d.wear }, records: { ...d.records }, settings: { ...base.settings, ...d.settings },
+      learned: Array.isArray(d.learned) ? d.learned : [], items: Array.isArray(d.items) ? d.items : [] };
+  } catch (e) { return base; }
+}
+
+export function save(st) {
+  st.t = Date.now();
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(st)); } catch (e) { /* ほぞん できない ときは なにも しない */ }
+}
+
+export function getRecord(st, id) { return st.records[id] || newRecord(); }

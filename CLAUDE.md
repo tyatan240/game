@@ -7,6 +7,7 @@
 - `sansu/`・`kokugo/`・`program/`：各部屋。`common/core.js` と `common/style.css` を共有（`program/` だけは独自コードで、ポイントの読み書きのみ共有データを使う）
 - `common/core.js`：保存データ（`defState`/`merge`/`save`）、アイテム（`ITEMS`）、キャラ・部屋の SVG、音、ポップアップ
 - `sw.js`：ルートの Service Worker（全部屋ぶん）。`sansu/sw.js`・`program/sw.js` は古い版を片付けるためだけのファイルなので消さない
+- `abc/`：ABCぼうけん（英語の 2D アドベンチャー）。**独立モジュール**で `common/` を使わず、保存も別（`abc-adventure-v1`）。構成は `abc/README.md`。ほしの共通化は未実装（やるときは上のデータ保護ルールに従う）
 - 画面の文字はひらがな中心（子ども向け）。漢字を使うのは保護者向けの部分だけ
 
 ## ⚠️ 保存データを壊さないこと（最重要）
