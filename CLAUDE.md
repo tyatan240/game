@@ -25,6 +25,7 @@ docs/           詳細仕様（下記）
 - `docs/save-data.md` … セーブデータの形式と互換ルール
 - `docs/dev-guide.md` … 実行・テスト・公開・新しいゲームの追加手順
 - `abc/README.md` … ABCぼうけんの構成・学習記録・データの足し方
+- `docs/abc-kotoba-mahou-spec.md` … ABCぼうけん次期仕様「ことばの まほう」＋「くみあわせ」（未実装・11章の確認事項あり）
 
 ## 実行・テスト
 - ローカル実行：`python3 -m http.server 8000` → `http://localhost:8000/`（`file://` では部屋間のリンクが動かない）
