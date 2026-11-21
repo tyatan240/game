@@ -11,7 +11,7 @@ import { SPELLS } from './data/combos.js';
 import { START, ITEMS, INV, STORY } from './data/world1.js';
 import { AREAS, ORDER, CHAPTER, WHERE } from './data/areas.js';
 import { W, H, area, setArea, tileAt, isWater, isPath, things, move, facing, heroTile, markPos, exitAt, exitOpen, isOpenGate, vinesKey, solidAt, inside } from './game/world.js';
-import { load, save, defaultState, getRecord } from './game/state.js';
+import { load, save, replayState, getRecord } from './game/state.js';
 import { record, pickTargets, choiceCount, levelOf } from './game/learning.js';
 import { letterQuestion, wordQuestion, shuffle } from './game/quiz.js';
 import { activeQuests, currentStep, stepFor, advance, objective, QUEST } from './game/quests.js';
@@ -518,9 +518,10 @@ async function letterGate(ob) {
   await playFx('burst', 1.0, { c: center(ob) });
   S.stars += 3; persist(); await ui.starFly(3, hud);
   if (ob.final) {
-    S.flags.alphabetClear = true; persist(); hud();
+    S.flags.alphabetClear = true; S.clears = (S.clears || 0) + 1; persist(); hud();
     const r = await ui.ending(STORY.ending, S);
     if (r === 'title') toTitle();
+    else if (r === 'replay') { mode = 'title'; setTimeout(() => startGame(true, true), 50); }
   } else await ui.notice('もんが ひらいた！', `つぎは「${AREAS[ch.next].name}」へ いこう！`);
 }
 
@@ -532,9 +533,11 @@ async function openChest(c) {
   const qs = targets.map((id, i) => letterQuestion(id, S.learned, i % 2 ? 'listen' : 'find', choiceCount(S.records[id])));
   await ui.quiz(qs, { title: 'たからばこ クイズ', onAnswer: answerLog });
   S.chests[c.id] = true; sfx.chest();
-  S.stars += 1; S.items.push(c.item); S.wear[c.item] = true; persist();
+  const had = S.items.includes(c.item);
+  S.stars += 1; if (!had) S.items.push(c.item); S.wear[c.item] = true; persist();
   await ui.starFly(1, hud);
-  await ui.notice(`${ITEMS[c.item].name} を てに いれた！`, 'さっそく つけてみたよ。メニューの「もちもの」で はずせるよ。', ui.heroPic(S.wear));
+  if (had) await ui.notice('ほしを みつけた！', `${ITEMS[c.item].name}は もう もっているよ。`);
+  else await ui.notice(`${ITEMS[c.item].name} を てに いれた！`, 'さっそく つけてみたよ。メニューの「もちもの」で はずせるよ。', ui.heroPic(S.wear));
 }
 
 async function bossEvent() {
@@ -560,13 +563,15 @@ function toTitle() {
   mode = 'title';
   titleEl.classList.remove('hide');
   document.getElementById('cont').style.display = S.started ? '' : 'none';
+  document.getElementById('start').textContent = S.clears ? 'もういちど ぼうけん' : 'はじめから';
+  const cb = document.getElementById('clears'); cb.textContent = S.clears ? `🏆 クリア ${S.clears}かい` : ''; cb.style.display = S.clears ? '' : 'none';
   document.getElementById('housePts').textContent = housePoints();
   document.body.classList.add('intitle');
 }
-async function startGame(fresh) {
+async function startGame(fresh, skipAsk = false) {
   unlockAudio();
-  if (fresh && S.started && !(await ui.confirm('いまの ぼうけんの きろくを けして、さいしょから はじめる？', 'はじめる', 'やめる'))) return;
-  if (fresh) { const keep = S.settings; S = defaultState(); S.settings = keep; }
+  if (fresh && S.started && !skipAsk && !(await ui.confirm('さいしょから ぼうけん する？<br><small>おぼえた もじの きろく・ほし・きがえは のこるよ</small>', 'はじめる', 'やめる'))) return;
+  if (fresh) S = replayState(S);
   titleEl.classList.add('hide'); document.body.classList.remove('intitle');
   S.started = true;
   const useStart = fresh || !S.hero.x;

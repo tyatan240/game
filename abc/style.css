@@ -213,3 +213,7 @@ body.portrait #goal{top:max(96px,calc(env(safe-area-inset-top) + 90px))}
 #toast{position:fixed;top:max(64px,calc(env(safe-area-inset-top) + 58px));right:max(12px,env(safe-area-inset-right));background:#fffdf5;border:3px solid #ffd34f;border-radius:999px;padding:5px 14px;font-weight:800;font-size:15px;color:#c98a00;opacity:0;pointer-events:none}
 #toast.show{animation:toast 3s ease forwards}
 @keyframes toast{0%{opacity:0;transform:translateY(-10px)}12%,80%{opacity:1;transform:none}100%{opacity:0}}
+.clears{margin:0;font-weight:800;color:#fff;background:#ffb020;border-radius:999px;padding:3px 14px;box-shadow:0 3px 0 #d9901a}
+.go.replay{background:#ffb020;box-shadow:0 5px 0 #d9901a}
+.ending .row2{flex-wrap:wrap}
+@media (max-height:440px){.ending .pic{display:none}.ending p{font-size:13px;margin:2px 0}.ending .sum{margin:4px 0}.ending .sum b{font-size:18px}.ending .row2 .go{padding:8px 14px;font-size:16px}}

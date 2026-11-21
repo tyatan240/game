@@ -191,11 +191,13 @@ export function closeByMenuKey() { if (current && current.onMenu) { current.onMe
 export function ending(info, st) {
   return new Promise(resolve => {
     const el = open(h(`<div class="modal"><div class="card ending"><div class="pic"></div><h2>${info.title}</h2><p>${info.text}</p>
-      <div class="sum"><div>おぼえた もじ<b>${st.learned.join(' ')}</b></div><div>あつめた ほし<b><span class="st">${STAR_SVG}</span>${st.stars}</b></div></div>
-      <div class="row2"><button class="go gray" data-a="title">タイトルへ</button><button class="go" data-a="stay">もっと あそぶ</button></div></div></div>`), null);
+      <div class="sum"><div>おぼえた もじ<b>${st.learned.length}こ</b></div><div>あつめた ほし<b><span class="st">${STAR_SVG}</span>${st.stars}</b></div>${st.clears ? `<div>クリア<b>${st.clears}かいめ</b></div>` : ''}</div>
+      <div class="row2"><button class="go gray" data-a="title">タイトルへ</button><button class="go" data-a="stay">もっと あそぶ</button><button class="go replay" data-a="replay">もういちど さいしょから</button></div>
+      <p class="muted">もういちど あそんでも、おぼえた もじの きろく・ほし・きがえは のこるよ</p></div></div>`), null);
     el.querySelector('.pic').appendChild(heroPic(st.wear, 120));
     el.querySelector('[data-a=title]').onclick = () => { sfx.tap(); close(); resolve('title'); };
     el.querySelector('[data-a=stay]').onclick = () => { sfx.tap(); close(); resolve('stay'); };
+    el.querySelector('[data-a=replay]').onclick = () => { sfx.tap(); close(); resolve('replay'); };
   });
 }
 

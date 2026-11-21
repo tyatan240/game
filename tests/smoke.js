@@ -164,6 +164,35 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
   }
 
+  console.log('9. ABCぼうけん：クリアしたら もういちど さいしょから あそべる');
+  {
+    const p = await page({ width: 844, height: 390 }); await p.goto(B + 'abc/index.html');
+    const ALL = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+    // おしろの もんの まえ（さいごの おさらい まえ）
+    await p.evaluate(ALL => localStorage.setItem('abc-adventure-v1', JSON.stringify({ v: 1, t: 1, started: true, hero: { x: 38.5, y: 10.8, dir: 'right', area: 'garden' }, stars: 70, starsSent: 70, learned: ALL, items: ['scarf'], wear: { scarf: true, hat: false },
+      flags: { intro: true, bossCleared: true, bridgeOpen: true }, records: { A: { asked: 5, correct: 5, streak: 5, level: 2, due: 0 } }, words: { apple: { at: 1 } },
+      quests: { apple: 'done', flowers: 'done', bee: 'done', sun: 'done', dog: 'done', pie: 'done', cat: 'done', fish: 'done', bird: 'done', colors: 'done' },
+      world: { gate: 'open', gate_forest: 'open', gate_village: 'open', gate_lake: 'open' }, areas: ['island', 'forest', 'village', 'lake', 'garden'] })), ALL);
+    await p.reload(); await p.waitForTimeout(400); await p.click('#cont'); await p.waitForTimeout(600);
+    await p.evaluate(() => __abc.approach('castle')); await p.keyboard.press('Enter'); await p.waitForTimeout(300);
+    for (let k = 0; k < 200 && !await p.$('.ending'); k++) {
+      if (await p.$('.dlg')) await p.keyboard.press('Enter');
+      else if (await p.$('.quiz') && !await p.$('.ch.ok')) await p.click(`.ch[data-v="${await p.evaluate(() => __abcQ.answer)}"]`, { timeout: 1000 }).catch(() => {});
+      await p.waitForTimeout(120);
+    }
+    ok(!!await p.$('.ending') && await p.evaluate(() => __abc.S.clears === 1), 'さいごの おさらいで クリア（1かいめ）');
+    await p.click('.ending [data-a=replay]'); await p.waitForTimeout(900);
+    for (let k = 0; k < 20 && await p.$('.dlg'); k++) { await p.keyboard.press('Enter'); await p.waitForTimeout(60); }
+    await p.waitForTimeout(400);
+    const r = await p.evaluate(() => { const S = __abc.S; return { area: __abc.area(), learned: S.learned.length, quests: Object.keys(S.quests).length, gate: S.world.gate, stars: S.stars, sent: S.starsSent, rec: S.records.A && S.records.A.correct, items: S.items, clears: S.clears, goal: __abc.objective().text }; });
+    ok(r.area === 'island' && r.learned === 0 && r.quests === 0 && !r.gate, 'すすみは さいしょに もどる ' + JSON.stringify(r));
+    ok(r.stars === 73 && r.sent === 73 && r.rec >= 5 && r.items.includes('scarf') && r.clears === 1, 'ほし・がくしゅう きろく・きがえ・クリア かいすうは のこる');
+    ok(r.goal.includes('もじ'), 'もういちど もじを おぼえる ところから');
+    await p.keyboard.press('Escape'); await p.click('.menu [data-a=title]'); await p.waitForTimeout(300);
+    ok(await p.textContent('#start') === 'もういちど ぼうけん' && (await p.textContent('#clears')).includes('1'), 'タイトルに クリア かいすう');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+  }
+
   await browser.close(); server.close();
   console.log(failed ? `\n${failed}こ しっぱい` : '\nぜんぶ OK');
   process.exit(failed ? 1 : 0);
