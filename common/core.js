@@ -123,6 +123,26 @@ const ITEMS=[
  {id:'u_cactus',cat:'furn',name:'サボテン',gacha:'n',box:'120 160 36 58'},
  {id:'u_cake',cat:'furn',name:'いちごの ケーキ',gacha:'n',box:'318 254 44 48'},
  {id:'u_flowerbox',cat:'furn',name:'まどべの おはな',gacha:'n',box:'22 96 102 40'},
+
+ /* 📖 こくご テスト ごうかくで もらえる アイテム */
+ {id:'a_pencil',cat:'acc',name:'おおきな えんぴつ',test:'k1yomi-1'},
+ {id:'h_sakura',cat:'hat',name:'さくらの かみかざり',test:'k1yomi-2'},
+ {id:'u_globe',cat:'furn',name:'ちきゅうぎ',test:'k1yomi-3',box:'216 156 44 62'},
+ {id:'a_brush',cat:'acc',name:'ふで',test:'k1kaki-1'},
+ {id:'o_hakama',cat:'outfit',name:'はかま',test:'k1kaki-2'},
+ {id:'w_washi',cat:'wall',name:'わしの かべ',test:'k1kaki-3'},
+ {id:'a_fan',cat:'acc',name:'さくらの せんす',test:'k2yomi-1'},
+ {id:'h_grad',cat:'hat',name:'はかせぼう',test:'k2yomi-2'},
+ {id:'u_lantern',cat:'furn',name:'ちょうちん',test:'k2yomi-3',box:'326 0 34 72'},
+ {id:'a_scroll',cat:'acc',name:'まきもの',test:'k2kaki-1'},
+ {id:'o_yukata',cat:'outfit',name:'ゆかた',test:'k2kaki-2'},
+ {id:'f_tatami',cat:'floor',name:'たたみ',test:'k2kaki-3'},
+ {id:'a_mic',cat:'acc',name:'マイク',test:'kotoba-1'},
+ {id:'h_headphone',cat:'hat',name:'ヘッドホン',test:'kotoba-2'},
+ {id:'w_board',cat:'wall',name:'こくばんの かべ',test:'kotoba-3'},
+ {id:'a_glasses',cat:'acc',name:'まるめがね',test:'yomi-1'},
+ {id:'o_sweater',cat:'outfit',name:'ほんの セーター',test:'yomi-2'},
+ {id:'u_books',cat:'furn',name:'ほんの やま',test:'yomi-3',box:'148 248 48 54'},
 ];
 const ITEM=Object.fromEntries(ITEMS.map(i=>[i.id,i]));
 const GACHA_SR=ITEMS.filter(i=>i.gacha==='sr'),GACHA_N=ITEMS.filter(i=>i.gacha==='n');
@@ -407,8 +427,8 @@ const FURN={
 };
 function roomSVG(st,mood='normal',cls='sway'){
  const has=id=>st.furn.includes(id),f=id=>has(id)&&!(id==='u_bed'&&has('u_canopy'))?FURN[id]():'';
- return `<svg viewBox="0 0 360 300">${wallSVG(st.equip.wall)}${f('u_poster')}${f('u_shelf')}${f('u_garland')}${f('u_chandelier')}${f('u_clock')}${f('u_flowerbox')}${floorSVG(st.equip.floor)}${f('u_castle')}${f('u_rug')}${f('u_bed')}${f('u_canopy')}${f('u_carriage')}${f('u_cactus')}${f('u_lamp')}${f('u_plant')}
- <g transform="translate(118 100) scale(.62)" data-act="pet"><g class="${cls}">${charInner(st.equip,mood)}</g></g>${f('u_cushion')}${f('u_bear')}${f('u_piano')}${f('u_musicbox')}${f('u_unipl')}${f('u_trophy')}${f('u_fish')}${f('u_cake')}</svg>`}
+ return `<svg viewBox="0 0 360 300">${wallSVG(st.equip.wall)}${f('u_poster')}${f('u_shelf')}${f('u_garland')}${f('u_chandelier')}${f('u_lantern')}${f('u_clock')}${f('u_flowerbox')}${floorSVG(st.equip.floor)}${f('u_castle')}${f('u_rug')}${f('u_bed')}${f('u_canopy')}${f('u_carriage')}${f('u_cactus')}${f('u_globe')}${f('u_lamp')}${f('u_plant')}
+ <g transform="translate(118 100) scale(.62)" data-act="pet"><g class="${cls}">${charInner(st.equip,mood)}</g></g>${f('u_cushion')}${f('u_bear')}${f('u_piano')}${f('u_musicbox')}${f('u_books')}${f('u_unipl')}${f('u_trophy')}${f('u_fish')}${f('u_cake')}</svg>`}
 
 /* ---------- 🎰 ガチャ げんてい アイテムの え ---------- */
 const RB=['#ffb3cf','#ffd59a','#fff09a','#bdf0c0','#b3dcff','#d6c2ff'];
@@ -520,6 +540,57 @@ Object.assign(FURN,{
   <rect x="28" y="116" width="90" height="16" rx="3" fill="#c99a6c" stroke="#a87a4c" stroke-width="2"/>`,
 });
 
+/* ---------- 📖 こくご テストの ごほうびの え ---------- */
+const sakura=(x,y,s=1)=>`<g transform="translate(${x} ${y}) scale(${s})">${[0,72,144,216,288].map(a=>`<ellipse cx="0" cy="-6" rx="4.2" ry="6.5" fill="#ffc2d6" stroke="#f08aa8" stroke-width="1" transform="rotate(${a})"/>`).join('')}<circle r="2.4" fill="#ffd34f"/></g>`;
+Object.assign(OUTFIT,{
+ o_hakama:`<path d="M72 160 Q100 152 128 160 L130 192 L70 192 Z" fill="#ffd6e2" stroke="#f08aa8" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M86 158 L100 182 L114 158" fill="none" stroke="#fff" stroke-width="4"/>
+  <path d="M68 186 L132 186 L146 224 Q100 232 54 224 Z" fill="#8e5bb5" stroke="#6c3f92" stroke-width="3" stroke-linejoin="round"/>
+  <g stroke="#6c3f92" stroke-width="2"><line x1="86" y1="190" x2="80" y2="226"/><line x1="100" y1="190" x2="100" y2="228"/><line x1="114" y1="190" x2="120" y2="226"/></g>
+  <path d="M100 188 l-11 -7 v14z M100 188 l11 -7 v14z" fill="#ff8fb1"/><circle cx="100" cy="188" r="3.5" fill="#ff6f9a"/>`,
+ o_yukata:`<path d="M70 160 Q100 152 130 160 L140 220 Q100 228 60 220 Z" fill="#7fb0e6" stroke="#4f86c6" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M86 158 L100 180 L114 158" fill="none" stroke="#fff" stroke-width="4"/>
+  <rect x="66" y="184" width="68" height="13" fill="#ffd34f" stroke="#e5a91c" stroke-width="2"/><path d="M128 190 l14 -8 v18z" fill="#ff8fb1" stroke="#e0688f" stroke-width="1.5"/>
+  ${[[78,208],[120,212],[100,172],[86,170]].map(([x,y])=>sakura(x,y,.8).replace(/#ffc2d6/g,'#fff').replace(/#f08aa8/g,'#cfe3ff')).join('')}`,
+ o_sweater:`<path d="M68 160 Q100 152 132 160 L136 206 Q100 214 64 206 Z" fill="#ff9e7a" stroke="#e07a56" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M65 200 Q100 208 135 200 L136 208 Q100 216 64 208 Z" fill="#ffb89a" stroke="#e07a56" stroke-width="2"/>
+  <path d="M100 176 Q90 170 80 174 V194 Q90 190 100 196 Q110 190 120 194 V174 Q110 170 100 176 Z" fill="#fff" stroke="#e07a56" stroke-width="2" stroke-linejoin="round"/><line x1="100" y1="176" x2="100" y2="196" stroke="#e07a56" stroke-width="2"/>
+  <path d="M84 180 h10 M84 185 h10 M106 180 h10 M106 185 h10" stroke="#ffb89a" stroke-width="1.5"/>`,
+});
+Object.assign(HAT,{
+ h_sakura:`${sakura(128,62,1.1)}${sakura(142,74,.85)}${sakura(116,52,.75)}`,
+ h_grad:`<path d="M70 48 V64 Q100 74 130 64 V48" fill="#3d3a55" stroke="#2a2840" stroke-width="2.5"/><path d="M100 22 L156 40 L100 58 L44 40 Z" fill="#4a4766" stroke="#2a2840" stroke-width="2.5" stroke-linejoin="round"/><path d="M100 40 L146 52 V72" stroke="#ffd34f" stroke-width="2.5" fill="none"/><path d="M142 72 h8 l-2 10 h-4z" fill="#ffd34f"/><circle cx="100" cy="40" r="3" fill="#ffd34f"/>`,
+ h_headphone:`<path d="M46 108 Q46 40 100 40 Q154 40 154 108" fill="none" stroke="#ff8fb1" stroke-width="7" stroke-linecap="round"/><g fill="#ff8fb1" stroke="#e0688f" stroke-width="2.5"><rect x="34" y="92" width="20" height="32" rx="9"/><rect x="146" y="92" width="20" height="32" rx="9"/></g><path d="M44 102 v12 M156 102 v12" stroke="#fff" stroke-width="3" stroke-linecap="round"/>`,
+});
+Object.assign(ACC,{
+ a_pencil:`<g transform="translate(44 164) rotate(-30)"><rect x="-6" y="-30" width="12" height="46" fill="#ffd34f" stroke="#e5a91c" stroke-width="2"/><line x1="0" y1="-30" x2="0" y2="16" stroke="#f0c03c" stroke-width="2"/><polygon points="-6,-30 6,-30 0,-44" fill="#f5d6a8" stroke="#d9b07a" stroke-width="2" stroke-linejoin="round"/><polygon points="-2,-38 2,-38 0,-44" fill="${INK}"/><rect x="-6" y="16" width="12" height="5" fill="#c9c9d4"/><rect x="-6" y="21" width="12" height="8" rx="3" fill="#ff9ec0"/></g>`,
+ a_brush:`<g transform="translate(154 178) rotate(28)"><rect x="-3.5" y="-34" width="7" height="44" rx="3" fill="#c99a6c" stroke="#a87a4c" stroke-width="1.5"/><path d="M-4 10 Q-6 20 0 30 Q6 20 4 10 Z" fill="#3d3a44"/><rect x="-4.5" y="6" width="9" height="5" fill="#e5a91c"/></g>`,
+ a_fan:`<g transform="translate(154 178)"><path d="M0 12 L-24 -14 A34 34 0 0 1 24 -14 Z" fill="#ff9ec0" stroke="#e0688f" stroke-width="2.5" stroke-linejoin="round"/>${[-18,-9,0,9,18].map(x=>`<line x1="0" y1="12" x2="${x}" y2="${-20+Math.abs(x)*.3}" stroke="#fff" stroke-width="1.5"/>`).join('')}${sakura(-6,-12,.6)}${sakura(10,-6,.5)}<circle cx="0" cy="12" r="3" fill="#e5a91c"/></g>`,
+ a_scroll:`<g transform="translate(152 196) rotate(-8)"><rect x="-18" y="-11" width="36" height="22" fill="#fff6dc" stroke="#d9b07a" stroke-width="2"/><rect x="-22" y="-14" width="6" height="28" rx="3" fill="#c9503f"/><rect x="16" y="-14" width="6" height="28" rx="3" fill="#c9503f"/><path d="M-10 -5 h20 M-10 0 h16 M-10 5 h18" stroke="#8a7a6a" stroke-width="2" stroke-linecap="round"/></g>`,
+ a_mic:`<g transform="translate(46 168) rotate(-25)"><rect x="-4" y="-6" width="8" height="34" rx="4" fill="#8f8fa0" stroke="#6d6d80" stroke-width="1.5"/><circle cx="0" cy="-14" r="11" fill="#d8d8e4" stroke="#8f8fa0" stroke-width="2.5"/><path d="M-7 -18 h14 M-8 -13 h16 M-7 -8 h14" stroke="#b0b0c0" stroke-width="1.5"/><rect x="-6" y="-4" width="12" height="5" fill="#ff8fb1"/></g>`,
+ a_glasses:`<g fill="#fff" fill-opacity=".18" stroke="#7a5a48" stroke-width="3.5"><circle cx="79" cy="110" r="15"/><circle cx="121" cy="110" r="15"/></g><path d="M94 108 Q100 102 106 108 M64 106 L48 100 M136 106 L152 100" fill="none" stroke="#7a5a48" stroke-width="3.5" stroke-linecap="round"/>`,
+});
+Object.assign(WALLX,{
+ w_washi:()=>{let s=`<rect width="360" height="200" fill="#fff4f2"/>`;[[150,30],[210,80],[290,30],[330,120],[170,150],[250,170],[230,30],[310,80]].forEach(([x,y],i)=>{s+=sakura(x,y,i%2?.9:1.2)});
+  [[180,60],[270,110],[200,120],[320,170],[150,95]].forEach(([x,y])=>{s+=`<circle cx="${x}" cy="${y}" r="2.5" fill="#f3cf6a"/>`});return s},
+ w_board:()=>`<rect width="360" height="200" fill="#fff1dc"/><rect y="150" width="360" height="50" fill="#ffe6c4"/><line x1="0" y1="150" x2="360" y2="150" stroke="#f3cf9f" stroke-width="3"/>
+  <rect x="146" y="20" width="196" height="108" rx="6" fill="#3e7d5c" stroke="#b5875a" stroke-width="7"/><rect x="170" y="126" width="148" height="6" rx="2" fill="#b5875a"/>
+  <text x="190" y="66" font-size="30" font-weight="800" fill="#fff" opacity=".9">あいう</text><polygon points="${star(306,56,14,6)}" fill="none" stroke="#ffe27a" stroke-width="3"/>
+  <path d="M190 96 q20 -14 40 0 t40 0" fill="none" stroke="#ffc2d6" stroke-width="3" stroke-linecap="round"/><rect x="290" y="120" width="14" height="5" rx="2" fill="#fff"/>`,
+});
+Object.assign(FLOORX,{
+ f_tatami:()=>{let s='';for(let x=0;x<360;x+=120)for(let y=200;y<300;y+=50)s+=`<rect x="${x}" y="${y}" width="120" height="50" fill="#d9e3a5" stroke="#6d8a4a" stroke-width="3"/>${[1,2,3,4,5,6,7,8,9,10].map(k=>`<line x1="${x+k*11}" y1="${y+3}" x2="${x+k*11}" y2="${y+47}" stroke="#c6d38e" stroke-width="1.2"/>`).join('')}`;return s},
+});
+Object.assign(FURN,{
+ u_globe:()=>`<ellipse cx="240" cy="212" rx="14" ry="4" fill="#c99a6c"/><rect x="238" y="196" width="4" height="16" fill="#c99a6c"/><path d="M220 178 A20 20 0 0 0 252 196" fill="none" stroke="#e5a91c" stroke-width="3"/>
+  <circle cx="238" cy="176" r="16" fill="#8fc8ff" stroke="#5a96d8" stroke-width="2.5"/><path d="M228 168 q6 -4 10 2 q-2 6 -8 6 q-4 -2 -2 -8z M242 176 q8 -2 8 6 q-4 6 -10 2z M236 186 q4 -2 6 2 q-3 2 -6 -2z" fill="#9fdc8f"/>`,
+ u_lantern:()=>`<line x1="343" y1="0" x2="343" y2="16" stroke="#8a6a4a" stroke-width="2"/><rect x="335" y="15" width="16" height="5" rx="2" fill="#3d3a44"/><ellipse cx="343" cy="38" rx="13" ry="19" fill="#ff6f5a" stroke="#d9473a" stroke-width="2"/>
+  <path d="M331 32 h24 M331 44 h24" stroke="#d9473a" stroke-width="1.5"/><rect x="335" y="56" width="16" height="5" rx="2" fill="#3d3a44"/><path d="M343 61 v8" stroke="#ffd34f" stroke-width="3"/>
+  <text x="343" y="43" text-anchor="middle" font-size="11" font-weight="800" fill="#fff">ぶん</text>`,
+ u_books:()=>`<rect x="152" y="288" width="40" height="10" rx="2" fill="#8fc8ff" stroke="#5a96d8" stroke-width="2"/><rect x="156" y="279" width="34" height="9" rx="2" fill="#ff9ec0" stroke="#e0688f" stroke-width="2"/><rect x="153" y="270" width="36" height="9" rx="2" fill="#b6ec9c" stroke="#7fbf70" stroke-width="2"/>
+  <path d="M190 291 h-6 M188 282 h-5" stroke="#fff" stroke-width="1.5"/><circle cx="171" cy="262" r="7" fill="#ff6f6f"/><path d="M171 255 q2 -4 5 -4" stroke="#6fc27a" stroke-width="2" fill="none"/>`,
+});
+
 function thumb(it){
  if(['char','outfit','hat','acc'].includes(it.cat)){const eq={...S.equip,[it.cat]:it.id};return charSVG(eq,it.cat==='char'?'happy':'normal')}
  if(it.cat==='wall') return `<svg viewBox="0 0 360 200" preserveAspectRatio="xMidYMid slice">${wallSVG(it.id)}</svg>`;
@@ -528,7 +599,7 @@ function thumb(it){
 const tabs=(list,cur,act)=>`<div class="tabs">${list.map(([k,l])=>`<button class="${k===cur?'on':''}" data-act="${act}" data-arg="${k}">${l}</button>`).join('')}</div>`;
 
 /* ---------- さんすうの テスト（ていぎ）---------- */
-const TBASE={add1:4,add21:7,add22:12,sub1:4.5,sub21:8,sub22:14}; // 1もん あたりの きほん びょうすう
+const TBASE={add1:4,add21:7,add22:12,sub1:4.5,sub21:8,sub22:14,k1yomi:5,k1kaki:5,k2yomi:6,k2kaki:6,kotoba:8,yomi:15}; // 1もん あたりの きほん びょうすう
 const TLV=[{n:10,need:9,mul:1,medal:'🥉',name:'テスト1'},{n:15,need:14,mul:.8,medal:'🥈',name:'テスト2'},{n:20,need:20,mul:.65,medal:'🥇',name:'テスト3'}];
 const testLimit=(tid,lv)=>Math.round(TLV[lv].n*TBASE[tid]*TLV[lv].mul*S.settings.testScale);
 const testItem=key=>ITEMS.find(i=>i.test===key);
