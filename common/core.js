@@ -617,8 +617,8 @@ Object.assign(FURN,{
 /* ---------- 🔤 えいご テストの ごほうびの え ---------- */
 const abcTxt=(x,y,t,sz,col,stroke)=>`<text x="${x}" y="${y}" text-anchor="middle" font-family="M PLUS Rounded 1c, sans-serif" font-weight="800" font-size="${sz}" fill="${col}"${stroke?` stroke="${stroke}" stroke-width="1.5" paint-order="stroke"`:''}>${t}</text>`;
 Object.assign(ACC,{
- a_abcballoon:`<g stroke="#b9a5a5" stroke-width="2" fill="none"><path d="M146 184 Q154 140 150 96"/><path d="M146 184 Q170 140 178 108"/><path d="M146 184 Q140 150 128 120"/></g>
-  ${[[150,72,'#ff8fb1','A'],[180,88,'#8fc8ff','B'],[126,98,'#ffd34f','C']].map(([x,y,c,t])=>`<ellipse cx="${x}" cy="${y}" rx="15" ry="18" fill="${c}" stroke="#fff" stroke-width="2"/>${abcTxt(x,y+6,t,16,'#fff')}`).join('')}`,
+ a_abcballoon:`<g stroke="#b9a5a5" stroke-width="2" fill="none"><path d="M146 184 Q160 120 168 60"/><path d="M146 184 Q176 130 186 84"/><path d="M146 184 Q156 110 150 34"/></g>
+  ${[[168,46,'#ff8fb1','A'],[186,72,'#8fc8ff','B'],[150,20,'#ffd34f','C']].map(([x,y,c,t])=>`<ellipse cx="${x}" cy="${y}" rx="15" ry="18" fill="${c}" stroke="#fff" stroke-width="2"/>${abcTxt(x,y+6,t,16,'#fff')}`).join('')}`,
  a_dict:`<g transform="translate(150 196) rotate(-10)"><rect x="-17" y="-16" width="34" height="30" rx="3" fill="#4a6fb5" stroke="#365a9c" stroke-width="2.5"/><rect x="-14" y="-13" width="4" height="24" fill="#ffd34f"/>${abcTxt(4,4,'ABC',11,'#fff')}</g>`,
  a_teacup:`<g transform="translate(150 198)"><path d="M-14 -8 h26 l-3 14 q-10 6 -20 0 z" fill="#fff" stroke="#9ec3e0" stroke-width="2.5" stroke-linejoin="round"/><path d="M12 -5 q9 0 7 7 q-2 5 -9 3" fill="none" stroke="#9ec3e0" stroke-width="2.5"/><ellipse cx="0" cy="-8" rx="13" ry="3" fill="#c98f55"/><circle cx="-6" cy="0" r="2" fill="#ff8fb1"/><circle cx="2" cy="2" r="2" fill="#ff8fb1"/><ellipse cx="0" cy="10" rx="18" ry="3.5" fill="#fff" stroke="#9ec3e0" stroke-width="2"/></g>`,
  a_cookie:`<g transform="translate(40 176)"><circle r="15" fill="#e8b46a" stroke="#c98f3a" stroke-width="2.5"/>${[[-6,-5],[5,-7],[2,4],[-7,6],[8,3]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="2.4" fill="#6a4020"/>`).join('')}</g>`,
@@ -635,7 +635,7 @@ Object.assign(OUTFIT,{
 });
 Object.assign(WALLX,{
  w_abc:()=>{let s=`<rect width="360" height="200" fill="#fffbea"/>`;const L='ABCDEFGHIJKLMNOPQRSTUVWXYZ',c=['#ff8fb1','#8fc8ff','#ffd34f','#8fe0a8','#c3a8ff','#ff9e6a'];
-  for(let i=0;i<22;i++){const x=150+(i*47)%200,y=22+((i*37)%160),t=L[(i*7)%26];s+=`<text x="${x}" y="${y}" text-anchor="middle" font-family="M PLUS Rounded 1c, sans-serif" font-weight="800" font-size="${18+(i%3)*6}" fill="${c[i%6]}" transform="rotate(${(i%5-2)*8} ${x} ${y})">${t}</text>`}return s},
+  for(let i=0;i<20;i++){const x=152+(i%5)*44+((i*13)%9-4),y=30+Math.floor(i/5)*42+((i*7)%11-5),t=L[(i*7)%26];s+=`<text x="${x}" y="${y}" text-anchor="middle" font-family="M PLUS Rounded 1c, sans-serif" font-weight="800" font-size="${18+(i%3)*6}" fill="${c[i%6]}" transform="rotate(${(i%5-2)*8} ${x} ${y})">${t}</text>`}return s},
 });
 Object.assign(FLOORX,{
  f_abcrug:()=>{let s=`<rect y="200" width="360" height="100" fill="#e9c89d"/><rect x="40" y="212" width="280" height="80" rx="12" fill="#ffe3ec" stroke="#ff8fb1" stroke-width="4"/>`;const L='ABCDEFGH',c=['#ff6f8a','#4f8fff','#3cb371','#ffb020'];
