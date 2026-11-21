@@ -163,6 +163,8 @@ function updPts(){const p=$('#pts');if(p)p.textContent=S.points}
 function resync(){S=loadState();if(typeof render==='function')render();else updPts()}
 window.addEventListener('pageshow',e=>{if(e.persisted)resync()});
 window.addEventListener('storage',e=>{if(e.key===LS)resync()});
+// ブラウザに「この データは けさないで」と おねがいする（ホーム画面に ついかすると みとめられやすい）
+try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{})}catch(e){}
 const today=()=>{const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()};
 
 /* ---------- おと ---------- */
