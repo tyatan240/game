@@ -18,12 +18,13 @@
   settings:{
     types:{add1:{on,pts},…}, ktypes:{k1yomi:{on,pts},…}, etypes:{ealisten:{on,pts},…},
     perRound, perfect, daily, sound, testScale, practiceMul, practiceBonus,
-    progPts, gachaOn, gachaCost, gachaDaily, abcPts
+    progPts, gachaOn, gachaCost, gachaDaily, abcPts, goalPts, goalAll
   },
   lastDay:'YYYY-M-D'（ログインボーナス）,
   stats:{q,ok}（さんすう）, kstats:{q,ok}（こくご）, estats:{q,ok}（えいご）,
   tests:{'add1-1':{pass,best}, 'k1yomi-2':{…}, …},
-  gacha:{day,count,pulls}
+  gacha:{day,count,pulls},
+  daily:{day,sansu,kokugo,eigo,abc,prog,got:{sansu,kokugo,eigo,prog},all}（きょうの もくひょう。day が変わるとリセット）
 }
 ```
 

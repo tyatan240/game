@@ -21,6 +21,10 @@ export async function sendStars(S, saveFn) {
     const mul = d.settings && typeof d.settings.abcPts === 'number' ? d.settings.abcPts : 10; // おうちの ⚙️せってい（しょきち 10）
     const add = pending * mul;
     d.points = (d.points || 0) + add; d.t = Date.now();
+    // きょうの もくひょう（ぼうけんを すすめる）：きょう あつめた ★の かず
+    const now = new Date(), day = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
+    if (!d.daily || d.daily.day !== day) d.daily = { day, sansu: 0, kokugo: 0, eigo: 0, abc: 0, prog: 0, got: {}, all: false };
+    d.daily.abc = (d.daily.abc || 0) + pending;
     try { localStorage.setItem(HOUSE, JSON.stringify(d)); } catch (e) { }
     if (db) await idbPut(db, d);
     S.starsSent = (S.starsSent || 0) + pending; saveFn && saveFn();

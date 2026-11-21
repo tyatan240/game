@@ -40,6 +40,15 @@ nav{grid-template-columns:repeat(5,1fr)}
 .study b{display:block;font-size:20px}
 .study span{font-size:12px;color:#a88f8f}
 a.big{text-align:center;text-decoration:none}
+.goals .ghead{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.goals .ghead b{color:#c8577f;font-size:16px}.goals .ghead span{font-weight:800;color:#e0719a}
+.goal{display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:2px dashed #f3e3e3;text-decoration:none;color:inherit}
+.goal .gi{font-size:22px;width:30px;text-align:center}
+.goal .gt{flex:1;font-weight:800;font-size:14px}.goal .gt small{display:block;font-size:11px;color:#a88f8f}
+.goal .gbar{width:64px;height:10px;border-radius:999px;background:#f3e3e3;overflow:hidden}.goal .gbar i{display:block;height:100%;background:#ffb020}
+.goal.ok .gbar i{background:#5cc28a}.goal.ok .gt small{color:#3d9a68}
+.gall{margin-top:8px;text-align:center;font-weight:800;font-size:13px;color:#d9822b;background:#fff5df;border-radius:12px;padding:5px}
+.gall.ok{color:#fff;background:#5cc28a}
 </style>
 </head>
 <body>
@@ -75,8 +84,27 @@ function render(){
 }
 function home(){
  return `<div class="card room">${bubble?`<div class="bubble">${bubble}</div>`:''}${roomSVG(S,homeMood,homeMood==='happy'?'hop':'sway')}</div>
+ ${goalsCard()}
  <button class="big" data-act="go" data-arg="study">おべんきょう する ▶</button>
  <p class="muted">キャラを タップしてみてね</p>`}
+/* ---------- きょうの もくひょう ---------- */
+function goalsCard(){
+ const d=dailyOf(S),gs=goals(),n=gs.filter(g=>d[g.key]>=g.need).length;
+ return `<div class="card goals"><div class="ghead"><b>🎯 きょうの もくひょう</b><span>${n} / ${gs.length}</span></div>
+ ${gs.map(g=>{const v=Math.min(d[g.key],g.need),ok=v>=g.need;return `<a class="goal ${ok?'ok':''}" href="${g.href}"><span class="gi">${ok?'✅':g.icon}</span><span class="gt">${g.text}<small>${v} / ${g.need}　${ok?'たっせい！':'ごほうび ⭐'+S.settings.goalPts}</small></span><span class="gbar"><i style="width:${v/g.need*100}%"></i></span></a>`}).join('')}
+ <div class="gall ${d.all?'ok':''}">${d.all?'🎉 ぜんぶ たっせい！ ⭐'+S.settings.goalAll+' もらったよ':'ぜんぶ たっせいで ボーナス ⭐'+S.settings.goalAll+'！'}</div></div>`}
+// たっせい した もくひょうの ごほうびを わたす（おうちに もどった とき）
+function goalsCheck(){
+ if(!$('#ov').classList.contains('hide'))return;
+ const d=dailyOf(S),gs=goals(),newly=gs.filter(g=>d[g.key]>=g.need&&!d.got[g.id]);
+ const allNow=gs.every(g=>d[g.key]>=g.need)&&!d.all;
+ if(!newly.length&&!allNow)return;
+ let add=0;newly.forEach(g=>{d.got[g.id]=true;add+=S.settings.goalPts});
+ if(allNow){d.all=true;add+=S.settings.goalAll}
+ S.points+=add;save();sBuy();render();
+ showPop(`${charSVG(S.equip,'happy','hop')}<h3>${allNow?'🎉 きょうの もくひょう ぜんぶ たっせい！':'🎯 もくひょう たっせい！'}</h3>
+ <div>${newly.map(g=>g.text).join('<br>')}</div><div class="stars" style="margin:8px 0">⭐＋${add}${allNow?` <small style="font-size:15px">（ボーナス＋${S.settings.goalAll}）</small>`:''}</div>
+ <div class="btns"><button class="big" data-act="close">やったー！</button></div>`)}
 function study(){
  const card=(href,ic,bg,name,col,desc)=>`<a class="study" href="${href}"><div class="ic" style="background:${bg}">${ic}</div><div><b style="color:${col}">${name}</b><span>${desc}</span></div></a>`;
  return `<h2>📚 おべんきょう</h2><p class="muted" style="text-align:left">どの へやでも ⭐ポイントが もらえるよ。ためた ポイントは おみせで つかえるよ！</p>
@@ -190,6 +218,9 @@ function settings(){
  <div class="row"><div class="lbl"><b>ステージの ★1つ あたりの ポイント</b><small>はじめて とった ★ だけ もらえます（1ステージ さいだい ★3）</small></div>${stepper('progPts','⭐'+s.progPts)}</div></div>
  <div class="card"><b>🔤 えいごの もんだいと ポイント</b><div class="muted" style="text-align:left">ABCぼうけんで おぼえた もじ・ことばから でます（3こ いじょう おぼえると あそべます）</div>
  ${ETYPES.map(t=>`<div class="row"><button class="sw ${s.etypes[t.id].on?'on':''}" data-act="etg" data-arg="${t.id}" aria-label="${t.name}"></button><div class="lbl"><b>${t.name}</b><small>れい：${t.ex}</small></div>${stepper('e:'+t.id,'⭐'+s.etypes[t.id].pts)}</div>`).join('')}</div>
+ <div class="card"><b>🎯 きょうの もくひょう</b><div class="muted" style="text-align:left">まいにち：さんすう・こくごの 🏆テスト 2かいずつ、えいご（ABCぼうけんを クリアするまでは ぼうけんで ★2こ、クリア後は 🏆テスト 2かい）、プログラミング 1ステージ</div>
+ <div class="row"><div class="lbl"><b>もくひょう 1つの ごほうび</b></div>${stepper('goalPts','⭐'+s.goalPts)}</div>
+ <div class="row"><div class="lbl"><b>ぜんぶ たっせいの ボーナス</b></div><div class="step"><button data-act="st" data-arg="goalAll|-10">−</button><span>⭐${s.goalAll}</span><button data-act="st" data-arg="goalAll|10">＋</button></div></div></div>
  <div class="card"><b>🔤 えいご（ABCぼうけん）</b>
  <div class="row"><div class="lbl"><b>ABCぼうけんの ★1つ あたりの ポイント</b><small>ABCぼうけんで あつめた ★が、この かずの ⭐に なって とどきます</small></div>${stepper('abcPts','⭐'+s.abcPts)}</div></div>
  <div class="card">
@@ -217,7 +248,7 @@ function settings(){
 let bkArm=false;
 const bkEnc=o=>btoa(unescape(encodeURIComponent(JSON.stringify(o))));
 const bkDec=t=>JSON.parse(decodeURIComponent(escape(atob(t.replace(/\s/g,'')))));
-const LIM={perRound:[3,20],perfect:[0,50],daily:[0,50],t:[0,20],practiceMul:[1,5],practiceBonus:[0,50],progPts:[0,10],abcPts:[0,30],gachaCost:[10,500],gachaDaily:[0,10]};
+const LIM={perRound:[3,20],perfect:[0,50],daily:[0,50],t:[0,20],practiceMul:[1,5],practiceBonus:[0,50],progPts:[0,10],abcPts:[0,30],goalPts:[0,50],goalAll:[0,200],gachaCost:[10,500],gachaDaily:[0,10]};
 function stepSet(arg){
  const [k,d]=arg.split('|'),dd=Number(d);
  if(k.startsWith('t:')||k.startsWith('k:')||k.startsWith('e:')){const o=S.settings[{t:'types',k:'ktypes',e:'etypes'}[k[0]]][k.slice(2)];o.pts=Math.max(LIM.t[0],Math.min(LIM.t[1],o.pts+dd))}
@@ -242,7 +273,7 @@ Object.assign(ACT,{
  buy:a=>{sTap();buy(a)},
  dobuy:a=>doBuy(a),
  wear:a=>wear(a),
- close:a=>{closePop();if(a)go(a)},
+ close:a=>{closePop();if(a)go(a);setTimeout(goalsCheck,200)},
  pet:()=>{if(view!=='home')return;bubble=LINES[r(0,LINES.length-1)];homeMood='happy';sOk();render();clearTimeout(ACT._t);ACT._t=setTimeout(()=>{homeMood='normal';bubble='';if(view==='home')render()},2200)},
  gate,gateok:gateOk,
  tg:a=>{S.settings.types[a].on=!S.settings.types[a].on;save();sTap();render()},
@@ -265,7 +296,8 @@ Object.assign(ACT,{
 });
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&$('#gatein'))gateOk()});
 render();
-ready.then(dailyCheck);
+ready.then(()=>{dailyCheck();goalsCheck()});
+window.addEventListener('pageshow',e=>{if(e.persisted)setTimeout(goalsCheck,300)});
 </script>
 </body>
 </html>

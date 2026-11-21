@@ -170,6 +170,23 @@ const GACHA_SR=ITEMS.filter(i=>i.gacha==='sr'),GACHA_N=ITEMS.filter(i=>i.gacha==
 const CATS=[['special','✨スペシャル'],['char','🐾キャラ'],['outfit','ふく'],['hat','ぼうし'],['acc','こもの'],['wall','かべ'],['floor','ゆか'],['furn','かぐ']];
 
 /* ---------- じょうたいと ほぞん ---------- */
+/* ---------- きょうの もくひょう ---------- */
+// まいにち リセット。テスト（🏆、れんしゅうは のぞく）を おわると かぞえる
+function newDaily(day){return{day,sansu:0,kokugo:0,eigo:0,abc:0,prog:0,got:{},all:false}}
+const todayStr=()=>{const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()};
+function dailyOf(st){if(!st.daily||st.daily.day!==todayStr())st.daily=newDaily(todayStr());return st.daily}
+function dailyAdd(k,n=1){dailyOf(S)[k]+=n;save()}
+// ABCぼうけんを クリアしたか（してなければ えいごの もくひょうは「ぼうけんを すすめる」）
+function abcCleared(){try{const a=JSON.parse(localStorage.getItem('abc-adventure-v1')||'null')||{};return (a.clears||0)>0||!!(a.flags&&a.flags.alphabetClear)}catch(e){return false}}
+function goals(){
+ return [
+  {id:'sansu',key:'sansu',need:2,text:'さんすうの 🏆テストを 2かい',href:'sansu/index.html#tests',icon:'✏️'},
+  {id:'kokugo',key:'kokugo',need:2,text:'こくごの 🏆テストを 2かい',href:'kokugo/index.html#tests',icon:'📖'},
+  abcCleared()?{id:'eigo',key:'eigo',need:2,text:'えいごの 🏆テストを 2かい',href:'eigo/index.html#tests',icon:'🔤'}
+   :{id:'eigo',key:'abc',need:2,text:'ABCぼうけんを すすめる（★を 2こ）',href:'abc/index.html',icon:'🗺️'},
+  {id:'prog',key:'prog',need:1,text:'プログラミングの ステージを 1かい クリア',href:'program/index.html',icon:'🤖'},
+ ]}
+
 function defState(){return{v:1,t:0,points:0,
  owned:['c_moko','o_none','h_none','a_none','w_cream','f_wood'],
  equip:{char:'c_moko',outfit:'o_none',hat:'h_none',acc:'a_none',wall:'w_cream',floor:'f_wood'},
@@ -177,8 +194,8 @@ function defState(){return{v:1,t:0,points:0,
  settings:{types:Object.fromEntries(TYPES.map(t=>[t.id,{on:t.id.startsWith('add'),pts:t.pts}])),
   ktypes:Object.fromEntries(KTYPES.map(t=>[t.id,{on:true,pts:t.pts}])),
   etypes:Object.fromEntries(ETYPES.map(t=>[t.id,{on:true,pts:t.pts}])),
-  perRound:5,perfect:3,daily:5,sound:true,testScale:1,practiceMul:2,practiceBonus:5,progPts:3,gachaOn:true,gachaCost:100,gachaDaily:0,abcPts:10},
- lastDay:'',stats:{q:0,ok:0},kstats:{q:0,ok:0},estats:{q:0,ok:0},tests:{},gacha:{day:'',count:0,pulls:0}}}
+  perRound:5,perfect:3,daily:5,sound:true,testScale:1,practiceMul:2,practiceBonus:5,progPts:3,gachaOn:true,gachaCost:100,gachaDaily:0,abcPts:10,goalPts:10,goalAll:50},
+ lastDay:'',stats:{q:0,ok:0},kstats:{q:0,ok:0},estats:{q:0,ok:0},tests:{},daily:newDaily(''),gacha:{day:'',count:0,pulls:0}}}
 function merge(d){
  const s=defState(); if(!d||typeof d!=='object') return s;
  if(typeof d.points==='number') s.points=d.points;
@@ -187,7 +204,7 @@ function merge(d){
  if(d.equip) for(const k in s.equip) if(d.equip[k]&&ITEM[d.equip[k]]) s.equip[k]=d.equip[k];
  if(Array.isArray(d.furn)) s.furn=d.furn.filter(i=>ITEM[i]);
  const ds=d.settings||{};
- for(const k of ['perRound','perfect','daily','practiceMul','practiceBonus','testScale','progPts','gachaCost','gachaDaily','abcPts']) if(typeof ds[k]==='number') s.settings[k]=ds[k];
+ for(const k of ['perRound','perfect','daily','practiceMul','practiceBonus','testScale','progPts','gachaCost','gachaDaily','abcPts','goalPts','goalAll']) if(typeof ds[k]==='number') s.settings[k]=ds[k];
  if(typeof ds.sound==='boolean') s.settings.sound=ds.sound;
  if(typeof ds.gachaOn==='boolean') s.settings.gachaOn=ds.gachaOn;
  if(d.gacha&&typeof d.gacha==='object') Object.assign(s.gacha,d.gacha);
@@ -195,6 +212,7 @@ function merge(d){
  if(d.stats) Object.assign(s.stats,d.stats);
  if(d.kstats) Object.assign(s.kstats,d.kstats);
  if(d.estats) Object.assign(s.estats,d.estats);
+ if(d.daily&&typeof d.daily==='object') s.daily={...s.daily,...d.daily,got:{...(d.daily.got||{})}};
  if(d.tests&&typeof d.tests==='object') s.tests=d.tests;
  return s}
 const LS='moko-math-v1';

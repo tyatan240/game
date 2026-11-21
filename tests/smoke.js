@@ -40,7 +40,7 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
   console.log('2. ポイントが へやを こえて きょうつう');
   {
     const p = await page();
-    await p.goto(B + 'index.html'); await p.waitForTimeout(400); await p.evaluate(() => closePop());
+    await p.goto(B + 'index.html'); await p.waitForTimeout(400); await p.evaluate(() => { closePop(); S.settings.goalPts = 0; S.settings.goalAll = 0; save(); }); // もくひょうの ごほうびは べつの テストで
     const p0 = await pts(p);
     await p.goto(B + 'sansu/index.html'); await p.click('[data-act=start] >> nth=0');
     for (let i = 0; i < 5; i++) {
@@ -136,7 +136,7 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     const p = await page({ width: 844, height: 390 });
     const housePts = () => p.evaluate(() => JSON.parse(localStorage.getItem('moko-math-v1') || '{}').points || 0);
     await p.goto(B + 'index.html'); await p.waitForTimeout(400);
-    await p.evaluate(() => { closePop(); S.points = 100; save(); go('study'); });
+    await p.evaluate(() => { closePop(); S.points = 100; S.settings.goalPts = 0; S.settings.goalAll = 0; save(); go('study'); });
     ok(!!await p.$('a.study[href="eigo/index.html"]'), 'おうちの おべんきょうに えいごの いりぐち');
     await p.click('a.study[href="eigo/index.html"]'); await p.waitForLoadState(); await p.waitForTimeout(400);
     ok(!!await p.$('a.bigchoice.adv') && !!await p.$('button.bigchoice.study'), 'えいごの へやで「ぼうけん」か「べんきょう」を えらべる');
@@ -209,6 +209,46 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     const rec = await p.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('abc-adventure-v1')).records));
     ok(rec.some(k => k.startsWith('w:')), 'けっかが ABCぼうけんの がくしゅう きろくに はいる ' + rec.join(','));
     await p.evaluate(() => __eigo.go('tests')); ok(!!await p.$('[data-act=tready][data-arg="ewpic-1"]'), 'えいごの 🏆テストが ある');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+  }
+
+  console.log('11. きょうの もくひょう');
+  {
+    const p = await page();
+    const daily = () => p.evaluate(() => (JSON.parse(localStorage.getItem('moko-math-v1') || '{}').daily) || {});
+    await p.goto(B + 'index.html'); await p.waitForTimeout(400);
+    await p.evaluate(() => { closePop(); S.points = 0; save(); });
+    ok(!!await p.$('.goals') && (await p.$$('.goal')).length === 4, 'おうちに きょうの もくひょう（4つ）');
+    await p.evaluate(() => localStorage.setItem('abc-adventure-v1', JSON.stringify({ v: 1, t: 1, started: true, learned: ['A', 'B', 'C'], words: { apple: { at: 1 }, water: { at: 1 }, flower: { at: 1 } }, stars: 0, starsSent: 0 })));
+    // さんすう・こくご・えいごの 🏆テストを 2かいずつ（じかんぎれで おわらせる）
+    for (const [room, key, g] of [['sansu', 'add1-1', 0], ['kokugo', 'k1yomi-1', 0], ['eigo', 'ealisten-1', 1]]) {
+      await p.goto(B + room + '/index.html#tests'); await p.waitForTimeout(400);
+      for (let i = 0; i < 2; i++) {
+        await p.click(`[data-act=tready][data-arg="${key}"]`); await p.click('#ov [data-act=tstart]');
+        await p.waitForFunction(g => { const t = g ? __eigo.test : test; return t && t.phase === 'run'; }, g, { timeout: 8000 });
+        await p.evaluate(g => { const t = g ? __eigo.test : test; t.t0 = performance.now() - t.limit; }, g);
+        await p.waitForSelector('#ov .pop'); await p.click('#ov [data-act=close] >> nth=0');
+      }
+    }
+    // れんしゅうは かぞえない
+    await p.click('[data-act=tready][data-arg="ealisten-1|p"]'); await p.click('#ov [data-act=tstart]');
+    await p.waitForFunction(() => __eigo.test && __eigo.test.phase === 'run', null, { timeout: 8000 });
+    await p.evaluate(() => { __eigo.test.t0 = performance.now() - __eigo.test.limit; }); await p.waitForSelector('#ov .pop');
+    let d = await daily(); ok(d.sansu === 2 && d.kokugo === 2 && d.eigo === 2, 'テストの かいすう（れんしゅうは のぞく）' + JSON.stringify(d));
+    // プログラミング
+    await p.goto(B + 'program/index.html'); await p.evaluate(() => { openLv(0); prog = [{ t: 'R' }, { t: 'R' }, { t: 'R' }, { t: 'R' }]; render(); run(); });
+    await p.waitForSelector('#pop', { timeout: 10000 }); await p.waitForTimeout(600);
+    // ABCぼうけん（クリア まえ → ★2こ で たっせい）
+    await p.evaluate(() => { const a = JSON.parse(localStorage.getItem('abc-adventure-v1')); a.stars = 2; a.hero = { x: 8.5, y: 12.8, area: 'island' }; a.flags = { intro: true }; localStorage.setItem('abc-adventure-v1', JSON.stringify(a)); });
+    await p.goto(B + 'abc/index.html'); await p.waitForTimeout(400); await p.click('#cont'); await p.waitForTimeout(900);
+    d = await daily(); ok(d.prog === 1 && d.abc === 2, 'プログラミング・ぼうけんも かぞえる ' + JSON.stringify(d));
+    // おうちに もどると ごほうび
+    await p.goto(B + 'index.html'); await p.waitForTimeout(800);
+    for (let k = 0; k < 5 && await p.$('#ov .pop'); k++) { await p.click('#ov [data-act=close] >> nth=0'); await p.waitForTimeout(400); }
+    const r = await p.evaluate(() => ({ pts: S.points, got: S.daily.got, all: S.daily.all }));
+    ok(r.all && Object.keys(r.got).length === 4, 'ぜんぶ たっせいで ごほうび ' + JSON.stringify(r));
+    await p.reload(); await p.waitForTimeout(800);
+    ok(await p.evaluate(() => S.points) === r.pts && !await p.$('#ov .pop'), 'ごほうびは 1かいだけ');
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
   }
 

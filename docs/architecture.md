@@ -51,6 +51,11 @@
 - 持ち物は `S.owned`、装備は `S.equip[cat]`、部屋に置いた家具は `S.furn`。家具の位置は種類ごとに固定（`roomSVG` の描画順で重なりを決める。家具を足したら `roomSVG` にも追加）。
 - キャラは体の形が共通なので、どのキャラにも服・帽子・小物が付く。
 
+## きょうの もくひょう
+- おうちの「おへや」に表示（`goalsCard()`）。目標は core.js の `goals()`：さんすう🏆テスト2回・こくご🏆テスト2回・えいご（ABCぼうけん未クリアなら ぼうけんで★2こ、クリア後は えいご🏆テスト2回）・プログラミング1ステージクリア。
+- 数え方：各部屋の `finishTest`（練習は除く）で `dailyOf(S).sansu++` など。プログラミングは `houseDaily()`、ABC は `house.js` の `sendStars()` が おうちのデータの `daily` を直接増やす。
+- ごほうび：おうちに戻ったとき `goalsCheck()` が達成済み・未受け取りの目標に ⭐`goalPts`（既定10）、全部達成で さらに ⭐`goalAll`（既定50）。`daily.got`・`daily.all` で1回だけ。
+
 ## ガチャ
 - `S.settings.gachaCost`（既定100）で1回。10% で ちょうレア（`GACHA_SR` 12種）、それ以外は ふつう（`GACHA_N` 20種）から等確率。
 - 持っているものが出たら ⭐10 返却。`gachaDaily`（0＝無制限）で1日の回数制限、`gachaOn` でオン/オフ。回数は `S.gacha`（`day`,`count`,`pulls`）。

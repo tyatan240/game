@@ -171,6 +171,7 @@ function finishTest(timeout){
   <div class="btns"><button class="big gray" data-act="close">とじる</button></div>`);
   test=null;return}
  const L=TLV[t.lv],it=testItem(t.key),pass=t.ok>=t.need,st=S.tests[t.key]||{},first=pass&&!st.pass;
+ dailyOf(S).sansu++; // きょうの もくひょう
  S.tests[t.key]={pass:!!(st.pass||pass),best:Math.max(st.best||0,t.ok)};
  if(first&&!S.owned.includes(it.id)){S.owned.push(it.id);if(it.cat==='furn'&&!S.furn.includes(it.id))S.furn.push(it.id)}
  save();view='tests';render();
