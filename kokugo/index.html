@@ -43,12 +43,12 @@ a.big{text-align:center;text-decoration:none}
   <header>
     <div class="pts">⭐ <span id="pts">0</span></div>
     <div class="ttl">📖 こくご</div>
-    <a id="tohub" href="../" aria-label="おうちに もどる">🏠</a>
+    <a id="tohub" href="../index.html" aria-label="おうちに もどる">🏠</a>
   </header>
   <main id="view"></main>
   <nav>
     <button data-act="go" data-arg="select"><span>📖</span>もんだい</button>
-    <a href="../"><span>🏠</span>おうち</a>
+    <a href="../index.html"><span>🏠</span>おうち</a>
   </nav>
 </div>
 <div id="ov" class="hide"></div>
@@ -224,7 +224,7 @@ function result(){
  <div>${q.n}もん ちゅう <b style="font-size:24px;color:#e0719a">${q.ok}</b>もん せいかい</div>
  <div class="stars" style="margin:10px 0">⭐＋${q.earned}${q.bonus?` <small style="font-size:16px">（ボーナス＋${q.bonus}）</small>`:''}</div></div>
  <button class="big" data-act="start" data-arg="${q.sel}">もういちど</button><div style="height:10px"></div>
- <a class="big sub" href="../#shop">おみせに いく 🛍️</a>`}
+ <a class="big sub" href="../index.html#shop">おみせに いく 🛍️</a>`}
 
 Object.assign(ACT,{
  go:a=>{sTap();go(a)},

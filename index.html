@@ -61,9 +61,9 @@ function home(){
 function study(){
  const card=(href,ic,bg,name,col,desc)=>`<a class="study" href="${href}"><div class="ic" style="background:${bg}">${ic}</div><div><b style="color:${col}">${name}</b><span>${desc}</span></div></a>`;
  return `<h2>📚 おべんきょう</h2><p class="muted" style="text-align:left">どの へやでも ⭐ポイントが もらえるよ。ためた ポイントは おみせで つかえるよ！</p>
- ${card('sansu/','✏️','#ffe3ea','さんすう','#c8577f','たしざん・ひきざん、🏆テストで とくべつな アイテム')}
- ${card('kokugo/','📖','#e3f4e8','こくご','#3f9a63','かん字の よみかき、ことば、おはなしの よみとり')}
- ${card('program/','🤖','#dff3fc','プログラミング','#2b7fa8','ブロックを ならべて ロボットの ピコを うごかそう')}`}
+ ${card('sansu/index.html','✏️','#ffe3ea','さんすう','#c8577f','たしざん・ひきざん、🏆テストで とくべつな アイテム')}
+ ${card('kokugo/index.html','📖','#e3f4e8','こくご','#3f9a63','かん字の よみかき、ことば、おはなしの よみとり')}
+ ${card('program/index.html','🤖','#dff3fc','プログラミング','#2b7fa8','ブロックを ならべて ロボットの ピコを うごかそう')}`}
 function shop(){
  const list=shopCat==='special'?ITEMS.filter(i=>i.special).sort((a,b)=>(b.cat==='char')-(a.cat==='char')):ITEMS.filter(i=>i.cat===shopCat&&i.price>0),tl=ITEMS.filter(i=>i.cat===shopCat&&i.test);
  return `<h2>おみせ</h2>${tabs(CATS,shopCat,'shopcat')}${shopCat==='special'?'<p class="muted">✨ とっても とくべつな アイテム。おべんきょうを がんばって ためよう！</p>':''}${shopCat==='char'?'<p class="muted">🐾 あたらしい なかまを むかえよう！ ふくも そのまま きられるよ</p>':''}<div class="items">
@@ -73,7 +73,7 @@ function shop(){
 function testInfo(key){
  const {tid,lv}=parseKey(key),it=testItem(key),on=S.settings.types[tid].on;
  showPop(`<div style="width:110px;margin:0 auto">${thumb(it)}</div><h3>${it.name}</h3><div>「${TYPE[tid].name}」（さんすう）の<br>${TLV[lv].medal} ${TLV[lv].name}に ごうかく すると もらえるよ！</div>${on?'':'<div class="muted">（いまは この もんだいが オフに なっています）</div>'}
- <div class="btns"><button class="big gray" data-act="close">とじる</button>${on?'<a class="big" href="sansu/#tests">テストへ 🏆</a>':''}</div>`)}
+ <div class="btns"><button class="big gray" data-act="close">とじる</button>${on?'<a class="big" href="sansu/index.html#tests">テストへ 🏆</a>':''}</div>`)}
 function buy(id){
  const it=ITEM[id];
  if(S.owned.includes(id)){wear(id);showPop(`${it.cat==='furn'||it.cat==='wall'||it.cat==='floor'?'':charSVG(S.equip,'happy','hop')}<h3>${it.name}</h3><div>${it.cat==='furn'?(S.furn.includes(id)?'おへやに おいたよ！':'おへやから しまったよ'):it.cat==='char'?'いっしょに あそぼう！':'つけたよ！'}</div><div class="btns"><button class="big" data-act="close">OK</button></div>`);return}

@@ -175,7 +175,7 @@ function titleV(){
  const btn=(lv,i)=>{const lk=!unlocked(i),b=S.best[i]||0;
   return `<button class="sbtn ${lk?'lock':lv.loop?'loop':''}" ${lk?'disabled':`onclick="openLv(${i})"`}>${lk?'🔒':i+1}<small>${lk?'':'★'.repeat(b)+'<span style="color:#d7e2e8">'+'★'.repeat(3-b)+'</span>'}</small></button>`};
  const a=LEVELS.map((l,i)=>[l,i]);
- return `<header><a class="hbtn" href="../" style="text-decoration:none;display:flex;align-items:center">🏠</a><div class="ttl">ピコの プログラミング</div>${ptsChip()}</header>
+ return `<header><a class="hbtn" href="../index.html" style="text-decoration:none;display:flex;align-items:center">🏠</a><div class="ttl">ピコの プログラミング</div>${ptsChip()}</header>
  <main>
  <div class="card hero">${robotSVG(0)}<h1>ピコを うごかそう！</h1><div class="muted">めいれいブロックを ならべて ▶ を おすと、ピコが そのとおりに うごくよ<br>はじめて とった ★ 1つで ⭐${starPts()} ポイント！</div></div>
  <div class="card"><div class="sec">➡️ ならべて うごかす</div><div class="stages">${a.filter(([l])=>!l.loop).map(([l,i])=>btn(l,i)).join('')}</div></div>
