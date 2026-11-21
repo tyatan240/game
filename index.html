@@ -2,31 +2,189 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ゲームの へや</title>
-<link rel="icon" href="sansu/icon-192.png">
-<meta name="theme-color" content="#fff3ec">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>モコの おべんきょうハウス</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<meta name="theme-color" content="#ffd9e3">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="おべんきょうハウス">
+<meta name="sw" content="sw.js">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common/style.css">
 <style>
-*{box-sizing:border-box}
-html,body{margin:0;min-height:100%;background:#fff3ec}
-body{font-family:"M PLUS Rounded 1c",system-ui,sans-serif;color:#5a4646}
-main{max-width:520px;margin:0 auto;padding:28px 16px}
-h1{text-align:center;font-size:26px;color:#c8577f;margin:0 0 20px}
-a.g{display:flex;align-items:center;gap:16px;background:#fff;border-radius:22px;padding:14px;margin-bottom:14px;text-decoration:none;color:inherit;box-shadow:0 4px 0 #f1d3d3}
-a.g:active{transform:translateY(3px);box-shadow:none}
-a.g img{width:76px;height:76px;border-radius:18px;flex:none}
-a.g b{display:block;font-size:20px;color:#c8577f}
-a.g.p b{color:#2b7fa8}
-a.g span{font-size:13px;color:#a88f8f}
+nav{grid-template-columns:repeat(4,1fr)}
+.study{display:flex;align-items:center;gap:14px;background:#fff;border-radius:22px;padding:12px;margin-bottom:12px;text-decoration:none;color:inherit;box-shadow:0 4px 0 #f1d3d3}
+.study:active{transform:translateY(3px);box-shadow:none}
+.study .ic{width:72px;height:72px;border-radius:18px;flex:none;display:flex;align-items:center;justify-content:center;font-size:40px}
+.study b{display:block;font-size:20px}
+.study span{font-size:12px;color:#a88f8f}
+a.big{text-align:center;text-decoration:none}
 </style>
 </head>
 <body>
-<main>
-<h1>🎮 ゲームの へや</h1>
-<a class="g" href="sansu/"><img src="sansu/icon-192.png" alt=""><div><b>モコの さんすうハウス</b><span>たしざん・ひきざんで ⭐を あつめて、おへやを かざろう</span></div></a>
-<a class="g p" href="program/"><img src="program/icon-192.png" alt=""><div><b>ピコの プログラミング</b><span>ブロックを ならべて ロボットの ピコを うごかそう</span></div></a>
-</main>
+<div id="app">
+  <header>
+    <div class="pts">⭐ <span id="pts">0</span></div>
+    <div class="ttl">モコの おべんきょうハウス</div>
+    <button id="gear" data-act="gate" aria-label="せってい">⚙️</button>
+  </header>
+  <main id="view"></main>
+  <nav>
+    <button data-act="go" data-arg="home"><span>🏠</span>おへや</button>
+    <button data-act="go" data-arg="study"><span>📚</span>おべんきょう</button>
+    <button data-act="go" data-arg="shop"><span>🛍️</span>おみせ</button>
+    <button data-act="go" data-arg="dress"><span>🎀</span>きせかえ</button>
+  </nav>
+</div>
+<div id="ov" class="hide"></div>
+<script src="common/core.js"></script>
+<script>
+/* ---------- がめん ---------- */
+const VIEWS=['home','study','shop','dress','settings'];
+let view=VIEWS.includes(location.hash.slice(1))&&location.hash!=='#settings'?location.hash.slice(1):'home';
+let bubble='',homeMood='normal',shopCat='outfit',dressTab='moko',resetArm=false;
+if(location.hash==='#dress-room'){view='dress';dressTab='room'}
+function go(v){view=v;history.replaceState(null,'',v==='home'||v==='settings'?location.pathname:'#'+v);render();$('main').scrollTop=0}
+function render(){
+ updPts();
+ document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.arg===view));
+ $('#view').innerHTML={home,study,shop,dress,settings}[view]();
+}
+function home(){
+ return `<div class="card room">${bubble?`<div class="bubble">${bubble}</div>`:''}${roomSVG(S,homeMood,homeMood==='happy'?'hop':'sway')}</div>
+ <button class="big" data-act="go" data-arg="study">おべんきょう する ▶</button>
+ <p class="muted">キャラを タップしてみてね</p>`}
+function study(){
+ const card=(href,ic,bg,name,col,desc)=>`<a class="study" href="${href}"><div class="ic" style="background:${bg}">${ic}</div><div><b style="color:${col}">${name}</b><span>${desc}</span></div></a>`;
+ return `<h2>📚 おべんきょう</h2><p class="muted" style="text-align:left">どの へやでも ⭐ポイントが もらえるよ。ためた ポイントは おみせで つかえるよ！</p>
+ ${card('sansu/','✏️','#ffe3ea','さんすう','#c8577f','たしざん・ひきざん、🏆テストで とくべつな アイテム')}
+ ${card('kokugo/','📖','#e3f4e8','こくご','#3f9a63','かん字の よみかき、ことば、おはなしの よみとり')}
+ ${card('program/','🤖','#dff3fc','プログラミング','#2b7fa8','ブロックを ならべて ロボットの ピコを うごかそう')}`}
+function shop(){
+ const list=shopCat==='special'?ITEMS.filter(i=>i.special).sort((a,b)=>(b.cat==='char')-(a.cat==='char')):ITEMS.filter(i=>i.cat===shopCat&&i.price>0),tl=ITEMS.filter(i=>i.cat===shopCat&&i.test);
+ return `<h2>おみせ</h2>${tabs(CATS,shopCat,'shopcat')}${shopCat==='special'?'<p class="muted">✨ とっても とくべつな アイテム。おべんきょうを がんばって ためよう！</p>':''}${shopCat==='char'?'<p class="muted">🐾 あたらしい なかまを むかえよう！ ふくも そのまま きられるよ</p>':''}<div class="items">
+ ${list.map(it=>{const own=S.owned.includes(it.id);return `<button class="item ${own?'own':''} ${it.special?'sp':''}" data-act="buy" data-arg="${it.id}">${thumb(it)}<div class="n">${it.name}</div><div class="p">${own?'✔ もってる':'⭐'+it.price}</div></button>`}).join('')}
+ </div>${tl.length?`<h2 style="font-size:15px;margin-top:16px">🏆 テストで もらえる アイテム</h2><div class="items">
+ ${tl.map(it=>{const own=S.owned.includes(it.id);return `<button class="item ${own?'own':'lock'}" data-act="${own?'buy':'tinfo'}" data-arg="${own?it.id:it.test}">${thumb(it)}<div class="n">${it.name}</div><div class="p">${own?'✔ もってる':'🏆 テストで ゲット'}</div></button>`}).join('')}</div>`:''}`}
+function testInfo(key){
+ const {tid,lv}=parseKey(key),it=testItem(key),on=S.settings.types[tid].on;
+ showPop(`<div style="width:110px;margin:0 auto">${thumb(it)}</div><h3>${it.name}</h3><div>「${TYPE[tid].name}」（さんすう）の<br>${TLV[lv].medal} ${TLV[lv].name}に ごうかく すると もらえるよ！</div>${on?'':'<div class="muted">（いまは この もんだいが オフに なっています）</div>'}
+ <div class="btns"><button class="big gray" data-act="close">とじる</button>${on?'<a class="big" href="sansu/#tests">テストへ 🏆</a>':''}</div>`)}
+function buy(id){
+ const it=ITEM[id];
+ if(S.owned.includes(id)){wear(id);showPop(`${it.cat==='furn'||it.cat==='wall'||it.cat==='floor'?'':charSVG(S.equip,'happy','hop')}<h3>${it.name}</h3><div>${it.cat==='furn'?(S.furn.includes(id)?'おへやに おいたよ！':'おへやから しまったよ'):it.cat==='char'?'いっしょに あそぼう！':'つけたよ！'}</div><div class="btns"><button class="big" data-act="close">OK</button></div>`);return}
+ if(S.points<it.price){sNg();showPop(`${charSVG(S.equip,'oops')}<h3>あと ⭐${it.price-S.points}</h3><div>おべんきょうで ポイントを ためよう！</div><div class="btns"><button class="big gray" data-act="close">とじる</button><button class="big" data-act="close" data-arg="study">おべんきょう ▶</button></div>`);return}
+ showPop(`<div style="width:130px;margin:0 auto">${thumb(it)}</div><h3>${it.special?'✨ ':''}${it.name}</h3><div>⭐${it.price} で ${it.cat==='char'?'なかまに する':'かう'}？</div><div class="btns"><button class="big gray" data-act="close">やめる</button><button class="big" data-act="dobuy" data-arg="${id}">かう！</button></div>`)}
+function doBuy(id){
+ const it=ITEM[id];if(S.owned.includes(id)||S.points<it.price)return closePop();
+ S.points-=it.price;S.owned.push(id);
+ if(it.cat==='furn'){if(!S.furn.includes(id))S.furn.push(id)}else S.equip[it.cat]=id;
+ save();sBuy();
+ showPop(`<div style="width:220px;margin:0 auto">${it.cat==='furn'||it.cat==='wall'||it.cat==='floor'?roomSVG(S,'happy','hop'):charSVG(S.equip,'happy','hop')}</div><h3>かったよ！</h3><div>${it.cat==='char'?`🎉 ${it.name} が なかまに なったよ！`:it.name+(it.cat==='furn'?' を おへやに おいたよ':' に きがえたよ')}</div><div class="btns"><button class="big" data-act="close">やったー！</button></div>`);render()}
+function wear(id){
+ const it=ITEM[id];
+ if(it.cat==='furn'){S.furn=S.furn.includes(id)?S.furn.filter(x=>x!==id):[...S.furn,id]}
+ else S.equip[it.cat]=id;
+ save();sTap();render()}
+function dress(){
+ const sec=(cat,label)=>{const own=ITEMS.filter(i=>i.cat===cat&&S.owned.includes(i.id));
+  return `<h2 style="font-size:15px">${label}</h2><div class="items">${own.map(it=>{const sel=cat==='furn'?S.furn.includes(it.id):S.equip[cat]===it.id;
+   return `<button class="item ${sel?'sel':''}" data-act="wear" data-arg="${it.id}">${it.price===0&&['outfit','hat','acc'].includes(cat)?`<svg viewBox="0 0 100 100"><text x="50" y="62" text-anchor="middle" font-size="30" fill="#c9bcbc">なし</text></svg>`:thumb(it)}<div class="n">${it.name}</div>${cat==='furn'?`<div class="p">${sel?'おいてる':'しまってる'}</div>`:''}</button>`}).join('')||'<p class="muted">おみせで かってね</p>'}</div>`};
+ let body;
+ if(dressTab==='moko') body=`<div class="card preview">${charSVG(S.equip,'happy','sway')}</div>${sec('char','🐾 キャラ')}${sec('outfit','👗 ふく')}${sec('hat','👒 ぼうし')}${sec('acc','🎈 こもの')}`;
+ else body=`<div class="card room">${roomSVG(S)}</div>${sec('wall','🧱 かべ')}${sec('floor','🟫 ゆか')}${S.owned.some(i=>ITEM[i].cat==='furn')?sec('furn','🪴 かぐ（タップで おく／しまう）'):'<h2 style="font-size:15px">🪴 かぐ</h2><p class="muted">おみせで かってね</p>'}`;
+ return tabs([['moko','🐾 キャラ・ふく'],['room','🏠 おへや']],dressTab,'dresstab')+body}
+
+
+/* ---------- ほごしゃの せってい ---------- */
+/* ---------- 保護者の設定 ---------- */
+let gateQ=null;
+function gate(){
+ if(view==='settings')return;
+ gateQ=[r(6,9),r(6,9)];
+ showPop(`<h3 style="font-size:18px">おうちのひと よう</h3><div>せっていを ひらくには こたえてね</div><div style="font-size:30px;font-weight:800;margin:10px 0">${gateQ[0]} × ${gateQ[1]} =</div><input id="gatein" type="number" inputmode="numeric"><div class="msg" id="gatemsg"></div><div class="btns"><button class="big gray" data-act="close">やめる</button><button class="big" data-act="gateok">ひらく</button></div>`);
+ setTimeout(()=>{const i=$('#gatein');i&&i.focus()},100)}
+function gateOk(){const v=Number(($('#gatein')||{}).value);if(v===gateQ[0]*gateQ[1]){closePop();resetArm=false;go('settings')}else{$('#gatemsg').textContent='ちがいます'}}
+const stepper=(key,val)=>`<div class="step"><button data-act="st" data-arg="${key}|-1">−</button><span>${val}</span><button data-act="st" data-arg="${key}|1">＋</button></div>`;
+function settings(){
+ const s=S.settings;
+ return `<h2>⚙️ せってい（おうちのひと よう）</h2>
+ <div class="card"><b>✏️ さんすうの もんだいと ポイント</b><div class="muted" style="text-align:left">オンにした もんだいが えらべます。ポイントは 1かいめで せいかいした ときの かず（2かいめは はんぶん）。</div>
+ ${TYPES.map(t=>`<div class="row"><button class="sw ${s.types[t.id].on?'on':''}" data-act="tg" data-arg="${t.id}" aria-label="${t.name}"></button><div class="lbl"><b>${t.name}</b><small>れい：${t.ex}</small></div>${stepper('t:'+t.id,'⭐'+s.types[t.id].pts)}</div>`).join('')}</div>
+ <div class="card"><b>📖 こくごの もんだいと ポイント</b>
+ ${KTYPES.map(t=>`<div class="row"><button class="sw ${s.ktypes[t.id].on?'on':''}" data-act="ktg" data-arg="${t.id}" aria-label="${t.name}"></button><div class="lbl"><b>${t.name}</b><small>れい：${t.ex}</small></div>${stepper('k:'+t.id,'⭐'+s.ktypes[t.id].pts)}</div>`).join('')}</div>
+ <div class="card"><b>🤖 プログラミング</b>
+ <div class="row"><div class="lbl"><b>ステージの ★1つ あたりの ポイント</b><small>はじめて とった ★ だけ もらえます（1ステージ さいだい ★3）</small></div>${stepper('progPts','⭐'+s.progPts)}</div></div>
+ <div class="card">
+ <div class="row"><div class="lbl"><b>1かいの もんだいすう</b><small>さんすう・こくご</small></div>${stepper('perRound',s.perRound)}</div>
+ <div class="row"><div class="lbl"><b>ぜんもんせいかい ボーナス</b></div>${stepper('perfect','⭐'+s.perfect)}</div>
+ <div class="row"><div class="lbl"><b>ログインボーナス</b><small>1日1かい</small></div>${stepper('daily','⭐'+s.daily)}</div>
+ <div class="row"><div class="lbl"><b>さんすう テストの せいげんじかん</b><small>きびしい＝0.8ばい／ゆっくり＝1.5ばい</small></div><div class="seg">${[[1.5,'ゆっくり'],[1,'ふつう'],[0.8,'きびしい']].map(([v,l])=>`<button class="${s.testScale===v?'on':''}" data-act="tscale" data-arg="${v}">${l}</button>`).join('')}</div></div>
+ <div class="row"><div class="lbl"><b>れんしゅうの ポイント ばいりつ</b><small>テスト形式の れんしゅうで、もんだいごとの ポイント×この ばいりつ</small></div>${stepper('practiceMul','×'+s.practiceMul)}</div>
+ <div class="row"><div class="lbl"><b>れんしゅうの ごうかくライン ボーナス</b></div>${stepper('practiceBonus','⭐'+s.practiceBonus)}</div>
+ <div class="row"><div class="lbl"><b>おと</b></div><button class="sw ${s.sound?'on':''}" data-act="snd"></button></div>
+ <div class="row"><div class="lbl"><b>ポイントを ちょうせい</b><small>いま ⭐${S.points}</small></div><div class="step"><button data-act="adj" data-arg="-10">−</button><span>10</span><button data-act="adj" data-arg="10">＋</button></div></div>
+ </div>
+ <div class="card"><div class="lbl"><b>きろく</b><small style="display:block;color:#a88f8f">さんすう：といた かず ${S.stats.q}もん ／ せいかい ${S.stats.ok}もん${S.stats.q?`（${Math.round(S.stats.ok/S.stats.q*100)}%）`:''}<br>こくご：といた かず ${S.kstats.q}もん ／ せいかい ${S.kstats.ok}もん${S.kstats.q?`（${Math.round(S.kstats.ok/S.kstats.q*100)}%）`:''}</small></div></div>
+ <div class="card"><b>データの ひきつぎ（バックアップ）</b><div class="muted" style="text-align:left">べつの たんまつに うつす ときや、バックアップ したい ときに つかいます。「コードを つくる」で でた もじを コピーして、うつしさきの この がめんに はりつけて「よみこむ」を おしてください。</div>
+ <div class="tbtns"><button class="prac" data-act="bkmake">コードを つくる</button><button data-act="bkcopy">コピー</button></div>
+ <textarea id="bkout" readonly style="width:100%;height:60px;margin-top:8px;font-size:11px;border:2px solid #ffd0dc;border-radius:10px"></textarea>
+ <textarea id="bkin" placeholder="ここに コードを はりつけ" style="width:100%;height:60px;margin-top:8px;font-size:11px;border:2px solid #ffd0dc;border-radius:10px;-webkit-user-select:text;user-select:text"></textarea>
+ <div class="tbtns"><button data-act="bkload">${bkArm?'もう いちど おすと うわがき します':'よみこむ'}</button></div><div class="msg" id="bkmsg"></div></div>
+ <button class="big gray" data-act="reset">${resetArm?'もう いちど おすと ぜんぶ けします':'データを リセット'}</button>
+ <div style="height:10px"></div><button class="big" data-act="go" data-arg="home">おわる</button>`}
+let bkArm=false;
+const bkEnc=o=>btoa(unescape(encodeURIComponent(JSON.stringify(o))));
+const bkDec=t=>JSON.parse(decodeURIComponent(escape(atob(t.replace(/\s/g,'')))));
+const LIM={perRound:[3,20],perfect:[0,50],daily:[0,50],t:[0,20],practiceMul:[1,5],practiceBonus:[0,50],progPts:[0,10]};
+function stepSet(arg){
+ const [k,d]=arg.split('|'),dd=Number(d);
+ if(k.startsWith('t:')||k.startsWith('k:')){const o=S.settings[k[0]==='t'?'types':'ktypes'][k.slice(2)];o.pts=Math.max(LIM.t[0],Math.min(LIM.t[1],o.pts+dd))}
+ else{const [lo,hi]=LIM[k];S.settings[k]=Math.max(lo,Math.min(hi,S.settings[k]+dd))}
+ save();sTap();render()}
+
+
+/* ---------- ログインボーナス ---------- */
+function dailyCheck(){
+ if(S.lastDay===today()) return;
+ S.lastDay=today(); const b=S.settings.daily; if(b>0) S.points+=b; save();
+ if(b>0) showPop(`${charSVG(S.equip,'happy')}<h3>おかえり！</h3><div>きょうの ログインボーナス</div><div class="stars">⭐＋${b}</div><div class="btns"><button class="big" data-act="close">やったー！</button></div>`);
+}
+
+/* ---------- ボタンの うごき ---------- */
+const LINES=['おべんきょう しよう！','きょうも がんばろうね♪','すてきな おへやだね','ポイント ためて おかいもの！','なでなで うれしい〜'];
+Object.assign(ACT,{
+ go:a=>{sTap();go(a)},
+ tinfo:a=>{sTap();testInfo(a)},
+ shopcat:a=>{shopCat=a;sTap();render()},
+ dresstab:a=>{dressTab=a;sTap();render()},
+ buy:a=>{sTap();buy(a)},
+ dobuy:a=>doBuy(a),
+ wear:a=>wear(a),
+ close:a=>{closePop();if(a)go(a)},
+ pet:()=>{if(view!=='home')return;bubble=LINES[r(0,LINES.length-1)];homeMood='happy';sOk();render();clearTimeout(ACT._t);ACT._t=setTimeout(()=>{homeMood='normal';bubble='';if(view==='home')render()},2200)},
+ gate,gateok:gateOk,
+ tg:a=>{S.settings.types[a].on=!S.settings.types[a].on;save();sTap();render()},
+ ktg:a=>{S.settings.ktypes[a].on=!S.settings.ktypes[a].on;save();sTap();render()},
+ tscale:a=>{S.settings.testScale=Number(a);save();sTap();render()},
+ snd:()=>{S.settings.sound=!S.settings.sound;save();render()},
+ st:a=>stepSet(a),
+ adj:a=>{S.points=Math.max(0,S.points+Number(a));save();render()},
+ bkmake:()=>{const o=$('#bkout');if(o){o.value=bkEnc(S);$('#bkmsg').textContent='コードを つくりました'}},
+ bkcopy:()=>{const o=$('#bkout');if(!o||!o.value)return;const done=()=>{$('#bkmsg').textContent='コピーしました'};try{navigator.clipboard.writeText(o.value).then(done,()=>{o.select();try{document.execCommand('copy');done()}catch(e){$('#bkmsg').textContent='てで せんたくして コピーしてください'}})}catch(e){o.select()}},
+ bkload:()=>{const i=$('#bkin'),v=i?i.value:'';let d=null;try{d=bkDec(v)}catch(e){}
+  if(!d||typeof d.points!=='number'){bkArm=false;$('#bkmsg').textContent='コードが ただしく ありません';return}
+  if(!bkArm){bkArm=true;const keep=v;render();$('#bkin').value=keep;$('#bkmsg').textContent=`⭐${d.points} の データです。もう いちど おすと いまの データを うわがき します`;return}
+  bkArm=false;S=merge(d);save();render();$('#bkmsg').textContent='よみこみました！'},
+ reset:()=>{if(!resetArm){resetArm=true;render();return}const keep=S.settings;S=defState();S.settings=keep;S.lastDay=today();resetArm=false;save();go('home')},
+});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&$('#gatein'))gateOk()});
+render();
+dailyCheck();
+</script>
 </body>
 </html>

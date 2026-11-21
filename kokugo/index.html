@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>こくご ― モコの おべんきょうハウス</title>
+<link rel="manifest" href="../manifest.json">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<link rel="icon" href="../icon-192.png">
+<meta name="theme-color" content="#ffd9e3">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="おべんきょうハウス">
+<meta name="sw" content="../sw.js">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../common/style.css">
+<style>
+nav{grid-template-columns:repeat(2,1fr)}
+nav a{text-decoration:none;padding:8px 0 10px;font-weight:800;font-size:12px;color:#b89a9a;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav a span{font-size:24px}
+a.big{text-align:center;text-decoration:none}
+.kq{display:flex;align-items:center;gap:10px}
+.kq svg{width:80px;flex:none}
+.kq .qt{flex:1;text-align:center}
+.qlabel{font-weight:800;font-size:14px;color:#a88f8f}
+.qmain{font-weight:800;font-size:44px;color:#5a4646;line-height:1.25;margin:4px 0;word-break:keep-all}
+.qmain.mid{font-size:26px}
+.qmain.small{font-size:19px}
+.story{background:#fffdf7;border:2px solid #f3e3c8;border-radius:16px;padding:12px 14px;font-size:17px;line-height:1.9;margin-bottom:10px;font-weight:500}
+.story b{display:block;color:#c8577f;font-size:15px;margin-bottom:2px}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.choices.one{grid-template-columns:1fr}
+.ch{border:0;border-radius:18px;padding:14px 8px;font:inherit;font-weight:800;font-size:24px;background:#fff;color:#5a4646;box-shadow:0 4px 0 #f1cfd8;min-height:64px}
+.ch.long{font-size:17px}
+.ch:active{transform:translateY(3px);box-shadow:none}
+.ch.ng{background:#eee3e3;color:#c3b2b2;box-shadow:none;text-decoration:line-through}
+.ch.ok{background:#8fd3a8;color:#fff;box-shadow:0 4px 0 #5fb37f}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="pts">⭐ <span id="pts">0</span></div>
+    <div class="ttl">📖 こくご</div>
+    <a id="tohub" href="../" aria-label="おうちに もどる">🏠</a>
+  </header>
+  <main id="view"></main>
+  <nav>
+    <button data-act="go" data-arg="select"><span>📖</span>もんだい</button>
+    <a href="../"><span>🏠</span>おうち</a>
+  </nav>
+</div>
+<div id="ov" class="hide"></div>
+<script src="../common/core.js"></script>
+<script>
+/* ========== もんだいの データ ========== */
+// かん字の ことば [かん字, よみ]
+const K1=[['山','やま'],['川','かわ'],['花','はな'],['雨','あめ'],['空','そら'],['犬','いぬ'],['虫','むし'],['貝','かい'],['石','いし'],['木','き'],
+ ['竹','たけ'],['草','くさ'],['森','もり'],['林','はやし'],['水','みず'],['火','ひ'],['目','め'],['耳','みみ'],['口','くち'],['手','て'],
+ ['足','あし'],['車','くるま'],['男の子','おとこのこ'],['女の子','おんなのこ'],['先生','せんせい'],['学校','がっこう'],['一年生','いちねんせい'],['天気','てんき'],['大きい','おおきい'],['小さい','ちいさい'],
+ ['赤い','あかい'],['白い','しろい'],['青い','あおい'],['早い','はやい'],['子ども','こども'],['名まえ','なまえ'],['本','ほん'],['百円','ひゃくえん'],['王さま','おうさま'],['糸','いと'],
+ ['町','まち'],['村','むら'],['田んぼ','たんぼ'],['夕日','ゆうひ'],['入る','はいる'],['出る','でる'],['見る','みる'],['休む','やすむ'],['立つ','たつ'],['上','うえ'],
+ ['下','した'],['右','みぎ'],['左','ひだり'],['中','なか'],['土','つち'],['音','おと'],['力','ちから'],['一つ','ひとつ'],['二つ','ふたつ'],['三つ','みっつ'],
+ ['四つ','よっつ'],['五つ','いつつ'],['六つ','むっつ'],['七つ','ななつ'],['九つ','ここのつ'],['人','ひと'],['月','つき'],['金','きん'],['玉','たま'],['千円','せんえん']];
+const K2=[['会う','あう'],['朝','あさ'],['昼','ひる'],['夜','よる'],['春','はる'],['夏','なつ'],['秋','あき'],['冬','ふゆ'],['雪','ゆき'],['風','かぜ'],
+ ['雲','くも'],['星','ほし'],['海','うみ'],['池','いけ'],['岩','いわ'],['谷','たに'],['道','みち'],['家','いえ'],['店','みせ'],['門','もん'],
+ ['魚','さかな'],['鳥','とり'],['馬','うま'],['牛','うし'],['羽','はね'],['肉','にく'],['米','こめ'],['父','ちち'],['母','はは'],['兄','あに'],
+ ['姉','あね'],['弟','おとうと'],['妹','いもうと'],['友だち','ともだち'],['頭','あたま'],['顔','かお'],['首','くび'],['声','こえ'],['歌','うた'],['絵','え'],
+ ['紙','かみ'],['色','いろ'],['黄色','きいろ'],['東','ひがし'],['西','にし'],['南','みなみ'],['北','きた'],['外','そと'],['前','まえ'],['後ろ','うしろ'],
+ ['高い','たかい'],['長い','ながい'],['強い','つよい'],['弱い','よわい'],['新しい','あたらしい'],['古い','ふるい'],['明るい','あかるい'],['近い','ちかい'],['遠い','とおい'],['多い','おおい'],
+ ['元気','げんき'],['午後','ごご'],['毎日','まいにち'],['話す','はなす'],['読む','よむ'],['書く','かく'],['歩く','あるく'],['走る','はしる'],['思う','おもう'],['教える','おしえる'],
+ ['聞く','きく'],['買う','かう'],['帰る','かえる'],['体','からだ'],['心','こころ'],['船','ふね'],['電車','でんしゃ'],['公園','こうえん'],['教室','きょうしつ'],['時計','とけい']];
+
+// ことば・ぶん [もんだい, こたえ, まちがい…]
+const KOTOBA=[
+ ['「おおきい」の はんたいの ことばは？','ちいさい','ながい','たかい','おもい'],
+ ['「ながい」の はんたいの ことばは？','みじかい','ほそい','ひくい','かるい'],
+ ['「おもい」の はんたいの ことばは？','かるい','うすい','ほそい','ひくい'],
+ ['「ふとい」の はんたいの ことばは？','ほそい','うすい','かるい','ひくい'],
+ ['「ひろい」の はんたいの ことばは？','せまい','ほそい','みじかい','ひくい'],
+ ['「つよい」の はんたいの ことばは？','よわい','おそい','かるい','うすい'],
+ ['「あかるい」の はんたいの ことばは？','くらい','ひくい','さむい','よわい'],
+ ['「あたらしい」の はんたいの ことばは？','ふるい','ちいさい','くらい','かるい'],
+ ['「おおい」の はんたいの ことばは？','すくない','ちいさい','みじかい','ひくい'],
+ ['「ちかい」の はんたいの ことばは？','とおい','ながい','ひろい','おおきい'],
+ ['「うえ」の はんたいの ことばは？','した','みぎ','なか','まえ'],
+ ['「みぎ」の はんたいの ことばは？','ひだり','うえ','そと','うしろ'],
+ ['「まえ」の はんたいの ことばは？','うしろ','よこ','した','なか'],
+ ['「はいる」の はんたいの ことばは？','でる','くる','いく','たつ'],
+ ['「かう（買う）」の はんたいの ことばは？','うる','みる','よむ','つくる'],
+ ['わたし（　）がっこうへ いきます。','は','わ','を','お'],
+ ['ほん（　）よみます。','を','お','は','わ'],
+ ['こうえん（　）いきます。','へ','え','を','お'],
+ ['ぼく（　）いぬが すきです。','は','わ','を','お'],
+ ['みず（　）のみます。','を','お','へ','わ'],
+ ['いえ（　）かえります。','へ','え','お','わ'],
+ ['あいさつ：「こんにち（　）。」','は','わ','を','へ'],
+ ['ただしい かきかたは どれ？','おとうさん','おとおさん','おとーさん','おとうさ'],
+ ['ただしい かきかたは どれ？','おおきい','おうきい','おーきい','おきい'],
+ ['ただしい かきかたは どれ？','こおり','こうり','こーり','こをり'],
+ ['ただしい かきかたは どれ？','とおい','とうい','とーい','とをい'],
+ ['ただしい かきかたは どれ？','がっこう','がこう','がっこお','がつこう'],
+ ['ゆうびんの「きって」の ただしい かきかたは？','きって','きつて','きっつて','きいて'],
+ ['えんぴつが 3（　）','ぼん','まい','ひき','わ'],
+ ['かみが 2（　）','まい','ほん','ひき','だい'],
+ ['いぬが 4（　）','ひき','わ','まい','ほん'],
+ ['ノートが 5（　）','さつ','わ','ひき','だい'],
+ ['くるまが 1（　）','だい','ひき','まい','わ'],
+ ['にわとりが 3（　）','わ','ほん','まい','だい'],
+ ['りんごが 2（　）','こ','まい','ほん','わ'],
+ ['「てれび」を カタカナで かくと？','テレビ','テレピ','ラレビ','テレヒ'],
+ ['「ぱん」を カタカナで かくと？','パン','バン','ハン','パソ'],
+ ['「らいおん」を カタカナで かくと？','ライオン','ライオソ','ヲイオン','ライホン'],
+ ['「けえき」を カタカナで かくと？','ケーキ','ケエキ','ケーキー','ケキ'],
+ ['「ぺんぎん」を カタカナで かくと？','ペンギン','ベンギン','ペソギソ','ペンキン'],
+ ['なかまはずれは どれ？（くだもの）','にんじん','りんご','みかん','ばなな'],
+ ['なかまはずれは どれ？（とり）','めだか','すずめ','からす','はと'],
+ ['なかまはずれは どれ？（いろ）','つくえ','あか','あお','きいろ'],
+ ['なかまはずれは どれ？（のりもの）','いす','でんしゃ','ひこうき','ふね'],
+];
+
+// よみとり {t:だいめい, s:おはなし, q:[[もんだい, こたえ, まちがい…], …]}
+const STORIES=[
+ {t:'モコの さんぽ',s:'きょうは いい てんきです。モコは こうえんへ さんぽに いきました。こうえんには あかい はなが さいて いました。モコは はなの においを かいで、にっこり しました。',
+  q:[['モコは どこへ いきましたか。','こうえん','うみ','がっこう','おみせ'],['はなは なにいろ でしたか。','あか','あお','きいろ','しろ'],['きょうの てんきは？','はれ','あめ','ゆき','くもり']]},
+ {t:'ポテの えんそく',s:'ハムスターの ポテは、あさ はやく おきました。きょうは えんそくの ひです。おかあさんが おにぎりを みっつ つくって くれました。ポテは うれしくて、ぴょんと はねました。',
+  q:[['きょうは なんの ひ ですか。','えんそく','たんじょうび','うんどうかい','おしょうがつ'],['おにぎりは いくつ ですか。','みっつ','ひとつ','ふたつ','よっつ'],['おにぎりを つくったのは だれ ですか。','おかあさん','ポテ','おとうさん','せんせい']]},
+ {t:'ペペと ゆき',s:'ふゆの あさ、まどの そとを みると、ゆきが つもって いました。ペンギンの ペペは そとへ とびだして、おおきな ゆきだるまを つくりました。それから、ともだちと ゆきがっせんを しました。',
+  q:[['この おはなしの きせつは？','ふゆ','なつ','はる','あき'],['ペペが さいしょに つくった ものは？','ゆきだるま','かまくら','おしろ','すなやま'],['そのあと、なにを しましたか。','ゆきがっせん','すいえい','かくれんぼ','なわとび']]},
+ {t:'ミルクの ひるね',s:'ねこの ミルクは、ひなたぼっこが だいすきです。ひるごはんの あと、まどべの クッションの うえで まるく なって ねむりました。ゆめの なかで、ミルクは さかなを たくさん たべました。',
+  q:[['ミルクは どこで ねむりましたか。','クッションの うえ','ベッドの した','はこの なか','にわ'],['ミルクが ねむったのは いつ ですか。','ひるごはんの あと','あさ おきて すぐ','よる おそく','おやつの まえ'],['ゆめの なかで なにを たべましたか。','さかな','ケーキ','にんじん','おにぎり']]},
+ {t:'ピコの おてつだい',s:'ロボットの ピコは、おてつだいが とくいです。あさは、しょっきを あらいます。ひるは、にわの はなに みずを やります。よるは、みんなの くつを きれいに ならべます。',
+  q:[['ピコが ひるに する ことは？','はなに みずを やる','しょっきを あらう','くつを ならべる','せんたくを する'],['よるに する ことは？','くつを ならべる','しょっきを あらう','はなに みずを やる','ごはんを つくる'],['ピコが とくいな ことは？','おてつだい','うた','かけっこ','えかき']]},
+ {t:'あさがお',s:'なつやすみに、わたしは あさがおを そだてました。まいあさ、みずを やりました。ある あさ、むらさきいろの はなが みっつ さきました。わたしは えにっきに、その はなの えを かきました。',
+  q:[['あさがおを そだてたのは いつ ですか。','なつやすみ','ふゆやすみ','はるやすみ','おしょうがつ'],['はなは なにいろ でしたか。','むらさきいろ','あかいろ','しろいろ','きいろ'],['はなは いくつ さきましたか。','みっつ','ひとつ','いつつ','とお']]},
+ {t:'ひとつの かさ',s:'かえりみち、きゅうに あめが ふって きました。かさを もって いなかった けんたくんに、ゆいちゃんが「いっしょに はいろう。」と いいました。ふたりは ひとつの かさで、いえまで かえりました。',
+  q:[['かさを もって いなかったのは だれ？','けんたくん','ゆいちゃん','せんせい','おかあさん'],['「いっしょに はいろう。」と いったのは だれ？','ゆいちゃん','けんたくん','せんせい','おかあさん'],['ふたりは いくつの かさで かえりましたか。','ひとつ','ふたつ','みっつ','かさは なかった']]},
+ {t:'カンガルーの あかちゃん',s:'カンガルーの あかちゃんは、うまれた とき 2センチ ぐらいの おおきさです。おかあさんの おなかに ある ふくろに はいって、おちちを のんで おおきく なります。',
+  q:[['あかちゃんは どこに はいりますか。','おなかの ふくろ','つちの あな','きの うえ','みずの なか'],['うまれた ときの おおきさは？','2センチ ぐらい','2メートル ぐらい','20センチ ぐらい','ねこ ぐらい']]},
+ {t:'なつまつり',s:'なつまつりの よる、ぼくは おじいちゃんと でかけました。やたいで、わたあめを かって もらいました。さいごに、そらに おおきな はなびが あがりました。',
+  q:[['だれと でかけましたか。','おじいちゃん','おばあちゃん','ともだち','いもうと'],['かって もらった ものは？','わたあめ','りんごあめ','やきそば','おめん'],['さいごに みた ものは？','はなび','にじ','ながれぼし','まんげつ']]},
+ {t:'たんぽぽ',s:'はるに なると、たんぽぽは きいろい はなを さかせます。はなが おわると、しろい わたげに なります。かぜが ふくと、わたげは とおくへ とんで いき、また あたらしい たんぽぽが そだちます。',
+  q:[['たんぽぽの はなは なにいろ ですか。','きいろ','しろ','ピンク','あお'],['はなが おわると なにに なりますか。','しろい わたげ','あかい み','ちいさい つぼみ','みどりの はっぱ'],['わたげを とおくへ とばす ものは？','かぜ','あめ','ゆき','つち']]},
+];
+
+/* ========== もんだいを つくる ========== */
+const isKana=c=>/[ぁ-んァ-ンー]/.test(c);
+// にている ことばを まちがいの せんたくしに する
+function pickSimilar(list,ans,key){
+ const tail=w=>isKana(w[0].slice(-1))?w[0].slice(-1):'';
+ const score=w=>(w[0].length===ans[0].length?2:0)+(tail(w)===tail(ans)?2:0)+Math.random()*2;
+ const seen=new Set([ans[key]]),out=[];
+ for(const w of [...list].sort((a,b)=>score(b)-score(a))){if(seen.has(w[key]))continue;seen.add(w[key]);out.push(w[key]);if(out.length===3)break}
+ return out}
+function makeQ(tid){
+ if(tid==='k1yomi'||tid==='k2yomi'||tid==='k1kaki'||tid==='k2kaki'){
+  const list=tid[1]==='1'?K1:K2,w=list[r(0,list.length-1)],yomi=tid.endsWith('yomi');
+  return yomi?{tid,key:w[0],label:'この ことばの よみかたは？',main:w[0],ans:w[1],choices:shuffle([w[1],...pickSimilar(list,w,1)])}
+   :{tid,key:w[0],label:'かん字で かくと どれ？',main:'「'+w[1]+'」',ans:w[0],choices:shuffle([w[0],...pickSimilar(list,w,0)]),size:'mid'}}
+ if(tid==='kotoba'){const i=r(0,KOTOBA.length-1),[q,a,...ng]=KOTOBA[i];
+  return {tid,key:'k'+i,label:'',main:q,ans:a,choices:shuffle([a,...ng]),size:'small'}}
+ const si=r(0,STORIES.length-1),st=STORIES[si],qi=r(0,st.q.length-1),[q,a,...ng]=st.q[qi];
+ return {tid,key:'s'+si+'-'+qi,story:st,label:'',main:q,ans:a,choices:shuffle([a,...ng]),size:'small'}}
+
+/* ========== がめん ========== */
+let view='select',quiz=null;
+function go(v){view=v;render();$('main').scrollTop=0}
+function render(){
+ updPts();
+ document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.arg==='select'));
+ $('#view').innerHTML={select,quiz:quizV,result}[view]();
+}
+const enabled=()=>KTYPES.filter(t=>S.settings.ktypes[t.id].on);
+function select(){
+ const en=enabled();
+ if(!en.length) return `<div class="card"><p class="muted">もんだいが えらばれていません。<br>おうちのひとに おうちの ⚙️ せってい で えらんでもらってね</p></div>`;
+ return `<h2>どの もんだいに する？</h2><div class="tgrid">
+ ${en.map(t=>`<button class="tbtn" data-act="start" data-arg="${t.id}"><b>${t.name}</b>れい：${t.ex}<small>せいかいで ⭐${S.settings.ktypes[t.id].pts}</small></button>`).join('')}
+ ${en.length>1?`<button class="tbtn mix" data-act="start" data-arg="mix"><b>🎲 まぜまぜ</b>いろんな もんだいが でるよ</button>`:''}
+ </div><p class="muted">${S.settings.perRound}もん ぜんぶ せいかいで ボーナス ⭐${S.settings.perfect}！</p>`}
+function startQuiz(sel){
+ const pool=sel==='mix'?enabled().map(t=>t.id):[sel];
+ quiz={pool,sel,i:0,n:S.settings.perRound,ok:0,earned:0,res:[],cur:null,tries:0,ng:[],mood:'normal',msg:'',lock:false,used:new Set()};
+ nextQ();view='quiz';render();$('main').scrollTop=0}
+function nextQ(){
+ let q,g=0;
+ do{q=makeQ(quiz.pool[r(0,quiz.pool.length-1)])}while(quiz.used.has(q.key)&&g++<30);
+ quiz.used.add(q.key);quiz.cur=q;quiz.tries=0;quiz.ng=[];quiz.mood='normal';quiz.msg='';$('main').scrollTop=0}
+function quizV(){
+ const q=quiz,c=q.cur,done=q.lock;
+ const dots=Array.from({length:q.n},(_,i)=>`<i class="${q.res[i]===true?'ok':q.res[i]===false?'ng':i===q.i?'now':''}"></i>`).join('');
+ const long=c.choices.some(x=>x.length>6);
+ return `<div class="dots">${dots}</div>
+ ${c.story?`<div class="story"><b>📖 ${c.story.t}</b>${c.story.s}</div>`:''}
+ <div class="card qcard kq">${charSVG(S.equip,q.mood,q.mood==='happy'?'hop':'')}<div class="qt">${c.label?`<div class="qlabel">${c.label}</div>`:''}<div class="qmain ${c.size||''}">${c.main}</div></div></div>
+ <div class="msg">${q.msg||'⭐'+S.settings.ktypes[c.tid].pts+' の もんだい'}</div>
+ <div class="choices ${long?'one':''}">${c.choices.map((x,i)=>`<button class="ch ${c.choices.some(y=>y.length>4)?'long':''} ${q.ng.includes(i)?'ng':''} ${done&&x===c.ans?'ok':''}" data-act="pick" data-arg="${i}">${x}</button>`).join('')}</div>`}
+function pick(i){
+ const q=quiz;if(!q||q.lock||q.ng.includes(i))return;
+ const c=q.cur,tp=S.settings.ktypes[c.tid].pts;
+ if(c.choices[i]===c.ans){
+  const pts=q.tries===0?tp:Math.ceil(tp/2);
+  q.ok++;q.earned+=pts;q.res[q.i]=true;S.points+=pts;S.kstats.q++;S.kstats.ok++;save();
+  q.mood='happy';q.msg=`せいかい！ ⭐＋${pts}`;sOk();q.lock=true;render();
+  setTimeout(advance,1200);
+ }else if(q.tries===0){
+  q.tries=1;q.ng.push(i);q.mood='oops';q.msg='おしい！ もういちど えらんでね';sNg();render();
+ }else{
+  q.ng.push(i);q.res[q.i]=false;S.kstats.q++;save();q.mood='oops';q.msg=`こたえは「${c.ans}」だよ。つぎ がんばろう！`;sNg();q.lock=true;render();
+  setTimeout(advance,2200);
+ }}
+function advance(){
+ const q=quiz;if(!q||view!=='quiz')return;q.lock=false;q.i++;
+ if(q.i>=q.n){
+  q.bonus=(q.ok===q.n&&S.settings.perfect>0)?S.settings.perfect:0;
+  if(q.bonus){S.points+=q.bonus;save()}
+  view='result';if(q.bonus)sBuy();render();return}
+ nextQ();render()}
+function result(){
+ const q=quiz,perfect=q.ok===q.n;
+ return `<div class="card" style="text-align:center"><div style="width:150px;margin:0 auto">${charSVG(S.equip,'happy','hop')}</div>
+ <h2 style="font-size:24px">${perfect?'ぜんもん せいかい！すごい！':q.ok>=q.n/2?'よく がんばったね！':'チャレンジ えらい！'}</h2>
+ <div>${q.n}もん ちゅう <b style="font-size:24px;color:#e0719a">${q.ok}</b>もん せいかい</div>
+ <div class="stars" style="margin:10px 0">⭐＋${q.earned}${q.bonus?` <small style="font-size:16px">（ボーナス＋${q.bonus}）</small>`:''}</div></div>
+ <button class="big" data-act="start" data-arg="${q.sel}">もういちど</button><div style="height:10px"></div>
+ <a class="big sub" href="../#shop">おみせに いく 🛍️</a>`}
+
+Object.assign(ACT,{
+ go:a=>{sTap();go(a)},
+ start:a=>{sTap();startQuiz(a)},
+ pick:a=>pick(Number(a)),
+});
+render();
+</script>
+</body>
+</html>

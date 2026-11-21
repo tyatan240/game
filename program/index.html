@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>ピコの プログラミング</title>
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-180.png">
-<link rel="icon" href="icon-192.png">
+<title>プログラミング ― モコの おべんきょうハウス</title>
+<link rel="manifest" href="../manifest.json">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<link rel="icon" href="../common/piko-192.png">
 <meta name="theme-color" content="#cdeffd">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="プログラミング">
+<meta name="apple-mobile-web-app-title" content="おべんきょうハウス">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&display=swap" rel="stylesheet">
 <style>
@@ -21,7 +21,7 @@ body{font-family:"M PLUS Rounded 1c",system-ui,sans-serif;color:#3f5566;-webkit-
 header{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#cdeffd;box-shadow:0 2px 0 #9fd9f2}
 header .ttl{flex:1;font-weight:800;font-size:17px;color:#2b7fa8;text-align:center}
 .hbtn{border:0;background:#fff;border-radius:999px;min-width:44px;height:40px;padding:0 12px;font:inherit;font-weight:800;font-size:15px;color:#2b7fa8;box-shadow:0 2px 0 #9fd9f2}
-.hbtn.ghost{visibility:hidden}
+.hbtn.pts{display:flex;align-items:center;color:#e0719a;white-space:nowrap}
 main{flex:1;padding:12px;display:flex;flex-direction:column;gap:12px}
 .card{background:#fff;border-radius:20px;box-shadow:0 3px 0 #d3e9f3;padding:12px}
 .muted{color:#7d95a5;font-size:13px;text-align:center;margin:6px 0}
@@ -137,6 +137,13 @@ const LS='piko-prog-v1';
 let S=(()=>{try{return JSON.parse(localStorage.getItem(LS)||'null')}catch(e){return null}})()||{best:{}};
 if(!S.best)S.best={};
 function save(){try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}}
+// おうちの ⭐ポイント（さんすう・こくごと きょうつう）
+const HOUSE='moko-math-v1';
+function houseGet(){try{return JSON.parse(localStorage.getItem(HOUSE)||'null')||{}}catch(e){return {}}}
+function housePts(){return houseGet().points||0}
+function starPts(){const v=(houseGet().settings||{}).progPts;return typeof v==='number'?v:3}
+function houseAdd(n){if(n<=0)return;const d=houseGet();d.points=(d.points||0)+n;d.t=Date.now();try{localStorage.setItem(HOUSE,JSON.stringify(d))}catch(e){}}
+const ptsChip=()=>`<span class="hbtn pts">⭐ ${housePts()}</span>`;
 const cleared=i=>(S.best[i]||0)>0;
 const unlocked=i=>i===0||cleared(i-1);
 
@@ -168,9 +175,9 @@ function titleV(){
  const btn=(lv,i)=>{const lk=!unlocked(i),b=S.best[i]||0;
   return `<button class="sbtn ${lk?'lock':lv.loop?'loop':''}" ${lk?'disabled':`onclick="openLv(${i})"`}>${lk?'🔒':i+1}<small>${lk?'':'★'.repeat(b)+'<span style="color:#d7e2e8">'+'★'.repeat(3-b)+'</span>'}</small></button>`};
  const a=LEVELS.map((l,i)=>[l,i]);
- return `<header><a class="hbtn" href="../" style="text-decoration:none;display:flex;align-items:center">🏠</a><div class="ttl">ピコの プログラミング</div><span class="hbtn ghost"></span></header>
+ return `<header><a class="hbtn" href="../" style="text-decoration:none;display:flex;align-items:center">🏠</a><div class="ttl">ピコの プログラミング</div>${ptsChip()}</header>
  <main>
- <div class="card hero">${robotSVG(0)}<h1>ピコを うごかそう！</h1><div class="muted">めいれいブロックを ならべて ▶ を おすと、ピコが そのとおりに うごくよ</div></div>
+ <div class="card hero">${robotSVG(0)}<h1>ピコを うごかそう！</h1><div class="muted">めいれいブロックを ならべて ▶ を おすと、ピコが そのとおりに うごくよ<br>はじめて とった ★ 1つで ⭐${starPts()} ポイント！</div></div>
  <div class="card"><div class="sec">➡️ ならべて うごかす</div><div class="stages">${a.filter(([l])=>!l.loop).map(([l,i])=>btn(l,i)).join('')}</div></div>
  <div class="card"><div class="sec">🔁 くりかえし</div><div class="stages">${a.filter(([l])=>l.loop).map(([l,i])=>btn(l,i)).join('')}</div></div>
  </main>`;
@@ -187,7 +194,7 @@ function playV(){
  for(let y=0;y<P.H;y++)for(let x=0;x<P.W;x++){const c=P.g[y][x];
   cs.push(`<div class="cell ${c==='#'?'wall':c==='G'?'goal':''}">${c==='G'?'🏁':c==='*'?`<span class="star" id="st${x}_${y}" style="${got.has(x+'_'+y)?'opacity:0':''}">⭐</span>`:''}</div>`)}
  const n=count();
- return `<header><button class="hbtn" onclick="back()">◀</button><div class="ttl">ステージ ${cur+1}</div><span class="hbtn ghost"></span></header>
+ return `<header><button class="hbtn" onclick="back()">◀</button><div class="ttl">ステージ ${cur+1}</div>${ptsChip()}</header>
  <main>
  <div class="hint">${lv.hint}</div>
  <div class="boardwrap" id="bw" style="max-width:${P.H>P.W?Math.round(P.W/P.H*100)+'%':'100%'}">
@@ -282,11 +289,12 @@ function end(win,msg){
   showPop(`<div style="font-size:48px">🤔</div><h3>${msg}</h3><div class="muted">${left&&!msg.includes('ぶつ')&&!msg.includes('そと')?`⭐ が あと ${left}こ のこってるよ。`:''}ブロックを なおして もういちど！</div>
    <div class="btns"><button class="big blue" onclick="closePop();stop()">なおす</button></div>`);return}
  const n=count(),stars=n<=lv.par?3:n<=lv.par+2?2:1;
- const prev=S.best[cur]||0;if(stars>prev){S.best[cur]=stars;save()}
+ const prev=S.best[cur]||0,earn=Math.max(0,stars-prev)*starPts();if(stars>prev){S.best[cur]=stars;save()}houseAdd(earn);
  $('#robot').classList.add('yay');sfx.win();
  const last=cur>=LEVELS.length-1;
  setTimeout(()=>showPop(`<div style="font-size:48px">🎉</div><h3>クリア！</h3>
   <div class="stars">${[1,2,3].map(i=>`<span class="${i<=stars?'':'off'}">⭐</span>`).join('')}</div>
+  ${earn?`<div style="font-weight:800;font-size:20px;color:#e0719a;margin:4px 0">ポイント ⭐＋${earn}</div>`:''}
   <div class="muted">ブロック ${n}こ で できたよ${stars<3?`<br>${lv.par}こ で できたら ⭐3！`:'<br>さいこうの プログラム！'}</div>
   <div class="btns">${last?'':`<button class="big" onclick="closePop();openLv(${cur+1})">つぎの ステージ ▶</button>`}
   ${stars<3?`<button class="big blue" onclick="closePop();stop()">もういちど ちょうせん</button>`:''}
@@ -299,7 +307,7 @@ function closePop(){const p=$('#pop');if(p)p.remove()}
 let flT;function flash(t){const h=$('.hint');if(!h)return;const o=LEVELS[cur].hint;h.textContent=t;h.style.color='#e5484d';clearTimeout(flT);flT=setTimeout(()=>{const hh=$('.hint');if(hh){hh.textContent=o;hh.style.color=''}},1400)}
 
 render();
-if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('../sw.js').catch(()=>{});
 </script>
 </body>
 </html>
