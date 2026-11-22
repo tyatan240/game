@@ -43,7 +43,9 @@
 
 ## 他のゲームから星を足す方法
 core.js を読める部屋は `S.points += n; save();`。
-読めない部屋（program・abc）は、localStorage と IndexedDB のうち `t` が新しいほうを読み、`points` を足して `t=Date.now()` にし、両方に書く（見本：`program/index.html` の `houseAdd()`、`abc/js/game/house.js` の `sendStars()`）。データの他の項目には触れない。
+読めない部屋（program・abc）は、localStorage と IndexedDB のうち `t` が新しいほうを読み、`points` を足して `t=Date.now()` にし、両方に書く（見本：`program/index.html` の `houseWrite()`、`abc/js/game/house.js` の `sendStars()`）。データの他の項目には触れない。
+- **IndexedDB の返事を待ってから書かない**（iPad のホーム画面アプリでは返事が来ないことがあり、★が届かないまま「おうちへ」でページが変わる。過去に発生）。IndexedDB はページを開いたときに先に読んでおき、加算は localStorage に**すぐ**書き、IndexedDB へはあとから書く（待つ時間に上限）。おうちは `t` が新しいほうを使うので、localStorage だけ書けていれば反映される。
+- 同じデータを書く処理を同時に2つ走らせない（片方の加算が消える）。
 
 ## ABCぼうけんの ★ → おうちの ⭐
 - ABC の `stars` − `starsSent` の差（まだ届けていない★）× おうちの `settings.abcPts`（既定10）を `points` に加算し、`starsSent` を進める。ABC の保存のたびに実行。
