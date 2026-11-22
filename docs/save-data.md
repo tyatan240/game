@@ -29,7 +29,7 @@
   gacha:{day,count,pulls},
   daily:{day,sansu,kokugo,eigo,abc,prog,got:{sansu,kokugo,eigo,prog},all}（きょうの もくひょう。day が変わるとリセット）,
   streakGot:[3,7,…]（がんばり カレンダーで もらった れんぞく日数）,
-  settings.admin:true/false（管理者モード）, adminBackup:[id…]|null（管理者モードを オンに した ときの もちもの。オフで owned に もどす）, daily.rec:{s:教科,t:単元}（きょうの おすすめ）,
+  settings.admin:true/false（管理者モード）；`abc-adventure-v1` に slots:{1|2|3: ぼうけんの すすみ}・w2clears（ワールドごとの つづき）・sentences（ワールド3の ぶん）を追加, adminBackup:[id…]|null（管理者モードを オンに した ときの もちもの。オフで owned に もどす）, daily.rec:{s:教科,t:単元}（きょうの おすすめ）,
   hw:{mob_pig:じこく,…}（まちの モブじゅうにんの しゅくだいを おえた じこく。core.js の hwDone()、program/ の houseWrite）,
   looks:{キャラid:{outfit,hat,acc}}（キャラごとに おぼえている きせかえ。core.js の equipItem() で更新。キャラを変えると前のキャラの服を保存し、次のキャラの服に着がえる）
 }

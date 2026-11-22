@@ -13,7 +13,7 @@ import { drawStall } from './engine/art3.js';
 import { START, ITEMS, INV, STORY, GIFTS } from './data/world1.js';
 import { AREAS, ORDER, CHAPTER, WHERE } from './data/areas.js';
 import { W, H, area, setArea, tileAt, isWater, isPath, things, move, facing, heroTile, markPos, exitAt, exitOpen, isOpenGate, vinesKey, solidAt, inside, unstick } from './game/world.js';
-import { load, save, replayState, getRecord, world2State, world3State } from './game/state.js';
+import { load, save, replayState, getRecord, world2State, world3State, worldOf, snapshot, restore } from './game/state.js';
 import { record, pickTargets, choiceCount, levelOf } from './game/learning.js';
 import { letterQuestion, wordQuestion, shuffle , lowerQuestion } from './game/quiz.js';
 import { activeQuests, currentStep, stepFor, advance, objective, QUEST, w3Learned } from './game/quests.js';
@@ -543,7 +543,7 @@ async function lowerGate(ob) {
   const ALLU = all.map(UP), recs = Object.fromEntries(ALLU.map(id => [id, S.records['l:' + id]]));
   const ids = pickTargets(ALLU, recs, 6);
   await ui.quiz(ids.map((id, i) => lowerQuestion(id, ALLU, ['match', 'listen', 'upper'][i % 3], 4)), { title: 'こもじの おさらい', onAnswer: answerLog });
-  S.world[key] = 'open'; S.flags.lowerClear = true; sfx.unlock(); persist();
+  S.world[key] = 'open'; S.flags.lowerClear = true; S.w2clears = (S.w2clears || 0) + 1; sfx.unlock(); persist();
   await playFx('burst', 1.0, { c: center(ob) });
   S.stars += 5; persist(); await ui.starFly(5, hud);
   await ui.notice('こもじ ぜんぶ クリア！', 'おおもじも こもじも よめる ように なったね！<br>えいごの「べんきょう」でも れんしゅう できるよ。');
@@ -722,12 +722,47 @@ function toTitle() {
   document.getElementById('housePts').textContent = housePoints();
   document.body.classList.add('intitle');
 }
-// いちど クリアしたら ワールドを えらべる（おうちの 管理者モードなら さいしょから ぜんぶ）
+// ワールドの えらびかた：いちど クリアしたら つぎの ワールドが えらべる（おうちの 管理者モードなら さいしょから ぜんぶ）
+//   ワールドごとに「つづきから」「はじめから」。いま あそんでいる ワールドの すすみは S の うえに、ほかは S.slots[ワールド] に ある
+const WORLDS = [{ n: 1, name: 'ワールド1', sub: 'ABC（おおもじ）' }, { n: 2, name: 'ワールド2', sub: 'abc（こもじ）' }, { n: 3, name: 'ワールド3', sub: 'ことばの まち' }];
+const curWorld = () => S.started ? worldOf(S.hero.area) : null;
+const worldOpen = n => n === 1 || houseAdmin() || (n === 2 ? !!(S.clears || S.flags.alphabetClear) : !!(S.w2clears || S.flags.lowerClear)) || !!(S.slots || {})[n];
+const hasProgress = n => curWorld() === n || !!(S.slots || {})[n];
 function titleButtons() {
-  const admin = houseAdmin(), w2 = !!(S.clears || S.flags.alphabetClear || admin), w3 = !!(S.flags.lowerClear || admin);
-  document.getElementById('start').textContent = w2 ? 'ワールド1（ABC）から' : 'はじめから';
-  document.getElementById('start2').style.display = w2 ? '' : 'none';
-  document.getElementById('start3').style.display = w3 ? '' : 'none';
+  const multi = worldOpen(2) || worldOpen(3), cw = curWorld();
+  titleEl.classList.toggle('multi', multi);
+  const cont = document.getElementById('cont');
+  cont.style.display = S.started ? '' : 'none';
+  cont.innerHTML = multi && cw ? `つづきから<small>${WORLDS[cw - 1].name}</small>` : 'つづきから';
+  document.getElementById('start').style.display = multi ? 'none' : '';
+  document.getElementById('start').textContent = 'はじめから';
+  const box = document.getElementById('worlds');
+  box.innerHTML = multi ? WORLDS.filter(w => worldOpen(w.n)).map(w => `<div class="wrow w${w.n}"><b>${w.name}<small>${w.sub}</small></b>
+    <button class="wcont" id="cont${w.n}" data-w="${w.n}" ${hasProgress(w.n) ? '' : 'disabled'}>つづきから</button><button class="wnew" id="start${w.n}" data-w="${w.n}">はじめから</button></div>`).join('') : '';
+  box.style.display = multi ? '' : 'none';
+  box.querySelectorAll('.wcont').forEach(b => b.onclick = () => { sfx.tap(); continueWorld(+b.dataset.w); });
+  box.querySelectorAll('.wnew').forEach(b => b.onclick = () => { sfx.tap(); newWorld(+b.dataset.w); });
+}
+// いまの ワールドの すすみを しまう
+function stash() { const cw = curWorld(); if (cw) { S.slots = S.slots || {}; S.slots[cw] = snapshot(S); } }
+async function continueWorld(n) {
+  unlockAudio();
+  if (curWorld() !== n) { const snap = (S.slots || {})[n]; if (!snap) return; stash(); restore(S, snap); delete S.slots[n]; }
+  await startGame(false);
+}
+async function newWorld(n) {
+  unlockAudio();
+  const name = WORLDS[n - 1].name;
+  if (hasProgress(n) && !(await ui.confirm(`${name}を はじめから あそぶ？<br><small>${name}の つづきは なくなるよ。<br>ほかの ワールドの つづき・おぼえた もじの きろく・ほし・きがえは のこるよ</small>`, 'はじめから', 'やめる'))) return;
+  stash();
+  if (S.slots) delete S.slots[n];
+  if (n === 1) { S = replayState(S); return startGame(false); }
+  const aid = n === 3 ? 'w3plaza' : 'lower', ent = AREAS[aid].entries.west;
+  const data = { letters: LETTERS.map(l => l.id), words: WORDS.filter(x => (x.world || 1) === 1), spells: SPELLS, quests: Object.values(QUEST).filter(q => !q.id.startsWith('w3')), areas: ORDER.slice(0, ORDER.indexOf('lower')) };
+  S = n === 3 ? world3State(S, data) : world2State(S, data);
+  S.hero = { x: ent.x + 0.5, y: ent.y + 0.8, dir: ent.dir || 'right', area: aid };
+  if (!S.areas.includes(aid)) S.areas.push(aid);
+  await startGame(false); // persist() は startGame の なか（さきに よぶと いまの いちで うわがき される）
 }
 houseReady.then(() => { if (mode === 'title') titleButtons(); });
 async function startGame(fresh, skipAsk = false) {
@@ -755,21 +790,6 @@ async function startGame(fresh, skipAsk = false) {
 }
 document.getElementById('start').onclick = () => { sfx.tap(); startGame(true); };
 document.getElementById('cont').onclick = () => { sfx.tap(); startGame(false); };
-// ワールド2（こもじの もり）から はじめる：ワールド1 は ぜんぶ おわった ことに する（きろく・ほし・きがえは のこる）
-async function startWorld2(w = 2) {
-  unlockAudio();
-  const name = w === 3 ? 'ワールド3「ことばの まち」' : 'ワールド2「こもじの もり」';
-  if (S.started && !(await ui.confirm(`${name}から はじめる？<br><small>おぼえた もじの きろく・ほし・きがえは のこるよ</small>`, 'はじめる', 'やめる'))) return;
-  const aid = w === 3 ? 'w3plaza' : 'lower', ent = AREAS[aid].entries.west;
-  const data = { letters: LETTERS.map(l => l.id), words: WORDS.filter(x => (x.world || 1) === 1), spells: SPELLS, quests: Object.values(QUEST).filter(q => !q.id.startsWith('w3')), areas: ORDER.slice(0, ORDER.indexOf('lower')) };
-  S = w === 3 ? world3State(S, data) : world2State(S, data);
-  S.hero = { x: ent.x + 0.5, y: ent.y + 0.8, dir: ent.dir || 'right', area: aid };
-  if (!S.areas.includes(aid)) S.areas.push(aid);
-  await startGame(false); // persist() は startGame の なか（さきに よぶと いまの いちで うわがき される）
-}
-document.getElementById('start2').onclick = () => { sfx.tap(); startWorld2(2); };
-document.getElementById('start3').onclick = () => { sfx.tap(); startWorld2(3); };
-
 /* ---------- そうさ ---------- */
 input.bindPad(document.getElementById('pad'));
 input.bindButton(document.getElementById('act'), 'action');
