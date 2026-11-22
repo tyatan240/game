@@ -7,11 +7,12 @@
 
 ## ディレクトリ
 ```
-index.html      おうち（トップ）：おへや（🎯きょうの もくひょう）・おべんきょう入口・ガチャ・おみせ・きせかえ・⚙️設定
+index.html      おうち（トップ）：おへや（🎯きょうの もくひょう、ドア→まち）・おべんきょう入口・ガチャ・おみせ・きせかえ・⚙️設定
 sansu/          さんすう：たし算ひき算の問題＋🏆テスト
 kokugo/         こくご：漢字よみかき・ことば・よみとり＋🏆テスト
 program/        プログラミング：ブロックでロボットを動かすパズル（独自コード）
 program/build/  ロボモコの ブロックタウン：3Dでブロックを置く町づくり（ES Modules＋Three.js。まだ未リンク。program/build/README.md）
+machi/          モコの まち：2Dの まちづくり（ES Modules＋core.js。まちの おみせ は おへやの おみせと別。machi/README.md）
 eigo/           えいご：「ぼうけん（abc/）」か「べんきょう（練習＋🏆テスト）」を選ぶ部屋。core.js ＋ abc のデータ・絵・音声を module で使う
 abc/            ABCぼうけん：英語の2Dアドベンチャー（独立モジュール、ES Modules。eigo/ の「ぼうけん」から入る）
 common/core.js  共通：保存・ポイント・アイテム定義・キャラ/部屋のSVG・音・ポップアップ
@@ -27,6 +28,7 @@ docs/           詳細仕様（下記）
 - `docs/save-data.md` … セーブデータの形式と互換ルール
 - `docs/dev-guide.md` … 実行・テスト・公開・新しいゲームの追加手順
 - `abc/README.md` … ABCぼうけんの構成・学習記録・データの足し方
+- `machi/README.md` … モコの まち：構成・保存・まちの おみせ・じゅうにん
 - `program/build/README.md` … ブロックタウンの構成・データ・保存・フェーズ2（ロボット）への準備
 - `docs/abc-kotoba-mahou-spec.md` … ABCぼうけん「ことばの まほう」＋「くみあわせ」の仕様・決定事項・実装メモ（実装済み）
 
@@ -39,7 +41,7 @@ docs/           詳細仕様（下記）
 `main` にマージすると GitHub Pages（main / root）が数分で反映。作業はブランチ → PR → ユーザーがマージ。
 
 ## ⚠️ 守ること（子どものデータを壊さない）
-1. 保存キーを変えない：`moko-math-v1`（localStorage と IndexedDB `moko-house`/`kv` の両方）、`piko-prog-v1`、`abc-adventure-v1`、`robomoko-build-v1`（localStorage と IndexedDB `robomoko-build`/`kv`）
+1. 保存キーを変えない：`moko-math-v1`（localStorage と IndexedDB `moko-house`/`kv` の両方）、`piko-prog-v1`、`abc-adventure-v1`、`robomoko-build-v1`（localStorage と IndexedDB `robomoko-build`/`kv`）、`moko-town-v1`（localStorage と IndexedDB `moko-town`/`kv`）
 2. データの形は追加のみ。新項目は `defState()` に初期値＋`merge()` で補う。項目名の変更・削除をしない
 3. `ITEMS` の `id` を変えない・消さない（未知の id は持ち物から外れる）
 4. 公開URL・リポジトリ名・Pages 設定を変えない。データを消す処理を足さない（リセットは ⚙️設定のみ）
@@ -57,4 +59,6 @@ docs/           詳細仕様（下記）
 - ABCぼうけん：おうちと接続済み（入口・「おうちへ」・★→おうちの ⭐。`abc/js/game/house.js`、⚙️設定の `abcPts`）。manifest の向きは `any`。ABC のファイルを増やしたら `sw.js` の ASSETS にも足す
 - ABCぼうけん：ワールド1 は A〜Z まで実装済み（5エリア・クエスト11・組み合わせ11）。単語・組み合わせ・クエスト・エリアはデータ追加で増やせる（`abc/README.md`）。次はワールド2「こもじの もり」
 - ブロックタウン（`program/build/`）：フェーズ1（手で作る）・フェーズ2（ロボットに おねがい：命令を並べてロボモコが建てる）まで。入口リンクはまだない。次はフェーズ3（お題5ステージ・クリア判定・ごほうび）
+- モコの まち（`machi/`）：設計書のフェーズ1〜3（まちづくり・まちの おみせ・じゅうにん）＋ まちレベルで ひらく とち・おうちの なか（おへやの かぐ）まで。次は 住人のお願い（フェーズ4の のこり）
+- まちの パーツは `machi/js/data/parts.js`（おへやの `ITEMS` に入れない）
 - iPad でホーム画面アプリが別スコープになる問題があったため、アイコンは必ずトップ（`/game/`）から追加してもらう
