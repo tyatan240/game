@@ -252,6 +252,42 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
   }
 
+  console.log('8b. IndexedDB が へんじしない ときも ABC の ★が おうちに とどく（iPad たいさく）');
+  {
+    const ctx = await browser.newContext({ viewport: { width: 844, height: 390 }, serviceWorkers: 'block' });
+    const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
+    await p.goto(B + 'index.html'); await p.waitForTimeout(400);
+    await p.evaluate(() => { closePop(); S.points = 50; S.settings.goalPts = 0; S.settings.goalAll = 0; save(); });
+    await p.evaluate(() => localStorage.setItem('abc-adventure-v1', JSON.stringify({ v: 1, t: 1, started: true, hero: { x: 8.5, y: 12.8, dir: 'down', area: 'island' }, stars: 3, starsSent: 3, learned: ['A'], flags: { intro: true } })));
+    // ABC の ページだけ IndexedDB を こたえない ように する
+    await p.addInitScript(() => { if (location.pathname.includes('/abc/')) indexedDB.open = () => ({}); });
+    await p.goto(B + 'abc/index.html'); await p.waitForTimeout(400); await p.click('#cont'); await p.waitForTimeout(600);
+    // ★を もらって すぐ「おうちへ」
+    await p.evaluate(() => { __abc.S.stars += 2; });
+    await p.keyboard.press('Escape'); await p.waitForTimeout(150); await p.click('.menu [data-a=home]'); await p.waitForLoadState(); await p.waitForTimeout(800);
+    const r = await p.evaluate(() => ({ pts: S.points, abc: S.daily.abc }));
+    ok(r.pts === 70 && r.abc === 2, 'おうちの ⭐と きょうの もくひょうに はいる ' + JSON.stringify(r));
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / '));
+    await ctx.close();
+  }
+
+  console.log('8c. IndexedDB が へんじしない ときも プログラミングの ⭐と もくひょうが とどく');
+  {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
+    const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
+    await p.goto(B + 'index.html'); await p.waitForTimeout(400);
+    await p.evaluate(() => { closePop(); S.points = 50; S.settings.goalPts = 0; S.settings.goalAll = 0; save(); });
+    await p.addInitScript(() => { if (location.pathname.includes('/program/')) indexedDB.open = () => ({}); });
+    await p.goto(B + 'program/index.html');
+    await p.evaluate(() => { openLv(0); prog = [{ t: 'R' }, { t: 'R' }, { t: 'R' }, { t: 'R' }]; render(); run(); });
+    await p.waitForSelector('#pop', { timeout: 10000 });
+    await p.goto(B + 'index.html'); await p.waitForTimeout(800);
+    const r = await p.evaluate(() => ({ pts: S.points, prog: S.daily.prog }));
+    ok(r.pts > 50 && r.prog === 1, '⭐も「プログラミング 1ステージ」も はいる ' + JSON.stringify(r));
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / '));
+    await ctx.close();
+  }
+
   console.log('12a. えいごの こえ（iPad で「Capital A」と よまれない）');
   {
     const p = await page(); await p.goto(B + 'abc/index.html'); await p.waitForTimeout(300);

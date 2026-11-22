@@ -144,17 +144,15 @@ function housePts(){return houseGet().points||0}
 function starPts(){const v=(houseGet().settings||{}).progPts;return typeof v==='number'?v:3}
 // IndexedDB と localStorage の あたらしい ほうに たして、りょうほうに ほぞん
 function idbOpen(){return new Promise((ok,ng)=>{try{const q=indexedDB.open('moko-house',1);q.onupgradeneeded=()=>q.result.createObjectStore('kv');q.onsuccess=()=>ok(q.result);q.onerror=()=>ng(q.error)}catch(e){ng(e)}})}
+// おうちの データに かく：localStorage に すぐ かき（IndexedDB の へんじを またない。iPad で へんじが ない ことが ある）、
+// IndexedDB には あとから。ひらいた ときに IndexedDB の ほうが あたらしければ localStorage に もどして あるので、ここでは localStorage を よめば よい
+function houseWrite(f){const d=houseGet();f(d);d.t=Date.now();try{localStorage.setItem(HOUSE,JSON.stringify(d))}catch(e){}
+ idbOpen().then(db=>{try{db.transaction('kv','readwrite').objectStore('kv').put(d,HOUSE)}catch(e){}}).catch(()=>{});return d}
 // きょうの もくひょう：ステージ クリアの かいすう（おうちの データの daily だけを ふやす）
-async function houseDaily(){let d=houseGet(),db=null;
- try{db=await idbOpen();const v=await new Promise(ok=>{const r=db.transaction('kv').objectStore('kv').get(HOUSE);r.onsuccess=()=>ok(r.result);r.onerror=()=>ok(null)});if(v&&(v.t||0)>(d.t||0))d=v}catch(e){}
- const t=new Date(),day=t.getFullYear()+'-'+(t.getMonth()+1)+'-'+t.getDate();
+function houseDaily(){houseWrite(d=>{const t=new Date(),day=t.getFullYear()+'-'+(t.getMonth()+1)+'-'+t.getDate();
  if(!d.daily||d.daily.day!==day)d.daily={day,sansu:0,kokugo:0,eigo:0,abc:0,prog:0,got:{},all:false};
- d.daily.prog=(d.daily.prog||0)+1;d.t=Date.now();try{localStorage.setItem(HOUSE,JSON.stringify(d))}catch(e){}
- try{if(db)db.transaction('kv','readwrite').objectStore('kv').put(d,HOUSE)}catch(e){}}
-async function houseAdd(n){if(n<=0)return;let d=houseGet(),db=null;
- try{db=await idbOpen();const v=await new Promise(ok=>{const r=db.transaction('kv').objectStore('kv').get(HOUSE);r.onsuccess=()=>ok(r.result);r.onerror=()=>ok(null)});if(v&&(v.t||0)>(d.t||0))d=v}catch(e){}
- d.points=(d.points||0)+n;d.t=Date.now();try{localStorage.setItem(HOUSE,JSON.stringify(d))}catch(e){}
- try{if(db)db.transaction('kv','readwrite').objectStore('kv').put(d,HOUSE)}catch(e){}
+ d.daily.prog=(d.daily.prog||0)+1})}
+function houseAdd(n){if(n<=0)return;const d=houseWrite(d=>{d.points=(d.points||0)+n});
  const c=document.querySelector('.hbtn.pts');if(c)c.textContent='⭐ '+d.points}
 // ひらいた とき：IndexedDB の ほうが あたらしければ localStorage に もどす
 idbOpen().then(db=>{const r=db.transaction('kv').objectStore('kv').get(HOUSE);r.onsuccess=()=>{const v=r.result,d=houseGet();if(v&&(v.t||0)>(d.t||0)){try{localStorage.setItem(HOUSE,JSON.stringify(v))}catch(e){}const c=document.querySelector('.hbtn.pts');if(c)c.textContent='⭐ '+v.points}}}).catch(()=>{});
@@ -304,7 +302,7 @@ function end(win,msg){
   showPop(`<div style="font-size:48px">🤔</div><h3>${msg}</h3><div class="muted">${left&&!msg.includes('ぶつ')&&!msg.includes('そと')?`⭐ が あと ${left}こ のこってるよ。`:''}ブロックを なおして もういちど！</div>
    <div class="btns"><button class="big blue" onclick="closePop();stop()">なおす</button></div>`);return}
  const n=count(),stars=n<=lv.par?3:n<=lv.par+2?2:1;
- const prev=S.best[cur]||0,earn=Math.max(0,stars-prev)*starPts();if(stars>prev){S.best[cur]=stars;save()}houseAdd(earn).then(houseDaily);
+ const prev=S.best[cur]||0,earn=Math.max(0,stars-prev)*starPts();if(stars>prev){S.best[cur]=stars;save()}houseAdd(earn);houseDaily();
  $('#robot').classList.add('yay');sfx.win();
  const last=cur>=LEVELS.length-1;
  setTimeout(()=>showPop(`<div style="font-size:48px">🎉</div><h3>クリア！</h3>
