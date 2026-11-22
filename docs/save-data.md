@@ -25,7 +25,8 @@
   stats:{q,ok}（さんすう）, kstats:{q,ok}（こくご）, estats:{q,ok}（えいご）,
   tests:{'add1-1':{pass,best}, 'k1yomi-2':{…}, …},
   gacha:{day,count,pulls},
-  daily:{day,sansu,kokugo,eigo,abc,prog,got:{sansu,kokugo,eigo,prog},all}（きょうの もくひょう。day が変わるとリセット）
+  daily:{day,sansu,kokugo,eigo,abc,prog,got:{sansu,kokugo,eigo,prog},all}（きょうの もくひょう。day が変わるとリセット）,
+  looks:{キャラid:{outfit,hat,acc}}（キャラごとに おぼえている きせかえ。core.js の equipItem() で更新。キャラを変えると前のキャラの服を保存し、次のキャラの服に着がえる）
 }
 ```
 
