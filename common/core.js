@@ -164,6 +164,26 @@ const ITEMS=[
  {id:'a_cookie',cat:'acc',name:'クッキー',test:'ewpic-1'},
  {id:'o_tartan',cat:'outfit',name:'チェックの ワンピース',test:'ewpic-2'},
  {id:'f_abcrug',cat:'floor',name:'ABCの じゅうたん',test:'ewpic-3'},
+
+ /* 🌈 ゆめの ごほうび（⭐1000 いじょう。dream:true。おみせの ✨スペシャルの いちばん うえ） */
+ {id:'o_heartdress',cat:'outfit',name:'きらきら ハートの へんしんドレス',price:1000,dream:true},
+ {id:'h_heartbow',cat:'hat',name:'へんしん ハートの リボン',price:1000,dream:true},
+ {id:'w_dream',cat:'wall',name:'ゆめかわ くもの かべ',price:1000,dream:true},
+ {id:'f_dream',cat:'floor',name:'ゆめかわ ハートの ゆか',price:1000,dream:true},
+ {id:'a_compact',cat:'acc',name:'へんしん コンパクト',price:1100,dream:true},
+ {id:'c_sheep',cat:'char',name:'ゆめひつじの ふわり',price:1200,dream:true},
+ {id:'o_moondress',cat:'outfit',name:'おつきさまの へんしんドレス',price:1300,dream:true},
+ {id:'a_dreamrod',cat:'acc',name:'ゆめの まほうの ロッド',price:1500,dream:true},
+ {id:'c_poodle',cat:'char',name:'トイプードルの ショコラ',price:1500,dream:true},
+ {id:'u_sweets',cat:'furn',name:'おかしの おうち',price:2000,dream:true,box:'244 150 116 116'},
+ {id:'c_dragon',cat:'char',name:'ゆめいろ ドラゴンの ピピ',price:3000,dream:true},
+
+ /* 🔒 ひみつの なかま（テストの ごうかく かいすう secret かいで あえる。かえない） */
+ {id:'o_idol',cat:'outfit',name:'アイドルの ステージドレス',secret:5},
+ {id:'c_starfox',cat:'char',name:'ほしぎつねの ルル',secret:10},
+ {id:'h_startiara',cat:'hat',name:'ひみつの ほしの ティアラ',secret:20},
+ {id:'c_angelbear',cat:'char',name:'てんしの こぐま ハニー',secret:30},
+ {id:'o_queen',cat:'outfit',name:'ゆめの じょおうさまドレス',secret:40},
 ];
 const ITEM=Object.fromEntries(ITEMS.map(i=>[i.id,i]));
 const GACHA_SR=ITEMS.filter(i=>i.gacha==='sr'),GACHA_N=ITEMS.filter(i=>i.gacha==='n');
@@ -468,7 +488,7 @@ const FURN={
 };
 function roomSVG(st,mood='normal',cls='sway'){
  const has=id=>st.furn.includes(id),f=id=>has(id)&&!(id==='u_bed'&&has('u_canopy'))?FURN[id]():'';
- return `<svg viewBox="0 0 360 300">${wallSVG(st.equip.wall)}${f('u_poster')}${f('u_shelf')}${f('u_garland')}${f('u_chandelier')}${f('u_lantern')}${f('u_clock')}${f('u_flowerbox')}${floorSVG(st.equip.floor)}${f('u_castle')}${f('u_rug')}${f('u_bed')}${f('u_canopy')}${f('u_carriage')}${f('u_cactus')}${f('u_globe')}${f('u_tower')}${f('u_abcblocks')}${f('u_lamp')}${f('u_plant')}
+ return `<svg viewBox="0 0 360 300">${wallSVG(st.equip.wall)}${f('u_poster')}${f('u_shelf')}${f('u_garland')}${f('u_chandelier')}${f('u_lantern')}${f('u_clock')}${f('u_flowerbox')}${floorSVG(st.equip.floor)}${f('u_castle')}${f('u_sweets')}${f('u_rug')}${f('u_bed')}${f('u_canopy')}${f('u_carriage')}${f('u_cactus')}${f('u_globe')}${f('u_tower')}${f('u_abcblocks')}${f('u_lamp')}${f('u_plant')}
  <g transform="translate(118 100) scale(.62)" data-act="pet"><g class="${cls}">${charInner(st.equip,mood)}</g></g>${f('u_cushion')}${f('u_bear')}${f('u_piano')}${f('u_musicbox')}${f('u_books')}${f('u_unipl')}${f('u_trophy')}${f('u_fish')}${f('u_cake')}</svg>`}
 
 /* ---------- 🎰 ガチャ げんてい アイテムの え ---------- */
@@ -666,6 +686,120 @@ Object.assign(FURN,{
   ${[188,202].map(y=>`<rect x="137" y="${y}" width="4" height="8" fill="#9ad6ff"/><rect x="143" y="${y}" width="4" height="8" fill="#9ad6ff"/>`).join('')}`,
 });
 
+/* ---------- 🌈 ゆめの ごほうび・🔒 ひみつの なかま の え（オリジナル） ---------- */
+// ハート（まんなか x,y・おおきさ r）
+const heartP=(x,y,r)=>`M${x} ${y+r} C${x-r*1.7} ${y-r*.1} ${x-r*.75} ${y-r*1.35} ${x} ${y-r*.35} C${x+r*.75} ${y-r*1.35} ${x+r*1.7} ${y-r*.1} ${x} ${y+r}Z`;
+const sparkle=(x,y,r,c='#fff6a8')=>`<path d="M${x} ${y-r} Q${x} ${y} ${x+r} ${y} Q${x} ${y} ${x} ${y+r} Q${x} ${y} ${x-r} ${y} Q${x} ${y} ${x} ${y-r}Z" fill="${c}"/>`;
+// あたまの まわりの もこもこ（ひつじ）・とげ（ドラゴン）
+const ring=(n,a0,a1,R,f)=>{let s='';for(let i=0;i<n;i++){const a=(a0+(a1-a0)*i/(n-1))*Math.PI/180;s+=f(100+R*Math.cos(a),108+R*Math.sin(a),a)}return s};
+const fr=(v)=>v.toFixed(1);
+// へんしんドレスの かたち（いろ ちがい）
+const magicDress=(c)=>`<path d="M78 158 Q100 150 122 158 L120 190 L80 190 Z" fill="${c.top}" stroke="${c.line}" stroke-width="3"/>
+ <path d="M80 186 Q100 194 120 186 L154 220 Q100 238 46 220 Z" fill="${c.skirt}" stroke="${c.line}" stroke-width="3"/>
+ <path d="M86 189 Q100 196 114 189 L130 214 Q100 224 70 214 Z" fill="${c.inner}" opacity=".9"/>
+ <path d="M48 219 q8.5 8 17 0 q8.5 8 17 0 q8.5 8 17 0 q8.5 8 17 0 q8.5 8 17 0 q8.5 8 17 0" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>
+ <path d="M100 166 C86 152 70 156 74 168 C76 176 90 174 100 166 C110 174 124 176 126 168 C130 156 114 152 100 166Z" fill="${c.bow}" stroke="${c.line}" stroke-width="2.5" stroke-linejoin="round"/>
+ <path d="M96 168 L86 190 L93 188 L96 194 Z M104 168 L114 190 L107 188 L104 194 Z" fill="${c.bow}" stroke="${c.line}" stroke-width="2" stroke-linejoin="round"/>
+ ${c.gem}${sparkle(66,206,6)}${sparkle(134,204,6)}${sparkle(100,222,4.5)}`;
+Object.assign(OUTFIT,{
+ o_heartdress:magicDress({top:'#ff8fc0',skirt:'#ffc2dc',inner:'#fff',line:'#e8659f',bow:'#ff5c9a',
+  gem:`<path d="${heartP(100,167,7)}" fill="#ffd34f" stroke="#e5a91c" stroke-width="2"/><circle cx="98" cy="164" r="1.8" fill="#fff"/>`}),
+ o_moondress:magicDress({top:'#a993f5',skirt:'#d9ccff',inner:'#eef0ff',line:'#7f68d6',bow:'#7fb2ff',
+  gem:`<circle cx="100" cy="167" r="8" fill="#ffe27a" stroke="#e5a91c" stroke-width="2"/><circle cx="104" cy="164" r="7" fill="#7fb2ff"/>`})
+  +`<g fill="#fff6a8">${[[62,198],[138,196],[84,212],[118,212]].map(([x,y])=>`<polygon points="${star(x,y,4.5,2)}"/>`).join('')}</g>`,
+ o_idol:`<path d="M78 158 Q100 150 122 158 L120 188 L80 188 Z" fill="#6fd6c8" stroke="#3fae9f" stroke-width="3"/>
+  <path d="M82 186 Q100 192 118 186 L146 212 Q100 226 54 212 Z" fill="#ff9ec7" stroke="#e8659f" stroke-width="3"/>
+  <path d="M74 200 Q100 208 126 200 L150 222 Q100 236 50 222 Z" fill="#9be6dc" stroke="#3fae9f" stroke-width="3"/>
+  <rect x="80" y="182" width="40" height="8" rx="3" fill="#fff"/><path d="M100 186 l-10 -7 v14z M100 186 l10 -7 v14z" fill="#ff5c9a"/>
+  <polygon points="${star(100,166,8,3.5)}" fill="#ffd34f" stroke="#e5a91c" stroke-width="2" stroke-linejoin="round"/>
+  ${sparkle(62,212,5)}${sparkle(138,212,5)}${sparkle(100,230,4)}`,
+ o_queen:`<path d="M78 156 Q100 148 122 156 L119 190 L81 190 Z" fill="#fff4d6" stroke="#e5b95a" stroke-width="3"/>
+  ${RB.map((c,i)=>`<path d="M${80-i*6} ${186+i*7} Q100 ${194+i*7} ${120+i*6} ${186+i*7} L${124+i*6+(i===5?30:0)} ${193+i*7+(i===5?16:0)} Q100 ${203+i*7+(i===5?14:0)} ${76-i*6-(i===5?30:0)} ${193+i*7+(i===5?16:0)} Z" fill="${c}"/>`).join('')}
+  <path d="M80 186 Q100 194 120 186 L158 226 Q100 242 42 226 Z" fill="none" stroke="#e5b95a" stroke-width="3"/>
+  <path d="M84 156 L100 174 L116 156" fill="none" stroke="#e5b95a" stroke-width="3"/>
+  <circle cx="100" cy="170" r="6" fill="#ff7ea6" stroke="#e5a91c" stroke-width="2"/>
+  <g fill="#fff">${[[64,214],[100,226],[136,214],[82,200],[118,200]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="2.6"/>`).join('')}</g>
+  ${sparkle(50,204,6)}${sparkle(150,202,6)}`
+});
+Object.assign(HAT,{
+ h_heartbow:`<g transform="translate(130 58) rotate(14)"><path d="M0 0 C-14 -26 -40 -22 -36 -2 C-34 12 -12 10 0 0 C12 10 34 12 36 -2 C40 -22 14 -26 0 0Z" fill="#ff6fa8" stroke="#e0487f" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M-4 4 L-14 24 L-8 22 L-6 28 Z M4 4 L14 24 L8 22 L6 28 Z" fill="#ff6fa8" stroke="#e0487f" stroke-width="2" stroke-linejoin="round"/>
+  <path d="${heartP(0,0,8)}" fill="#ffd34f" stroke="#e5a91c" stroke-width="2"/><circle cx="-2" cy="-3" r="2" fill="#fff"/>
+  <path d="M-36 -10 q-10 -8 -6 4 q-8 2 4 6z M36 -10 q10 -8 6 4 q8 2 -4 6z" fill="#fff" stroke="#f0a8c4" stroke-width="1.5"/></g>${sparkle(160,40,6)}${sparkle(98,46,4)}`,
+ h_startiara:`<path d="M70 62 Q100 44 130 62 L126 52 Q100 38 74 52 Z" fill="#e3ecf5" stroke="#a9b7c9" stroke-width="2.5" stroke-linejoin="round"/>
+  <polygon points="${star(100,34,15,6.5)}" fill="#fff3a0" stroke="#e5b95a" stroke-width="2.5" stroke-linejoin="round"/>
+  <circle cx="81" cy="50" r="4" fill="#9ad6ff" stroke="#fff" stroke-width="1.5"/><circle cx="119" cy="50" r="4" fill="#ffb1d6" stroke="#fff" stroke-width="1.5"/>
+  <circle cx="100" cy="33" r="3" fill="#ff7ea6"/>${sparkle(72,30,6)}${sparkle(130,26,5)}${sparkle(140,48,3.5,'#fff')}`
+});
+Object.assign(ACC,{
+ a_compact:`<g transform="translate(156 168) rotate(-12)"><path d="${heartP(0,0,16)}" fill="#ffd34f" stroke="#e5a91c" stroke-width="3"/><path d="${heartP(0,-1,11)}" fill="#ff8fc0"/><circle cx="-4" cy="-6" r="3" fill="#fff"/><polygon points="${star(0,0,5,2.2)}" fill="#fff"/></g>
+  ${sparkle(176,140,7)}${sparkle(138,148,5)}${sparkle(184,176,4)}`,
+ a_dreamrod:`<line x1="56" y1="188" x2="30" y2="118" stroke="#ffb1d6" stroke-width="6" stroke-linecap="round"/><line x1="56" y1="188" x2="30" y2="118" stroke="#fff" stroke-width="2" stroke-dasharray="4 6" stroke-linecap="round"/>
+  <path d="M28 110 q-20 -16 -24 4 q-10 6 6 10 z M32 110 q20 -16 24 4 q10 6 -6 10 z" fill="#fff" stroke="#b9d8f5" stroke-width="2"/>
+  <path d="${heartP(30,104,13)}" fill="#ff6fa8" stroke="#e0487f" stroke-width="2.5"/><circle cx="26" cy="99" r="3" fill="#fff"/>
+  <polygon points="${star(30,84,8,3.5)}" fill="#ffd34f" stroke="#e5a91c" stroke-width="2" stroke-linejoin="round"/>
+  ${sparkle(8,86,6)}${sparkle(54,96,5)}${sparkle(14,136,4)}`
+});
+Object.assign(CH,{
+ c_sheep:{body:'#fffaf2',line:'#cdb79c',
+  back:`${ring(11,-168,-12,60,(x,y)=>`<circle cx="${fr(x)}" cy="${fr(y)}" r="15" fill="#fffaf2" stroke="#cdb79c" stroke-width="3"/>`)}
+   <g fill="#fffaf2" stroke="#cdb79c" stroke-width="3"><circle cx="134" cy="214" r="9"/></g>`,
+  belly:`<g fill="#fff" opacity=".9">${[[86,176],[114,176],[100,196],[80,198],[120,198]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="9"/>`).join('')}</g>`,
+  front:`<g fill="#ffd6e6" stroke="#e48fb4" stroke-width="3"><circle cx="40" cy="104" r="13"/><circle cx="160" cy="104" r="13"/></g><g fill="none" stroke="#e48fb4" stroke-width="3" stroke-linecap="round"><path d="M40 98 a6 6 0 1 1 -5 8"/><path d="M160 98 a6 6 0 1 0 5 8"/></g>
+   <g fill="#e9defa" stroke="#c9b6ee" stroke-width="2.5"><circle cx="86" cy="56" r="12"/><circle cx="114" cy="56" r="12"/><circle cx="100" cy="50" r="14"/></g>${sparkle(100,50,5,'#fff')}`,
+  blush:'#ffb3d1',cheek:12,bigEyes:true,nose:'#f2a0b8'},
+ c_poodle:{body:'#b07a55',line:'#7e5135',
+  back:`<circle cx="148" cy="210" r="11" fill="#b07a55" stroke="#7e5135" stroke-width="3"/>`,
+  belly:`<ellipse cx="100" cy="196" rx="24" ry="22" fill="#d8a985"/>`,
+  front:`<g fill="#b07a55" stroke="#7e5135" stroke-width="3">${[[46,104],[40,124],[48,144],[154,104],[160,124],[152,144],[86,54],[114,54],[100,46]].map(([x,y],i)=>`<circle cx="${x}" cy="${y}" r="${i>5?(i===8?17:14):15}"/>`).join('')}</g>
+   <ellipse cx="100" cy="132" rx="24" ry="16" fill="#d8a985"/>
+   <g transform="translate(100 34)"><path d="M0 0 L-16 -10 L-16 10 Z M0 0 L16 -10 L16 10 Z" fill="#ff7ea6" stroke="#e05a86" stroke-width="2.5" stroke-linejoin="round"/><circle r="5" fill="#ff9ec0" stroke="#e05a86" stroke-width="2"/></g>`,
+  nose:'#4a2c1e',blush:'#ff9fb0',bigEyes:true},
+ c_dragon:{body:'#a8e6cf',line:'#5fb894',feet:'#a8e6cf',
+  back:`${wingPath(-1,'#ffd0e8','#f29ac4',1)}${wingPath(1,'#e2d4ff','#b29cf0',1)}
+   <path d="M132 212 Q172 220 176 186" fill="none" stroke="#5fb894" stroke-width="20" stroke-linecap="round"/><path d="M132 212 Q172 220 176 186" fill="none" stroke="#a8e6cf" stroke-width="14" stroke-linecap="round"/>
+   <path d="M176 186 l-12 -6 l14 -16 l8 18 z" fill="#ff9ec7" stroke="#e8659f" stroke-width="2.5" stroke-linejoin="round"/>
+   ${ring(5,-140,-40,58,(x,y,a)=>{const c=Math.cos(a),s=Math.sin(a),px=-s*9,py=c*9;return `<polygon points="${fr(x+px)},${fr(y+py)} ${fr(x-px)},${fr(y-py)} ${fr(x+c*16)},${fr(y+s*16)}" fill="#ffb1d6" stroke="#e8659f" stroke-width="2" stroke-linejoin="round"/>`})}`,
+  belly:`<ellipse cx="100" cy="194" rx="27" ry="26" fill="#fff4d6"/><g stroke="#f0d9a0" stroke-width="2.5"><line x1="80" y1="186" x2="120" y2="186"/><line x1="78" y1="198" x2="122" y2="198"/><line x1="84" y1="210" x2="116" y2="210"/></g>`,
+  front:`<g fill="#fff4d6" stroke="#e5c77a" stroke-width="2.5" stroke-linejoin="round"><path d="M72 62 L66 36 L84 54 Z"/><path d="M128 62 L134 36 L116 54 Z"/></g>
+   <g fill="#5fb894"><circle cx="92" cy="122" r="2"/><circle cx="108" cy="122" r="2"/></g>`,
+  blush:'#ffa9c9',cheek:12,bigEyes:true},
+ c_starfox:{body:'#d9cbff',line:'#a08ad6',
+  back:`<path d="M134 208 Q190 206 178 150 Q170 128 150 150 Q160 176 132 192 Z" fill="#d9cbff" stroke="#a08ad6" stroke-width="3" stroke-linejoin="round"/><path d="M178 150 Q170 128 150 150 Q162 150 170 160 Z" fill="#fff"/>
+   <g fill="#fff6a8">${[[166,176],[152,192]].map(([x,y])=>`<polygon points="${star(x,y,5,2)}"/>`).join('')}</g>`,
+  belly:`<ellipse cx="100" cy="196" rx="24" ry="22" fill="#fff"/>`,
+  front:`<g stroke="#a08ad6" stroke-width="3" fill="#d9cbff" stroke-linejoin="round"><path d="M50 84 L54 30 L92 58 Z"/><path d="M150 84 L146 30 L108 58 Z"/></g>
+   <g fill="#ffc4e1"><path d="M58 72 L60 42 L82 58 Z"/><path d="M142 72 L140 42 L118 58 Z"/></g>
+   <path d="M62 122 Q74 148 100 146 Q126 148 138 122 Q120 134 100 130 Q80 134 62 122 Z" fill="#f6f1ff"/>
+   <polygon points="${star(100,76,9,4)}" fill="#ffe27a" stroke="#e5b95a" stroke-width="2" stroke-linejoin="round"/>`,
+  nose:'#6b5a9a',blush:'#ffb1d6',bigEyes:true},
+ c_angelbear:{body:'#f3cf94',line:'#cf9f55',
+  back:`${wingPath(-1,'#fff','#b9d8f5',1)}${wingPath(1,'#fff','#b9d8f5',1)}<g fill="#f3cf94" stroke="#cf9f55" stroke-width="3"><circle cx="58" cy="62" r="17"/><circle cx="142" cy="62" r="17"/></g><g fill="#ffd9c2"><circle cx="58" cy="62" r="9"/><circle cx="142" cy="62" r="9"/></g>`,
+  belly:`<ellipse cx="100" cy="196" rx="25" ry="23" fill="#fff3dc"/><path d="${heartP(100,194,8)}" fill="#ffb1c8"/>`,
+  front:`<ellipse cx="100" cy="130" rx="22" ry="15" fill="#fff3dc"/><ellipse cx="100" cy="34" rx="28" ry="8" fill="none" stroke="#ffd34f" stroke-width="6"/><ellipse cx="100" cy="34" rx="28" ry="8" fill="none" stroke="#fff6c2" stroke-width="2"/>${sparkle(136,30,5)}`,
+  nose:'#8a5a2b',blush:'#ffb1c0'}
+});
+Object.assign(WALLX,{
+ w_dream:()=>{let s=`<rect width="360" height="200" fill="#ffe8f4"/>`;['#ffe8f4','#fbe6fb','#f1e6ff','#e8ecff'].forEach((c,i)=>{s+=`<rect y="${i*50}" width="360" height="50" fill="${c}"/>`});
+  [[160,40],[300,30],[240,110],[340,150],[180,160]].forEach(([x,y],i)=>{s+=`<g fill="#fff" opacity=".95"><ellipse cx="${x}" cy="${y}" rx="26" ry="10"/><circle cx="${x-10}" cy="${y-6}" r="11"/><circle cx="${x+8}" cy="${y-9}" r="13"/></g>`});
+  [[210,60],[330,90],[150,110],[270,170],[200,20]].forEach(([x,y],i)=>{s+=i%2?`<path d="${heartP(x,y,7)}" fill="#ffb1d6"/>`:sparkle(x,y,7,'#ffe27a')});
+  ['#ffb3c7','#ffd59a','#fff09a','#bdf0c0','#b3dcff','#d6c2ff'].forEach((c,i)=>{const R=46-i*5;s+=`<path d="M${280-R} 92 A${R} ${R} 0 0 1 ${280+R} 92" fill="none" stroke="${c}" stroke-width="5"/>`});
+  return s}
+});
+Object.assign(FLOORX,{
+ f_dream:()=>{let s=`<rect y="200" width="360" height="100" fill="#efe4ff"/>`;let k=0;
+  for(let y=216;y<300;y+=24)for(let x=(y%48?18:36);x<360;x+=36){s+=k++%3===2?sparkle(x,y,5,'#fff'):`<path d="${heartP(x,y,6)}" fill="${k%2?'#ffc2dc':'#d6c2ff'}"/>`}
+  return s}
+});
+FURN.u_sweets=()=>`<rect x="258" y="196" width="88" height="62" rx="4" fill="#ffc2dc" stroke="#e8659f" stroke-width="3"/>
+ <g stroke="#f7a7c8" stroke-width="2">${[0,1,2,3].map(i=>`<line x1="258" y1="${208+i*13}" x2="346" y2="${208+i*13}"/>`).join('')}</g>
+ <path d="M250 200 L302 158 L354 200 Z" fill="#9a6440" stroke="#744628" stroke-width="3" stroke-linejoin="round"/>
+ <path d="M256 196 L302 160 L348 196 q-6 10 -11 0 q-6 12 -12 0 q-6 10 -11 0 q-6 12 -12 0 q-6 10 -11 0 q-6 12 -12 0 q-6 10 -11 0 Z" fill="#fff" />
+ <g>${[[280,182,'#ff7ea6'],[302,172,'#7fd0f2'],[324,184,'#ffd34f'],[292,190,'#b6ec9c'],[314,190,'#d6c2ff']].map(([x,y,c])=>`<circle cx="${x}" cy="${y}" r="4" fill="${c}"/>`).join('')}</g>
+ <rect x="290" y="224" width="24" height="34" rx="11" fill="#8a5a3a" stroke="#5f3b22" stroke-width="2.5"/><circle cx="308" cy="242" r="2.5" fill="#ffd34f"/>
+ <rect x="266" y="210" width="18" height="16" rx="3" fill="#fff6c2" stroke="#e8659f" stroke-width="2"/><rect x="322" y="210" width="18" height="16" rx="3" fill="#fff6c2" stroke="#e8659f" stroke-width="2"/>
+ <line x1="252" y1="262" x2="252" y2="226" stroke="#fff" stroke-width="4"/><line x1="252" y1="262" x2="252" y2="226" stroke="#f0c8d8" stroke-width="1.5"/><circle cx="252" cy="218" r="10" fill="#ff9ec7" stroke="#e8659f" stroke-width="2"/><path d="M246 218 a6 6 0 0 1 12 0 a3 3 0 0 1 -6 0" fill="none" stroke="#fff" stroke-width="2"/>`;
+
 function thumb(it){
  if(['char','outfit','hat','acc'].includes(it.cat)){const eq={...S.equip,[it.cat]:it.id};return charSVG(eq,it.cat==='char'?'happy':'normal')}
  if(it.cat==='wall') return `<svg viewBox="0 0 360 200" preserveAspectRatio="xMidYMid slice">${wallSVG(it.id)}</svg>`;
@@ -678,6 +812,11 @@ const TBASE={add1:4,add21:7,add22:12,sub1:4.5,sub21:8,sub22:14,k1yomi:5,k1kaki:5
 const TLV=[{n:10,need:9,mul:1,medal:'🥉',name:'テスト1'},{n:15,need:14,mul:.8,medal:'🥈',name:'テスト2'},{n:20,need:20,mul:.65,medal:'🥇',name:'テスト3'}];
 const testLimit=(tid,lv)=>Math.round(TLV[lv].n*TBASE[tid]*TLV[lv].mul*S.settings.testScale);
 const testItem=key=>ITEMS.find(i=>i.test===key);
+// 🔒 ひみつの なかま：テストに ごうかく した かず（しゅるい×だんかい。れんしゅうは ふくまない）
+const passCount=(st=S)=>Object.values(st.tests||{}).filter(t=>t&&t.pass).length;
+const SECRETS=ITEMS.filter(i=>i.secret).sort((a,b)=>a.secret-b.secret);
+// あたらしく あえる ひみつの なかま（まだ もっていない もの）
+const newSecrets=()=>{const n=passCount();return SECRETS.filter(i=>n>=i.secret&&!S.owned.includes(i.id))};
 const parseKey=key=>{const [tid,l]=key.split('-');return{tid,lv:Number(l)-1}};
 const testUnlocked=key=>{const {tid,lv}=parseKey(key);return lv===0||!!(S.tests[tid+'-'+lv]||{}).pass};
 const passRule=L=>L.need===L.n?'ぜんもん せいかい':`${L.need}もん いじょう せいかい`;

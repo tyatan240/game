@@ -28,6 +28,15 @@ nav{grid-template-columns:repeat(5,1fr)}
 @keyframes drop{0%{opacity:1;transform:translateY(-26px)}60%{opacity:1;transform:translateY(4px)}80%{transform:translateY(-3px)}100%{opacity:1;transform:translateY(0)}}
 .ginfo{text-align:center;font-weight:800;margin:6px 0 10px}
 .items .item.unk .n{color:#c9bcbc}
+.item.dream{background:linear-gradient(160deg,#ffe3f1,#fff6d6,#e3f4ff,#efe3ff);box-shadow:0 3px 0 #e7b8e0,0 0 0 2px #fff inset}
+.item.dream .p{color:#b45fd0}
+.item.secret{background:linear-gradient(160deg,#f3ecff,#eaf7ff)}
+.item.secret.lock .p{color:#8a76c9;font-size:11px}
+.sil{background:#fff7f2;border-radius:12px}
+.sil svg{filter:brightness(0) opacity(.22);background:none!important}
+h2.dreamh .gt{background:linear-gradient(90deg,#ff6fae,#b07cff,#4fa8f0);-webkit-background-clip:text;background-clip:text;color:transparent}
+h2.dreamh small,h2.sech small{font-size:11px;color:#9a8aa8;-webkit-text-fill-color:#9a8aa8}
+h2.sech{font-size:15px;margin-top:16px;color:#7a5fc0}
 .items .item.srbg{background:linear-gradient(160deg,#fff4fb,#f3ecff,#eaf7ff)}
 .pop.sr{background:linear-gradient(160deg,#ffe3f1,#fff6d6,#e3f4ff,#efe3ff);box-shadow:0 0 0 4px #fff,0 0 30px 6px #ffd6ef}
 .srlabel{font-weight:800;font-size:22px;background:linear-gradient(90deg,#ff6f9a,#ffb347,#4fc3f7,#a07cff);-webkit-background-clip:text;background-clip:text;color:transparent;animation:pop .4s}
@@ -96,6 +105,7 @@ function goalsCard(){
 // たっせい した もくひょうの ごほうびを わたす（おうちに もどった とき）
 function goalsCheck(){
  if(!$('#ov').classList.contains('hide'))return;
+ if(secretCheck())return; // ひみつの なかまが さき（とじると もういちど goalsCheck が よばれる）
  const d=dailyOf(S),gs=goals(),newly=gs.filter(g=>d[g.key]>=g.need&&!d.got[g.id]);
  const allNow=gs.every(g=>d[g.key]>=g.need)&&!d.all;
  if(!newly.length&&!allNow)return;
@@ -105,6 +115,21 @@ function goalsCheck(){
  showPop(`${charSVG(S.equip,'happy','hop')}<h3>${allNow?'🎉 きょうの もくひょう ぜんぶ たっせい！':'🎯 もくひょう たっせい！'}</h3>
  <div>${newly.map(g=>g.text).join('<br>')}</div><div class="stars" style="margin:8px 0">⭐＋${add}${allNow?` <small style="font-size:15px">（ボーナス＋${S.settings.goalAll}）</small>`:''}</div>
  <div class="btns"><button class="big" data-act="close">やったー！</button></div>`)}
+// 🔒 テストの ごうかくで ひみつの なかまが くる（1かいに 1つずつ みせる）
+function secretCheck(){
+ const it=newSecrets()[0];if(!it)return false;
+ S.owned.push(it.id);if(it.cat==='furn'){if(!S.furn.includes(it.id))S.furn.push(it.id)}
+ save();sBuy();setTimeout(sBuy,450);render();
+ const pic=['char','outfit','hat','acc'].includes(it.cat)?charSVG({...S.equip,[it.cat]:it.id},'happy','hop'):thumb(it);
+ showPop(`<div class="srlabel">🔒 ひみつの ${it.cat==='char'?'なかま':'アイテム'} 🔓</div><div class="gprev sr">${pic}</div><h3>${it.name}</h3>
+ <div>テストに ${it.secret}かい ごうかく したから<br>${it.cat==='char'?'あいに きて くれたよ！':'とどいたよ！'}</div>
+ <div class="btns"><button class="big gray" data-act="close">とじる</button><button class="big" data-act="gwear" data-arg="${it.id}">つけてみる</button></div>`);
+ $('#ov .pop').classList.add('sr');return true}
+function secretInfo(id){
+ const it=ITEM[id],n=passCount();
+ showPop(`<div style="width:120px;margin:0 auto" class="sil">${thumb(it)}</div><h3>？？？</h3><div>🏆 テストに <b>${it.secret}かい</b> ごうかく すると<br>${it.cat==='char'?'ひみつの なかまが あいに くるよ！':'ひみつの アイテムが もらえるよ！'}</div>
+ <div class="stars" style="margin:8px 0;font-size:18px">いま ${n}かい ／ あと ${Math.max(0,it.secret-n)}かい</div>
+ <div class="btns"><button class="big gray" data-act="close">とじる</button><button class="big" data-act="close" data-arg="study">おべんきょう ▶</button></div>`)}
 function study(){
  const card=(href,ic,bg,name,col,desc)=>`<a class="study" href="${href}"><div class="ic" style="background:${bg}">${ic}</div><div><b style="color:${col}">${name}</b><span>${desc}</span></div></a>`;
  return `<h2>📚 おべんきょう</h2><p class="muted" style="text-align:left">どの へやでも ⭐ポイントが もらえるよ。ためた ポイントは おみせで つかえるよ！</p>
@@ -161,10 +186,17 @@ function reveal(it,sr,dup){
  if(sr)$('#ov .pop').classList.add('sr')}
 
 function shop(){
- const list=shopCat==='special'?ITEMS.filter(i=>i.special).sort((a,b)=>(b.cat==='char')-(a.cat==='char')):ITEMS.filter(i=>i.cat===shopCat&&i.price>0),tl=ITEMS.filter(i=>i.cat===shopCat&&i.test);
- return `<h2>おみせ</h2>${tabs(CATS,shopCat,'shopcat')}${shopCat==='special'?'<p class="muted">✨ とっても とくべつな アイテム。おべんきょうを がんばって ためよう！</p>':''}${shopCat==='char'?'<p class="muted">🐾 あたらしい なかまを むかえよう！ ふくも そのまま きられるよ</p>':''}<div class="items">
- ${list.map(it=>{const own=S.owned.includes(it.id);return `<button class="item ${own?'own':''} ${it.special?'sp':''}" data-act="buy" data-arg="${it.id}">${thumb(it)}<div class="n">${it.name}</div><div class="p">${own?'✔ もってる':'⭐'+it.price}</div></button>`}).join('')}
- </div>${tl.length?`<h2 style="font-size:15px;margin-top:16px">🏆 テストで もらえる アイテム</h2><div class="items">
+ const list=shopCat==='special'?ITEMS.filter(i=>i.special).sort((a,b)=>(b.cat==='char')-(a.cat==='char')):ITEMS.filter(i=>i.cat===shopCat&&i.price>0).sort((a,b)=>(!!a.dream)-(!!b.dream)),tl=ITEMS.filter(i=>i.cat===shopCat&&i.test);
+ const card=it=>{const own=S.owned.includes(it.id);return `<button class="item ${own?'own':''} ${it.dream?'dream':it.special?'sp':''}" data-act="buy" data-arg="${it.id}">${thumb(it)}<div class="n">${it.name}</div><div class="p">${own?'✔ もってる':'⭐'+it.price}</div></button>`};
+ const n=passCount(),sec=shopCat==='special'||shopCat==='char'?SECRETS.filter(i=>shopCat==='special'||i.cat==='char'):[];
+ const dreams=shopCat==='special'?ITEMS.filter(i=>i.dream).sort((a,b)=>a.price-b.price):[];
+ return `<h2>おみせ</h2>${tabs(CATS,shopCat,'shopcat')}
+ ${dreams.length?`<h2 class="dreamh">🌈 <span class="gt">ゆめの ごほうび</span> <small>⭐1000〜</small></h2><div class="items">${dreams.map(card).join('')}</div>
+ <h2 class="sech">🔒 ひみつの なかま <small>🏆テストに ごうかく すると あえる（いま ${n}かい）</small></h2><div class="items">${sec.map(it=>{const own=S.owned.includes(it.id);return own?`<button class="item own secret" data-act="buy" data-arg="${it.id}">${thumb(it)}<div class="n">${it.name}</div><div class="p">✔ もってる</div></button>`:`<button class="item secret lock" data-act="sinfo" data-arg="${it.id}"><div class="sil">${thumb(it)}</div><div class="n">？？？</div><div class="p">🏆 ${it.secret}かい ごうかく</div></button>`}).join('')}</div>
+ <h2 style="font-size:15px;margin-top:16px">✨ スペシャル</h2>`:''}
+ ${shopCat==='special'?'<p class="muted">✨ とっても とくべつな アイテム。おべんきょうを がんばって ためよう！</p>':''}${shopCat==='char'?'<p class="muted">🐾 あたらしい なかまを むかえよう！ ふくも そのまま きられるよ</p>':''}<div class="items">
+ ${list.map(card).join('')}
+ </div>${shopCat==='char'&&sec.length?`<h2 class="sech">🔒 ひみつの なかま <small>🏆テストに ごうかく すると あえる（いま ${n}かい）</small></h2><div class="items">${sec.map(it=>S.owned.includes(it.id)?card(it):`<button class="item secret lock" data-act="sinfo" data-arg="${it.id}"><div class="sil">${thumb(it)}</div><div class="n">？？？</div><div class="p">🏆 ${it.secret}かい ごうかく</div></button>`).join('')}</div>`:''}${tl.length?`<h2 style="font-size:15px;margin-top:16px">🏆 テストで もらえる アイテム</h2><div class="items">
  ${tl.map(it=>{const own=S.owned.includes(it.id);return `<button class="item ${own?'own':'lock'}" data-act="${own?'buy':'tinfo'}" data-arg="${own?it.id:it.test}">${thumb(it)}<div class="n">${it.name}</div><div class="p">${own?'✔ もってる':'🏆 テストで ゲット'}</div></button>`}).join('')}</div>`:''}`}
 function testInfo(key){
  const {tid,lv}=parseKey(key),it=testItem(key),sub=KTYPE[tid]?'k':ETYPE[tid]?'e':'t';
@@ -173,6 +205,7 @@ function testInfo(key){
  <div class="btns"><button class="big gray" data-act="close">とじる</button>${on?`<a class="big" href="${T[3]}/index.html#tests">テストへ 🏆</a>`:''}</div>`)}
 function buy(id){
  const it=ITEM[id];
+ if(it.secret&&!S.owned.includes(id))return secretInfo(id);
  if(S.owned.includes(id)){wear(id);showPop(`${it.cat==='furn'||it.cat==='wall'||it.cat==='floor'?'':charSVG(S.equip,'happy','hop')}<h3>${it.name}</h3><div>${it.cat==='furn'?(S.furn.includes(id)?'おへやに おいたよ！':'おへやから しまったよ'):it.cat==='char'?'いっしょに あそぼう！':'つけたよ！'}</div><div class="btns"><button class="big" data-act="close">OK</button></div>`);return}
  if(S.points<it.price){sNg();showPop(`${charSVG(S.equip,'oops')}<h3>あと ⭐${it.price-S.points}</h3><div>おべんきょうで ポイントを ためよう！</div><div class="btns"><button class="big gray" data-act="close">とじる</button><button class="big" data-act="close" data-arg="study">おべんきょう ▶</button></div>`);return}
  showPop(`<div style="width:130px;margin:0 auto">${thumb(it)}</div><h3>${it.special?'✨ ':''}${it.name}</h3><div>⭐${it.price} で ${it.cat==='char'?'なかまに する':'かう'}？</div><div class="btns"><button class="big gray" data-act="close">やめる</button><button class="big" data-act="dobuy" data-arg="${id}">かう！</button></div>`)}
@@ -268,6 +301,7 @@ const LINES=['おべんきょう しよう！','きょうも がんばろうね�
 Object.assign(ACT,{
  go:a=>{sTap();go(a)},
  tinfo:a=>{sTap();testInfo(a)},
+ sinfo:a=>{sTap();secretInfo(a)},
  shopcat:a=>{shopCat=a;sTap();render()},
  dresstab:a=>{dressTab=a;sTap();render()},
  buy:a=>{sTap();buy(a)},
