@@ -137,4 +137,57 @@ export const QUESTS = [
       ['にわしの メリー', 'あかと あおの おはな、すてき！ これで おまつりが できるわ！'],
       ['にわしの メリー', 'さいごは おくの おしろの もんで、ぜんぶの もじの おさらいよ！']], reward: { star: 4 } },
   ] },
+  // ===== ワールド3「ことばの まち」=====
+  //   convo    … target に はなしかけると、えいごの へんじを えらぶ（answer：words.js の id）
+  //   ask      … 「How are you?」を えらんで きく → reply を よんで／きいて、あう ものを わたす（items から give を えらぶ）
+  //   sentence … ぶんカードで ぶんを つくる（frame の スロットに want を はめる）→ give を もらう
+  //   count    … えを みて かずを えいごで こたえる（rounds の かず）
+  { id: 'w3hello', title: 'こえを とりもどそう', requires: { flag: 'lowerClear', w3: 'w3plaza' }, steps: [
+    { id: 'duck', on: 'convo', target: 'w3Duck', goal: 'アヒルさんに あいさつ しよう！', pre: [
+      ['アヒルさん', '……。'], ['', 'アヒルさんは こえが でない みたい。いまは あさ。'], ['', 'えいごで あさの あいさつを してみよう！']],
+      ask: 'あさの あいさつは どれ？', answer: 'goodmorning', choices: ['goodmorning', 'goodnight', 'goodbye'],
+      after: [['アヒルさん', 'Good morning! ……あっ、こえが でた！ ありがとう！']] },
+    { id: 'cow', on: 'convo', target: 'w3Cow', goal: 'うしさんに はなしかけよう！', pre: [
+      ['うしさん', '……。'], ['', 'うしさんが きれいな おはなを くれた！'], ['', 'えいごで おれいを いおう！']],
+      ask: 'なんて いう？', answer: 'thankyou', choices: ['thankyou', 'sorry', 'hello'],
+      after: [['うしさん', 'Thank you の ことば、うれしいな。……こえが もどったよ！']] },
+    { id: 'penguin', on: 'convo', target: 'w3Penguin', goal: 'ペンギンさんに はなしかけよう！', pre: [
+      ['', 'あっ！ ペンギンさんに ぶつかっちゃった！'], ['', 'えいごで あやまろう！']],
+      ask: 'なんて いう？', answer: 'sorry', choices: ['sorry', 'thankyou', 'goodmorning'],
+      after: [['ペンギンさん', 'だいじょうぶだよ！ ……あれ、こえが でた！ ありがとう！']], reward: { star: 2 } },
+  ] },
+  { id: 'w3feel', title: 'げんき かな？', requires: { quest: 'w3hello' }, steps: [
+    { id: 'koala', on: 'ask', target: 'w3Koala', goal: 'コアラさんに「げんき？」と きこう！', pre: [
+      ['', 'コアラさんが ぼんやり している。'], ['', 'えいごで「げんき？」って きいて みよう！']],
+      answer: 'howareyou', reply: "I'm sleepy.", give: 'pillow', items: ['pillow', 'bananas', 'balloon'],
+      after: [['コアラさん', 'まくら、ありがとう！ ぐっすり ねられそう。Good night!']] },
+    { id: 'monkey', on: 'ask', target: 'w3Monkey', goal: 'おさるさんに「げんき？」と きこう！', pre: [
+      ['', 'おさるさんが おなかを おさえている。'], ['', 'えいごで「げんき？」って きいて みよう！']],
+      answer: 'howareyou', reply: "I'm hungry.", give: 'bananas', items: ['pillow', 'bananas', 'balloon'],
+      after: [['おさるさん', 'バナナ だいすき！ Thank you!']] },
+    { id: 'lion', on: 'sentence', target: 'w3Lion', goal: 'ライオンさんに きもちを つたえよう！', frame: 'im', want: ['happy'], pre: [
+      ['ライオンさん', 'How are you?'], ['', 'ライオンさんが「げんき？」って きいてきた。'], ['', 'みんなを たすけて うれしい きもちを、ぶんカードで つたえよう！']],
+      wrong: 'うれしい きもちの ことばを えらんでね。',
+      after: [['ライオンさん', "I'm happy, too! よかった！"], ['ライオンさん', 'ひろばに こえが もどったね。ひがしの「あいさつの もん」へ いってみて！']], reward: { star: 3 } },
+  ] },
+  { id: 'w3pie', title: 'アップルパイを つくろう', requires: { w3: 'w3market' }, steps: [
+    { id: 'ask', on: 'talk', target: 'w3Baker', goal: 'パンやさんに はなしかけよう！', lines: [
+      ['パンやさん', 'Hello! アップルパイを つくりたいの。'], ['パンやさん', 'りんごが 3こ と、たまごが 2こ ほしいな。'],
+      ['パンやさん', 'いちばの おみせで、えいごで たのんでね。「Two bananas, please.」みたいにね！']] },
+    { id: 'apples', on: 'sentence', target: 'w3FruitKeeper', goal: 'くだものやさんで りんごを 3こ たのもう！', frame: 'please', want: ['three', 'apples'], give: 'apples3', pre: [
+      ['くだものやさん', 'Hello! いらっしゃい！'], ['', 'ぶんカードで りんごを 3こ たのもう！']],
+      wrong: 'パンやさんは りんごを 3こ ほしいって いってたよ。',
+      after: [['くだものやさん', 'Three apples! OK! はい、どうぞ。']] },
+    { id: 'eggs', on: 'sentence', target: 'w3EggKeeper', goal: 'たまごやさんで たまごを 2こ たのもう！', frame: 'please', want: ['two', 'eggs'], give: 'eggs2', pre: [
+      ['たまごやさん', 'Hello! ピヨ！'], ['', 'ぶんカードで たまごを 2こ たのもう！']],
+      wrong: 'パンやさんは たまごを 2こ ほしいって いってたよ。',
+      after: [['たまごやさん', 'Two eggs! はい、どうぞ。']] },
+    { id: 'deliver', on: 'deliver', item: 'apples3', take: true, target: 'w3Baker', goal: 'パンやさんに とどけよう！', effect: [{ take: 'eggs2' }], lines: [
+      ['パンやさん', 'りんご 3こ と たまご 2こ！ Thank you!'], ['パンやさん', 'おいしい アップルパイが やけたよ！']], reward: { star: 3 } },
+  ] },
+  { id: 'w3balloon', title: 'ふうせん いくつ？', requires: { w3: 'w3market' }, steps: [
+    { id: 'count', on: 'count', target: 'w3Clown', goal: 'ふうせんやさんの クイズに こたえよう！', rounds: [3, 5, 8, 10], pre: [
+      ['ふうせんやさん', 'Hello! ふうせん いくつ あるかな？'], ['ふうせんやさん', 'かぞえて、えいごで こたえてね！']],
+      after: [['ふうせんやさん', 'Great! かずの えいご、ばっちりだね！']], reward: { star: 2 } },
+  ] },
 ];

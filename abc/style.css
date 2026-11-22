@@ -35,7 +35,9 @@ body.intitle #hud,body.intitle #pad,body.intitle #act{display:none}
 .logo em{font-style:normal;font-size:min(9vh,52px);font-weight:800;color:#fff;-webkit-text-stroke:2.5px #4a3a3a;paint-order:stroke fill;margin-left:6px}
 @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
 .sub{margin:0;font-weight:800;font-size:min(4.5vh,20px);background:#fffdf5;border-radius:999px;padding:4px 16px}
-.tbtns{display:flex;gap:14px;margin-top:6px}
+.tbtns{display:flex;gap:14px;margin-top:6px;flex-wrap:wrap;justify-content:center}
+.tbtns button#start2{background:#9b7be0;box-shadow:0 5px 0 #7457c0}
+.tbtns button#start3{background:#3fa8d8;box-shadow:0 5px 0 #2a84b0}
 .tbtns button,.go{border:0;border-radius:20px;padding:12px 26px;font-weight:800;font-size:min(5vh,22px);color:#fff;background:#ff8fb1;box-shadow:0 5px 0 #d9658c}
 .tbtns button#cont{background:#5cc28a;box-shadow:0 5px 0 #3d9a68}
 .tbtns button:active,.go:active{transform:translateY(4px);box-shadow:none}
@@ -226,3 +228,27 @@ body.portrait #goal{top:max(96px,calc(env(safe-area-inset-top) + 90px))}
 .teach .pair span { font-size: 38px; color: #4a8fe0; }
 .teach .pair.pulse { animation: lowpulse .4s; }
 @keyframes lowpulse { 50% { transform: scale(1.15); } }
+/* ===== ワールド3「ことばの まち」===== */
+.w3teach{max-width:min(680px,96vw)}
+.w3cards{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:8px 0;max-height:46vh;overflow-y:auto}
+.w3c{border:0;border-radius:16px;background:#fff;box-shadow:0 4px 0 #e6d6d6,inset 0 0 0 3px #f0e4e4;padding:6px 8px;min-width:min(19vh,104px);display:flex;flex-direction:column;align-items:center;font:inherit;color:#4a3a3a}
+.w3c canvas{width:min(11vh,56px)!important;height:min(11vh,56px)!important}
+.w3c b{font-size:min(4.4vh,19px);color:#3f7fc9;white-space:nowrap}
+.w3c small{font-size:11px;color:#9a8a8a;font-weight:800}
+.w3c.sel{box-shadow:0 4px 0 #e5b82c,inset 0 0 0 3px #ffd34f;background:#fffbe8}
+.w3c.glow{animation:w3glow 1s infinite}
+@keyframes w3glow{50%{box-shadow:0 4px 0 #e5b82c,inset 0 0 0 4px #ffd34f,0 0 14px 4px #ffe27a}}
+.w3c.pulse{animation:lowpulse .5s}
+.frame{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;font-weight:800;font-size:min(6vh,28px);color:#4a3a3a;margin:6px 0}
+.frame .fw{color:#3f7fc9}
+.frame .fslot{display:inline-flex;align-items:center;justify-content:center;min-width:min(20vh,110px);height:min(9vh,44px);border:3px dashed #d8c0c8;border-radius:12px;background:#fff;font-style:normal;color:#3f7fc9;padding:0 8px}
+.frame .fslot.on{border:3px solid #ffd34f;background:#fffbe8}
+button.frame{border:0;background:#f4f9ff;border-radius:16px;padding:8px 14px;margin:6px auto;box-shadow:0 3px 0 #d6e6f6;font:inherit;font-weight:800;font-size:min(6vh,28px)}
+.frame.shake{animation:shake .4s}
+.frame.merge{animation:lowpulse .6s 2}
+.entext{font-size:min(7vh,32px);font-weight:800;color:#3f7fc9;margin:2px 0 4px}
+.ch.opt{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:min(5vh,24px);padding:min(2vh,12px) 4px}
+.ch.opt canvas{width:min(12vh,64px)!important;height:min(12vh,64px)!important}
+.ch.opt .otext{color:#3f7fc9;white-space:nowrap}
+.w3teach .lname{font-size:min(4vh,17px);margin:4px 0}
+.frame .punct{margin-left:-6px}

@@ -50,3 +50,6 @@ export async function sendStars(S, saveFn) {
 }
 // おうちの いまの ⭐（タイトルに ひょうじ）
 export function housePoints() { return readHouse().points || 0; }
+
+// おうちの ⚙️設定の「管理者モード」が オンか（オンなら ワールドを さいしょから えらべる）
+export function houseAdmin() { const d = readHouse(); return !!(d.settings && d.settings.admin); }

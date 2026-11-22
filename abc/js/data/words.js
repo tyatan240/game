@@ -25,5 +25,20 @@ export const WORDS = [
   // いろの にわ
   { id: 'red', word: 'RED', ja: 'あか', art: 'red', speak: 'red', audio: null, learnAt: 'redpaint', place: 'にわの あかい えのぐ', magic: 'あかい いろの まほう' },
   { id: 'blue', word: 'BLUE', ja: 'あお', art: 'blue', speak: 'blue', audio: null, learnAt: 'bluepaint', place: 'にわの あおい えのぐ', magic: 'あおい いろの まほう' },
+  // ===== ワールド3「ことばの まち」（world:3。word は ふつうの かきかた。kind で なかまわけ）=====
+  // あいさつの ひろば
+  ...[
+    ['hello', 'Hello', 'こんにちは', 'w3Parrot', 'あう ときの あいさつ'],
+    ['goodbye', 'Goodbye', 'さようなら', 'w3Parrot', 'わかれる ときの あいさつ'],
+    ['thankyou', 'Thank you', 'ありがとう', 'w3Parrot', 'おれいの ことば'],
+    ['sorry', 'Sorry', 'ごめんなさい', 'w3Parrot', 'あやまる ことば'],
+    ['goodmorning', 'Good morning', 'おはよう', 'w3Sheep', 'あさの あいさつ'],
+    ['goodnight', 'Good night', 'おやすみ', 'w3Sheep', 'ねる まえの あいさつ'],
+    ['howareyou', 'How are you?', 'げんき？', 'w3Pig', 'げんきか きく ことば'],
+  ].map(([id, word, ja, at, magic]) => ({ id, word, ja, art: id, speak: word, audio: null, learnAt: at, place: 'あいさつの ひろば', magic, world: 3, kind: 'greet' })),
+  ...[['happy', 'うれしい'], ['sleepy', 'ねむい'], ['hungry', 'おなかが すいた']].map(([id, ja]) => ({ id, word: id, ja, art: id, speak: id, audio: null, learnAt: 'w3Pig', place: 'あいさつの ひろば', magic: 'きもちを いう ことば', world: 3, kind: 'feel' })),
+  // かずの いちば
+  ...['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'].map((id, i) => ({ id, word: id, ja: String(i + 1), n: i + 1, art: 'n' + (i + 1), speak: id, audio: null, learnAt: i < 5 ? 'w3Bear' : 'w3Deer', place: 'かずの いちば', magic: 'かずを いう ことば', world: 3, kind: 'number' })),
+  ...[['apples', 'apple', 'りんご'], ['bananas', 'banana', 'バナナ'], ['eggs', 'egg', 'たまご']].map(([id, one, ja]) => ({ id, word: id, one, ja, art: id, speak: id, audio: null, learnAt: 'w3Grocer', place: 'かずの いちば', magic: 'おみせで たのむ ことば', world: 3, kind: 'thing' })),
 ];
 export const WORD = Object.fromEntries(WORDS.map(w => [w.id, w]));

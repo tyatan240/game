@@ -84,7 +84,12 @@ export const INV = {
   bridgeKey: { name: 'はしの かぎ', art: 'key' },
   honey: { name: 'はちみつ', art: 'honey' },
   applebasket: { name: 'りんごの かご', art: 'basket' },
+  // ワールド3
+  apples3: { name: 'りんご 3こ', art: 'apples' },
+  eggs2: { name: 'たまご 2こ', art: 'eggs' },
 };
+// ワールド3：えらんで わたす もの（ask）
+export const GIFTS = { pillow: { ja: 'まくら', art: 'pillow' }, bananas: { ja: 'バナナ', art: 'bananas' }, balloon: { ja: 'ふうせん', art: 'balloon1' } };
 
 export const STORY = {
   intro: [
