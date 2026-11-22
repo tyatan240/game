@@ -338,6 +338,19 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
   }
 
+  console.log('8f. おみせの タブを えらんでも よこスクロールが もどらない');
+  {
+    const p = await page();
+    await p.goto(B + 'index.html'); await p.waitForTimeout(500);
+    await p.evaluate(() => { closePop(); go('shop'); });
+    await p.evaluate(() => { document.querySelector('#view .tabs').scrollLeft = 9999; });
+    const x0 = await p.evaluate(() => document.querySelector('#view .tabs').scrollLeft);
+    await p.click('#view .tabs [data-arg=furn]');
+    const x1 = await p.evaluate(() => document.querySelector('#view .tabs').scrollLeft);
+    ok(x0 > 50 && Math.abs(x1 - x0) < 10 && await p.evaluate(() => shopCat === 'furn'), `みぎの タブを えらんでも そのまま（${x0}→${x1}）`);
+    await p.context().close();
+  }
+
   console.log('12a. えいごの こえ（iPad で「Capital A」と よまれない）');
   {
     const p = await page(); await p.goto(B + 'abc/index.html'); await p.waitForTimeout(300);

@@ -85,10 +85,16 @@ let view=VIEWS.includes(location.hash.slice(1))&&location.hash!=='#settings'?loc
 let bubble='',homeMood='normal',shopCat='outfit',dressTab='moko',resetArm=false;
 if(location.hash==='#dress-room'){view='dress';dressTab='room'}
 function go(v){view=v;history.replaceState(null,'',v==='home'||v==='settings'?location.pathname:'#'+v);render();$('main').scrollTop=0}
+let lastView=null;
 function render(){
  updPts();
  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.arg===view));
+ // タブの よこスクロールの いちを おぼえておく（えらぶたびに ひだりはしに もどらない ように）
+ const keep=lastView===view?[...document.querySelectorAll('#view .tabs')].map(t=>t.scrollLeft):[];lastView=view;
  $('#view').innerHTML={home,study,gacha,shop,dress,settings}[view]();
+ document.querySelectorAll('#view .tabs').forEach((t,i)=>{if(keep[i]!==undefined)t.scrollLeft=keep[i];
+  const on=t.querySelector('button.on');if(!on)return;const l=on.offsetLeft-t.offsetLeft,r=l+on.offsetWidth;
+  if(l<t.scrollLeft)t.scrollLeft=l-8;else if(r>t.scrollLeft+t.clientWidth)t.scrollLeft=r-t.clientWidth+8});
  if(view==='settings')storageInfo().then(h=>{const e=$('#stinfo');if(e)e.innerHTML=h});
 }
 function home(){
