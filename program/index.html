@@ -101,6 +101,11 @@ main{flex:1;padding:12px;display:flex;flex-direction:column;gap:12px}
  main.play .pbtn.lp{font-size:16px}
  main.play .blk{width:48px;height:48px;font-size:27px}
 }
+.buildcard{display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;background:linear-gradient(120deg,#eaf7ff,#f1ffe8)}
+.buildcard svg{width:64px;height:64px;flex:none}
+.buildcard b{display:block;font-size:17px;color:#2b7fa8}
+.buildcard span{font-size:12px;color:#5d7f93}
+.buildcard .go{font-size:22px;color:#5bbbe6;margin-left:auto}
 </style>
 </head>
 <body>
@@ -226,6 +231,7 @@ function titleV(){
  return `<header><a class="hbtn" href="../index.html" style="text-decoration:none;display:flex;align-items:center">🏠</a><div class="ttl">ピコの プログラミング</div>${ptsChip()}</header>
  <main>
  <div class="card hero">${robotSVG(0)}<h1>ピコを うごかそう！</h1><div class="muted">めいれいブロックを ならべて ▶ を おすと、ピコが そのとおりに うごくよ<br>はじめて とった ★ 1つで ⭐${starPts()} ポイント！</div></div>
+ <a class="card buildcard" href="build/index.html"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M8 40 L32 28 L56 40 L32 52 Z" fill="#a6dc78"/><path d="M8 40 L32 52 L32 58 L8 46 Z" fill="#8f6440"/><path d="M56 40 L32 52 L32 58 L56 46 Z" fill="#a5764a"/><path d="M20 30 L32 24 L44 30 L32 36 Z" fill="#e0957a"/><path d="M20 30 L32 36 L32 46 L20 40 Z" fill="#c9574b"/><path d="M44 30 L32 36 L32 46 L44 40 Z" fill="#d9675a"/><path d="M18 31 L32 14 L46 31 L32 24 Z" fill="#e0524f"/></svg><div><b>ロボモコの ブロックタウン</b><span>3Dの せかいで ブロックを つんで おうちを つくろう。ロボットに めいれいも できるよ！</span></div><span class="go">▶</span></a>
  <div class="card"><div class="sec">➡️ ならべて うごかす</div><div class="stages">${a.filter(([l])=>!l.loop&&!l.set).map(([l,i])=>btn(l,i)).join('')}</div></div>
  <div class="card"><div class="sec">🔁 くりかえし</div><div class="stages">${a.filter(([l])=>l.loop&&!l.set).map(([l,i])=>btn(l,i)).join('')}</div></div>
  <div class="card"><div class="sec">🌟 もっと ならべて</div><div class="stages">${a.filter(([l])=>!l.loop&&l.set===2).map(([l,i])=>btn(l,i)).join('')}</div></div>

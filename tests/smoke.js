@@ -646,6 +646,39 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await ctx.close();
   }
 
+  console.log('18. ブロックタウン：おだい 5ステージ・プログラミングの へやから はいる');
+  {
+    const ctx = await browser.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true, serviceWorkers: 'block' });
+    const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
+    await p.goto(B + 'index.html'); await p.waitForTimeout(300); await p.evaluate(() => { closePop(); S.points = 0; S.settings.goalPts = 0; S.settings.goalAll = 0; save(); });
+    await p.goto(B + 'program/index.html'); await p.waitForTimeout(300);
+    await p.click('a.buildcard'); await p.waitForSelector('body[data-ready="1"]'); await p.click('#helpOk');
+    ok(p.url().endsWith('program/build/index.html') && /おだい1/.test(await p.textContent('#qbar')), 'プログラミングの へやから はいれる・おだい1 が でる');
+    const done = () => p.evaluate(() => { __build.questNow(); return __build.ui.quest.done.join(); });
+    const closeDlg = () => p.evaluate(() => { document.getElementById('questDlg').hidden = true; });
+    await p.evaluate(() => { const w = __build.world; for (let x = 2; x < 6; x++) w.place(x, 1, 2, 'wood'); });
+    ok(await done() === '1', 'おだい1：きを よこに 4こ'); await closeDlg();
+    await p.evaluate(() => { const w = __build.world; for (let x = 2; x < 10; x++) w.place(x, 1, 4, 'stone'); });
+    ok(await done() === '1', 'おだい2：くりかえしを つかわないと まだ');
+    // ロボットで くりかえし
+    await p.click('#tabRobot'); await p.evaluate(() => { __build.robot.moveTo(2, 7); __build.prog = [{ t: 'loop', n: 8, body: [{ t: 'put', b: 'brick' }, { t: 'R' }] }]; __build.runner.speed = 2; });
+    await p.click('#rPlay'); await p.waitForFunction(() => __build.runner.state === 'idle', null, { timeout: 15000 }); await p.waitForTimeout(400);
+    ok(await done() === '1,2', 'おだい2：ロボットの くりかえしで ながい かべ'); await closeDlg(); await p.click('#tabFree');
+    // へや（4×4 の しかく）
+    await p.evaluate(() => { const w = __build.world; for (let i = 0; i < 4; i++) { w.place(10 + i, 1, 10, 'wood'); w.place(10 + i, 1, 13, 'wood'); w.place(10, 1, 10 + i, 'wood'); w.place(13, 1, 10 + i, 'wood'); } });
+    ok(await done() === '1,2,3', 'おだい3：かこんだ へや'); await closeDlg();
+    // おうち（ドア・まど・やね）
+    await p.evaluate(() => { const w = __build.world; w.remove(11, 1, 13); w.place(11, 1, 13, 'door'); w.remove(13, 1, 11); w.place(13, 1, 11, 'glass'); for (let x = 10; x < 14; x++) w.place(x, 2, 11, 'roof'); });
+    ok(await done() === '1,2,3,4', 'おだい4：ドア・まど・やねで おうち'); await closeDlg();
+    await p.evaluate(() => { const w = __build.world; for (const [ox, oz] of [[1, 10], [5, 12]]) { for (let i = 0; i < 3; i++) { w.place(ox + i, 1, oz, 'brick'); w.place(ox + i, 1, oz + 2, 'brick'); w.place(ox, 1, oz + i, 'brick'); w.place(ox + 2, 1, oz + i, 'brick'); } w.remove(ox + 1, 1, oz + 2); w.place(ox + 1, 1, oz + 2, 'door'); w.remove(ox, 1, oz + 1); w.place(ox, 1, oz + 1, 'glass'); for (let x = ox; x < ox + 3; x++) w.place(x, 2, oz + 1, 'roof'); } });
+    ok(await done() === '1,2,3,4,5' && /むらびと/.test(await p.textContent('#questCard')), 'おだい5：おうち 3けんで むら');
+    await p.waitForTimeout(300);
+    ok(await p.evaluate(() => JSON.parse(localStorage.getItem('moko-math-v1')).points) === 220, 'ごほうびの ⭐が おうちに とどく（20+30+40+50+80）');
+    await p.reload(); await p.waitForSelector('body[data-ready="1"]');
+    ok(await p.evaluate(() => __build.ui.quest.done.length === 5) && /ぜんぶ クリア/.test(await p.textContent('#qbar')), 'クリアは のこる・たてものも のこる');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await ctx.close();
+  }
+
   console.log('12a. えいごの こえ（iPad で「Capital A」と よまれない）');
   {
     const p = await page(); await p.goto(B + 'abc/index.html'); await p.waitForTimeout(300);
