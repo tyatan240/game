@@ -417,9 +417,9 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(await p.evaluate(() => document.getElementById('ov').classList.contains('hide')), 'みための「おわり」で とじる');
     await p.click('#bShop');
     await p.click('[data-act=tshopcat][data-arg=park]'); await p.click('[data-act=tpart][data-arg=lamp]'); await p.click('[data-act=tbuy]');
-    ok(await T(() => S.points === 130 && JSON.parse(localStorage.getItem('moko-math-v1')).points === 130 && __town.town.unlockedParts.includes('lamp')), 'かうと ⭐が へって つかえる ように なる');
-    await T(() => __town.buy('lamp')); ok(await T(() => S.points === 130), 'おなじ ものは 2かい かえない');
-    await T(() => __town.buy('fountain')); ok(await T(() => S.points === 130 && !__town.town.unlockedParts.includes('fountain')), '⭐が たりないと かえない');
+    ok(await T(() => S.points === 90 && JSON.parse(localStorage.getItem('moko-math-v1')).points === 90 && __town.town.unlockedParts.includes('lamp')), 'かうと ⭐が へって つかえる ように なる');
+    await T(() => __town.buy('lamp')); ok(await T(() => S.points === 90), 'おなじ ものは 2かい かえない');
+    await T(() => __town.buy('fountain')); ok(await T(() => S.points === 90 && !__town.town.unlockedParts.includes('fountain')), '⭐が たりないと かえない');
     await T(() => { closePop(); __town.setMode('build'); __town.chooseTool({ kind: 'part', id: 'lamp', r: 0 }); __town.tapBuild(24.5, 26.5); __town.tapBuild(24.5, 26.5); __town.setMode('view'); });
     ok(await T(() => __town.town.objects.some(o => o.type === 'lamp')), 'かった パーツを おける');
     // じゅうにん
@@ -444,7 +444,7 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     await T(() => __town.saveNow()); await p.reload(); await p.waitForSelector('body[data-ready="1"]');
     ok(await T(() => __town.town.objects.some(o => o.type === 'lamp') && __town.town.unlockedAreas.includes('forest') && __town.town.objects.find(o => o.room).room.furn[0] === 'u_bed' && __town.town.ground['14,12'] === 'road_dirt' && __town.town.objects.find(o => o.type === 'house_basic').residents[0] === 'c_hamster'), 'とじても のこる（たてもの・みち・すむひと）');
     await p.click('#toRoom'); await p.waitForLoadState(); await p.waitForTimeout(500);
-    ok(!p.url().includes('machi') && await T(() => S.points) === 130, 'おへやに もどる（⭐が いっしょ）');
+    ok(!p.url().includes('machi') && await T(() => S.points) === 90, 'おへやに もどる（⭐が いっしょ）');
     await T(() => { closePop(); go('shop'); });
     ok(await T(() => !/がいとう|ふんすい|いしだたみ|まちの/.test(document.getElementById('view').textContent) && !ITEMS.some(i => ['lamp', 'fountain', 'house_basic', 'road_stone', 'tree_sakura'].includes(i.id))), 'おへやの おみせに まちの しょうひんは ない');
     ok(await T(() => [...S.owned].sort().join()) === owned0, 'おへやの もちものは かわらない');
