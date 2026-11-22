@@ -9,7 +9,7 @@
 ## common/core.js の主な定義
 | 種類 | 名前 |
 |---|---|
-| 問題の種類 | `TYPES`/`TYPE`（さんすう：add1, add21, add22, sub1, sub21, sub22, mul1, mul2（九九）, clock1, clock2（時計）。`gen()` で出題、答えは `ansOf(p)`、表示は `probHTML(p,入力)`。時計は `[時,'⏰',分,'h'|'m']`、`def:true` は最初からオン）、`KTYPES`/`KTYPE`（こくご：k1yomi, k1kaki, k2yomi, k2kaki, kotoba, yomi） |
+| 問題の種類 | `TYPES`/`TYPE`（さんすう：add1, add21, add22, sub1, sub21, sub22, mul1, mul2（九九）, clock1, clock2（時計）。`gen()` で出題、答えは `ansOf(p)`、表示は `probHTML(p,入力)`。時計は `[時,'⏰',分,'h'|'m']`、`def:true` は最初からオン）、`KTYPES`/`KTYPE`（こくご：k1yomi, k1kaki, k2yomi, k2kaki, kotoba, yomi, kata（かたかな）, bun（ぶんの しくみ）） |
 | アイテム | `ITEMS`/`ITEM`、`CATS`（おみせのタブ）、`GACHA_SR`/`GACHA_N` |
 | 保存 | `defState()`、`merge(d)`、`S`（現在の状態）、`save()`、`ready`（IndexedDB 読込完了の Promise）、`resync()` |
 | 絵 | `charSVG(equip,mood,cls)`、`roomSVG(state)`、`thumb(item)`。パーツ：`CH`（キャラ）`OUTFIT` `HAT` `ACC` `ACC_BACK` `WALLX`/`wallSVG` `FLOORX`/`floorSVG` `FURN` |
@@ -27,7 +27,7 @@
 ### さんすう（`sansu/`）・こくご（`kokugo/`）
 - 練習：`perRound` 問。1回目正解で満点、2回目は半分。全問正解ボーナス `perfect`。
 - 🏆テスト：種類×3段階。制限時間＝問題数×`TBASE[種類]`×段階倍率×`testScale`。間違えるとやり直しなし。合格で限定アイテム（`ITEMS` の `test:'種類-段階'`）。前の段階に合格すると次が開く。練習モードはポイント×`practiceMul`、合格ライン到達で `practiceBonus`。
-- こくごの問題データは `kokugo/index.html` 内の `K1`・`K2`（漢字語 [漢字,よみ]）、`KOTOBA`（[問題,正解,誤答…]）、`STORIES`（よみとり）。`makeQ(種類)` が4択を作る。
+- こくごの問題データは `kokugo/index.html` 内の `K1`・`K2`（漢字語 [漢字,よみ]）、`KOTOBA`（[問題,正解,誤答…]）、`STORIES`（よみとり）、`KATA_W`（[ひらがな,カタカナ]。誤答は `KATA_MIX` のまぎらわしい字で作る）、`BUN`（いつ・だれが・どこで・どうする の部品）。`makeQ(種類)` が4択を作る。
 
 ### えいご（`eigo/`）
 - 最初の画面で「ぼうけんに いく」（`abc/`）か「べんきょう する」を選ぶ。べんきょうは さんすう・こくごと同じ（練習＋🏆テスト、限定アイテム）。

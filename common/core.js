@@ -41,6 +41,8 @@ const KTYPES=[
  {id:'k2kaki',name:'かん字かき 2ねん',ex:'あう → 会う',pts:3},
  {id:'kotoba',name:'ことば・ぶん',ex:'はんたいことば・は を へ',pts:2},
  {id:'yomi',name:'よみとり',ex:'おはなしを よんで こたえる',pts:3},
+ {id:'kata',name:'かたかな',ex:'ばなな → バナナ',pts:1},
+ {id:'bun',name:'ぶんの しくみ',ex:'だれが？ どうする？',pts:2},
 ];
 const KTYPE=Object.fromEntries(KTYPES.map(t=>[t.id,t]));
 // えいご（ABCぼうけんで おぼえた もじ・ことばを つかう）
@@ -184,6 +186,12 @@ const ITEMS=[
  {id:'a_glasses',cat:'acc',name:'まるめがね',test:'yomi-1'},
  {id:'o_sweater',cat:'outfit',name:'ほんの セーター',test:'yomi-2'},
  {id:'u_books',cat:'furn',name:'ほんの やま',test:'yomi-3',box:'148 248 48 54'},
+ {id:'a_crayon',cat:'acc',name:'クレヨン',test:'kata-1'},
+ {id:'o_parka',cat:'outfit',name:'きいろの パーカー',test:'kata-2'},
+ {id:'u_easel',cat:'furn',name:'えを かく イーゼル',test:'kata-3',box:'14 160 70 104'},
+ {id:'a_notebook',cat:'acc',name:'ノート',test:'bun-1'},
+ {id:'h_pencilclip',cat:'hat',name:'えんぴつの かみかざり',test:'bun-2'},
+ {id:'w_letters',cat:'wall',name:'ひらがなの かべ',test:'bun-3'},
  /* 🔤 えいご テスト ごうかくで もらえる アイテム */
  {id:'a_abcballoon',cat:'acc',name:'ABCの ふうせん',test:'ealisten-1'},
  {id:'h_abccap',cat:'hat',name:'ABCの キャップ',test:'ealisten-2'},
@@ -540,7 +548,7 @@ const FURN={
 // chars を わたすと その キャラたち（[equip…]、0〜2にん）を かく（まちの おうちの なか よう）。わたさなければ いままで どおり
 function roomSVG(st,mood='normal',cls='sway',chars){
  const has=id=>st.furn.includes(id),f=id=>has(id)&&!(id==='u_bed'&&has('u_canopy'))?FURN[id]():'';
- return `<svg viewBox="0 0 360 300">${wallSVG(st.equip.wall)}${f('u_poster')}${f('u_shelf')}${f('u_kukuchart')}${f('u_garland')}${f('u_chandelier')}${f('u_lantern')}${f('u_clock')}${f('u_flowerbox')}${floorSVG(st.equip.floor)}${f('u_castle')}${f('u_sweets')}${f('u_rug')}${f('u_bed')}${f('u_canopy')}${f('u_carriage')}${f('u_cactus')}${f('u_globe')}${f('u_tower')}${f('u_abcblocks')}${f('u_lamp')}${f('u_plant')}
+ return `<svg viewBox="0 0 360 300">${wallSVG(st.equip.wall)}${f('u_poster')}${f('u_shelf')}${f('u_kukuchart')}${f('u_garland')}${f('u_chandelier')}${f('u_lantern')}${f('u_clock')}${f('u_flowerbox')}${floorSVG(st.equip.floor)}${f('u_castle')}${f('u_sweets')}${f('u_rug')}${f('u_bed')}${f('u_canopy')}${f('u_carriage')}${f('u_cactus')}${f('u_easel')}${f('u_globe')}${f('u_tower')}${f('u_abcblocks')}${f('u_lamp')}${f('u_plant')}
  ${chars?chars.map((eq,i,a)=>`<g transform="translate(${a.length>1?[66,172][i]:118} 100) scale(.62)"><g class="${cls}">${charInner(eq,mood)}</g></g>`).join(''):`<g transform="translate(118 100) scale(.62)" data-act="pet"><g class="${cls}">${charInner(st.equip,mood)}</g></g>`}${f('u_cushion')}${f('u_bear')}${f('u_piano')}${f('u_musicbox')}${f('u_books')}${f('u_unipl')}${f('u_trophy')}${f('u_fish')}${f('u_cake')}${f('u_alarm')}</svg>`}
 
 /* ---------- 🎰 ガチャ げんてい アイテムの え ---------- */
@@ -885,6 +893,21 @@ Object.assign(FURN,{
  u_kukuchart:()=>`<rect x="226" y="116" width="62" height="50" rx="4" fill="#fffbe8" stroke="#8fc8ff" stroke-width="3"/><text x="257" y="130" font-size="9" font-weight="800" text-anchor="middle" fill="#4a8fe0">くくの ひょう</text>${[0,1,2].map(j=>[0,1,2,3].map(i=>`<rect x="${232+i*13}" y="${135+j*9}" width="11" height="7" rx="1.5" fill="${['#ffd6e2','#d6ecff','#fff3c4'][j]}"/>`).join('')).join('')}`,
  u_alarm:()=>`<ellipse cx="325" cy="294" rx="24" ry="5" fill="rgba(0,0,0,.08)"/><g stroke="#e0719a" stroke-width="3" stroke-linecap="round"><line x1="308" y1="288" x2="302" y2="296"/><line x1="342" y1="288" x2="348" y2="296"/></g><circle cx="308" cy="244" r="8" fill="#ffd34f" stroke="#e5a91c" stroke-width="2"/><circle cx="342" cy="244" r="8" fill="#ffd34f" stroke="#e5a91c" stroke-width="2"/><circle cx="325" cy="266" r="24" fill="#ff8fb1" stroke="#e0719a" stroke-width="3"/><circle cx="325" cy="266" r="18" fill="#fff"/><path d="M325 266 v-11 M325 266 h8" stroke="#5a4646" stroke-width="2.5" stroke-linecap="round"/>`
 });
+/* ---------- かたかな・ぶんの しくみ の ごほうび ---------- */
+Object.assign(ACC,{
+ a_crayon:`<g transform="translate(152 172) rotate(-12)"><rect x="-18" y="-12" width="36" height="24" rx="3" fill="#ffd34f" stroke="#e5a91c" stroke-width="2.5"/>${['#ff6b7d','#5a8fe0','#5bb36a','#b48cff'].map((c,i)=>`<rect x="${-14+i*8}" y="-22" width="6" height="14" rx="1.5" fill="${c}"/><path d="M${-14+i*8} -22 l3 -5 l3 5z" fill="${c}"/>`).join('')}</g>`,
+ a_notebook:`<g transform="translate(150 174) rotate(-10)"><rect x="-16" y="-20" width="32" height="40" rx="3" fill="#8fc8ff" stroke="#5a96d8" stroke-width="2.5"/><rect x="-11" y="-14" width="22" height="9" rx="2" fill="#fff"/><text x="0" y="-7" font-size="7" font-weight="800" text-anchor="middle" fill="#5a96d8">こくご</text><line x1="-16" y1="8" x2="16" y2="8" stroke="#5a96d8" stroke-width="1.5"/></g>`
+});
+Object.assign(HAT,{
+ h_pencilclip:`<g transform="translate(134 60) rotate(30)"><rect x="-4" y="-18" width="8" height="30" fill="#ffd34f" stroke="#e5a91c" stroke-width="2"/><path d="M-4 12 L0 22 L4 12 Z" fill="#f6dcb4" stroke="#c9a67a" stroke-width="1.5"/><path d="M-1.2 18 L0 22 L1.2 18Z" fill="#5a4646"/><rect x="-4" y="-24" width="8" height="6" rx="2" fill="#ff9fb8"/></g>`
+});
+Object.assign(OUTFIT,{
+ o_parka:`<path d="M64 162 Q100 150 136 162 L144 220 Q100 230 56 220 Z" fill="#ffd34f" stroke="#e5a91c" stroke-width="3"/><path d="M78 160 Q100 178 122 160" fill="#ffe680" stroke="#e5a91c" stroke-width="2.5"/><line x1="100" y1="170" x2="100" y2="220" stroke="#e5a91c" stroke-width="2"/><g stroke="#fff" stroke-width="2.5" stroke-linecap="round"><line x1="92" y1="168" x2="90" y2="184"/><line x1="108" y1="168" x2="110" y2="184"/></g><rect x="74" y="196" width="52" height="14" rx="5" fill="#ffe680" stroke="#e5a91c" stroke-width="2"/>`
+});
+Object.assign(WALLX,{
+ w_letters:()=>{let s=`<rect width="360" height="200" fill="#fff8ee"/>`;const ch='あいうえおかきくけこさしすせそたちつてとなにぬねの',cs=['#ff8fb1','#8fc8ff','#ffd34f','#8fd46d','#c3a8ff'];let k=0;for(let y=30;y<200;y+=38)for(let x=(y/38|0)%2?150:168;x<360;x+=40){s+=`<text x="${x}" y="${y}" font-size="22" font-weight="800" fill="${cs[k%5]}" opacity=".7">${ch[(k*7)%ch.length]}</text>`;k++}return s}
+});
+FURN.u_easel=()=>`<g stroke="#a06a3e" stroke-width="5" stroke-linecap="round"><line x1="32" y1="262" x2="48" y2="170"/><line x1="72" y1="262" x2="56" y2="170"/><line x1="52" y1="250" x2="52" y2="170"/></g><rect x="20" y="164" width="64" height="54" rx="3" fill="#fff" stroke="#c98f55" stroke-width="3"/><circle cx="40" cy="186" r="9" fill="#ffd34f"/><path d="M24 214 Q44 192 60 206 Q70 196 80 214 Z" fill="#8fd46d"/><path d="M60 180 q6 -6 12 0" stroke="#5a8fe0" stroke-width="2.5" fill="none"/><rect x="22" y="216" width="60" height="6" rx="2" fill="#c98f55"/>`;
 function thumb(it){
  if(['char','outfit','hat','acc'].includes(it.cat)){const eq=it.cat==='char'?{...S.equip,...(S.looks[it.id]||{}),char:it.id}:{...S.equip,[it.cat]:it.id};return charSVG(eq,it.cat==='char'?'happy':'normal')}
  if(it.cat==='wall') return `<svg viewBox="0 0 360 200" preserveAspectRatio="xMidYMid slice">${wallSVG(it.id)}</svg>`;
@@ -893,7 +916,7 @@ function thumb(it){
 const tabs=(list,cur,act)=>`<div class="tabs">${list.map(([k,l])=>`<button class="${k===cur?'on':''}" data-act="${act}" data-arg="${k}">${l}</button>`).join('')}</div>`;
 
 /* ---------- さんすうの テスト（ていぎ）---------- */
-const TBASE={add1:4,add21:7,add22:12,sub1:4.5,sub21:8,sub22:14,mul1:4,mul2:4.5,clock1:7,clock2:10,k1yomi:5,k1kaki:5,k2yomi:6,k2kaki:6,kotoba:8,yomi:15,ealisten:5,eaname:5,ewlisten:6,ewpic:6}; // 1もん あたりの きほん びょうすう
+const TBASE={add1:4,add21:7,add22:12,sub1:4.5,sub21:8,sub22:14,mul1:4,mul2:4.5,clock1:7,clock2:10,k1yomi:5,k1kaki:5,k2yomi:6,k2kaki:6,kotoba:8,yomi:15,kata:6,bun:10,ealisten:5,eaname:5,ewlisten:6,ewpic:6}; // 1もん あたりの きほん びょうすう
 const TLV=[{n:10,need:9,mul:1,medal:'🥉',name:'テスト1'},{n:15,need:14,mul:.8,medal:'🥈',name:'テスト2'},{n:20,need:20,mul:.65,medal:'🥇',name:'テスト3'}];
 const testLimit=(tid,lv)=>Math.round(TLV[lv].n*TBASE[tid]*TLV[lv].mul*S.settings.testScale);
 const testItem=key=>ITEMS.find(i=>i.test===key);
