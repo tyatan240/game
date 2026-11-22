@@ -9,7 +9,7 @@
 ## common/core.js の主な定義
 | 種類 | 名前 |
 |---|---|
-| 問題の種類 | `TYPES`/`TYPE`（さんすう：add1, add21, add22, sub1, sub21, sub22。`gen()` で出題）、`KTYPES`/`KTYPE`（こくご：k1yomi, k1kaki, k2yomi, k2kaki, kotoba, yomi） |
+| 問題の種類 | `TYPES`/`TYPE`（さんすう：add1, add21, add22, sub1, sub21, sub22, mul1, mul2（九九）, clock1, clock2（時計）。`gen()` で出題、答えは `ansOf(p)`、表示は `probHTML(p,入力)`。時計は `[時,'⏰',分,'h'|'m']`、`def:true` は最初からオン）、`KTYPES`/`KTYPE`（こくご：k1yomi, k1kaki, k2yomi, k2kaki, kotoba, yomi） |
 | アイテム | `ITEMS`/`ITEM`、`CATS`（おみせのタブ）、`GACHA_SR`/`GACHA_N` |
 | 保存 | `defState()`、`merge(d)`、`S`（現在の状態）、`save()`、`ready`（IndexedDB 読込完了の Promise）、`resync()` |
 | 絵 | `charSVG(equip,mood,cls)`、`roomSVG(state)`、`thumb(item)`。パーツ：`CH`（キャラ）`OUTFIT` `HAT` `ACC` `ACC_BACK` `WALLX`/`wallSVG` `FLOORX`/`floorSVG` `FURN` |

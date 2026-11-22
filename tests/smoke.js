@@ -597,6 +597,23 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await ctx.close();
   }
 
+  console.log('16. さんすう：くく・とけい');
+  {
+    const p = await page();
+    await p.goto(B + 'index.html'); await p.waitForTimeout(300);
+    await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('moko-math-v1')); delete d.settings.types.mul1; delete d.settings.types.clock1; d.t = Date.now() + 9e9; localStorage.setItem('moko-math-v1', JSON.stringify(d)); });
+    await p.goto(B + 'sansu/index.html'); await p.waitForTimeout(400);
+    ok(await p.evaluate(() => ['mul1', 'mul2', 'clock1', 'clock2'].every(id => S.settings.types[id] && S.settings.types[id].on) && ['mul1-3', 'mul2-3', 'clock1-3', 'clock2-3'].every(k => testItem(k))), 'ふるい データでも くく・とけいが オン、テストの ごほうびが ある');
+    const tap = async v => { for (const ch of String(v)) await p.click(`.pad [data-act=key][data-arg="${ch}"]`); await p.click('.pad [data-act=answer]'); };
+    for (const tid of ['mul2', 'clock1', 'clock2']) {
+      await p.goto(B + 'sansu/index.html'); await p.waitForTimeout(300); await p.click(`[data-act=start][data-arg=${tid}]`);
+      const c = await p.evaluate(() => quiz.cur); await tap(c.ans); await p.waitForTimeout(100);
+      const okc = await p.evaluate(() => quiz.ok === 1), want = c.p[1] === '×' ? c.p[0] * c.p[2] : c.p[3] === 'h' ? c.p[0] : c.p[2];
+      ok(okc && c.ans === want && (c.p[1] !== '⏰' || await p.locator('.clockq svg').count() === 1), `${tid}：こたえ ${c.ans}（${c.p.join(' ')}）`);
+    }
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+  }
+
   console.log('12a. えいごの こえ（iPad で「Capital A」と よまれない）');
   {
     const p = await page(); await p.goto(B + 'abc/index.html'); await p.waitForTimeout(300);
