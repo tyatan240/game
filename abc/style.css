@@ -37,6 +37,7 @@ body.intitle #hud,body.intitle #pad,body.intitle #act{display:none}
 .sub{margin:0;font-weight:800;font-size:min(4.5vh,20px);background:#fffdf5;border-radius:999px;padding:4px 16px}
 .tbtns{display:flex;gap:14px;margin-top:6px;flex-wrap:wrap;justify-content:center}
 .tbtns button#start2{background:#9b7be0;box-shadow:0 5px 0 #7457c0}
+.tbtns button#start3{background:#3fa8d8;box-shadow:0 5px 0 #2a84b0}
 .tbtns button,.go{border:0;border-radius:20px;padding:12px 26px;font-weight:800;font-size:min(5vh,22px);color:#fff;background:#ff8fb1;box-shadow:0 5px 0 #d9658c}
 .tbtns button#cont{background:#5cc28a;box-shadow:0 5px 0 #3d9a68}
 .tbtns button:active,.go:active{transform:translateY(4px);box-shadow:none}

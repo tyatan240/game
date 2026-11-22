@@ -75,4 +75,13 @@ export function world2State(old, { letters, words, spells, quests, areas }) {
   return s;
 }
 
+// ワールド3（ことばの まち）から はじめる：ワールド1・2を おえた じょうたい
+export function world3State(old, data) {
+  const s = world2State(old, data);
+  s.lower = 'abcdefghijklmnopqrstuvwxyz'.split('');
+  s.flags.lowerClear = true; s.world.gate_lower = 'open';
+  if (!s.areas.includes('lower')) s.areas.push('lower');
+  return s;
+}
+
 export function getRecord(st, id) { return st.records[id] || newRecord(); }

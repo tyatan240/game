@@ -13,13 +13,13 @@ import { drawStall } from './engine/art3.js';
 import { START, ITEMS, INV, STORY, GIFTS } from './data/world1.js';
 import { AREAS, ORDER, CHAPTER, WHERE } from './data/areas.js';
 import { W, H, area, setArea, tileAt, isWater, isPath, things, move, facing, heroTile, markPos, exitAt, exitOpen, isOpenGate, vinesKey, solidAt, inside, unstick } from './game/world.js';
-import { load, save, replayState, getRecord, world2State } from './game/state.js';
+import { load, save, replayState, getRecord, world2State, world3State } from './game/state.js';
 import { record, pickTargets, choiceCount, levelOf } from './game/learning.js';
 import { letterQuestion, wordQuestion, shuffle , lowerQuestion } from './game/quiz.js';
 import { activeQuests, currentStep, stepFor, advance, objective, QUEST, w3Learned } from './game/quests.js';
 import { tryCast, hintFor, applyEffects, comboKey } from './game/magic.js';
 import * as ui from './ui/ui.js';
-import { sendStars, housePoints } from './game/house.js';
+import { sendStars, housePoints, houseAdmin, houseReady } from './game/house.js';
 
 const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
 // かいわの かおアイコン：なまえ → どうぶつ
@@ -709,13 +709,19 @@ function toTitle() {
   mode = 'title';
   titleEl.classList.remove('hide');
   document.getElementById('cont').style.display = S.started ? '' : 'none';
-  const w2 = !!(S.clears || S.flags.alphabetClear); // いちど クリアしたら ワールドを えらべる
-  document.getElementById('start').textContent = w2 ? 'ワールド1（ABC）から' : 'はじめから';
-  document.getElementById('start2').style.display = w2 ? '' : 'none';
+  titleButtons();
   const cb = document.getElementById('clears'); cb.textContent = S.clears ? `🏆 クリア ${S.clears}かい` : ''; cb.style.display = S.clears ? '' : 'none';
   document.getElementById('housePts').textContent = housePoints();
   document.body.classList.add('intitle');
 }
+// いちど クリアしたら ワールドを えらべる（おうちの 管理者モードなら さいしょから ぜんぶ）
+function titleButtons() {
+  const admin = houseAdmin(), w2 = !!(S.clears || S.flags.alphabetClear || admin), w3 = !!(S.flags.lowerClear || admin);
+  document.getElementById('start').textContent = w2 ? 'ワールド1（ABC）から' : 'はじめから';
+  document.getElementById('start2').style.display = w2 ? '' : 'none';
+  document.getElementById('start3').style.display = w3 ? '' : 'none';
+}
+houseReady.then(() => { if (mode === 'title') titleButtons(); });
 async function startGame(fresh, skipAsk = false) {
   unlockAudio();
   if (fresh && S.started && !skipAsk && !(await ui.confirm('さいしょから ぼうけん する？<br><small>おぼえた もじの きろく・ほし・きがえは のこるよ</small>', 'はじめる', 'やめる'))) return;
@@ -742,16 +748,19 @@ async function startGame(fresh, skipAsk = false) {
 document.getElementById('start').onclick = () => { sfx.tap(); startGame(true); };
 document.getElementById('cont').onclick = () => { sfx.tap(); startGame(false); };
 // ワールド2（こもじの もり）から はじめる：ワールド1 は ぜんぶ おわった ことに する（きろく・ほし・きがえは のこる）
-async function startWorld2() {
+async function startWorld2(w = 2) {
   unlockAudio();
-  if (S.started && !(await ui.confirm('ワールド2「こもじの もり」から はじめる？<br><small>おぼえた もじの きろく・ほし・きがえは のこるよ</small>', 'はじめる', 'やめる'))) return;
-  const ch = CHAPTER.lower, ent = AREAS.lower.entries.west;
-  S = world2State(S, { letters: LETTERS.map(l => l.id), words: WORDS.filter(w => (w.world || 1) === 1), spells: SPELLS, quests: Object.values(QUEST).filter(q => !q.id.startsWith('w3')), areas: ORDER.slice(0, ORDER.indexOf('lower')) });
-  S.hero = { x: ent.x + 0.5, y: ent.y + 0.8, dir: ent.dir || 'right', area: 'lower' };
-  if (!S.areas.includes(ch.area)) S.areas.push(ch.area);
+  const name = w === 3 ? 'ワールド3「ことばの まち」' : 'ワールド2「こもじの もり」';
+  if (S.started && !(await ui.confirm(`${name}から はじめる？<br><small>おぼえた もじの きろく・ほし・きがえは のこるよ</small>`, 'はじめる', 'やめる'))) return;
+  const aid = w === 3 ? 'w3plaza' : 'lower', ent = AREAS[aid].entries.west;
+  const data = { letters: LETTERS.map(l => l.id), words: WORDS.filter(x => (x.world || 1) === 1), spells: SPELLS, quests: Object.values(QUEST).filter(q => !q.id.startsWith('w3')), areas: ORDER.slice(0, ORDER.indexOf('lower')) };
+  S = w === 3 ? world3State(S, data) : world2State(S, data);
+  S.hero = { x: ent.x + 0.5, y: ent.y + 0.8, dir: ent.dir || 'right', area: aid };
+  if (!S.areas.includes(aid)) S.areas.push(aid);
   await startGame(false); // persist() は startGame の なか（さきに よぶと いまの いちで うわがき される）
 }
-document.getElementById('start2').onclick = () => { sfx.tap(); startWorld2(); };
+document.getElementById('start2').onclick = () => { sfx.tap(); startWorld2(2); };
+document.getElementById('start3').onclick = () => { sfx.tap(); startWorld2(3); };
 
 /* ---------- そうさ ---------- */
 input.bindPad(document.getElementById('pad'));

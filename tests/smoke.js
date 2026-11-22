@@ -861,6 +861,26 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
   }
 
+  console.log('20e. ABCぼうけん：管理者モードなら さいしょから ワールド2・3 を えらべる');
+  {
+    const p = await page({ width: 844, height: 390 });
+    await p.goto(B + 'program/index.html'); // おうちの ページで かくと とじる ときに うわがき される
+    await p.evaluate(() => { localStorage.setItem('moko-math-v1', JSON.stringify({ v: 1, t: Date.now() + 9e9, points: 10, settings: { admin: true } })); localStorage.setItem('abc-adventure-v1', JSON.stringify({ v: 1, t: 1, started: true, stars: 2, starsSent: 2, learned: ['A'], records: { A: { asked: 2, correct: 2 } }, flags: { intro: true }, quests: {}, world: {}, areas: ['island'], hero: { x: 6.5, y: 12.8, dir: 'down', area: 'island' } })); });
+    await p.goto(B + 'abc/index.html'); await p.waitForTimeout(500);
+    ok(await p.isVisible('#start2') && await p.isVisible('#start3'), '管理者モード：まだ クリアしていなくても ワールド2・3 の ボタン');
+    await p.click('#start3'); await p.click('.modal button:has-text("はじめる")'); await p.waitForTimeout(1200);
+    ok(await p.evaluate(() => __abc.area() === 'w3plaza' && __abc.mode === 'play' && /せんせい/.test(__abc.objective().text) && __abc.S.flags.lowerClear && __abc.S.lower.length === 26 && __abc.S.records.A && !Object.keys(__abc.S.quests).some(q => q.startsWith('w3'))), 'ワールド3 から はじめる（あいさつの ひろば・きろくは のこる）');
+    await p.keyboard.down('ArrowLeft'); await p.waitForTimeout(800); await p.keyboard.up('ArrowLeft'); await p.waitForTimeout(1200);
+    ok(await p.evaluate(() => __abc.area()) === 'lower', 'ひだりへ いくと こもじの もり');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+    const q = await page({ width: 844, height: 390 });
+    await q.goto(B + 'program/index.html');
+    await q.evaluate(() => { localStorage.setItem('moko-math-v1', JSON.stringify({ v: 1, t: Date.now() + 9e9, points: 10, settings: { admin: false } })); localStorage.setItem('abc-adventure-v1', JSON.stringify({ v: 1, t: 1, started: true, stars: 2, learned: ['A'], flags: { intro: true }, quests: {}, world: {}, areas: ['island'], hero: { x: 6.5, y: 12.8, dir: 'down', area: 'island' } })); });
+    await q.goto(B + 'abc/index.html'); await q.waitForTimeout(500);
+    ok(!(await q.isVisible('#start2')) && !(await q.isVisible('#start3')), 'ふだんは クリア まえに ワールド2・3 は えらべない');
+    await q.context().close();
+  }
+
   console.log('20b. ABCぼうけん：ドラコが うごいた ところに いても うごける');
   {
     const p = await page({ width: 844, height: 390 });

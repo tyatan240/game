@@ -119,3 +119,4 @@ abc/
 - **もん**：`kind:'lettergate'` を つかい、`CHAPTER[area].w3` なら `w3Gate()`（ことばの おさらい 5もん）。
 - 絵は `engine/art3.js`（かお・て・かず・くだもの・ふうせん・やたい）。えいごの部屋（`eigo/`）も art3 を よむ。
 - 保存：`abc-adventure-v1` に `sentences:{}` を追加（`state.js` で補う）。
+- タイトル：こもじの もんを クリアすると「ワールド3（ことば）から」（`world3State()`）。おうちの ⚙️設定の **管理者モード** が オンなら、クリア まえでも ワールド2・3 を えらべる（`game/house.js` の `houseAdmin()`）。
