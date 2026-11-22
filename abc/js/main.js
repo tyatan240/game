@@ -11,7 +11,7 @@ import { SPELLS } from './data/combos.js';
 import { START, ITEMS, INV, STORY } from './data/world1.js';
 import { AREAS, ORDER, CHAPTER, WHERE } from './data/areas.js';
 import { W, H, area, setArea, tileAt, isWater, isPath, things, move, facing, heroTile, markPos, exitAt, exitOpen, isOpenGate, vinesKey, solidAt, inside, unstick } from './game/world.js';
-import { load, save, replayState, getRecord } from './game/state.js';
+import { load, save, replayState, getRecord, world2State } from './game/state.js';
 import { record, pickTargets, choiceCount, levelOf } from './game/learning.js';
 import { letterQuestion, wordQuestion, shuffle , lowerQuestion } from './game/quiz.js';
 import { activeQuests, currentStep, stepFor, advance, objective, QUEST } from './game/quests.js';
@@ -605,7 +605,9 @@ function toTitle() {
   mode = 'title';
   titleEl.classList.remove('hide');
   document.getElementById('cont').style.display = S.started ? '' : 'none';
-  document.getElementById('start').textContent = S.clears ? 'もういちど ぼうけん' : 'はじめから';
+  const w2 = !!(S.clears || S.flags.alphabetClear); // いちど クリアしたら ワールドを えらべる
+  document.getElementById('start').textContent = w2 ? 'ワールド1（ABC）から' : 'はじめから';
+  document.getElementById('start2').style.display = w2 ? '' : 'none';
   const cb = document.getElementById('clears'); cb.textContent = S.clears ? `🏆 クリア ${S.clears}かい` : ''; cb.style.display = S.clears ? '' : 'none';
   document.getElementById('housePts').textContent = housePoints();
   document.body.classList.add('intitle');
@@ -635,6 +637,17 @@ async function startGame(fresh, skipAsk = false) {
 }
 document.getElementById('start').onclick = () => { sfx.tap(); startGame(true); };
 document.getElementById('cont').onclick = () => { sfx.tap(); startGame(false); };
+// ワールド2（こもじの もり）から はじめる：ワールド1 は ぜんぶ おわった ことに する（きろく・ほし・きがえは のこる）
+async function startWorld2() {
+  unlockAudio();
+  if (S.started && !(await ui.confirm('ワールド2「こもじの もり」から はじめる？<br><small>おぼえた もじの きろく・ほし・きがえは のこるよ</small>', 'はじめる', 'やめる'))) return;
+  const ch = CHAPTER.lower, ent = AREAS.lower.entries.west;
+  S = world2State(S, { letters: LETTERS.map(l => l.id), words: WORDS, spells: SPELLS, quests: Object.values(QUEST), areas: ORDER.filter(a => a !== 'lower') });
+  S.hero = { x: ent.x + 0.5, y: ent.y + 0.8, dir: ent.dir || 'right', area: 'lower' };
+  if (!S.areas.includes(ch.area)) S.areas.push(ch.area);
+  await startGame(false); // persist() は startGame の なか（さきに よぶと いまの いちで うわがき される）
+}
+document.getElementById('start2').onclick = () => { sfx.tap(); startWorld2(); };
 
 /* ---------- そうさ ---------- */
 input.bindPad(document.getElementById('pad'));

@@ -191,7 +191,7 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(r.stars === 73 && r.sent === 73 && r.rec >= 5 && r.items.includes('scarf') && r.clears === 1, 'ほし・がくしゅう きろく・きがえ・クリア かいすうは のこる');
     ok(r.goal.includes('もじ'), 'もういちど もじを おぼえる ところから');
     await p.keyboard.press('Escape'); await p.click('.menu [data-a=title]'); await p.waitForTimeout(300);
-    ok(await p.textContent('#start') === 'もういちど ぼうけん' && (await p.textContent('#clears')).includes('1'), 'タイトルに クリア かいすう');
+    ok(await p.textContent('#start') === 'ワールド1（ABC）から' && await p.isVisible('#start2') && (await p.textContent('#clears')).includes('1'), 'タイトルに クリア かいすう');
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
   }
 
@@ -771,6 +771,24 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     await p.evaluate(() => { closePop(); go('settings'); });
     await p.click('[data-act=admintg]'); await p.click('[data-act=adminyes]');
     ok(await p.evaluate(c => !ADMIN() && S.adminBackup === null && S.owned.length === 8 && S.owned.includes('h_hachimaki') && S.owned.includes('a_watch') && S.equip.char === 'c_moko' && !testUnlocked('add1-3') && JSON.parse(localStorage.getItem('moko-math-v1')).owned.length === 8, ch), 'オフで もとの もちもの＋もらった ごほうびに もどる（もっていない きせかえは はずす）');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+  }
+
+  console.log('20c. ABCぼうけん：クリアしたら ワールド1・2 を タイトルで えらべる');
+  {
+    const p = await page({ width: 844, height: 390 });
+    await p.goto(B + 'index.html');
+    await p.evaluate(() => localStorage.setItem('abc-adventure-v1', JSON.stringify({ v: 1, t: 1, started: true, stars: 3, starsSent: 3, learned: ['A'], flags: { intro: true }, quests: {}, world: {}, areas: ['island'], hero: { x: 6.5, y: 12.8, dir: 'down', area: 'island' } })));
+    await p.goto(B + 'abc/index.html'); await p.waitForTimeout(400);
+    ok(!(await p.isVisible('#start2')), 'クリア まえは ワールド2 を えらべない');
+    await p.goto(B + 'index.html');
+    await p.evaluate(() => localStorage.setItem('abc-adventure-v1', JSON.stringify({ v: 1, t: 1, started: true, clears: 1, stars: 40, starsSent: 40, learned: ['A', 'B'], records: { A: { asked: 3, ok: 3 } }, flags: { intro: true, bossCleared: true }, quests: {}, world: {}, areas: ['island'], hero: { x: 6.5, y: 12.8, dir: 'down', area: 'island' } })));
+    await p.goto(B + 'abc/index.html'); await p.waitForTimeout(400);
+    ok(await p.isVisible('#start2') && /ワールド1/.test(await p.textContent('#start')), 'クリア したら ワールド1・ワールド2 の ボタン');
+    await p.click('#start2'); await p.click('.modal button:has-text("はじめる")'); await p.waitForTimeout(1200);
+    ok(await p.evaluate(() => __abc.area() === 'lower' && __abc.mode === 'play' && /こもじ/.test(__abc.objective().text) && __abc.S.learned.length === 26 && __abc.S.flags.alphabetClear && __abc.S.records.A && __abc.S.stars === 40 && __abc.S.clears === 1), 'ワールド2 から はじめる（きろく・ほし は のこる）');
+    await p.keyboard.down('ArrowLeft'); await p.waitForTimeout(1200); await p.keyboard.up('ArrowLeft'); await p.waitForTimeout(1200);
+    ok(await p.evaluate(() => __abc.area()) === 'garden', 'ワールド1 の にわへも もどれる');
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
   }
 

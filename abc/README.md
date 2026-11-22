@@ -106,5 +106,6 @@ abc/
 - `data/areas/lower.js`：せんせい5にん（ふくろう a〜e・りす f〜j・きつね k〜o・たぬき p〜t・かめ u〜z。NPC の `lower`）と「こもじの もん」（`lowerGate`）。
 - せんせい：おおもじ と こもじ の ペアのカード（`ui.teachLower`）→ クイズ（「A の こもじは どれ？」／音を聞いて こもじ）→ その こもじを `S.lower` に（★＋2）。2回目からは おさらい（「a の おおもじは？」も）。
 - もん：26こ おぼえると さいごの おさらい6問 → `S.world.gate_lower='open'`・`S.flags.lowerClear`（★＋5）。
+- **ワールドを えらぶ**：いちど A〜Z を クリアすると（`clears`>0 か `flags.alphabetClear`）、タイトルに「ワールド1（ABC）から」「ワールド2（abc）から」。ワールド2 は `state.js` の `world2State()` で ワールド1 を ぜんぶ おえた じょうたい（クエスト・まほう・もん・ことば・もじ）を データから つくり、こもじの もりの 入口から はじめる（きろく・ほし・きがえ・クリア回数は のこる。こもじの すすみは はじめから）。
 - 学習記録は `S.records['l:A']`（こもじ）。出題は `quiz.js` の `lowerQuestion(target, pool, 'match'|'listen'|'upper', 選択肢の数)`。
 - 保存：`abc-adventure-v1` に `lower:[]` を追加（`state.js` で補う）。

@@ -56,4 +56,22 @@ export function replayState(old) {
   return s;
 }
 
+// ワールド2（こもじの もり）から はじめる：ワールド1（A〜Z）を ぜんぶ おえた じょうたいを データから つくる
+//   spells・quests・chapters は data の もの（ここで import すると じゅんかんするので ひきすうで もらう）
+export function world2State(old, { letters, words, spells, quests, areas }) {
+  const s = replayState(old);
+  const eff = list => { for (const e of list || []) { if (e.set) s.world[e.set[0]] = e.set[1]; if (e.area && !s.areas.includes(e.area)) s.areas.push(e.area); } };
+  const walk = o => { if (!o || typeof o !== 'object') return; if (Array.isArray(o.effect)) eff(o.effect); for (const k in o) if (k !== 'effect') walk(o[k]); };
+  for (const q of quests) { walk(q); s.quests[q.id] = 'done'; }
+  for (const sp of spells) { eff(sp.effect); if (sp.words.length > 1) { const k = [...sp.words].sort().join('+'); if (!s.combos.includes(k)) s.combos.push(k); } }
+  for (const w of words) s.words[w.id] = { at: Date.now() };
+  for (const a of areas) { if (!s.areas.includes(a)) s.areas.push(a); if (a !== 'island' && a !== 'lower') s.world['gate_' + a] = 'open'; }
+  s.world.gate = 'open';
+  s.learned = [...letters];
+  s.inv = {};
+  s.flags = { intro: true, bossCleared: true, bridgeOpen: true, alphabetClear: true };
+  s.started = true;
+  return s;
+}
+
 export function getRecord(st, id) { return st.records[id] || newRecord(); }

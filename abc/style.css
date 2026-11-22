@@ -35,7 +35,8 @@ body.intitle #hud,body.intitle #pad,body.intitle #act{display:none}
 .logo em{font-style:normal;font-size:min(9vh,52px);font-weight:800;color:#fff;-webkit-text-stroke:2.5px #4a3a3a;paint-order:stroke fill;margin-left:6px}
 @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
 .sub{margin:0;font-weight:800;font-size:min(4.5vh,20px);background:#fffdf5;border-radius:999px;padding:4px 16px}
-.tbtns{display:flex;gap:14px;margin-top:6px}
+.tbtns{display:flex;gap:14px;margin-top:6px;flex-wrap:wrap;justify-content:center}
+.tbtns button#start2{background:#9b7be0;box-shadow:0 5px 0 #7457c0}
 .tbtns button,.go{border:0;border-radius:20px;padding:12px 26px;font-weight:800;font-size:min(5vh,22px);color:#fff;background:#ff8fb1;box-shadow:0 5px 0 #d9658c}
 .tbtns button#cont{background:#5cc28a;box-shadow:0 5px 0 #3d9a68}
 .tbtns button:active,.go:active{transform:translateY(4px);box-shadow:none}
