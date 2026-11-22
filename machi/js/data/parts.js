@@ -7,6 +7,7 @@
 //   walk  … うえを あるける（はな・くさ・はし）    water … みず（あるけない）   onWater … みずの うえに だけ おける
 //   kind  … 'look' の とき：やね・かべ・ドア・まどの いろ／かたち（おうちの みための へんこうに つかう）
 //   fav   … すきな ばしょ グループ（キャラの このみ）
+//   quest … おねがいの ごほうび（おみせでは うらない）  custom … おおきさを かえられる おうち  tall … 2かいだて
 export const CATS = [
   { id: 'house', name: 'おうち', icon: '🏠' },
   { id: 'look', name: 'やね・かべ', icon: '🎨' },
@@ -29,8 +30,11 @@ export const PARTS = [
   { id: 'plaza', cat: 'special', name: 'ひろば', layer: 'ground', price: 120, road: true, fav: 'park' },
   // おうち
   { id: 'house_basic', cat: 'house', name: 'ちいさな おうち', size: [2, 2], price: 0, home: true, look: { roof: 'red', wall: 'cream', door: 'basic', window: 'square' } },
-  { id: 'house_wood', cat: 'house', name: 'きの おうち', size: [2, 2], price: 150, home: true, look: { roof: 'green', wall: 'wood', door: 'basic', window: 'square' } },
-  { id: 'house_brick', cat: 'house', name: 'レンガの おうち', size: [3, 2], price: 240, home: true, look: { roof: 'blue', wall: 'brick', door: 'round', window: 'square' } },
+  { id: 'house_wood', cat: 'house', name: 'きの おうち', size: [2, 2], price: 150, home: true, look: { roof: 'green', wall: 'wood', door: 'basic', window: 'square', deco: ['chimney'] } },
+  { id: 'house_brick', cat: 'house', name: 'レンガの おうち', size: [3, 2], price: 240, home: true, look: { roof: 'blue', wall: 'brick', door: 'round', window: 'square', deco: ['chimney'] } },
+  { id: 'house_tall', cat: 'house', name: '2かいだての おうち', size: [2, 2], price: 240, home: true, tall: 1, look: { roof: 'blue', wall: 'white', door: 'basic', window: 'round', deco: ['flowerbox'] } },
+  { id: 'house_mushroom', cat: 'house', name: 'きのこの おうち', size: [2, 2], price: 270, home: true, look: { roof: 'red', wall: 'cream', door: 'round', window: 'round', shape: 'mushroom' } },
+  { id: 'house_custom', cat: 'house', name: 'じぶんで つくる おうち', size: [2, 2], price: 300, home: true, custom: true, look: { roof: 'pink', wall: 'cream', door: 'basic', window: 'square', shape: 'gable', deco: [] } },
   { id: 'house_cake', cat: 'house', name: 'ケーキの おうち', size: [2, 2], price: 300, home: true, look: { roof: 'pink', wall: 'cream', door: 'round', window: 'heart' } },
   { id: 'house_castle', cat: 'house', name: 'おしろの おうち', size: [3, 3], price: 450, home: true, look: { roof: 'purple', wall: 'white', door: 'round', window: 'round' } },
   // やね・かべ（おうちの みため）
@@ -52,6 +56,19 @@ export const PARTS = [
   { id: 'window_square', cat: 'look', kind: 'window', name: 'しかくい まど', price: 0 },
   { id: 'window_round', cat: 'look', kind: 'window', name: 'まるい まど', price: 90 },
   { id: 'window_heart', cat: 'look', kind: 'window', name: 'ハートの まど', price: 150 },
+  // やねの かたち（shape）・かざり（deco：いくつでも）
+  { id: 'shape_gable', cat: 'look', kind: 'shape', name: 'さんかくの やね', price: 0 },
+  { id: 'shape_round', cat: 'look', kind: 'shape', name: 'まるい やね', price: 90 },
+  { id: 'shape_flat', cat: 'look', kind: 'shape', name: 'たいらな やね', price: 90 },
+  { id: 'shape_pointy', cat: 'look', kind: 'shape', name: 'とんがり やね', price: 90 },
+  { id: 'shape_mushroom', cat: 'look', kind: 'shape', name: 'きのこの やね', price: 150 },
+  { id: 'deco_chimney', cat: 'look', kind: 'deco', name: 'えんとつ', price: 0 },
+  { id: 'deco_flowerbox', cat: 'look', kind: 'deco', name: 'まどべの はな', price: 60 },
+  { id: 'deco_awning', cat: 'look', kind: 'deco', name: 'しましまの ひさし', price: 90 },
+  { id: 'deco_heart', cat: 'look', kind: 'deco', name: 'ハートの かざり', price: 90 },
+  { id: 'deco_star', cat: 'look', kind: 'deco', name: 'ほしの かざり', price: 90 },
+  { id: 'deco_lantern', cat: 'look', kind: 'deco', name: 'げんかんの あかり', price: 60 },
+  { id: 'deco_ribbon', cat: 'look', kind: 'deco', name: 'おおきな リボン', price: 120 },
   // しぜん
   { id: 'tree_basic', cat: 'nature', name: 'き', size: [1, 1], price: 0, fav: 'forest' },
   { id: 'tree_round', cat: 'nature', name: 'まあるい き', size: [1, 1], price: 30, fav: 'forest' },
@@ -83,16 +100,24 @@ export const PARTS = [
   { id: 'school', cat: 'special', name: 'がっこう', size: [3, 3], price: 450 },
   { id: 'cafe', cat: 'special', name: 'ケーキやさん', size: [2, 2], price: 360, fav: 'bench' },
   { id: 'rainbow', cat: 'special', name: 'にじの アーチ', size: [2, 1], price: 300, walk: true, fav: 'park' },
+  // 🎁 おねがいの ごほうび（おみせでは うらない。quest＝その おねがいで もらえる）
+  { id: 'flower_rainbow', cat: 'nature', name: 'にじいろの はな', size: [1, 1], price: 0, quest: 'flowers', walk: true, fav: 'flower' },
+  { id: 'well', cat: 'garden', name: 'いど', size: [1, 1], price: 0, quest: 'house2' },
+  { id: 'statue', cat: 'park', name: 'モコの どうぞう', size: [1, 1], price: 0, quest: 'park', fav: 'park' },
+  { id: 'windmill', cat: 'special', name: 'ふうしゃ', size: [2, 2], price: 0, quest: 'road' },
+  { id: 'lamp_star', cat: 'park', name: 'ほしの がいとう', size: [1, 1], price: 0, quest: 'bench' },
+  { id: 'carousel', cat: 'park', name: 'メリーゴーランド', size: [3, 3], price: 0, quest: 'friends3', fav: 'park' },
+  { id: 'tree_star', cat: 'nature', name: 'ほしの き', size: [1, 1], price: 0, quest: 'forest', fav: 'forest' },
   // まちに さいしょから ある もの（おみせでは うらない・けせない）
-  { id: 'moko_house', cat: 'fixed', name: 'モコの おうち', size: [3, 2], price: 0, fixed: true, look: { roof: 'pink', wall: 'white', door: 'heart', window: 'heart' } },
+  { id: 'moko_house', cat: 'fixed', name: 'モコの おうち', size: [3, 2], price: 0, fixed: true, look: { roof: 'pink', wall: 'white', door: 'heart', window: 'heart', deco: ['chimney'] } },
   { id: 'town_shop', cat: 'fixed', name: 'まちの おみせ', size: [3, 2], price: 0, fixed: true },
 ];
 export const PART = Object.fromEntries(PARTS.map(p => [p.id, p]));
 export const LOOK = kind => PARTS.filter(p => p.cat === 'look' && p.kind === kind);
 export const lookColor = (kind, id) => (PART[kind + '_' + id] || {}).color;
 // うる もの（fixed いがい）
-export const SHOP_PARTS = PARTS.filter(p => !p.fixed);
-export const FREE = PARTS.filter(p => !p.fixed && !p.price).map(p => p.id);
+export const SHOP_PARTS = PARTS.filter(p => !p.fixed && !p.quest);
+export const FREE = PARTS.filter(p => !p.fixed && !p.quest && !p.price).map(p => p.id);
 
 // キャラの すきな ばしょ（よく いく）。しらない キャラは 'park'
 export const FAV = {

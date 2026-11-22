@@ -55,20 +55,34 @@ export function drawGround(g, id, x, y, T, nb) {
 /* ---------- おうち ---------- */
 function houseBody(g, W, Hh, T, look, opt = {}) {
   const roof = lookColor('roof', look.roof) || '#e8605a', wall = lookColor('wall', look.wall) || '#fff3d9';
-  const pad = T * .12, wy = Hh * .28, by = Hh - T * .1;
+  const deco = Array.isArray(look.deco) ? look.deco : (opt.chimney ? ['chimney'] : []);
+  const shape = look.shape || (opt.flat ? 'flat' : 'gable'), up = (opt.tall || 0) * T * .8; // 2かいだて は うえに のびる
+  const pad = T * .12, wy = Hh * .28 - up, by = Hh - T * .1, top = -T * .7 - up;
   shadow(g, W / 2, by + T * .02, W / 2 - pad / 2, T * .16);
   // かべ
   g.fillStyle = wall; line(g, shade(wall.startsWith('#') ? wall : '#ffffff', .7), T / 20);
   g.fillRect(pad, wy, W - pad * 2, by - wy); g.strokeRect(pad, wy, W - pad * 2, by - wy);
   if (look.wall === 'brick') { g.strokeStyle = shade('#d9775f', .8); g.lineWidth = T / 40; for (let y = wy + T * .14, k = 0; y < by; y += T * .14, k++) { g.beginPath(); g.moveTo(pad, y); g.lineTo(W - pad, y); g.stroke(); for (let x = pad + (k % 2) * T * .14; x < W - pad; x += T * .28) { g.beginPath(); g.moveTo(x, y - T * .14); g.lineTo(x, y); g.stroke(); } } }
   if (look.wall === 'wood') { g.strokeStyle = shade('#d9a066', .8); g.lineWidth = T / 40; for (let y = wy + T * .12; y < by; y += T * .12) { g.beginPath(); g.moveTo(pad, y); g.lineTo(W - pad, y); g.stroke(); } }
-  // えんとつ
-  if (opt.chimney) { g.fillStyle = '#c96d5a'; g.fillRect(W * .7, -T * .55, T * .22, T * .5); g.strokeStyle = '#9c4f40'; g.strokeRect(W * .7, -T * .55, T * .22, T * .5); }
+  // えんとつ（やねの うしろ）
+  if (deco.includes('chimney')) { g.fillStyle = '#c96d5a'; g.fillRect(W * .7, top + T * .15, T * .22, T * .5); g.strokeStyle = '#9c4f40'; g.lineWidth = T / 24; g.strokeRect(W * .7, top + T * .15, T * .22, T * .5); }
   // やね
   g.fillStyle = roof; line(g, shade(roof, .72), T / 16);
-  g.beginPath(); g.moveTo(-T * .04, wy + T * .14); g.lineTo(W * .5 - (opt.flat ? W * .3 : 0), -T * .7); if (opt.flat) g.lineTo(W * .8, -T * .7); g.lineTo(W + T * .04, wy + T * .14); g.closePath(); g.fill(); g.stroke();
-  g.strokeStyle = shade(roof, .85); g.lineWidth = T / 30;
-  for (let k = 1; k < 4; k++) { const yy = -T * .7 + (wy + T * .84) * k / 4, s = (yy + T * .7) / (wy + T * .84); g.beginPath(); g.moveTo(W * .5 - s * W * .52, yy); g.lineTo(W * .5 + s * W * .52, yy); g.stroke(); }
+  const ey = wy + T * .14; // のきの たかさ
+  g.beginPath();
+  if (shape === 'round' || shape === 'mushroom') { g.moveTo(-T * (shape === 'mushroom' ? .2 : .04), ey); g.bezierCurveTo(-T * .1, top - T * .2, W + T * .1, top - T * .2, W + T * (shape === 'mushroom' ? .2 : .04), ey); g.closePath(); }
+  else if (shape === 'flat') { g.moveTo(-T * .04, ey); g.lineTo(W * .2, top); g.lineTo(W * .8, top); g.lineTo(W + T * .04, ey); g.closePath(); }
+  else { const ap = shape === 'pointy' ? top - T * .6 : top; g.moveTo(-T * .04, ey); g.lineTo(W * .5, ap); g.lineTo(W + T * .04, ey); g.closePath(); }
+  g.fill(); g.stroke();
+  if (shape === 'mushroom') { g.fillStyle = '#fff'; [[.25, .55], [.55, .3], [.78, .6], [.42, .75]].forEach(([x, y]) => { circ(g, W * x, top + (ey - top) * y, T * .11); g.fill(); }); }
+  else if (shape !== 'round') { g.strokeStyle = shade(roof, .85); g.lineWidth = T / 30; const ap = shape === 'pointy' ? top - T * .6 : top; for (let k = 1; k < 4; k++) { const yy = ap + (ey - ap) * k / 4, s = shape === 'flat' ? .6 + .4 * k / 4 : (yy - ap) / (ey - ap); g.beginPath(); g.moveTo(W * .5 - s * W * .52, yy); g.lineTo(W * .5 + s * W * .52, yy); g.stroke(); } }
+  else { g.strokeStyle = shade(roof, .85); g.lineWidth = T / 30; for (let k = 1; k < 3; k++) { g.beginPath(); g.ellipse(W / 2, ey, W * .5 * (1 - k * .25), (ey - top) * (1 - k * .25) + T * .05, 0, Math.PI, 0); g.stroke(); } }
+  // やねの かざり
+  if (deco.includes('heart')) { g.fillStyle = '#ff6fae'; heart(g, W / 2, top + (ey - top) * .55, T * .17); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = T / 30; g.stroke(); }
+  if (deco.includes('star')) { g.fillStyle = '#ffd34f'; g.strokeStyle = '#e5a91c'; g.lineWidth = T / 30; starP(g, W / 2, (shape === 'pointy' ? top - T * .6 : top) - T * .12, T * .16); g.fill(); g.stroke(); }
+  if (deco.includes('ribbon')) { g.fillStyle = '#ff6fae'; g.strokeStyle = '#e0487f'; g.lineWidth = T / 30; const rx = W * .78, ry = top + (ey - top) * .5; g.beginPath(); g.moveTo(rx, ry); g.lineTo(rx - T * .22, ry - T * .14); g.lineTo(rx - T * .22, ry + T * .14); g.closePath(); g.moveTo(rx, ry); g.lineTo(rx + T * .22, ry - T * .14); g.lineTo(rx + T * .22, ry + T * .14); g.closePath(); g.fill(); g.stroke(); circ(g, rx, ry, T * .07); g.fill(); }
+  // ひさし（ドアの うえ）
+  if (deco.includes('awning')) { const aw = T * .9, ax = W / 2 - aw / 2, ay = by - T * .82; for (let i = 0; i < 5; i++) { g.fillStyle = i % 2 ? '#fff' : '#ff8fb8'; g.fillRect(ax + i * aw / 5, ay, aw / 5, T * .14); } g.fillStyle = '#ff8fb8'; for (let i = 0; i < 5; i++) { circ(g, ax + (i + .5) * aw / 5, ay + T * .14, aw / 10); g.fill(); } }
   // ドア
   const dw = T * .42, dh = T * .6, dx = W / 2 - dw / 2, dy = by - dh;
   g.fillStyle = '#a86e45'; line(g, '#7a4b2c', T / 24);
@@ -76,16 +90,21 @@ function houseBody(g, W, Hh, T, look, opt = {}) {
   else if (look.door === 'heart') { g.fillStyle = '#ff8fb8'; line(g, '#e0608f', T / 24); g.fillRect(dx, dy, dw, dh); g.strokeRect(dx, dy, dw, dh); g.fillStyle = '#fff'; heart(g, W / 2, dy + dh * .35, dw * .22); g.fill(); }
   else { g.fillRect(dx, dy, dw, dh); g.strokeRect(dx, dy, dw, dh); }
   g.fillStyle = '#ffd34f'; circ(g, dx + dw * .78, dy + dh * .55, T * .035); g.fill();
-  // まど
-  const wins = W > T * 2.5 ? [W * .2, W * .8] : [W * .24, W * .76], wy2 = wy + (by - wy) * .38;
-  for (const cx of wins) {
+  if (deco.includes('lantern')) { for (const lx of [dx - T * .14, dx + dw + T * .14]) { g.fillStyle = 'rgba(255,240,160,.45)'; circ(g, lx, dy + T * .12, T * .15); g.fill(); g.fillStyle = '#fff3a8'; g.strokeStyle = '#8a6a3a'; g.lineWidth = T / 40; g.fillRect(lx - T * .06, dy + T * .04, T * .12, T * .16); g.strokeRect(lx - T * .06, dy + T * .04, T * .12, T * .16); } }
+  // まど（2かいだて は 2だん）
+  const n = W > T * 3.5 ? 3 : 2, xs = n === 3 ? [W * .17, W * .5, W * .83] : W > T * 2.5 ? [W * .2, W * .8] : [W * .24, W * .76];
+  const rows = opt.tall ? [wy + T * .45, by - T * .62] : [wy + (by - wy) * .38];
+  rows.forEach((wy2, ri) => xs.forEach(cx => {
+    if (ri === rows.length - 1 && Math.abs(cx - W / 2) < T * .4) return; // ドアの ところは まどなし
     const s = T * .3;
     g.fillStyle = '#bfe6ff'; line(g, '#ffffff', T / 18);
     if (look.window === 'round') { circ(g, cx, wy2, s / 2); g.fill(); g.stroke(); }
     else if (look.window === 'heart') { heart(g, cx, wy2, s * .42); g.fill(); g.stroke(); }
     else { g.fillRect(cx - s / 2, wy2 - s / 2, s, s); g.strokeRect(cx - s / 2, wy2 - s / 2, s, s); g.beginPath(); g.moveTo(cx, wy2 - s / 2); g.lineTo(cx, wy2 + s / 2); g.stroke(); }
-  }
+    if (deco.includes('flowerbox')) { g.fillStyle = '#9a6a45'; g.fillRect(cx - s * .65, wy2 + s * .55, s * 1.3, s * .3); ['#ff6b7d', '#ffd34f', '#ff9fd0'].forEach((c, i) => { g.fillStyle = c; circ(g, cx - s * .4 + i * s * .4, wy2 + s * .52, s * .16); g.fill(); }); }
+  }));
 }
+function starP(g, x, y, r) { g.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? r * .45 : r; i ? g.lineTo(x + q * Math.cos(a), y + q * Math.sin(a)) : g.moveTo(x + q * Math.cos(a), y + q * Math.sin(a)); } g.closePath(); }
 
 function tree(g, T, kind, seed) {
   const R = rnd(seed), cx = T / 2;
@@ -118,13 +137,13 @@ function flower(g, T, col, seed, tulip) {
 /* ---------- もの ---------- */
 export function drawObject(g, o, T, t) {
   const p = PART[o.type]; if (!p) return;
-  const [w, h] = p.size && p.rotate && (o.r & 1) ? [p.size[1], p.size[0]] : (p.size || [1, 1]);
+  const [w, h] = p.custom && Array.isArray(o.size) ? o.size : p.size && p.rotate && (o.r & 1) ? [p.size[1], p.size[0]] : (p.size || [1, 1]);
   const Wd = w * T, Hd = h * T, seed = hash(o.x || 0, o.y || 0);
   const look = { ...(p.look || {}), ...(o.look || {}) };
   switch (o.type) {
     case 'house_basic': houseBody(g, Wd, Hd, T, look); break;
-    case 'house_wood': houseBody(g, Wd, Hd, T, look, { chimney: true }); break;
-    case 'house_brick': houseBody(g, Wd, Hd, T, look, { chimney: true }); break;
+    case 'house_wood': case 'house_brick': case 'house_mushroom': case 'house_custom': houseBody(g, Wd, Hd, T, look); break;
+    case 'house_tall': houseBody(g, Wd, Hd, T, look, { tall: 1 }); break;
     case 'house_cake': {
       houseBody(g, Wd, Hd, T, look);
       g.fillStyle = '#fff'; for (let i = 0; i < 6; i++) { circ(g, Wd * (.1 + i * .16), Hd * .3, T * .1); g.fill(); }
@@ -137,7 +156,7 @@ export function drawObject(g, o, T, t) {
       g.fillStyle = '#ff7eb0'; g.beginPath(); g.moveTo(Wd / 2, -T * .7); g.lineTo(Wd / 2, -T * 1.25); g.lineTo(Wd / 2 + T * .3, -T * 1.1); g.lineTo(Wd / 2, -T * .98); g.fill(); break;
     }
     case 'moko_house': {
-      houseBody(g, Wd, Hd, T, look, { chimney: true });
+      houseBody(g, Wd, Hd, T, look);
       g.fillStyle = '#ff6fae'; heart(g, Wd / 2, -T * .2, T * .2); g.fill();
       rr(g, Wd / 2 - T * .5, Hd - T * .32, T, T * .26, T * .08); g.fillStyle = '#fff'; g.fill(); g.strokeStyle = '#ff8fb8'; g.lineWidth = T / 30; g.stroke();
       g.fillStyle = '#e0608f'; g.font = `800 ${T * .17}px "M PLUS Rounded 1c",sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('モコ', Wd / 2, Hd - T * .19);
@@ -204,6 +223,14 @@ export function drawObject(g, o, T, t) {
     case 'slide': { shadow(g, Wd / 2, Hd - T * .2, Wd * .45, T * .14); g.fillStyle = '#5a8fe0'; g.fillRect(T * .35, -T * .2, T * .5, Hd - T * .1); line(g, '#3d6fbd', T / 22); g.strokeRect(T * .35, -T * .2, T * .5, Hd - T * .1); for (let y = 0; y < Hd - T * .4; y += T * .25) { g.beginPath(); g.moveTo(T * .35, y); g.lineTo(T * .85, y); g.stroke(); } g.fillStyle = '#ff8fb8'; line(g, '#e0608f', T / 22); g.beginPath(); g.moveTo(T * .85, -T * .2); g.quadraticCurveTo(Wd - T * .2, T * .6, Wd - T * .1, Hd - T * .2); g.lineTo(Wd - T * .45, Hd - T * .2); g.quadraticCurveTo(Wd - T * .6, T * .8, T * .85, T * .2); g.closePath(); g.fill(); g.stroke(); break; }
     case 'fountain': { shadow(g, Wd / 2, Hd - T * .25, Wd * .46, T * .2); g.fillStyle = '#d6dae2'; line(g, '#a4aab6', T / 18); g.beginPath(); g.ellipse(Wd / 2, Hd * .62, Wd * .44, Hd * .3, 0, 0, Math.PI * 2); g.fill(); g.stroke(); g.fillStyle = '#86cdf2'; g.beginPath(); g.ellipse(Wd / 2, Hd * .6, Wd * .36, Hd * .22, 0, 0, Math.PI * 2); g.fill(); g.fillStyle = '#d6dae2'; g.fillRect(Wd / 2 - T * .1, Hd * .2, T * .2, Hd * .4); g.strokeRect(Wd / 2 - T * .1, Hd * .2, T * .2, Hd * .4); const tt = (t || 0) / 300; g.strokeStyle = 'rgba(255,255,255,.9)'; g.lineWidth = T / 16; for (const d of [-1, 1]) { g.beginPath(); g.moveTo(Wd / 2, Hd * .2); g.quadraticCurveTo(Wd / 2 + d * T * .5, -T * .3 + Math.sin(tt) * T * .05, Wd / 2 + d * T * .7, Hd * .55); g.stroke(); } g.fillStyle = '#bfe6ff'; circ(g, Wd / 2, Hd * .18, T * .14); g.fill(); break; }
     case 'rainbow': { const cs = ['#ffadad', '#ffd29a', '#fff0a0', '#bfeab0', '#addcff', '#d4c2ff']; cs.forEach((c, i) => { g.strokeStyle = c; g.lineWidth = T * .1; g.beginPath(); g.arc(Wd / 2, T * .9, Wd * .46 - i * T * .1, Math.PI, 0); g.stroke(); }); g.fillStyle = '#fff'; [[T * .2, T * .85], [Wd - T * .2, T * .85]].forEach(([x, y]) => { circ(g, x, y, T * .18); g.fill(); circ(g, x + T * .14, y + T * .04, T * .13); g.fill(); }); break; }
+    // 🎁 おねがいの ごほうび
+    case 'flower_rainbow': { const cs = ['#ff6b7d', '#ffb35a', '#ffe14f', '#7fd46a', '#6fb6ff', '#b48cff']; g.strokeStyle = '#4fae4a'; g.lineWidth = T / 20; g.beginPath(); g.moveTo(T / 2, T * .45); g.lineTo(T / 2, T * .9); g.stroke(); cs.forEach((c, k) => { const a = k * Math.PI / 3; g.fillStyle = c; circ(g, T / 2 + Math.cos(a) * T * .14, T * .4 + Math.sin(a) * T * .14, T * .1); g.fill(); }); g.fillStyle = '#fff6a8'; circ(g, T / 2, T * .4, T * .08); g.fill(); break; }
+    case 'well': shadow(g, T / 2, T * .86, T * .38, T * .1); g.fillStyle = '#b9bec8'; line(g, '#8d939f', T / 24); g.beginPath(); g.ellipse(T / 2, T * .62, T * .36, T * .2, 0, 0, Math.PI * 2); g.fill(); g.stroke(); g.fillStyle = '#86cdf2'; g.beginPath(); g.ellipse(T / 2, T * .6, T * .26, T * .12, 0, 0, Math.PI * 2); g.fill(); g.strokeStyle = '#8f5e33'; g.lineWidth = T / 16; g.beginPath(); g.moveTo(T * .18, T * .62); g.lineTo(T * .18, T * .02); g.moveTo(T * .82, T * .62); g.lineTo(T * .82, T * .02); g.stroke(); g.fillStyle = '#e8605a'; g.beginPath(); g.moveTo(T * .05, T * .1); g.lineTo(T / 2, -T * .22); g.lineTo(T * .95, T * .1); g.closePath(); g.fill(); break;
+    case 'statue': { shadow(g, T / 2, T * .88, T * .34, T * .1); g.fillStyle = '#d6dae2'; line(g, '#a4aab6', T / 24); g.fillRect(T * .2, T * .55, T * .6, T * .32); g.strokeRect(T * .2, T * .55, T * .6, T * .32); g.fillStyle = '#ffe9a8'; line(g, '#e5b95a', T / 24); circ(g, T / 2, T * .22, T * .22); g.fill(); g.stroke(); g.beginPath(); g.ellipse(T / 2, T * .45, T * .2, T * .14, 0, 0, Math.PI * 2); g.fill(); g.stroke(); for (const d of [-1, 1]) { g.beginPath(); g.ellipse(T / 2 + d * T * .1, -T * .08, T * .06, T * .17, d * .25, 0, Math.PI * 2); g.fill(); g.stroke(); } g.fillStyle = '#8a6a3a'; circ(g, T * .43, T * .2, T * .025); g.fill(); circ(g, T * .57, T * .2, T * .025); g.fill(); break; }
+    case 'windmill': { shadow(g, Wd / 2, Hd - T * .15, Wd * .4, T * .15); g.fillStyle = '#fff6e6'; line(g, '#d6bf99', T / 20); g.beginPath(); g.moveTo(Wd * .25, Hd - T * .1); g.lineTo(Wd * .35, -T * .2); g.lineTo(Wd * .65, -T * .2); g.lineTo(Wd * .75, Hd - T * .1); g.closePath(); g.fill(); g.stroke(); g.fillStyle = '#e8605a'; g.beginPath(); g.moveTo(Wd * .3, -T * .2); g.lineTo(Wd / 2, -T * .75); g.lineTo(Wd * .7, -T * .2); g.closePath(); g.fill(); g.fillStyle = '#a86e45'; g.fillRect(Wd / 2 - T * .18, Hd - T * .65, T * .36, T * .55); const a0 = (t || 0) / 900; g.save(); g.translate(Wd / 2, -T * .25); g.rotate(a0); for (let k = 0; k < 4; k++) { g.rotate(Math.PI / 2); g.fillStyle = '#fffdf7'; g.strokeStyle = '#c9a67a'; g.lineWidth = T / 30; g.fillRect(-T * .1, -T * .95, T * .2, T * .8); g.strokeRect(-T * .1, -T * .95, T * .2, T * .8); } g.restore(); g.fillStyle = '#8f5e33'; circ(g, Wd / 2, -T * .25, T * .08); g.fill(); break; }
+    case 'lamp_star': shadow(g, T / 2, T * .86, T * .18, T * .06); g.fillStyle = '#8a7ad6'; g.fillRect(T * .46, -T * .2, T * .08, T * 1.05); g.fillStyle = 'rgba(255,240,160,.4)'; circ(g, T / 2, -T * .35, T * .34); g.fill(); g.fillStyle = '#ffe14f'; g.strokeStyle = '#e5a91c'; g.lineWidth = T / 30; starP(g, T / 2, -T * .35, T * .22); g.fill(); g.stroke(); break;
+    case 'carousel': { shadow(g, Wd / 2, Hd - T * .3, Wd * .45, T * .25); g.fillStyle = '#ffe0ec'; line(g, '#f08aa8', T / 20); g.beginPath(); g.ellipse(Wd / 2, Hd - T * .5, Wd * .44, T * .4, 0, 0, Math.PI * 2); g.fill(); g.stroke(); const cs = ['#ffb3cf', '#b3dcff', '#fff09a', '#d6c2ff']; for (let k = 0; k < 4; k++) { const x = Wd * (.2 + k * .2); g.strokeStyle = '#e5b95a'; g.lineWidth = T / 20; g.beginPath(); g.moveTo(x, -T * .2); g.lineTo(x, Hd - T * .55); g.stroke(); g.fillStyle = cs[k]; g.beginPath(); g.ellipse(x, Hd - T * (.9 + (k % 2) * .25), T * .22, T * .14, 0, 0, Math.PI * 2); g.fill(); g.fillStyle = '#fff'; circ(g, x + T * .18, Hd - T * (1.0 + (k % 2) * .25), T * .09); g.fill(); } for (let i = 0; i < 8; i++) { g.fillStyle = i % 2 ? '#fff' : '#ff8fb8'; g.beginPath(); g.moveTo(Wd / 2, -T * .9); g.lineTo(i * Wd / 8, -T * .1); g.lineTo((i + 1) * Wd / 8, -T * .1); g.closePath(); g.fill(); } g.fillStyle = '#ffd34f'; starP(g, Wd / 2, -T * .98, T * .2); g.fill(); break; }
+    case 'tree_star': { shadow(g, T / 2, T * .85, T * .32, T * .1); g.fillStyle = '#a06a3e'; g.fillRect(T * .43, T * .4, T * .14, T * .46); g.fillStyle = '#5bb36a'; line(g, '#41913b', T / 24); for (let k = 0; k < 3; k++) { const y = T * (.45 - k * .26), w = T * (.42 - k * .1); g.beginPath(); g.moveTo(T / 2 - w, y + T * .1); g.lineTo(T / 2, y - T * .28); g.lineTo(T / 2 + w, y + T * .1); g.closePath(); g.fill(); g.stroke(); } [['#ff6b7d', .35, .32], ['#6fb6ff', .62, .2], ['#ffe14f', .45, 0]].forEach(([c, x, y]) => { g.fillStyle = c; circ(g, T * x, T * y, T * .05); g.fill(); }); g.fillStyle = '#ffe14f'; g.strokeStyle = '#e5a91c'; g.lineWidth = T / 30; starP(g, T / 2, -T * .38, T * .17); g.fill(); g.stroke(); break; }
     default: g.fillStyle = '#ccc'; g.fillRect(0, 0, Wd, Hd);
   }
 }
@@ -220,11 +247,11 @@ export function drawIcon(cv, id, look) {
   if (p.cat === 'look') {
     const T = S * .4;
     g.save(); g.translate(S * .1, S * .42);
-    const lk = { roof: 'red', wall: 'cream', door: 'basic', window: 'square' }; lk[p.kind] = id.replace(p.kind + '_', '');
+    const lk = { roof: 'red', wall: 'cream', door: 'basic', window: 'square', deco: [] }, v = id.replace(p.kind + '_', ''); if (p.kind === 'deco') lk.deco = [v]; else lk[p.kind] = v;
     houseBody(g, T * 2, T * 2 * .9, T, lk); g.restore(); return;
   }
-  const [w, h] = p.size || [1, 1], tall = /house|school|cafe|moko|shop/.test(id) ? 1.3 : (id === 'lamp' || id === 'swing' || id.startsWith('tree')) ? .6 : .2;
+  const [w, h] = p.custom && look && look.size ? look.size : (p.size || [1, 1]), tall = /house_tall|windmill|carousel/.test(id) ? 2 : /house|school|cafe|moko|shop/.test(id) ? 1.3 : /lamp|swing|tree|statue|well/.test(id) ? .6 : .2;
   const T = Math.min(S * .86 / w, S * .86 / (h + tall));
   g.save(); g.translate((S - w * T) / 2, (S - (h + tall) * T) / 2 + tall * T);
-  drawObject(g, { type: id, x: 3, y: 4, r: 0, look }, T, 0); g.restore();
+  drawObject(g, { type: id, x: 3, y: 4, r: 0, look, size: look && look.size }, T, 0); g.restore();
 }

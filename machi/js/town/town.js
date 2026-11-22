@@ -16,6 +16,8 @@ export function defTown() {
     unlockedAreas: ['central'],
     camera: { x: 20, y: 20, zoom: 1 },
     knownChars: null,           // まちで もう しらせた キャラ（null＝はじめて）
+    quests: { done: [] },       // おわった おねがい（ごほうびを もらった もの）
+    templates: [],              // おきにいりの おうち [{id, type, look, size?}]
     seq: 1,
   };
 }
@@ -47,6 +49,8 @@ export function mergeTown(d) {
   if (Array.isArray(d.unlockedAreas)) t.unlockedAreas = d.unlockedAreas;
   if (d.camera && typeof d.camera === 'object') Object.assign(t.camera, d.camera);
   if (Array.isArray(d.knownChars)) t.knownChars = d.knownChars;
+  if (d.quests && Array.isArray(d.quests.done)) t.quests.done = d.quests.done.filter(q => typeof q === 'string');
+  if (Array.isArray(d.templates)) t.templates = d.templates.filter(x => x && typeof x.type === 'string').slice(0, 8);
   t.seq = Math.max(d.seq | 0, ...t.objects.map(o => +String(o.id).replace(/\D/g, '') + 1 || 1), 1);
   t.t = d.t || 0;
   // モコの おうち と おみせ は かならず ある
@@ -84,7 +88,12 @@ export const inMap = (x, y) => x >= 0 && y >= 0 && x < W && y < H;
 // ひらいている エリアか（まちレベルで ひらく）
 export const usable = (t, x, y) => { const a = inMap(x, y) && areaOf(x, y); return !!a && t.unlockedAreas.includes(a.id); };
 export const groundAt = (t, x, y) => t.ground[x + ',' + y] || 'grass';
-export function sizeOf(o) { const p = PART[o.type]; const [w, h] = p && p.size ? p.size : [1, 1]; return (o.r & 1) && p && p.rotate ? [h, w] : [w, h]; }
+export const CUSTOM_SIZES = [[2, 2], [3, 2], [3, 3], [4, 2], [4, 3]];
+export function sizeOf(o) {
+  const p = PART[o.type];
+  if (p && p.custom && Array.isArray(o.size) && CUSTOM_SIZES.some(([a, b]) => a === o.size[0] && b === o.size[1])) return [o.size[0], o.size[1]];
+  const [w, h] = p && p.size ? p.size : [1, 1]; return (o.r & 1) && p && p.rotate ? [h, w] : [w, h];
+}
 export function cellsOf(o) { const [w, h] = sizeOf(o), out = []; for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) out.push([o.x + i, o.y + j]); return out; }
 
 // どこに なにが あるか（"x,y" → object）

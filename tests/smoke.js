@@ -440,9 +440,26 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(await T(() => { const h = __town.town.objects.find(o => o.residents && o.residents.includes('c_hamster')); return JSON.stringify(h.room); }) === '{"wall":"w_dots","floor":"f_wood","furn":["u_bed"]}', 'おうちの なかに もっている かぐ・かべを おける（もっていない ものは おけない）');
     ok(/ハムスター/.test(await p.textContent('#ov')) && await p.locator('#ov .inroom svg').count() === 1, 'おうちの なかに すんでいる キャラ');
     await T(() => closePop());
+    // じゅうにんの おねがい（フェーズ4）
+    await T(() => { const add = (type, x, y) => __town.town.objects.push({ id: 'f' + x + y, type, x, y, r: 0 }); for (let i = 0; i < 5; i++) add('flower_red', 9 + i, 31); __town.changed(); });
+    const q0 = await T(() => __town.activeQuests().find(a => a.q.id === 'flowers'));
+    ok(q0 && q0.ok && await T(() => !document.getElementById('qbadge').hidden), 'おはなを 5こ うえると おねがい たっせい（バッジ）');
+    ok(await T(() => !__town.town.unlockedParts.includes('flower_rainbow')) && !/にじいろの はな/.test(await T(() => { ACT.tshopcat('nature'); const t = document.getElementById('ov').textContent; closePop(); return t; })), 'ごほうびの パーツは おみせに ない');
+    await p.click('#bQuest'); await p.click('[data-act=tclaim][data-arg=flowers]');
+    ok(await T(() => __town.town.quests.done.includes('flowers') && __town.town.unlockedParts.includes('flower_rainbow')), 'うけとると ごほうびの パーツが つかえる');
+    await T(() => closePop());
+    // ほんかくてきな いえづくり（フェーズ5）
+    await T(() => { __town.town.unlockedParts.push('house_custom', 'shape_round', 'deco_heart'); __town.setMode('build'); __town.chooseTool({ kind: 'part', id: 'house_custom', r: 0 }); __town.tapBuild(25.5, 29.5); __town.tapBuild(25.5, 29.5); __town.setMode('view'); });
+    await T(() => { const h = __town.town.objects.find(o => o.type === 'house_custom'); __town.openLooks(h); });
+    await p.click('[data-act=tlook][data-arg$="size|3x2"]'); await p.click('[data-act=tlook][data-arg$="shape|round"]'); await p.click('[data-act=tlook][data-arg$="deco|heart"]');
+    ok(await T(() => { const h = __town.town.objects.find(o => o.type === 'house_custom'); return h.size.join() === '3,2' && h.look.shape === 'round' && h.look.deco.includes('heart'); }), 'じぶんで つくる おうち：おおきさ・やねの かたち・かざり');
+    await p.click('[data-act=ttpl]'); await T(() => closePop());
+    await T(() => { __town.setMode('build'); __town.ui.cat = 'house'; __town.chooseTool({ kind: 'select' }); });
+    await p.click('#bparts [data-tpl]'); await T(() => { __town.tapBuild(18.5, 26.5); __town.tapBuild(18.5, 26.5); __town.setMode('view'); });
+    ok(await T(() => __town.town.objects.filter(o => o.type === 'house_custom' && o.look.shape === 'round' && o.size.join() === '3,2').length === 2), 'おきにいりから おなじ おうちを たてる');
     // ほぞん・もどる
     await T(() => __town.saveNow()); await p.reload(); await p.waitForSelector('body[data-ready="1"]');
-    ok(await T(() => __town.town.objects.some(o => o.type === 'lamp') && __town.town.unlockedAreas.includes('forest') && __town.town.objects.find(o => o.room).room.furn[0] === 'u_bed' && __town.town.ground['14,12'] === 'road_dirt' && __town.town.objects.find(o => o.type === 'house_basic').residents[0] === 'c_hamster'), 'とじても のこる（たてもの・みち・すむひと）');
+    ok(await T(() => __town.town.objects.some(o => o.type === 'lamp') && __town.town.templates.length === 1 && __town.town.quests.done.includes('flowers') && __town.town.unlockedAreas.includes('forest') && __town.town.objects.find(o => o.room).room.furn[0] === 'u_bed' && __town.town.ground['14,12'] === 'road_dirt' && __town.town.objects.find(o => o.type === 'house_basic').residents[0] === 'c_hamster'), 'とじても のこる（たてもの・みち・すむひと）');
     await p.click('#toRoom'); await p.waitForLoadState(); await p.waitForTimeout(500);
     ok(!p.url().includes('machi') && await T(() => S.points) === 90, 'おへやに もどる（⭐が いっしょ）');
     await T(() => { closePop(); go('shop'); });
