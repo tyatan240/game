@@ -5,12 +5,17 @@ import { World, newWorld } from './world/world.js';
 import { loadSave, writeSave } from './world/storage.js';
 import { BuildScene } from './render/scene.js';
 import { drawIcon } from './render/icons.js';
+import { RobotView } from './render/robotModel.js';
+import { Robot, Runner, ERR } from './robot/robot.js';
+import { sanitize } from './robot/program.js';
+import { RobotPanel } from './ui/robotPanel.js';
 
 const $ = id => document.getElementById(id);
 const MSG = { out: 'そこには おけないよ', full: 'もう ブロックが あるよ', top: 'はなの うえには おけないよ', id: 'その ブロックは つかえないよ' };
 
-const ui = { sel: 'wood', rot: 0, mode: 'place', pending: null, seenHelp: false };
-let world, scene;
+// app: 'free'（じゆうに つくる）/ 'robot'（ロボットに おねがい）
+const ui = { app: 'free', sel: 'wood', rot: 0, mode: 'place', pending: null, seenHelp: false };
+let world, scene, robot, runner, rview, panel, prog = [];
 
 // ---------- おと（WebAudio。みじかい「ぽん」）----------
 let ac = null;
@@ -31,7 +36,8 @@ let saveTimer = 0;
 function saveNow() {
   clearTimeout(saveTimer); saveTimer = 0;
   if (!world) return;
-  writeSave({ world: world.toJSON(), cam: scene.camState(), sel: ui.sel, rot: ui.rot, seenHelp: ui.seenHelp });
+  writeSave({ world: world.toJSON(), cam: scene.camState(), sel: ui.sel, rot: ui.rot, seenHelp: ui.seenHelp,
+    app: ui.app, robot: robot.toJSON(), prog, speed: runner.speed });
 }
 function saveSoon() { clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 300); }
 addEventListener('pagehide', saveNow);
@@ -122,6 +128,7 @@ function commit(t) {
 // タッチ：1かいめで プレビュー、おなじ ところを もういちど（か「ここに おく」）で きまり
 // マウス：うごかすと プレビュー、クリックで きまり
 function tap(cx, cy, type) {
+  if (ui.app === 'robot') return tapRobot(cx, cy);
   const t = targetAt(cx, cy);
   if (type === 'mouse') { commit(t); showHoverAt(cx, cy); return; }
   if (!t) { clearPending(); return; }
@@ -130,8 +137,46 @@ function tap(cx, cy, type) {
   if (!t.ok) { sNg(); toast(MSG[t.reason] || MSG.out); } else sTap();
 }
 
+// ロボットモード：タップした ところへ ロボを つれていく（じっこう していない とき）
+function tapRobot(cx, cy) {
+  if (runner.state !== 'idle') return;
+  const p = scene.pick(cx, cy), c = p.hit || p.place;
+  if (!c) return;
+  const from = robot.pos();
+  if (robot.moveTo(c.x, c.z)) { rview.play('move', from, robot.pos(), robot.dir, 380); sTap(); saveSoon(); }
+}
+
+// つくる ⇄ ロボット
+function setApp(a, quiet) {
+  if (runner.state !== 'idle') return;
+  ui.app = a;
+  document.body.classList.toggle('robot', a === 'robot');
+  $('tabFree').classList.toggle('on', a === 'free');
+  $('tabRobot').classList.toggle('on', a === 'robot');
+  $('rpanel').hidden = $('rpal').hidden = a !== 'robot';
+  rview.showArrows(a === 'robot');
+  clearPending(); hoverXY = null; scene.showPreview(null);
+  if (a === 'robot') { scene.snapAz(); panel.render(); }
+  layout();
+  if (!quiet) { sTap(); saveSoon(); }
+}
+// パレットの たかさに あわせて パネルの したを きめる
+function layout() {
+  const pal = ui.app === 'robot' ? $('rpal') : $('palette');
+  document.documentElement.style.setProperty('--palH', (pal.offsetHeight + 8) + 'px');
+  // せかいを みえる ところの まんなかに
+  const top = document.querySelector('.top').offsetHeight, rp = $('rpanel');
+  const ins = { t: top * .6, b: pal.offsetHeight, l: 0, r: 0 };
+  if (ui.app === 'robot') {
+    const r = rp.getBoundingClientRect();
+    if (innerWidth > innerHeight) ins.l = r.right; else ins.b = innerHeight - r.top;
+  }
+  scene.setInset(ins);
+}
+addEventListener('resize', () => layout());
+
 let hoverCell = null, hoverXY = null;
-function showHoverAt(cx, cy) { hoverXY = [cx, cy]; showHover(); }
+function showHoverAt(cx, cy) { if (ui.app !== 'free') return; hoverXY = [cx, cy]; showHover(); }
 function showHover() {
   if (!hoverXY) return;
   hoverCell = targetAt(hoverXY[0], hoverXY[1]);
@@ -196,13 +241,15 @@ function setupButtons() {
   $('mPlace').onclick = () => setMode('place');
   $('mErase').onclick = () => setMode('erase');
   $('rot').onclick = rotate;
-  $('undo').onclick = () => { if (world.undo()) { sTap(); clearPending(); } };
-  $('redo').onclick = () => { if (world.redo()) { sTap(); clearPending(); } };
+  $('undo').onclick = () => { if (runner.state === 'idle' && world.undo()) { sTap(); clearPending(); } };
+  $('redo').onclick = () => { if (runner.state === 'idle' && world.redo()) { sTap(); clearPending(); } };
+  $('tabFree').onclick = () => setApp('free');
+  $('tabRobot').onclick = () => setApp('robot');
   $('turnL').onclick = () => { scene.turn(-1); sTap(); clearPending(); saveSoon(); };
   $('turnR').onclick = () => { scene.turn(1); sTap(); clearPending(); saveSoon(); };
   $('zIn').onclick = () => { scene.zoomBy(1.25); sTap(); saveSoon(); };
   $('zOut').onclick = () => { scene.zoomBy(1 / 1.25); sTap(); saveSoon(); };
-  $('camReset').onclick = () => { scene.resetCamera(); sTap(); clearPending(); saveSoon(); };
+  $('camReset').onclick = () => { scene.resetCamera(ui.app === 'robot' ? 0 : Math.PI / 4); sTap(); clearPending(); saveSoon(); };
   $('ok').onclick = () => commit(ui.pending);
   $('menu').onclick = () => { $('menuDlg').hidden = false; };
   $('menuClose').onclick = () => { $('menuDlg').hidden = true; };
@@ -215,6 +262,12 @@ function setupButtons() {
   addEventListener('keydown', e => {
     if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
     const k = e.key.toLowerCase();
+    if (runner.state !== 'idle' || ui.app === 'robot') {
+      if (k === ' ') { e.preventDefault(); $('rPlay').click(); }
+      else if (k === '[' || k === 'q') scene.turn(-1);
+      else if (k === ']' || k === 'e') scene.turn(1);
+      return;
+    }
     if ((e.ctrlKey || e.metaKey) && k === 'z') { e.preventDefault(); (e.shiftKey ? world.redo() : world.undo()); clearPending(); return; }
     if ((e.ctrlKey || e.metaKey) && k === 'y') { e.preventDefault(); world.redo(); clearPending(); return; }
     if (/^[1-9]$/.test(e.key) && BLOCKS[+e.key - 1]) select(BLOCKS[+e.key - 1].id);
@@ -230,8 +283,42 @@ function setupButtons() {
 }
 
 function refreshButtons() {
-  $('undo').disabled = !world.canUndo();
-  $('redo').disabled = !world.canRedo();
+  const idle = !runner || runner.state === 'idle';
+  $('undo').disabled = !idle || !world.canUndo();
+  $('redo').disabled = !idle || !world.canRedo();
+  for (const id of ['tabFree', 'tabRobot']) $(id).disabled = !idle;
+}
+
+// ロボ・じっこう がかり・パネルを つくる
+function setupRobot(data) {
+  robot = new Robot(world, data && data.robot);
+  prog = sanitize(data && data.prog);
+  rview = new RobotView(scene.scene);
+  scene.animators.push(rview);
+  rview.place(robot.pos(), robot.dir);
+  rview.showArrows(false);
+  runner = new Runner(world, robot, {
+    step(s, res, ms) {
+      rview.play(res.kind, res.from, res.to, robot.dir, ms);
+      panel.mark(s, !res.ok);
+      if (!res.ok) sNg(); else if (res.kind === 'put') sPlace(); else if (res.kind === 'break') sErase(); else if (res.kind === 'move') beep(440, .04, 'sine', .07);
+    },
+    state() { panel.updateControls(); refreshButtons(); },
+    end(r) {
+      if (!r.ok) { toast(ERR[r.reason] || 'うまく いかなかったよ'); panel.mark(r.step, true); }
+      else { panel.mark(null); if (r.done) { toast('できた！', true); beep(660, .1); setTimeout(() => beep(880, .12), 110); } }
+      refreshButtons(); saveNow();
+    },
+  });
+  if (data && Number.isInteger(data.speed) && data.speed >= 0 && data.speed < 3) runner.speed = data.speed;
+  panel = new RobotPanel({
+    runner, getProg: () => prog, setProg: p => { prog = p; },
+    onEdit: () => { panel.mark(null); saveSoon(); }, toast, sound: { tap: sTap, ng: sNg },
+  });
+  scene.onCamera = az => panel.setArrows(az);
+  panel.setArrows(scene.az);
+  // てで つくりかえたら ロボは その れつの うえに のる
+  world.onChange(() => { if (runner.state === 'idle') rview.place(robot.pos(), robot.dir); });
 }
 
 async function start() {
@@ -240,6 +327,7 @@ async function start() {
   if (data && data.world) world.load(data.world); else world = newWorld();
   scene = new BuildScene($('cv'), world);
   if (data) { scene.setCam(data.cam); ui.seenHelp = !!data.seenHelp; }
+  setupRobot(data);
   buildPalette();
   select(data && BLOCK[data.sel] ? data.sel : 'wood');
   ui.rot = data && Number.isInteger(data.rot) ? ((data.rot % 4) + 4) % 4 : 0;
@@ -247,12 +335,15 @@ async function start() {
   world.onChange(() => { refreshButtons(); saveSoon(); if (hoverXY) showHover(); });
   scene.onTurn = () => { if (hoverXY) showHover(); };
   refreshButtons();
+  setApp(data && data.app === 'robot' ? 'robot' : 'free', true);
+  layout();
   if (!ui.seenHelp) $('help').hidden = false;
   if (!data) saveNow();
 
   // テストと、あとで つなぐ ロボット用の いりぐち
   window.__build = {
-    world, scene, ui, BLOCKS,
+    world, scene, ui, BLOCKS, robot, runner, panel, setApp,
+    get prog() { return prog; }, set prog(p) { prog = sanitize(p); panel.render(); },
     select, setMode, rotate, commit, tap, saveNow,
     targetAt, toScreen: (x, y, z) => scene.toScreen(x, y, z),
   };

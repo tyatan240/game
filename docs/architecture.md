@@ -42,6 +42,7 @@
 ### ロボモコの ブロックタウン（`program/build/`）
 - 3D のブロック置き（Three.js r160.1 を `js/vendor/` に同梱、ES Modules）。core.js は使わない。まだどこからもリンクしていない。
 - 世界のデータ（`js/world/world.js`）と描画（`js/render/`）を分けている。将来のロボット命令は `World` の `place`/`remove`/`batch` を使う。
+- 「つくる」（手で置く）と「ロボット」（命令を並べてロボモコが建てる）の2モードで同じ世界を使う。ロボットの命令は `program/` と同じ形（`{t:'R'}`、`{t:'loop',n,body}`）＋ `put`/`break`/`wait`。
 - 保存は `robomoko-build-v1`。共通ポイントはまだ出さない。詳細は `program/build/README.md`。テスト用の入口は `window.__build`。
 
 ## 星（共通ポイント）

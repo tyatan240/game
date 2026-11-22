@@ -328,6 +328,67 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     await ctx.close();
   }
 
+  console.log('13. ブロックタウン：ロボットに おねがい');
+  {
+    const ctx = await browser.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true, serviceWorkers: 'block' });
+    const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
+    await p.goto(B + 'program/build/index.html');
+    await p.waitForSelector('body[data-ready="1"]', { timeout: 15000 }); await p.click('#helpOk');
+    const W = () => p.evaluate(() => __build.world.toJSON().blocks.filter(b => b[1] > 0).map(b => b.join(':')).sort().join(' '));
+    const add = c => p.evaluate(c => document.querySelector(`#rpal [data-cmd='${JSON.stringify(c)}']`).click(), c);
+    const idle = () => p.waitForFunction(() => __build.runner.state === 'idle', null, { timeout: 15000 });
+    await p.click('#tabRobot'); await p.waitForTimeout(700);
+    ok(await p.isVisible('#rpanel') && !await p.isVisible('#palette') && await p.evaluate(() => Math.abs(Math.sin(__build.scene.az * 2)) < .01), 'ロボットモード（やじるしが まっすぐに なる むき）');
+    await p.evaluate(() => __build.robot.moveTo(2, 10));
+    // 4かい くりかえす：きを おく → みぎに すすむ
+    await add({ t: 'loop' }); await p.click('#prog .lno'); await p.click('#prog .lno');
+    await add({ t: 'put', b: 'wood' }); await add({ t: 'R' });
+    ok(await p.evaluate(() => JSON.stringify(__build.prog)) === '[{"t":"loop","n":4,"body":[{"t":"put","b":"wood"},{"t":"R"}]}]', 'めいれいを ならべる（プログラミングと おなじ かたち）');
+    await p.click('#rSpeed'); await p.click('#rPlay'); await idle();
+    ok(await W() === '2:1:10:wood 3:1:10:wood 4:1:10:wood 5:1:10:wood' && await p.evaluate(() => __build.robot.x === 6), 'じっこうで きの かべが できる');
+    await p.click('#undo'); ok(await W() === '', 'じっこう 1かい分を まとめて もどせる');
+    await p.click('#redo');
+    // うえに つむ（おく を つづけると たかく なる）・こわす
+    await p.evaluate(() => { __build.robot.moveTo(8, 4); __build.prog = [{ t: 'put', b: 'stone' }, { t: 'put', b: 'stone' }, { t: 'put', b: 'brick' }, { t: 'break' }, { t: 'wait' }]; });
+    await p.click('#rPlay'); await idle();
+    ok(/8:1:4:stone 8:2:4:stone/.test(await W()) && !/8:3:4/.test(await W()) && await p.evaluate(() => __build.robot.y === 3), 'つみあげる・こわす・まつ');
+    // 1ステップ・いちじていし・ていし
+    await p.evaluate(() => { __build.robot.moveTo(12, 12); __build.prog = [{ t: 'put', b: 'brick' }, { t: 'U' }, { t: 'put', b: 'brick' }, { t: 'U' }]; });
+    await p.click('#rStep');
+    ok(await p.evaluate(() => __build.runner.state === 'pause') && /12:1:12:brick/.test(await W()) && !/12:1:11/.test(await W()) && await p.isVisible('#c0.run'), '1ステップ じっこう（いまの めいれいが ひかる）');
+    await p.click('#rStep'); await p.click('#rStep');
+    ok(/12:1:11:brick/.test(await W()), 'もう1ステップ');
+    await p.click('#rStop'); await idle();
+    ok(await p.evaluate(() => __build.runner.state === 'idle' && __build.robot.z === 11), 'ていし（つくった ものは のこる）');
+    await p.evaluate(() => { __build.runner.speed = 0; }); await p.click('#rPlay'); await p.waitForTimeout(100); await p.click('#rPlay');
+    ok(await p.evaluate(() => __build.runner.state === 'pause'), 'いちじていし');
+    await p.click('#rStop'); await idle();
+    // まちがい：そとに でる
+    await p.evaluate(() => { __build.runner.speed = 2; __build.robot.moveTo(15, 0); __build.prog = [{ t: 'R' }]; });
+    await p.click('#rPlay'); await idle();
+    ok(await p.isVisible('#c0.err') && /そと/.test(await p.textContent('#toast')), 'そとに でようと すると とまって おしえる');
+    // ながすぎる プログラムは いれられない
+    await p.evaluate(() => { __build.prog = []; }); for (let i = 0; i < 41; i++) await add({ t: 'wait' });
+    ok(await p.evaluate(() => __build.prog.length) === 40, 'めいれいは 40こ まで');
+    await p.evaluate(() => { __build.prog = Array.from({ length: 5 }, () => ({ t: 'loop', n: 9, body: Array(7).fill({ t: 'wait' }) })); });
+    ok(await p.evaluate(async () => (await import('./js/robot/program.js')).steps(__build.prog).length) <= 600, 'じっこうの かずにも じょうげん');
+    // めいれいを タップで けす
+    await p.evaluate(() => { __build.prog = [{ t: 'R' }, { t: 'U' }]; });
+    await p.click('#c0'); ok(await p.evaluate(() => JSON.stringify(__build.prog)) === '[{"t":"U"}]', 'めいれいを タップで けす');
+    // せかいを タップで ロボを うごかす
+    const s = await p.evaluate(() => __build.toScreen(7.5, 1, 13.5)); await p.touchscreen.tap(s.x, s.y); await p.waitForTimeout(500);
+    ok(await p.evaluate(() => __build.robot.x === 7 && __build.robot.z === 13), 'タップした ところへ ロボが いく');
+    // とじても のこる
+    await p.waitForTimeout(500); const w0 = await W(); await p.reload(); await p.waitForSelector('body[data-ready="1"]');
+    ok(await W() === w0 && await p.evaluate(() => __build.ui.app === 'robot' && __build.robot.x === 7 && JSON.stringify(__build.prog) === '[{"t":"U"}]'), 'プログラム・ロボの ばしょも のこる');
+    // つくる モードに もどって てで なおせる
+    await p.click('#tabFree'); await p.click('#mErase');
+    const t = await p.evaluate(() => __build.toScreen(2.5, 2, 10.5)); await p.touchscreen.tap(t.x, t.y); await p.touchscreen.tap(t.x, t.y);
+    ok(!/2:1:10:wood/.test(await W()) && await p.isVisible('#palette'), 'ロボの たてものを てで なおせる');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / '));
+    await ctx.close();
+  }
+
   await browser.close(); server.close();
   console.log(failed ? `\n${failed}こ しっぱい` : '\nぜんぶ OK');
   process.exit(failed ? 1 : 0);

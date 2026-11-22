@@ -23,7 +23,10 @@
     <a class="btn" id="back" href="../index.html" aria-label="もどる">
       <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" /></svg><span>もどる</span>
     </a>
-    <div class="ttl">ロボモコの ブロックタウン</div>
+    <div class="tabs" role="tablist">
+      <button class="tab on" id="tabFree" role="tab" aria-label="じゆうに つくる"><svg viewBox="0 0 24 24"><path d="M8 13V6a1.5 1.5 0 013 0v6M11 12V4.5a1.5 1.5 0 013 0V12M14 12V6a1.5 1.5 0 013 0v7c0 4-2.5 7-6 7-2.5 0-4-1.5-5.5-4L4 13a1.5 1.5 0 012.5-1.5L8 13" /></svg><span>つくる</span></button>
+      <button class="tab" id="tabRobot" role="tab" aria-label="ロボットに おねがい"><svg viewBox="0 0 24 24"><rect x="5" y="8" width="14" height="11" rx="4" /><path d="M12 8V4" /><circle cx="12" cy="3" r="1.2" fill="currentColor" /><circle cx="9.5" cy="13" r="1" fill="currentColor" /><circle cx="14.5" cy="13" r="1" fill="currentColor" /></svg><span>ロボット</span></button>
+    </div>
     <button class="btn ic" id="undo" aria-label="ひとつ もどす"><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5" /><path d="M4 9h11a5 5 0 010 10h-3" /></svg></button>
     <button class="btn ic" id="redo" aria-label="やりなおす"><svg viewBox="0 0 24 24"><path d="M15 14l5-5-5-5" /><path d="M20 9H9a5 5 0 000 10h3" /></svg></button>
     <button class="btn ic" id="menu" aria-label="メニュー"><svg viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h14" /></svg></button>
@@ -47,6 +50,22 @@
 
   <nav class="palette" id="palette" aria-label="ブロック"></nav>
 
+  <!-- ロボットに おねがい -->
+  <section id="rpanel" class="rpanel" hidden>
+    <div class="rctl">
+      <button class="rbtn go" id="rPlay"></button>
+      <button class="rbtn ic" id="rStep" aria-label="1つ すすめる"><svg viewBox="0 0 24 24"><path d="M5 5l9 7-9 7z" fill="currentColor" /><path d="M18 5v14" /></svg></button>
+      <button class="rbtn ic" id="rStop" aria-label="ていし"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor" /></svg></button>
+      <button class="rbtn sp" id="rSpeed" aria-label="はやさ"><svg viewBox="0 0 24 24"><path d="M4 18h3v-4H4zM10.5 18h3V10h-3zM17 18h3V6h-3z" class="bars" /></svg><span>ふつう</span></button>
+    </div>
+    <div id="prog" class="prog"></div>
+    <div class="rinfo"><b id="rCount">0 / 40</b><span>タップで けせるよ</span><i class="gap"></i>
+      <button class="rbtn ic sm" id="rBack" aria-label="1つ けす"><svg viewBox="0 0 24 24"><path d="M9 6h11v12H9l-6-6z" /><path d="M12 10l4 4M16 10l-4 4" /></svg></button>
+      <button class="rbtn ic sm" id="rClear" aria-label="ぜんぶ けす"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13" /></svg></button>
+    </div>
+  </section>
+  <nav class="palette rpal" id="rpal" aria-label="めいれい" hidden></nav>
+
   <div id="toast" class="toast" hidden></div>
 
   <div id="help" class="help" hidden>
@@ -57,7 +76,7 @@
         <li>おきたい ばしょを タップ（かげが でるよ）</li>
         <li>もういちど タップか「ここに おく」で おく</li>
       </ol>
-      <p>ゆびで ドラッグ：まわす　ふたゆび：ズーム・いどう<br>「けす」に すると ブロックを けせるよ</p>
+      <p>ゆびで ドラッグ：まわす　ふたゆび：ズーム・いどう<br>「けす」に すると ブロックを けせるよ<br>うえの「ロボット」：めいれいを ならべると ロボモコが つくって くれるよ</p>
       <button class="big" id="helpOk">わかった</button>
     </div>
   </div>
@@ -68,6 +87,15 @@
       <button class="big" id="openHelp">あそびかた</button>
       <button class="big warn" id="askNew">はじめから つくる</button>
       <button class="big sub" id="menuClose">とじる</button>
+    </div>
+  </div>
+
+  <div id="clrDlg" class="help" hidden>
+    <div class="card">
+      <div class="h">プログラムを ぜんぶ けす？</div>
+      <p>つくった たてものは のこるよ</p>
+      <button class="big warn" id="clrYes">ぜんぶ けす</button>
+      <button class="big sub" id="clrNo">やめる</button>
     </div>
   </div>
 
