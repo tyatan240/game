@@ -493,7 +493,7 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     const T = f => p.evaluate(f);
     ok(await T(() => ['mob_pig', 'mob_tanuki', 'mob_chick', 'mob_frog'].every(id => __town.people.list.some(q => q.id === id && q.mob))), 'モブじゅうにん 4にんが まちに いる');
     const hw = await T(() => Object.fromEntries(['mob_pig', 'mob_tanuki', 'mob_chick', 'mob_frog'].map(id => [id, __town.hwState({ id, subj: { mob_pig: 'sansu', mob_tanuki: 'kokugo', mob_chick: 'eigo', mob_frog: 'prog' }[id] }).active])));
-    ok(/^add|^sub/.test(hw.mob_pig.key) && /^k|^kotoba|^yomi/.test(hw.mob_tanuki.key) && /^ea/.test(hw.mob_chick.key) && +hw.mob_frog.key <= 2, 'しゅくだいは それぞれの きょうかの テスト・ステージ ' + JSON.stringify([hw.mob_pig.key, hw.mob_tanuki.key, hw.mob_chick.key, hw.mob_frog.key]));
+    ok(/^(add|sub|mul|clock)/.test(hw.mob_pig.key) && /^k|^kotoba|^yomi/.test(hw.mob_tanuki.key) && /^ea/.test(hw.mob_chick.key) && +hw.mob_frog.key <= 2, 'しゅくだいは それぞれの きょうかの テスト・ステージ ' + JSON.stringify([hw.mob_pig.key, hw.mob_tanuki.key, hw.mob_chick.key, hw.mob_frog.key]));
     await T(() => __town.openHomework({ id: 'mob_pig', name: 'こぶたの ブブ', subj: 'sansu', sname: 'さんすう', page: '../sansu/index.html' }));
     await p.click('#ov a.big'); await p.waitForLoadState(); await p.waitForTimeout(500);
     ok(/sansu\/index.html#hw=mob_pig\|/.test(p.url()) && /れんしゅう/.test(await p.textContent('#ov')), 'てつだう → さんすうの テストれんしゅう が ひらく');
@@ -612,6 +612,38 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
       ok(okc && c.ans === want && (c.p[1] !== '⏰' || await p.locator('.clockq svg').count() === 1), `${tid}：こたえ ${c.ans}（${c.p.join(' ')}）`);
     }
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+  }
+
+  console.log('17. まるごと バックアップ（ファイル）');
+  {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, acceptDownloads: true, serviceWorkers: 'block' });
+    const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
+    await p.goto(B + 'index.html'); await p.waitForTimeout(400);
+    await p.evaluate(async () => { closePop(); S.points = 777; S.owned.push('h_crown'); save();
+      localStorage.setItem('piko-prog-v1', JSON.stringify({ best: { 0: 3, 1: 2 } }));
+      localStorage.setItem('abc-adventure-v1', JSON.stringify({ v: 1, t: 5, started: true, stars: 12, learned: ['A', 'B'] }));
+      localStorage.setItem('moko-town-v1', JSON.stringify({ version: 1, t: 5, townName: 'テストの まち', objects: [], ground: { '10,10': 'road_dirt' } }));
+      localStorage.setItem('robomoko-build-v1', JSON.stringify({ v: 1, t: 5, world: { size: [16, 12, 16], blocks: [[1, 1, 1, 'wood']] } }));
+      await LH.importData({ format: 'moko-learning-history', version: 1, attempts: [{ id: 'x1', ts: Date.now(), questionInstanceId: 'q1', subject: 'sansu', topic: 'add1', isCorrect: true, attemptNumber: 1 }], sessions: [] }); });
+    const gate = async () => { await p.evaluate(() => gate()); const [x, y] = (await p.textContent('#ov')).match(/(\d) × (\d)/).slice(1).map(Number); await p.fill('#gatein', String(x * y)); await p.click('#ov [data-act=gateok]'); };
+    await gate();
+    const [dl] = await Promise.all([p.waitForEvent('download'), p.click('[data-act=fullsave]')]);
+    const file = path.join(require('os').tmpdir(), 'moko-full-test.json'); await dl.saveAs(file);
+    const js = JSON.parse(fs.readFileSync(file, 'utf8'));
+    ok(js.format === 'moko-house-backup' && Object.keys(js.data).length === 5 && js.data['moko-math-v1'].points === 777 && js.history.attempts.length === 1, 'ぜんぶの へや＋学習記録を 1つの ファイルに 保存');
+    // こわして から ふくげん
+    await p.evaluate(async () => { S.points = 1; S.owned = S.owned.filter(i => i !== 'h_crown'); save(); ['piko-prog-v1', 'abc-adventure-v1', 'moko-town-v1', 'robomoko-build-v1'].forEach(k => localStorage.removeItem(k)); await LH.clearAll(); });
+    await p.setInputFiles('#fullin', file); await p.waitForSelector('#ov [data-act=fullyes]');
+    ok(/⭐ 777/.test(await p.textContent('#ov')), '復元の まえに 中身を 確認');
+    await p.click('#ov [data-act=fullyes]'); await p.waitForTimeout(600);
+    const r = await p.evaluate(async () => ({ pts: S.points, crown: S.owned.includes('h_crown'), prog: JSON.parse(localStorage.getItem('piko-prog-v1')).best[1], abc: JSON.parse(localStorage.getItem('abc-adventure-v1')).stars, town: JSON.parse(localStorage.getItem('moko-town-v1')).townName, build: JSON.parse(localStorage.getItem('robomoko-build-v1')).world.blocks.length, lh: (await LH.getAttempts()).length }));
+    ok(r.pts === 777 && r.crown && r.prog === 2 && r.abc === 12 && r.town === 'テストの まち' && r.build === 1 && r.lh === 1, 'ファイルから ぜんぶ 復元 ' + JSON.stringify(r));
+    await p.goto(B + 'machi/index.html'); await p.waitForSelector('body[data-ready="1"]');
+    ok(await p.evaluate(() => __town.town.townName === 'テストの まち' && S.points === 777), '復元した まち・⭐が つかわれる');
+    await p.goto(B + 'index.html'); await p.waitForTimeout(300); await gate();
+    fs.writeFileSync(file, JSON.stringify({ format: 'other' })); await p.setInputFiles('#fullin', file); await p.waitForTimeout(200);
+    ok(/ありません/.test(await p.textContent('#fullmsg')) && await p.evaluate(() => S.points) === 777, 'ちがう ファイルは 読まない');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await ctx.close();
   }
 
   console.log('12a. えいごの こえ（iPad で「Capital A」と よまれない）');

@@ -81,6 +81,7 @@ a.big{text-align:center;text-decoration:none}
   </nav>
 </div>
 <div id="ov" class="hide"></div>
+<script src="common/learning-history.js"></script>
 <script src="common/core.js"></script>
 <script>
 /* ---------- がめん ---------- */
@@ -288,9 +289,51 @@ function settings(){
  <textarea id="bkout" readonly style="width:100%;height:60px;margin-top:8px;font-size:11px;border:2px solid #ffd0dc;border-radius:10px"></textarea>
  <textarea id="bkin" placeholder="ここに コードを はりつけ" style="width:100%;height:60px;margin-top:8px;font-size:11px;border:2px solid #ffd0dc;border-radius:10px;-webkit-user-select:text;user-select:text"></textarea>
  <div class="tbtns"><button data-act="bkload">${bkArm?'もう いちど おすと うわがき します':'よみこむ'}</button></div><div class="msg" id="bkmsg"></div></div>
+ <div class="card"><b>まるごと バックアップ（ファイル）</b><div class="muted" style="text-align:left">おうち・プログラミング・ABCぼうけん・ブロックタウン・まち・学習レポートの記録を、ぜんぶ 1つの ファイルに 保存します。iPad の かいかえ や こしょうに そなえて、ときどき 保存してください。</div>
+ <div class="tbtns"><button class="prac" data-act="fullsave">ぜんぶ 保存</button><label style="flex:1;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;border-radius:12px;padding:8px 4px;font-weight:800;font-size:13px;background:#ff8fb1;color:#fff;box-shadow:0 3px 0 #e0688f">ファイルから 復元<input type="file" id="fullin" accept="application/json,.json" hidden></label></div><div class="msg" id="fullmsg"></div></div>
  <button class="big gray" data-act="reset">${resetArm?'もう いちど おすと ぜんぶ けします':'データを リセット'}</button>
  <div style="height:10px"></div><button class="big" data-act="go" data-arg="home">おわる</button>`}
 let bkArm=false;
+/* ---------- まるごと バックアップ（ぜんぶの へやの データ ＋ 学習記録）---------- */
+// 保存キーは そのまま（形は かえない）。ふくげん は かくにん してから、それぞれの キーに かきもどす
+const FULL_KEYS=['moko-math-v1','piko-prog-v1','abc-adventure-v1','robomoko-build-v1','moko-town-v1'];
+const FULL_NAME={'moko-math-v1':'おうち（⭐・もちもの・きせかえ・テスト）','piko-prog-v1':'プログラミング','abc-adventure-v1':'ABCぼうけん','robomoko-build-v1':'ブロックタウン','moko-town-v1':'モコの まち'};
+async function fullSave(){
+ save();const data={};
+ for(const k of FULL_KEYS){try{const v=k==='moko-math-v1'?S:JSON.parse(localStorage.getItem(k)||'null');if(v)data[k]=v}catch(e){}}
+ let history=null;try{if(window.LH)history=await LH.exportAll()}catch(e){}
+ const o={format:'moko-house-backup',version:1,savedAt:new Date().toISOString(),data,history};
+ const d=new Date(),name=`moko-backup-${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.json`;
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(o)],{type:'application/json'}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);
+ const m=$('#fullmsg');if(m)m.textContent=`ほぞん しました（${Object.keys(data).length}この へや${history?`・学習記録 ${history.attempts.length}件`:''}）`}
+let fullPending=null;
+function fullCheck(o){
+ if(!o||o.format!=='moko-house-backup'||typeof o.version!=='number'||!o.data||typeof o.data!=='object')throw new Error('format');
+ if(o.version>1)throw new Error('version');
+ const keys=FULL_KEYS.filter(k=>o.data[k]&&typeof o.data[k]==='object');
+ if(o.data['moko-math-v1']&&typeof o.data['moko-math-v1'].points!=='number')throw new Error('format');
+ if(!keys.length)throw new Error('empty');
+ return keys}
+async function fullPick(f){
+ const m=$('#fullmsg');let o;
+ try{o=JSON.parse(await f.text());fullPending={o,keys:fullCheck(o)}}catch(e){fullPending=null;if(m)m.textContent=e.message==='version'?'この アプリより あたらしい ファイルです':'バックアップの ファイルでは ありません';return}
+ const h=o.history&&Array.isArray(o.history.attempts)?o.history.attempts.length:0,md=o.data['moko-math-v1'];
+ showPop(`<h3 style="font-size:20px">ファイルから 復元しますか？</h3><div style="text-align:left;line-height:1.7">${fullPending.keys.map(k=>'・'+FULL_NAME[k]).join('<br>')}${h?`<br>・学習記録 ${h}件（今の記録に たします）`:''}</div>
+ ${md?`<div style="margin-top:6px">⭐ ${md.points}（いまは ⭐ ${S.points}）</div>`:''}<div class="muted" style="margin-top:6px">ファイルに ある へやの データは、いまの データと いれかわります。<br>（${new Date(o.savedAt||0).toLocaleString('ja-JP')} に ほぞん）</div>
+ <div class="btns"><button class="big gray" data-act="close">やめる</button><button class="big" data-act="fullyes">復元する</button></div>`)}
+async function fullRestore(){
+ const P=fullPending;if(!P)return closePop();fullPending=null;const now=Date.now();
+ for(const k of P.keys){
+  const v=JSON.parse(JSON.stringify(P.o.data[k]));
+  if(k==='moko-math-v1'){S=merge(v);save();continue} // おうちは merge を とおして 2かしょに ほぞん
+  if('t' in v||k!=='piko-prog-v1')v.t=now;           // あたらしい ほうが つかわれる ように
+  try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}
+  const db={'robomoko-build-v1':'robomoko-build','moko-town-v1':'moko-town'}[k];
+  if(db)try{const q=indexedDB.open(db,1);q.onupgradeneeded=()=>q.result.createObjectStore('kv');q.onsuccess=()=>{try{q.result.transaction('kv','readwrite').objectStore('kv').put(v,k)}catch(e){}}}catch(e){}
+ }
+ let hm='';try{if(P.o.history&&window.LH){const r=await LH.importData(P.o.history);hm=`・学習記録 ${r.added}件`}}catch(e){}
+ closePop();render();const m=$('#fullmsg');if(m)m.textContent=`復元しました（${P.keys.length}この へや${hm}）`}
+document.addEventListener('change',e=>{if(e.target&&e.target.id==='fullin'){const f=e.target.files[0];e.target.value='';if(f)fullPick(f)}});
 const bkEnc=o=>btoa(unescape(encodeURIComponent(JSON.stringify(o))));
 const bkDec=t=>JSON.parse(decodeURIComponent(escape(atob(t.replace(/\s/g,'')))));
 const LIM={perRound:[3,20],perfect:[0,50],daily:[0,50],t:[0,20],practiceMul:[1,5],practiceBonus:[0,50],progPts:[0,10],abcPts:[0,30],goalPts:[0,50],goalAll:[0,200],gachaCost:[10,500],gachaDaily:[0,10]};
@@ -332,6 +375,8 @@ Object.assign(ACT,{
  snd:()=>{S.settings.sound=!S.settings.sound;save();render()},
  st:a=>stepSet(a),
  adj:a=>{S.points=Math.max(0,S.points+Number(a));save();render()},
+ fullsave:()=>fullSave(),
+ fullyes:()=>fullRestore(),
  bkmake:()=>{const o=$('#bkout');if(o){o.value=bkEnc(S);$('#bkmsg').textContent='コードを つくりました'}},
  bkcopy:()=>{const o=$('#bkout');if(!o||!o.value)return;const done=()=>{$('#bkmsg').textContent='コピーしました'};try{navigator.clipboard.writeText(o.value).then(done,()=>{o.select();try{document.execCommand('copy');done()}catch(e){$('#bkmsg').textContent='てで せんたくして コピーしてください'}})}catch(e){o.select()}},
  bkload:()=>{const i=$('#bkin'),v=i?i.value:'';let d=null;try{d=bkDec(v)}catch(e){}
