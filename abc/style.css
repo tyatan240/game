@@ -252,3 +252,21 @@ button.frame{border:0;background:#f4f9ff;border-radius:16px;padding:8px 14px;mar
 .ch.opt .otext{color:#3f7fc9;white-space:nowrap}
 .w3teach .lname{font-size:min(4vh,17px);margin:4px 0}
 .frame .punct{margin-left:-6px}
+.ch.pic .pja{display:block;font-size:min(3.6vh,16px);color:#7a6a6a;margin-top:2px}
+.ch.pic{flex-direction:column}
+.w3c small{font-size:13px!important;color:#7a6a6a!important}
+.fslotw{display:inline-flex;flex-direction:column;align-items:center;gap:2px}
+.fslotw small{font-size:min(3.2vh,13px);color:#a08a8a;font-weight:800}
+.w3sent .task{color:#e0508a;font-size:min(5.4vh,24px);margin:2px 0 4px}
+.w3sent .small{font-weight:800;color:#9a8a8a;font-size:13px}
+.lpage{min-height:min(34vh,170px);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.lbig{border:0;background:#f4f9ff;border-radius:18px;padding:6px 26px;box-shadow:0 4px 0 #d6e6f6;font:inherit;font-weight:800;font-size:min(14vh,72px);color:#3f7fc9}
+.lbig.pulse,.ex.pulse{animation:lowpulse .5s}
+.ltext{font-weight:800;font-size:min(4.4vh,19px);line-height:1.6;margin:8px 4px;max-width:560px}
+.exs{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.exs .ex{display:flex;flex-direction:column;align-items:center;border:0;background:#f4f9ff;border-radius:16px;padding:6px 14px;box-shadow:0 3px 0 #d6e6f6;font:inherit}
+.exs .ex .frame{margin:0;font-size:min(5vh,24px);flex-wrap:nowrap}
+.exs .ex small{font-size:min(3.4vh,15px);color:#7a6a6a}
+.dots.lsn{display:flex;gap:6px;justify-content:center;margin-top:6px}
+.dots.lsn i{width:10px;height:10px;border-radius:50%;background:#e6dada}
+.dots.lsn i.ok{background:#5cc28a}.dots.lsn i.now{background:#ffd34f}

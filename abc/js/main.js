@@ -564,8 +564,9 @@ async function w3Teacher(n) {
   }
   if (fr && !S.sentences[fr.id]) {
     await sayH([[n.name, 'つぎは「ぶんカード」！ ことばカードを はめると えいごの ぶんが できるよ。']]);
-    await ui.teachFrame(fr, fr.example.map(id => WORD[id]));
-    const ids = await makeSentence(fr, { title: 'すきな ことばで ぶんを つくって みよう！' });
+    await ui.teachFrame(fr);
+    const want = practiceWant(fr);
+    const ids = await makeSentence(fr, { want, wrong: `「${fr.ja(want.map(id => WORD[id]))}」の ぶんを つくってね。`, title: 'つくって みよう！' });
     if (!ids) { await sayH([[n.name, 'また いつでも つくりに きてね！']]); return; }
     S.sentences[fr.id] = { at: Date.now(), made: [sentenceKey(fr.id, ids)] };
     S.stars += 1; persist(); await ui.starFly(1, hud);
@@ -582,10 +583,17 @@ async function w3Teacher(n) {
   } else if (w3Learned(S, area().id)) await ui.notice('ことばを ぜんぶ ならった！', 'まちの こまっている ひとを えいごで たすけよう！ うえの「つぎは」を みてね。');
 }
 // ぶんカードで ぶんを つくる（want が あれば その ぶん だけ せいかい）
+// せんせいの れんしゅう：じっさいに いう ぶんを きめる（「ねむい」と いって みよう など）
+function practiceWant(fr) {
+  const pick = (kind, i) => { const ws = WORDS.filter(w => w.kind === kind && S.words[w.id] && (kind !== 'number' || (w.n >= 2 && w.n <= 5))); return ws[(Math.random() * ws.length) | 0].id; };
+  if (fr.id === 'im') return [fr.example[(Math.random() * fr.example.length) | 0]];
+  return fr.slots.map(pick);
+}
 async function makeSentence(fr, { want, wrong, title } = {}) {
   let fails = 0, hinted = false;
   const ids = await ui.sentence(S, {
-    frame: fr, title: title || 'ぶんカードで ぶんを つくろう！',
+    frame: fr, title: `ぶんカード「${fr.title}」${title ? '　' + title : ''}`,
+    task: want ? `「${fr.ja(want.map(id => WORD[id]))}」と えいごで いって みよう！` : '',
     check: sel => { if (want && sel.join() !== want.join()) { fails++; return { ok: false, msg: wrong || 'ちがう みたい。もういちど！' }; } return { ok: true }; },
     hint: want ? () => { hinted = true; return { text: `「${fr.make(want.map(id => WORD[id]))}」 と いって みよう！`, highlight: want }; } : null,
   });
@@ -606,13 +614,13 @@ async function w3Step(q, st, o) {
     const greet = shuffle(WORDS.filter(w => w.kind === 'greet' && w.id !== st.answer && S.words[w.id]).map(w => w.id)).slice(0, 2);
     const ch1 = shuffle([st.answer, ...greet]), feel = ['happy', 'sleepy', 'hungry'].find(f => st.reply.includes(f));
     await ui.quiz([
-      { kind: 'convo', target: st.answer, answer: st.answer, choices: ch1, render: 'opt', opts: Object.fromEntries(ch1.map(id => [id, optOf(id)])), prompt: `${o.ref.name}に「げんき？」って きこう！`, silent: true, okVoice: WORD[st.answer], recKey: 'w:' + st.answer, label: id => WORD[id].word },
+      { kind: 'convo', target: st.answer, answer: st.answer, choices: ch1, render: 'opt', opts: Object.fromEntries(ch1.map(id => [id, optOf(id)])), prompt: '「げんき？」と きく えいごは どれ？', silent: true, okVoice: WORD[st.answer], recKey: 'w:' + st.answer, label: id => WORD[id].word },
       { kind: 'gift', target: st.give, answer: st.give, choices: shuffle(st.items), render: 'opt', opts: Object.fromEntries(st.items.map(id => [id, { text: GIFTS[id].ja, art: GIFTS[id].art }])),
-        prompt: 'なんて いったかな？ あう ものを あげよう！', en: st.reply, voice: { speak: st.reply }, recKey: feel ? 'w:' + feel : null, label: id => GIFTS[id].ja },
+        prompt: `${o.ref.name}の へんじを よもう。なにを あげると いいかな？`, en: st.reply, voice: { speak: st.reply }, recKey: feel ? 'w:' + feel : null, label: id => GIFTS[id].ja },
     ], { title: 'かいわ', onAnswer: (qq, ok, first) => { if (qq.recKey) answerLog(qq, ok, first); } });
   } else if (st.on === 'sentence') {
     const fr = FRAME[st.frame];
-    const ids = await makeSentence(fr, { want: st.want, wrong: st.wrong, title: `ぶんカードで いおう！（${fr.ja}）` });
+    const ids = await makeSentence(fr, { want: st.want, wrong: st.wrong });
     if (!ids) return true; // やめた：あとで もういちど
     if (st.give) S.inv[st.give] = (S.inv[st.give] || 0) + 1;
   } else if (st.on === 'count') {

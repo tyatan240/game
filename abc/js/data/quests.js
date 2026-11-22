@@ -145,15 +145,15 @@ export const QUESTS = [
   { id: 'w3hello', title: 'こえを とりもどそう', requires: { flag: 'lowerClear', w3: 'w3plaza' }, steps: [
     { id: 'duck', on: 'convo', target: 'w3Duck', goal: 'アヒルさんに あいさつ しよう！', pre: [
       ['アヒルさん', '……。'], ['', 'アヒルさんは こえが でない みたい。いまは あさ。'], ['', 'えいごで あさの あいさつを してみよう！']],
-      ask: 'あさの あいさつは どれ？', answer: 'goodmorning', choices: ['goodmorning', 'goodnight', 'goodbye'],
+      ask: '「おはよう」と いう えいごは どれ？', answer: 'goodmorning', choices: ['goodmorning', 'goodnight', 'goodbye'],
       after: [['アヒルさん', 'Good morning! ……あっ、こえが でた！ ありがとう！']] },
     { id: 'cow', on: 'convo', target: 'w3Cow', goal: 'うしさんに はなしかけよう！', pre: [
       ['うしさん', '……。'], ['', 'うしさんが きれいな おはなを くれた！'], ['', 'えいごで おれいを いおう！']],
-      ask: 'なんて いう？', answer: 'thankyou', choices: ['thankyou', 'sorry', 'hello'],
+      ask: '「ありがとう」と いう えいごは どれ？', answer: 'thankyou', choices: ['thankyou', 'sorry', 'hello'],
       after: [['うしさん', 'Thank you の ことば、うれしいな。……こえが もどったよ！']] },
     { id: 'penguin', on: 'convo', target: 'w3Penguin', goal: 'ペンギンさんに はなしかけよう！', pre: [
       ['', 'あっ！ ペンギンさんに ぶつかっちゃった！'], ['', 'えいごで あやまろう！']],
-      ask: 'なんて いう？', answer: 'sorry', choices: ['sorry', 'thankyou', 'goodmorning'],
+      ask: '「ごめんなさい」と いう えいごは どれ？', answer: 'sorry', choices: ['sorry', 'thankyou', 'goodmorning'],
       after: [['ペンギンさん', 'だいじょうぶだよ！ ……あれ、こえが でた！ ありがとう！']], reward: { star: 2 } },
   ] },
   { id: 'w3feel', title: 'げんき かな？', requires: { quest: 'w3hello' }, steps: [
@@ -166,7 +166,7 @@ export const QUESTS = [
       answer: 'howareyou', reply: "I'm hungry.", give: 'bananas', items: ['pillow', 'bananas', 'balloon'],
       after: [['おさるさん', 'バナナ だいすき！ Thank you!']] },
     { id: 'lion', on: 'sentence', target: 'w3Lion', goal: 'ライオンさんに きもちを つたえよう！', frame: 'im', want: ['happy'], pre: [
-      ['ライオンさん', 'How are you?'], ['', 'ライオンさんが「げんき？」って きいてきた。'], ['', 'みんなを たすけて うれしい きもちを、ぶんカードで つたえよう！']],
+      ['ライオンさん', 'How are you?'], ['', 'ライオンさんが「げんき？」って きいてきた。'], ['', 'みんなを たすけて うれしい きもち。「わたしは うれしい」と ぶんカードで こたえよう！']],
       wrong: 'うれしい きもちの ことばを えらんでね。',
       after: [['ライオンさん', "I'm happy, too! よかった！"], ['ライオンさん', 'ひろばに こえが もどったね。ひがしの「あいさつの もん」へ いってみて！']], reward: { star: 3 } },
   ] },
