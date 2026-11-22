@@ -32,7 +32,7 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
   const pts = p => p.evaluate(() => JSON.parse(localStorage.getItem('moko-math-v1') || '{}').points || 0);
 
   console.log('1. どの ページも エラーなく ひらく');
-  for (const u of ['index.html', 'sansu/index.html', 'kokugo/index.html', 'program/index.html', 'eigo/index.html', 'abc/index.html']) {
+  for (const u of ['index.html', 'sansu/index.html', 'kokugo/index.html', 'program/index.html', 'eigo/index.html', 'abc/index.html', 'machi/index.html']) {
     const p = await page(); await p.goto(B + u); await p.waitForTimeout(500);
     ok(p.errs.length === 0, `${u} ${p.errs.join(' / ')}`); await p.context().close();
   }
@@ -377,6 +377,59 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     await ctx.close();
   }
 
+  console.log('14. モコの まち（machi/）');
+  {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
+    const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
+    await p.goto(B + 'index.html'); await p.waitForTimeout(500);
+    await p.evaluate(() => { closePop(); S.points = 150; S.settings.goalPts = 0; S.settings.goalAll = 0; S.owned.push('c_hamster', 'c_cat'); save(); render(); });
+    const owned0 = await p.evaluate(() => [...S.owned].sort().join());
+    ok(await p.isVisible('.room .todoor'), 'おへやに「まちへ」の ドア');
+    await p.click('.room .todoor'); await p.waitForSelector('body[data-ready="1"]', { timeout: 10000 });
+    ok(p.url().endsWith('machi/index.html') && await p.evaluate(() => ['moko_house', 'town_shop'].every(t => __town.town.objects.some(o => o.type === t))), 'ドアから まちへ（モコの おうち・まちの おみせ が ある）');
+    const T = (f, a) => p.evaluate(f, a);
+    // おく・うごかす・けす・もどす
+    await T(() => { __town.setMode('build'); __town.chooseTool({ kind: 'part', id: 'house_basic', r: 0 }); __town.tapBuild(10.5, 10.5); __town.tapBuild(10.5, 10.5); });
+    ok(await T(() => __town.town.objects.some(o => o.type === 'house_basic' && o.x === 10 && o.y === 9)), 'おうちを おく（タップ 2かい）');
+    await T(() => { __town.chooseTool({ kind: 'part', id: 'tree_basic', r: 0 }); __town.tapBuild(10.5, 9.5); });
+    ok(await T(() => __town.ui.pending && !__town.ui.pending.ok), 'かさなる ところは おけない（あかい プレビュー）');
+    await T(() => { __town.chooseTool({ kind: 'part', id: 'road_dirt' }); __town.cam.x = 6; __town.cam.y = 6; __town.cam.zoom = 1; });
+    const s1 = await T(() => __town.toScreen(3.5, 5.5)), s2 = await T(() => __town.toScreen(6.5, 5.5));
+    await p.mouse.move(s1[0], s1[1]); await p.mouse.down(); await p.mouse.move(s2[0], s2[1], { steps: 8 }); await p.mouse.up();
+    ok(await T(() => [3, 4, 5, 6].every(x => __town.town.ground[x + ',5'] === 'road_dirt')), 'みちを なぞって ぬる');
+    await T(() => { __town.chooseTool({ kind: 'select' }); __town.tapBuild(10.5, 10.5); });
+    await p.click('#act [data-a=move]'); await T(() => { __town.tapBuild(12.5, 13.5); __town.tapBuild(12.5, 13.5); });
+    ok(await T(() => __town.town.objects.some(o => o.type === 'house_basic' && o.x === 12 && o.y === 12)), 'うごかす');
+    await T(() => { __town.chooseTool({ kind: 'select' }); __town.tapBuild(12.5, 13.5); }); await p.click('#act [data-a=del]');
+    ok(await T(() => !__town.town.objects.some(o => o.type === 'house_basic')), 'けす');
+    await p.click('#tUndo');
+    ok(await T(() => __town.town.objects.some(o => o.type === 'house_basic' && o.x === 12)), 'もどす');
+    // まちの おみせ（⭐は おうちと きょうつう）
+    await T(() => __town.setMode('view')); await p.click('#bShop');
+    ok(/まちの おみせ/.test(await p.textContent('#ov')), 'まちの おみせが ひらく');
+    await p.click('[data-act=tshopcat][data-arg=park]'); await p.click('[data-act=tpart][data-arg=lamp]'); await p.click('[data-act=tbuy]');
+    ok(await T(() => S.points === 130 && JSON.parse(localStorage.getItem('moko-math-v1')).points === 130 && __town.town.unlockedParts.includes('lamp')), 'かうと ⭐が へって つかえる ように なる');
+    await T(() => __town.buy('lamp')); ok(await T(() => S.points === 130), 'おなじ ものは 2かい かえない');
+    await T(() => __town.buy('fountain')); ok(await T(() => S.points === 130 && !__town.town.unlockedParts.includes('fountain')), '⭐が たりないと かえない');
+    await T(() => { closePop(); __town.setMode('build'); __town.chooseTool({ kind: 'part', id: 'lamp', r: 0 }); __town.tapBuild(5.5, 8.5); __town.tapBuild(5.5, 8.5); __town.setMode('view'); });
+    ok(await T(() => __town.town.objects.some(o => o.type === 'lamp')), 'かった パーツを おける');
+    // じゅうにん
+    await T(() => { const h = __town.town.objects.find(o => o.type === 'house_basic'); __town.toggleResident(h.id, 'c_hamster'); __town.toggleResident(h.id, 'c_unicorn'); closePop(); });
+    ok(await T(() => JSON.stringify(__town.town.objects.find(o => o.type === 'house_basic').residents)) === '["c_hamster"]', 'もっている キャラだけ すめる');
+    await T(() => __town.people.list.forEach(q => { q.wait = 0; })); await p.waitForTimeout(2500);
+    ok(await T(() => __town.people.list.some(q => q.id === 'c_hamster' && q.state !== 'home')), 'じゅうにんが まちを あるく');
+    // ほぞん・もどる
+    await T(() => __town.saveNow()); await p.reload(); await p.waitForSelector('body[data-ready="1"]');
+    ok(await T(() => __town.town.objects.some(o => o.type === 'lamp') && __town.town.ground['4,5'] === 'road_dirt' && __town.town.objects.find(o => o.type === 'house_basic').residents[0] === 'c_hamster'), 'とじても のこる（たてもの・みち・すむひと）');
+    await p.click('#toRoom'); await p.waitForLoadState(); await p.waitForTimeout(500);
+    ok(!p.url().includes('machi') && await T(() => S.points) === 130, 'おへやに もどる（⭐が いっしょ）');
+    await T(() => { closePop(); go('shop'); });
+    ok(await T(() => !/がいとう|ふんすい|いしだたみ|まちの/.test(document.getElementById('view').textContent) && !ITEMS.some(i => ['lamp', 'fountain', 'house_basic', 'road_stone', 'tree_sakura'].includes(i.id))), 'おへやの おみせに まちの しょうひんは ない');
+    ok(await T(() => [...S.owned].sort().join()) === owned0, 'おへやの もちものは かわらない');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / '));
+    await ctx.close();
+  }
+
   console.log('12a. えいごの こえ（iPad で「Capital A」と よまれない）');
   {
     const p = await page(); await p.goto(B + 'abc/index.html'); await p.waitForTimeout(300);
@@ -473,7 +526,7 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     const W = () => p.evaluate(() => __build.world.toJSON().blocks.filter(b => b[1] > 0).map(b => b.join(':')).sort().join(' '));
     const add = c => p.evaluate(c => document.querySelector(`#rpal [data-cmd='${JSON.stringify(c)}']`).click(), c);
     const idle = () => p.waitForFunction(() => __build.runner.state === 'idle', null, { timeout: 15000 });
-    await p.click('#tabRobot'); await p.waitForTimeout(700);
+    await p.click('#tabRobot'); await p.waitForFunction(() => Math.abs(Math.sin(__build.scene.az * 2)) < .01, null, { timeout: 5000 }).catch(() => {});
     ok(await p.isVisible('#rpanel') && !await p.isVisible('#palette') && await p.evaluate(() => Math.abs(Math.sin(__build.scene.az * 2)) < .01), 'ロボットモード（やじるしが まっすぐに なる むき）');
     await p.evaluate(() => __build.robot.moveTo(2, 10));
     // 4かい くりかえす：きを おく → みぎに すすむ

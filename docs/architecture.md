@@ -48,9 +48,15 @@
 - 「つくる」（手で置く）と「ロボット」（命令を並べてロボモコが建てる）の2モードで同じ世界を使う。ロボットの命令は `program/` と同じ形（`{t:'R'}`、`{t:'loop',n,body}`）＋ `put`/`break`/`wait`。
 - 保存は `robomoko-build-v1`。共通ポイントはまだ出さない。詳細は `program/build/README.md`。テスト用の入口は `window.__build`。
 
+### モコの まち（`machi/`）
+- 2Dの見下ろしの まちづくり（Canvas 2D、ES Modules）。core.js を読み、⭐（`S.points`）・キャラ（`S.owned`）・着せかえ（`S.equip`・`S.looks`）を共通で使う。
+- 入口は おへやの ドア（`index.html` の `.todoor`）、出口は まちの モコの おうち／「おへや」ボタン。
+- まちの おみせ は まち専用のカタログ（`machi/js/data/parts.js`）。おへやの `ITEMS` には入れない。買うと `moko-town-v1` の `unlockedParts` に入り、⭐ は `S.points` から引く。
+- 家にキャラを住ませると まちを歩く。詳細は `machi/README.md`。テスト用の入口は `window.__town`。
+
 ## 星（共通ポイント）
 - `S.points`。さんすう・こくごの正解、ボーナス、テスト練習、プログラミングの★、ABCぼうけんの★（×`abcPts`）、ログインボーナスで増える。
-- 使い道：おみせ（`price`）、ガチャ。⚙️設定で各ポイント量を調整可能。
+- 使い道：おみせ（`price`）、ガチャ、まちの おみせ（`machi/`）。⚙️設定で各ポイント量を調整可能。
 
 ## おみせ・きせかえ
 - `ITEMS` の `cat`：`char` `outfit` `hat` `acc` `wall` `floor` `furn`。

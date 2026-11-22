@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>モコの まち ― モコの おべんきょうハウス</title>
+<link rel="manifest" href="../manifest.json">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<link rel="icon" href="../icon-192.png">
+<meta name="theme-color" content="#bfe8a4">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="おべんきょうハウス">
+<meta name="sw" content="../sw.js">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../common/style.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="town">
+  <canvas id="cv" aria-label="まちの ちず"></canvas>
+
+  <header class="mtop">
+    <div class="tname" id="tname">モコの まち</div>
+    <div class="chip">⭐ <b id="pts">0</b></div>
+  </header>
+
+  <nav class="tnav" id="tnav">
+    <a class="nb" href="../index.html" id="toRoom"><span>🏠</span>おへや</a>
+    <button class="nb" id="bBuild"><span>🔨</span>つくる</button>
+    <button class="nb" id="bShop"><span>🛍️</span>おみせ</button>
+    <button class="nb" id="bFriends"><span>🐾</span>なかま</button>
+  </nav>
+
+  <section class="build" id="build" hidden>
+    <div class="bcats" id="bcats"></div>
+    <div class="bparts" id="bparts"></div>
+    <div class="btools">
+      <button class="tb" id="tSel"><span>👆</span>えらぶ</button>
+      <button class="tb" id="tUndo"><span>↶</span>もどす</button>
+      <button class="tb" id="tRedo"><span>↷</span>やりなおす</button>
+      <i class="gap"></i>
+      <button class="tb done" id="tDone"><span>✓</span>おわり</button>
+    </div>
+  </section>
+
+  <div class="act" id="act" hidden></div>
+  <div class="hintline" id="hint" hidden></div>
+  <div class="ttoast" id="toast" hidden></div>
+</div>
+<div id="ov" class="hide"></div>
+<script src="../common/core.js"></script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
