@@ -39,6 +39,11 @@
 - 12ステージ（`LEVELS`：`#`壁 `S`スタート `G`ゴール `*`星。`loop:true` で「くりかえし」ブロック解禁）。
 - クリアの★（1〜3）は `piko-prog-v1` の `best`。初めて取った★1つにつき `settings.progPts`（既定3）の共通ポイント。
 
+### ロボモコの ブロックタウン（`program/build/`）
+- 3D のブロック置き（Three.js r160.1 を `js/vendor/` に同梱、ES Modules）。core.js は使わない。まだどこからもリンクしていない。
+- 世界のデータ（`js/world/world.js`）と描画（`js/render/`）を分けている。将来のロボット命令は `World` の `place`/`remove`/`batch` を使う。
+- 保存は `robomoko-build-v1`。共通ポイントはまだ出さない。詳細は `program/build/README.md`。テスト用の入口は `window.__build`。
+
 ## 星（共通ポイント）
 - `S.points`。さんすう・こくごの正解、ボーナス、テスト練習、プログラミングの★、ABCぼうけんの★（×`abcPts`）、ログインボーナスで増える。
 - 使い道：おみせ（`price`）、ガチャ。⚙️設定で各ポイント量を調整可能。

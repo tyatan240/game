@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>ロボモコの ブロックタウン ― モコの おべんきょうハウス</title>
+<link rel="manifest" href="../../manifest.json">
+<link rel="apple-touch-icon" href="../../icon-180.png">
+<link rel="icon" href="../../common/piko-192.png">
+<meta name="theme-color" content="#bfe6ff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="おべんきょうハウス">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <canvas id="cv" aria-label="ブロックの せかい"></canvas>
+
+  <header class="top">
+    <a class="btn" id="back" href="../index.html" aria-label="もどる">
+      <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" /></svg><span>もどる</span>
+    </a>
+    <div class="ttl">ロボモコの ブロックタウン</div>
+    <button class="btn ic" id="undo" aria-label="ひとつ もどす"><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5" /><path d="M4 9h11a5 5 0 010 10h-3" /></svg></button>
+    <button class="btn ic" id="redo" aria-label="やりなおす"><svg viewBox="0 0 24 24"><path d="M15 14l5-5-5-5" /><path d="M20 9H9a5 5 0 000 10h3" /></svg></button>
+    <button class="btn ic" id="menu" aria-label="メニュー"><svg viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h14" /></svg></button>
+  </header>
+
+  <div class="side left">
+    <button class="mode on" id="mPlace" data-mode="place"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg><span>おく</span></button>
+    <button class="mode" id="mErase" data-mode="erase"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" /></svg><span>けす</span></button>
+    <button class="mode" id="rot" hidden><svg viewBox="0 0 24 24"><path d="M19 12a7 7 0 11-2.1-5" /><path d="M17 3v4h-4" /></svg><span>まわす</span></button>
+  </div>
+
+  <div class="side right">
+    <button class="btn ic" id="turnL" aria-label="ひだりに まわす"><svg viewBox="0 0 24 24"><path d="M5 12a7 7 0 1 0 2.1-5" /><path d="M7 3v4h4" /></svg></button>
+    <button class="btn ic" id="turnR" aria-label="みぎに まわす"><svg viewBox="0 0 24 24"><path d="M19 12a7 7 0 1 1-2.1-5" /><path d="M17 3v4h-4" /></svg></button>
+    <button class="btn ic" id="zIn" aria-label="おおきく"><svg viewBox="0 0 24 24"><path d="M12 6v12M6 12h12" /></svg></button>
+    <button class="btn ic" id="zOut" aria-label="ちいさく"><svg viewBox="0 0 24 24"><path d="M6 12h12" /></svg></button>
+    <button class="btn ic" id="camReset" aria-label="カメラを もとに もどす"><svg viewBox="0 0 24 24"><path d="M4 11l8-6 8 6" /><path d="M6 10v9h12v-9" /></svg></button>
+  </div>
+
+  <button id="ok" class="okbtn" hidden><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10" /></svg><span>ここに おく</span></button>
+
+  <nav class="palette" id="palette" aria-label="ブロック"></nav>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <div id="help" class="help" hidden>
+    <div class="card">
+      <div class="h">あそびかた</div>
+      <ol>
+        <li>したの ブロックを えらぶ</li>
+        <li>おきたい ばしょを タップ（かげが でるよ）</li>
+        <li>もういちど タップか「ここに おく」で おく</li>
+      </ol>
+      <p>ゆびで ドラッグ：まわす　ふたゆび：ズーム・いどう<br>「けす」に すると ブロックを けせるよ</p>
+      <button class="big" id="helpOk">わかった</button>
+    </div>
+  </div>
+
+  <div id="menuDlg" class="help" hidden>
+    <div class="card">
+      <div class="h">メニュー</div>
+      <button class="big" id="openHelp">あそびかた</button>
+      <button class="big warn" id="askNew">はじめから つくる</button>
+      <button class="big sub" id="menuClose">とじる</button>
+    </div>
+  </div>
+
+  <div id="newDlg" class="help" hidden>
+    <div class="card">
+      <div class="h">はじめから つくる？</div>
+      <p>いまの まちは なくなるよ。<br>（すぐ あとなら「もどす」で もどせるよ）</p>
+      <button class="big warn" id="newYes">はじめから</button>
+      <button class="big sub" id="newNo">やめる</button>
+    </div>
+  </div>
+
+  <noscript><p class="nojs">このページは JavaScript を つかいます</p></noscript>
+</div>
+<script type="module" src="js/main.js"></script>
+<script>
+if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('../../sw.js').catch(() => {});
+</script>
+</body>
+</html>

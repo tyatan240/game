@@ -13,7 +13,7 @@ node tests/smoke.js
 - Playwright（Chromium）で自動確認：全ページがエラーなく開く／さんすう・こくご・プログラミングで共通ポイントが増え、おうちの表示と一致／ガチャ／旧形式セーブデータの読込／ABCぼうけんの移動とクイズ。
 - Playwright がない環境：`npm i -D playwright && npx playwright install chromium`。
 - 手で確認するとき：iPad の横・縦、スマホ（約 390×844 と 844×390）。ポップアップで画面がふさがらないか、ボタンが押せるか。
-- テスト用の入口：おうち・さんすう・こくごはグローバル（`S`、`go()`、`quiz`、`test` など）を `page.evaluate` で操作できる。ABC は `window.__abc`（`S`、`hero`、`tp(x,y,dir)`）と、出題中の `window.__abcQ`。
+- テスト用の入口：おうち・さんすう・こくごはグローバル（`S`、`go()`、`quiz`、`test` など）を `page.evaluate` で操作できる。ABC は `window.__abc`（`S`、`hero`、`tp(x,y,dir)`）と、出題中の `window.__abcQ`。ブロックタウンは `window.__build`（`world`、`scene`、`toScreen(x,y,z)` で座標→画面の点）。
 - 英語の音声（音声合成）はヘッドレスでは確認できない。実機で確認する。
 
 ## 公開（GitHub Pages）
