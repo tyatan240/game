@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>学習レポート ― モコの おべんきょうハウス</title>
+<link rel="manifest" href="../manifest.json">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<link rel="icon" href="../icon-192.png">
+<meta name="theme-color" content="#eef3f8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="おべんきょうハウス">
+<meta name="sw" content="../sw.js">
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="report.css">
+</head>
+<body>
+<header class="rh">
+  <a class="back" href="../index.html" id="back">← もどる</a>
+  <h1>📊 学習レポート</h1>
+</header>
+<main id="main">
+  <!-- 保護者確認（かけ算）。答えるまで中身は作らない -->
+  <section class="gate" id="gate">
+    <h2>おうちのひと よう</h2>
+    <p>レポートを ひらくには こたえてね</p>
+    <div class="gq" id="gq"></div>
+    <input id="gin" type="number" inputmode="numeric" autocomplete="off">
+    <div class="gmsg" id="gmsg"></div>
+    <button class="btn" id="gok">ひらく</button>
+  </section>
+  <div id="report" hidden></div>
+</main>
+<div id="ov" class="hide"></div>
+<script src="../common/learning-history.js"></script>
+<script src="../common/core.js"></script>
+<script src="report.js"></script>
+</body>
+</html>

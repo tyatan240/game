@@ -516,6 +516,87 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await ctx.close();
   }
 
+  console.log('15. 学習レポート（学習履歴の記録・保護者画面）');
+  {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, acceptDownloads: true });
+    await ctx.addInitScript(() => { const st = window.setTimeout; window.setTimeout = (f, t, ...a) => st(f, Math.min(t || 0, 40), ...a); });
+    const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
+    const tap = async v => { for (const ch of String(v)) await p.click(`.pad [data-act=key][data-arg="${ch}"]`); await p.click('.pad [data-act=answer]'); };
+    await p.goto(B + 'index.html'); await p.waitForTimeout(400);
+    await p.evaluate(() => { closePop(); S.points = 0; S.settings.goalPts = 0; S.settings.goalAll = 0; save(); });
+    const save0 = await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('moko-math-v1')); return JSON.stringify({ owned: d.owned, equip: d.equip, tests: d.tests }); });
+    await p.goto(B + 'sansu/index.html'); await p.waitForTimeout(300);
+    await p.click('[data-act=start] >> nth=0');
+    const a1 = await p.evaluate(() => quiz.cur.ans), k1 = await p.evaluate(() => quiz.cur.p.join(''));
+    await tap(a1); await p.waitForTimeout(200);
+    let n = await p.evaluate(async () => { await LH.flushed(); return (await LH.getAttempts()).length; });
+    ok(n === 1, '1. 問題を解くと 履歴が 1件');
+    const a2 = await p.evaluate(() => quiz.cur.ans); await tap((a2 + 1) % 10 || 1); await tap(a2); await p.waitForTimeout(200);
+    const r = await p.evaluate(async () => { await LH.flushed(); const a = await LH.getAttempts(); return { n: a.length, s: LH.summarize(a), last: a.slice(-2).map(x => [x.attemptNumber, x.isCorrect, x.questionInstanceId]) }; });
+    ok(r.n === 3 && r.last[0][2] === r.last[1][2] && r.last[0][0] === 1 && r.last[1][0] === 2, '2. 解き直すと 回答が 追加（同じ出題・2回目）');
+    ok(r.s.questions === 2 && r.s.firstOk === 1 && r.s.retryOk === 1, '3. 解き直しても 初回正答率は 変わらない（1/2）・解き直し成功 1');
+    ok(await p.evaluate(async () => (await LH.getAttempts()).every(a => a.activeMs >= 0 && a.activeMs <= 60000 && a.responseTimeMs >= 0)), '5. 学習時間（表示中のみ・上限つき）');
+    // 4. べつの ひに おなじ もんだい → べつの しゅつだい
+    const inst = await p.evaluate(async () => { const a = await LH.getAttempts(); return new Set(a.map(x => x.questionInstanceId)).size; });
+    await p.click('[data-act=go][data-arg=select]').catch(() => { }); await p.goto(B + 'sansu/index.html'); await p.waitForTimeout(300); await p.click('[data-act=start] >> nth=0');
+    await tap(await p.evaluate(() => quiz.cur.ans)); await p.waitForTimeout(200);
+    ok(await p.evaluate(async () => { await LH.flushed(); const a = await LH.getAttempts(); return new Set(a.map(x => x.questionInstanceId)).size; }) === inst + 1, '4. 新しく出題されると 新しい出題として記録（同じ問題でも 別の出題ID）');
+    // こくご・テスト
+    await p.goto(B + 'kokugo/index.html'); await p.waitForTimeout(300); await p.click('[data-act=start] >> nth=0');
+    await p.click(`[data-act=pick][data-arg="${await p.evaluate(() => (quiz.cur.choices.indexOf(quiz.cur.ans) + 1) % quiz.cur.choices.length)}"]`);
+    await p.waitForTimeout(100); await p.evaluate(async () => LH.flushed());
+    // 17. ほぞんに しっぱいしても べんきょうは とまらない
+    const ctx2 = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
+    await ctx2.addInitScript(() => { indexedDB.open = () => { throw new Error('blocked'); }; });
+    const p2 = await ctx2.newPage(); const e2 = []; p2.on('pageerror', e => e2.push(e.message));
+    await p2.goto(B + 'sansu/index.html'); await p2.waitForTimeout(300); await p2.click('[data-act=start] >> nth=0');
+    const pa = await p2.evaluate(() => S.points); const ans2 = await p2.evaluate(() => quiz.cur.ans);
+    for (const ch of String(ans2)) await p2.click(`.pad [data-act=key][data-arg="${ch}"]`); await p2.click('.pad [data-act=answer]');
+    ok(await p2.evaluate(() => S.points) > pa && e2.length === 0, '17. 履歴の保存に失敗しても 問題・星は ふつうに うごく');
+    await ctx2.close();
+    // 保護者画面
+    await p.goto(B + 'parent/index.html'); await p.waitForTimeout(400);
+    ok(await p.isVisible('#gate') && !await p.isVisible('#report') && !/初回正答率/.test(await p.textContent('body')), '16. 直接URLで ひらいても 保護者確認なしでは 見られない');
+    const gate = async () => { const [x, y] = (await p.textContent('#gq')).match(/\d+/g).map(Number); await p.fill('#gin', String(x * y)); await p.click('#gok'); await p.waitForSelector('#report:not([hidden]) .kpis'); };
+    await p.fill('#gin', '1'); await p.click('#gok'); ok(/ちがいます/.test(await p.textContent('#gmsg')), 'まちがえると ひらかない');
+    await gate();
+    const kp = await p.textContent('.kpis');
+    ok(/50%/.test(kp) && /4問/.test(kp) && /2 \/ 4問/.test(kp), '概要：問題数 4・初回正答率 50%（解き直しは 含めない） ' + kp.replace(/\s+/g, ' ').slice(0, 80));
+    for (const k of ['today', '30', 'all', '7']) await p.click(`#ptabs [data-p="${k}"]`);
+    ok(await p.isVisible('.kpis'), '6. 期間を 切り替えられる');
+    const topic = await p.evaluate(() => [...document.querySelectorAll('.subj')].map(x => x.textContent.replace(/\s+/g, ' ')).join(' | '));
+    ok(/算数/.test(topic) && /国語/.test(topic) && /0%（1問/.test(topic), '7. 教科別・単元別の 正答率 ' + topic.slice(0, 120));
+    ok(await p.locator('#mist .item').count() === 2 && /正解：/.test(await p.textContent('#mist')), '8. まちがえた問題の 内容（問題・こたえ・正解）');
+    // 11・12 バックアップ
+    const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#exj')]);
+    const file = path.join(require('os').tmpdir(), 'moko-lh-test.json'); await dl.saveAs(file);
+    const js = JSON.parse(fs.readFileSync(file, 'utf8'));
+    ok(js.format === 'moko-learning-history' && js.attempts.length === 5, '11. JSON に 保存できる（' + js.attempts.length + '件）');
+    await p.evaluate(async () => { await LH.clearAll(); });
+    await p.setInputFiles('#imf', file); await p.click('.dlg [data-x="1"]'); await p.waitForTimeout(500);
+    ok(await p.evaluate(async () => (await LH.getAttempts()).length) === 5, '12. バックアップから 復元できる');
+    await p.setInputFiles('#imf', file); ok(/すでにある（同じID）5件/.test(await p.textContent('.dlg')), '同じIDは 重複して 入れない'); await p.click('.dlg [data-x="0"]');
+    fs.writeFileSync(file, JSON.stringify({ hello: 1 })); await p.setInputFiles('#imf', file); await p.waitForTimeout(200);
+    ok(/ではありません/.test(await p.textContent('#bkmsg')), '不正な ファイルは 拒否');
+    // 9. さいきどう・10. オフライン
+    await p.reload(); await gate();
+    ok(/4問/.test(await p.textContent('.kpis')), '9. 再読み込みしても 履歴が 残る');
+    ok(await p.evaluate(() => sessionStorage.getItem('moko-parent-ok')) === null, '画面を 離れると 閲覧状態を 終える');
+    await p.goto(B + 'index.html'); await p.evaluate(() => navigator.serviceWorker && navigator.serviceWorker.ready); await p.waitForTimeout(2500);
+    await ctx.setOffline(true); await p.goto(B + 'parent/index.html').catch(() => { }); await p.waitForTimeout(500);
+    let offOk = false; try { await gate(); offOk = /4問/.test(await p.textContent('.kpis')); } catch (e) { }
+    ok(offOk, '10. オフラインでも 履歴を 見られる'); await ctx.setOffline(false);
+    // 13・15 きぞんの データ
+    await p.goto(B + 'index.html'); await p.waitForTimeout(300);
+    ok(await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('moko-math-v1')); return JSON.stringify({ owned: d.owned, equip: d.equip, tests: d.tests }); }) === save0, '13・15. 星いがいの セーブデータ（持ち物・着せかえ・テスト）は そのまま');
+    // 設定画面の 入口
+    await p.evaluate(() => { closePop(); gate(); }); const [g1, g2] = (await p.textContent('#ov')).match(/(\d) × (\d)/).slice(1).map(Number);
+    await p.fill('#gatein', String(g1 * g2)); await p.click('#ov [data-act=gateok]');
+    await p.click('a[href="parent/index.html"]'); await p.waitForSelector('#report:not([hidden]) .kpis', { timeout: 5000 }).catch(() => { });
+    ok(await p.isVisible('.kpis'), '⚙️設定の「📊 学習レポート」から ひらける（かけ算を 通ったあと）');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await ctx.close();
+  }
+
   console.log('12a. えいごの こえ（iPad で「Capital A」と よまれない）');
   {
     const p = await page(); await p.goto(B + 'abc/index.html'); await p.waitForTimeout(300);

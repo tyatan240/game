@@ -314,6 +314,8 @@ Object.assign(ACT,{
 window.render = render; // core.js の resync から よばれる
 window.__eigo = { get quiz() { return quiz; }, get test() { return test; }, get view() { return view; }, go, makeQ }; // テスト よう
 render();
+// 学習レポートの「練習へ」：#start=しゅるい で その れんしゅうを はじめる
+{ const m = /^#start=(\w+)/.exec(location.hash); if (m) ready.then(() => { if (enabled().some(t => t.id === m[1])) startQuiz(m[1]); }); }
 // まちの じゅうにんの しゅくだい：その テストの れんしゅうを ひらく（まだ あそべない ときは あそべる しゅるいに かえる）
 if (HW) ready.then(() => {
   const en = enabled(); if (!en.length) return;

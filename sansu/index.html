@@ -205,6 +205,8 @@ Object.assign(ACT,{
  close:a=>{closePop();if(a)go(a)},
 });
 render();
+// 学習レポートの「練習へ」：#start=しゅるい で その れんしゅうを はじめる
+{const m=/^#start=(\w+)/.exec(location.hash);if(m&&enabled().some(t=>t.id===m[1]))ready.then(()=>startQuiz(m[1]))}
 // まちの じゅうにんの しゅくだい：その テストの れんしゅうを ひらく
 if(HW)ready.then(()=>{if(!(TYPE)[parseKey(HW.key).tid])return;view='tests';render();testReady(HW.key+'|p')});
 </script>
