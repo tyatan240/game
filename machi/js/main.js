@@ -4,13 +4,13 @@ import { CATS, PARTS, PART, SHOP_PARTS, LOOK, FAV, FAV_NAME } from './data/parts
 import { W, H, loadTown, saveTown, groundAt, sizeOf, occupancy, canPlace, canPaint, hasPart, History, inMap, openArea, CUSTOM_SIZES } from './town/town.js';
 import { QUESTS, QUEST } from './data/quests.js';
 import { MOBS, MOB, HW_COOLDOWN, HW_REWARD, newHomework, NOT_YET, mobEquip } from './data/mobs.js';
-import { AREAS, AREA, scoreTown } from './data/areas.js';
+import { AREAS, AREA, scoreTown, areaOf } from './data/areas.js';
 import { drawGround, drawObject, drawIcon } from './render/art.js';
 import { People, charImage } from './town/people.js';
 
 const $id = id => document.getElementById(id);
 const TS = 48;                                   // zoom 1 の 1マス（CSS px）
-const MSG = { out: 'そこには おけないよ', full: 'もう なにか あるよ', water: 'みずの うえには おけないよ', land: 'はしは みずの うえに おいてね', lock: 'まだ ひらいて いない とち だよ' };
+const MSG = { out: 'そこには おけないよ', full: 'もう なにか あるよ', water: 'みずの うえには おけないよ', land: 'はしは みずの うえに おいてね', lock: 'まだ ひらいて いない とち だよ（おみせで かえるよ）' };
 
 let town, hist, people;
 const cam = { x: 20, y: 20, zoom: 1 };
@@ -114,7 +114,7 @@ function drawLocked(a, t, time) {
   for (let y = a.y0; y <= a.y1; y += 3) for (let x = a.x0 + ((y / 3) % 2) * 1.5; x <= a.x1; x += 3) { const [sx, sy] = toScreen(x + .5, y + .8); g.beginPath(); g.arc(sx, sy, t * .55, 0, 7); g.arc(sx + t * .55, sy - t * .25, t * .5, 0, 7); g.arc(sx + t * 1.1, sy, t * .45, 0, 7); g.fill(); }
   const [cx, cy] = toScreen((a.x0 + a.x1 + 1) / 2, (a.y0 + a.y1 + 1) / 2);
   g.font = `800 ${Math.max(13, t * .34)}px "M PLUS Rounded 1c",sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
-  const label = `🔒 ${a.name}`, sub = `まち レベル ${a.lv} で ひらくよ`, tw = Math.max(g.measureText(label).width, g.measureText(sub).width) + 28, bh = Math.max(56, t * 1.3);
+  const label = `🔒 ${a.name}`, sub = `⭐${a.price} で かえるよ（タップ）`, tw = Math.max(g.measureText(label).width, g.measureText(sub).width) + 28, bh = Math.max(56, t * 1.3);
   g.fillStyle = '#fff'; g.strokeStyle = '#c9dcef'; g.lineWidth = 3;
   g.beginPath(); { const x = cx - tw / 2, y = cy - bh / 2, r = 14; g.moveTo(x + r, y); g.arcTo(x + tw, y, x + tw, y + bh, r); g.arcTo(x + tw, y + bh, x, y + bh, r); g.arcTo(x, y + bh, x, y, r); g.arcTo(x, y, x + tw, y, r); g.closePath(); } g.fill(); g.stroke();
   g.fillStyle = '#5a7fa8'; g.fillText(label, cx, cy - bh * .2); g.fillStyle = '#9aaebf'; g.font = `800 ${Math.max(11, t * .26)}px "M PLUS Rounded 1c",sans-serif`; g.fillText(sub, cx, cy + bh * .22);
@@ -260,8 +260,8 @@ Object.assign(ACT, { tclaim: id => claimQuest(id), tquests: () => openQuests() }
 /* ---------- まちレベル・あたらしい とち ---------- */
 function levelInfo() { return scoreTown(town, PART); }
 function showLevel() {
-  const L = levelInfo(), lv = town.townLevel, nx = AREAS.find(a => a.lv > lv);
-  $id('lv').textContent = 'Lv' + lv;
+  const L = levelInfo(), nx = AREAS.find(a => a.price && !town.unlockedAreas.includes(a.id));
+  $id('lv').textContent = 'Lv' + town.townLevel;
   const pr = L.next == null ? 1 : Math.max(0, Math.min(1, (L.score - L.prev) / (L.next - L.prev)));
   $id('lvbar').style.width = (pr * 100) + '%';
   return { L, nx };
@@ -271,14 +271,12 @@ function checkLevel(quiet) {
   const L = levelInfo();
   if (L.lv > town.townLevel) {
     const before = town.townLevel; town.townLevel = L.lv;
-    const opened = AREAS.filter(a => a.lv <= L.lv && !town.unlockedAreas.includes(a.id)).filter(a => openArea(town, a.id));
-    if (opened.length) { people.changed(town); ui.dirtyGround = true; }
-    if (!quiet) levelUp(before, L.lv, opened);
+    if (!quiet) levelUp(before, L.lv);
     saveSoon();
   }
   showLevel();
 }
-function levelUp(from, to, opened) {
+function levelUp(from, to, opened = []) {
   beep(523); setTimeout(() => beep(659), 100); setTimeout(() => beep(784), 200); setTimeout(() => beep(1047, .15), 320);
   showPop(`<div class="srlabel">🎉 まち レベル アップ！</div><h3>Lv${from} → Lv${to}</h3>
   ${opened.length ? `<div>あたらしい とちが ひらいたよ！</div><div style="font-size:20px;font-weight:800;margin:6px 0">${opened.map(a => a.icon + ' ' + a.name).join('<br>')}</div>` : '<div>まちが すてきに なってきたね！</div>'}
@@ -291,8 +289,8 @@ function openLevel() {
   <div>まちの すてきポイント：<b>${L.score}</b>${L.next != null ? `　つぎの レベルまで あと <b>${Math.max(0, L.next - L.score)}</b>` : ''}</div>
   <table style="margin:8px auto;font-weight:800;font-size:14px;border-spacing:12px 2px">${rows}</table>
   <div class="muted" style="margin:0">いろんな しゅるいを おいたり、なかまを すませたり、こうえんを つくると あがるよ</div>
-  ${nx ? `<div style="margin-top:8px;font-weight:800">つぎの とち：${nx.icon} ${nx.name}（Lv${nx.lv}）</div>` : '<div style="margin-top:8px;font-weight:800">ぜんぶの とちが ひらいたよ！</div>'}
-  <div class="btns"><button class="big gray" data-act="close">とじる</button></div>`);
+  ${nx ? `<div style="margin-top:8px;font-weight:800">あたらしい とちは おみせで ⭐を つかって かえるよ</div>` : '<div style="margin-top:8px;font-weight:800">ぜんぶの とちが ひらいたよ！</div>'}
+  <div class="btns"><button class="big gray" data-act="close">とじる</button>${nx ? '<button class="big" data-act="tshopcat" data-arg="land">🗺️ とちを みる</button>' : ''}</div>`);
 }
 function paintAt(cx, cy) {
   const id = ui.tool.id;
@@ -330,7 +328,8 @@ function tapView(wx, wy) {
   const p = people.at(wx, wy);
   if (p && p.mob) { beep(880, .05); return openHomework(MOB[p.id]); }
   if (p) { const aq = activeQuestsCache.find(a => a.who === p.id); if (aq && Math.random() < .6) { p.say = aq.ok ? 'できたね！ おねがいを みて！' : aq.q.text; p.sayT = 3.5; } else people.talk(p); beep(880, .05); return; }
-  const o = objectAt(wx, wy); if (!o) return;
+  const o = objectAt(wx, wy);
+  if (!o) { const a = areaOf(Math.floor(wx), Math.floor(wy)); if (a && !town.unlockedAreas.includes(a.id)) { beep(660, .03); landInfo(a.id); } return; }
   if (o.type === 'town_shop') return openShop();
   if (o.type === 'moko_house') return openMokoHouse(o);
   if (PART[o.type] && PART[o.type].home) return openResidents(o);
@@ -471,14 +470,50 @@ function setupButtons() {
 let shopCat = 'house';
 function wide() { const p = document.querySelector('#ov .pop'); if (p) p.style.maxWidth = '560px'; }
 function openShop(cat) {
-  if (cat && CATS.some(c => c.id === cat)) shopCat = cat;
+  if (cat && (cat === 'land' || CATS.some(c => c.id === cat))) shopCat = cat;
+  if (shopCat === 'land') return openLandShop();
   const list = SHOP_PARTS.filter(p => p.cat === shopCat && p.price > 0).sort((a, b) => a.price - b.price);
   showPop(`<h3>🛍️ まちの おみせ</h3><div style="font-weight:800;color:#e0719a">⭐ ${S.points}</div>
-  ${tabs(CATS.map(c => [c.id, c.icon + ' ' + c.name]), shopCat, 'tshopcat')}
+  ${shopTabs(shopCat)}
   <div class="tshop"><div class="items">${list.map(p => { const own = hasPart(town, p.id); return `<button class="item ${own ? 'own' : ''}" data-act="tpart" data-arg="${p.id}"><img alt="" src="${iconURL(p.id)}"><div class="n">${p.name}</div><div class="p">${own ? '✔ つかえる' : '⭐' + p.price}</div></button>`; }).join('') || '<p class="muted">この カテゴリは ぜんぶ つかえるよ</p>'}</div></div>
   <p class="muted" style="margin:6px 0 0">かうと なんこでも おけるよ</p>
   <div class="btns"><button class="big gray" data-act="close">とじる</button></div>`);
   wide();
+}
+/* ---------- とち（⭐で かう） ---------- */
+const LANDS = () => AREAS.filter(a => a.price);
+const LAND_COL = { forest: '#3f9a52', river: '#4fa8e0', beach: '#f2c46b', meadow: '#f58fb8' };
+// とちの ばしょを しめす ちいさな ちず（SVG）
+function landMap(id, px = 64) {
+  const r = a => `<rect x="${a.x0}" y="${a.y0}" width="${a.x1 - a.x0 + 1}" height="${a.y1 - a.y0 + 1}" fill="${a.id === id ? LAND_COL[a.id] || '#ff8fb1' : town.unlockedAreas.includes(a.id) ? '#bfe3a5' : '#e3e7ee'}" stroke="#fff" stroke-width="1"/>`;
+  return `<svg width="${px}" height="${px}" viewBox="-1 -1 42 42" style="display:block;margin:4px auto"><rect x="-1" y="-1" width="42" height="42" rx="4" fill="#fff"/>${AREAS.map(r).join('')}</svg>`;
+}
+const shopTabs = cur => tabs([...CATS.map(c => [c.id, c.icon + ' ' + c.name]), ['land', '🗺️ とち']], cur, 'tshopcat');
+function openLandShop() {
+  showPop(`<h3>🛍️ まちの おみせ</h3><div style="font-weight:800;color:#e0719a">⭐ ${S.points}</div>
+  ${shopTabs('land')}
+  <div class="tshop"><div class="items">${LANDS().map(a => { const own = town.unlockedAreas.includes(a.id); return `<button class="item ${own ? 'own' : ''}" data-act="tland" data-arg="${a.id}">${landMap(a.id)}<div class="n">${a.name}</div><div class="p">${own ? '✔ ひらいた' : '⭐' + a.price}</div></button>`; }).join('')}</div></div>
+  <p class="muted" style="margin:6px 0 0">かうと まちが ひろがるよ</p>
+  <div class="btns"><button class="big gray" data-act="close">とじる</button></div>`);
+  wide();
+}
+function landInfo(id) {
+  const a = AREA[id]; if (!a || !a.price) return;
+  const own = town.unlockedAreas.includes(id), need = a.price - S.points;
+  showPop(`${landMap(id, 96)}<h3>${a.name}</h3>
+  ${own ? '<div>✔ もう ひらいて いるよ</div>' : need > 0 ? `<div>⭐${a.price}　<b style="color:#c63d46">あと ⭐${need}</b></div><div class="muted">おべんきょうで あつめよう！</div>` : `<div>⭐${a.price} で この とちを かう？</div>`}
+  <div class="btns"><button class="big gray" data-act="tshopcat" data-arg="land">もどる</button>${own ? `<button class="big" data-act="tgoarea" data-arg="${id}">みに いく</button>` : need <= 0 ? `<button class="big" data-act="tbuyland" data-arg="${id}">かう！</button>` : ''}</div>`);
+}
+function buyLand(id) {
+  const a = AREA[id];
+  if (!a || !a.price || town.unlockedAreas.includes(id) || S.points < a.price) return landInfo(id);
+  if (!openArea(town, id)) return landInfo(id);
+  people.changed(town); ui.dirtyGround = true; saveNow();
+  S.points -= a.price; save();
+  beep(523); setTimeout(() => beep(659), 100); setTimeout(() => beep(784), 200); setTimeout(() => beep(1047, .15), 320);
+  showPop(`<div class="srlabel">🎉 あたらしい とち！</div>${landMap(id, 96)}<h3>${a.name}</h3><div>まちが ひろく なったよ！</div>
+  <div class="btns"><button class="big" data-act="tgoarea" data-arg="${id}">みに いく</button></div>`);
+  showLevel(); if (ui.mode === 'build') renderBuild();
 }
 function partInfo(id) {
   const p = PART[id], own = hasPart(town, id), need = p.price - S.points;
@@ -505,6 +540,8 @@ Object.assign(ACT, {
   tshop: () => openShop(),
   tpart: id => { beep(660, .03); partInfo(id); },
   tbuy: id => buy(id),
+  tland: id => { beep(660, .03); landInfo(id); },
+  tbuyland: id => buyLand(id),
   tuse: id => { closePop(); const p = PART[id]; ui.cat = p.cat; setMode('build'); chooseTool({ kind: 'part', id, r: 0 }); },
 });
 
@@ -634,7 +671,7 @@ async function start() {
   saveTown(town);
   requestAnimationFrame(t => { last = t; frame(t); });
   // テスト・あとの フェーズ よう
-  window.__town = { get town() { return town; }, cam, ui, people, hist, toScreen, toWorld, setMode, chooseTool, tapBuild, tapView, placePending, buy, toggleResident, saveNow, objectAt, levelInfo, checkLevel, openInside, setInside, changed, activeQuests, claimQuest, openLooks, hwState, hwCheck, openHomework };
+  window.__town = { get town() { return town; }, cam, ui, people, hist, toScreen, toWorld, setMode, chooseTool, tapBuild, tapView, placePending, buy, toggleResident, saveNow, objectAt, levelInfo, checkLevel, openInside, buyLand, landInfo, setInside, changed, activeQuests, claimQuest, openLooks, hwState, hwCheck, openHomework };
   document.body.dataset.ready = '1';
 }
 // ほかの へやで ⭐ が かわったら（core.js の resync から よばれる）

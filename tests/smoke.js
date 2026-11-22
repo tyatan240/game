@@ -432,8 +432,16 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     await T(() => { __town.setMode('build'); __town.chooseTool({ kind: 'part', id: 'tree_basic', r: 0 }); __town.tapBuild(15.5, 3.5); });
     ok(await T(() => __town.ui.pending && __town.ui.pending.reason === 'lock'), 'ひらいて いない とちには おけない');
     await T(() => { const add = (type, x, y) => __town.town.objects.push({ id: 'z' + x + y, type, x, y, r: 0, residents: [] }); add('house_basic', 9, 26); add('house_basic', 12, 26); add('flowerbed', 9, 29); add('swing', 12, 29); add('tree_pine', 15, 29); add('mailbox', 16, 29); add('rock', 17, 29); __town.changed(); });
-    ok(await T(() => __town.town.townLevel >= 2 && __town.town.unlockedAreas.includes('forest') && __town.town.objects.some(o => o.y <= 7 && /tree/.test(o.type))), 'レベルが あがると もりの エリアが ひらく ' + await T(() => JSON.stringify(__town.levelInfo())));
+    ok(await T(() => __town.town.townLevel >= 2 && !__town.town.unlockedAreas.includes('forest')), 'レベルが あがっても とちは ひらかない（⭐で かう） ' + await T(() => JSON.stringify(__town.levelInfo())));
     ok(/レベル アップ/.test(await p.textContent('#ov')), 'レベル アップの おしらせ');
+    await T(() => { closePop(); __town.setMode('view'); __town.tapView(15.5, 3.5); });
+    ok(/もりの エリア/.test(await p.textContent('#ov')) && /あと ⭐/.test(await p.textContent('#ov')) && !(await p.$('#ov [data-act=tbuyland]')), 'くもを タップ → とちの ねだん（⭐が たりないと かえない）');
+    await T(() => { closePop(); __town.buyLand('forest'); closePop(); });
+    ok(await T(() => !__town.town.unlockedAreas.includes('forest') && S.points === 90), '⭐が たりないと ひらかない');
+    await T(() => { S.points += 3000; save(); ACT.tshopcat('land'); });
+    ok(/⭐3000/.test(await p.textContent('#ov')) && /⭐6000/.test(await p.textContent('#ov')), 'おみせの「とち」に ねだん（3000〜）');
+    await p.click('#ov [data-act=tland][data-arg=forest]'); await p.click('#ov [data-act=tbuyland]');
+    ok(await T(() => __town.town.unlockedAreas.includes('forest') && S.points === 90 && JSON.parse(localStorage.getItem('moko-math-v1')).points === 90 && __town.town.objects.some(o => o.y <= 7 && /tree/.test(o.type))), '⭐3000 で もりの エリアを かって ひらく');
     await T(() => { closePop(); __town.setMode('view'); });
     // おうちの なか（おへやで もっている かぐ）
     await T(() => { const h = __town.town.objects.find(o => o.type === 'house_basic' && o.residents && o.residents.includes('c_hamster')); __town.setInside(h.id, 'u_bed'); __town.setInside(h.id, 'w_dots'); __town.setInside(h.id, 'u_castle'); __town.openInside(h); });
