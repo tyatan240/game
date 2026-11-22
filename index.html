@@ -250,11 +250,11 @@ function gate(){
  gateQ=[r(6,9),r(6,9)];
  showPop(`<h3 style="font-size:18px">おうちのひと よう</h3><div>せっていを ひらくには こたえてね</div><div style="font-size:30px;font-weight:800;margin:10px 0">${gateQ[0]} × ${gateQ[1]} =</div><input id="gatein" type="number" inputmode="numeric"><div class="msg" id="gatemsg"></div><div class="btns"><button class="big gray" data-act="close">やめる</button><button class="big" data-act="gateok">ひらく</button></div>`);
  setTimeout(()=>{const i=$('#gatein');i&&i.focus()},100)}
-function gateOk(){const v=Number(($('#gatein')||{}).value);if(v===gateQ[0]*gateQ[1]){closePop();resetArm=false;go('settings')}else{$('#gatemsg').textContent='ちがいます'}}
+function gateOk(){const v=Number(($('#gatein')||{}).value);if(v===gateQ[0]*gateQ[1]){closePop();resetArm=false;try{sessionStorage.setItem('moko-parent-ok',Date.now())}catch(e){}go('settings')}else{$('#gatemsg').textContent='ちがいます'}}
 const stepper=(key,val)=>`<div class="step"><button data-act="st" data-arg="${key}|-1">−</button><span>${val}</span><button data-act="st" data-arg="${key}|1">＋</button></div>`;
 function settings(){
  const s=S.settings;
- return `<h2>⚙️ せってい（おうちのひと よう）</h2>
+ return `<a class="big" href="parent/index.html" style="text-decoration:none;text-align:center;display:block;margin-bottom:12px;background:#4a8fe0;box-shadow:0 4px 0 #2f6fbd">📊 学習レポート</a><h2>⚙️ せってい（おうちのひと よう）</h2>
  <div class="card"><b>✏️ さんすうの もんだいと ポイント</b><div class="muted" style="text-align:left">オンにした もんだいが えらべます。ポイントは 1かいめで せいかいした ときの かず（2かいめは はんぶん）。</div>
  ${TYPES.map(t=>`<div class="row"><button class="sw ${s.types[t.id].on?'on':''}" data-act="tg" data-arg="${t.id}" aria-label="${t.name}"></button><div class="lbl"><b>${t.name}</b><small>れい：${t.ex}</small></div>${stepper('t:'+t.id,'⭐'+s.types[t.id].pts)}</div>`).join('')}</div>
  <div class="card"><b>📖 こくごの もんだいと ポイント</b>
@@ -283,7 +283,7 @@ function settings(){
  </div>
  <div class="card"><div class="lbl"><b>きろく</b><small style="display:block;color:#a88f8f">さんすう：といた かず ${S.stats.q}もん ／ せいかい ${S.stats.ok}もん${S.stats.q?`（${Math.round(S.stats.ok/S.stats.q*100)}%）`:''}<br>こくご：といた かず ${S.kstats.q}もん ／ せいかい ${S.kstats.ok}もん${S.kstats.q?`（${Math.round(S.kstats.ok/S.kstats.q*100)}%）`:''}</small></div></div>
  <div class="card"><b>ほぞんの じょうたい</b><div class="muted" style="text-align:left" id="stinfo">しらべています…</div></div>
- <div class="card"><b>データの ひきつぎ（バックアップ）</b><div class="muted" style="text-align:left">べつの たんまつに うつす ときや、バックアップ したい ときに つかいます。「コードを つくる」で でた もじを コピーして、うつしさきの この がめんに はりつけて「よみこむ」を おしてください。</div>
+ <div class="card"><b>データの ひきつぎ（バックアップ）</b><div class="muted" style="text-align:left">べつの たんまつに うつす ときや、バックアップ したい ときに つかいます。「コードを つくる」で でた もじを コピーして、うつしさきの この がめんに はりつけて「よみこむ」を おしてください。<br>※ 学習レポートの履歴は このコードに 含まれません。「📊 学習レポート」の「学習データを保存」で べつに 保存できます。</div>
  <div class="tbtns"><button class="prac" data-act="bkmake">コードを つくる</button><button data-act="bkcopy">コピー</button></div>
  <textarea id="bkout" readonly style="width:100%;height:60px;margin-top:8px;font-size:11px;border:2px solid #ffd0dc;border-radius:10px"></textarea>
  <textarea id="bkin" placeholder="ここに コードを はりつけ" style="width:100%;height:60px;margin-top:8px;font-size:11px;border:2px solid #ffd0dc;border-radius:10px;-webkit-user-select:text;user-select:text"></textarea>

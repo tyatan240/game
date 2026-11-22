@@ -74,6 +74,7 @@ a.big{text-align:center;text-decoration:none}
   </nav>
 </div>
 <div id="ov" class="hide"></div>
+<script src="../common/learning-history.js"></script>
 <script src="../common/core.js"></script>
 <script type="module">
 /* えいごの へや：ABCぼうけんで おぼえた もじ・ことばで れんしゅう と テスト（さんすう・こくごと おなじ ルール）
@@ -161,14 +162,16 @@ function select(){
  ${on.map(t=>{const a=avail(t);return a>=MIN?`<button class="tbtn" data-act="start" data-arg="${t.id}"><b>${t.name}</b>れい：${t.ex}<small>せいかいで ⭐${S.settings.etypes[t.id].pts}（${a}こ から でるよ）</small></button>`:`<button class="tbtn off" data-act="go" data-arg="home"><b>${t.name}</b>れい：${t.ex}<small>ぼうけんで ${t.need==='letters'?'もじ':'ことば'}を あと ${MIN-a}こ おぼえると できるよ</small></button>`}).join('')}
  ${en.length>1?`<button class="tbtn mix" data-act="start" data-arg="mix"><b>🎲 まぜまぜ</b>いろんな もんだいが でるよ</button>`:''}
  </div><p class="muted">${S.settings.perRound}もん ぜんぶ せいかいで ボーナス ⭐${S.settings.perfect}！</p>`}
+// 学習履歴（保護者レポート用）。けっかが きまったら きろく だけ する
+const lhRec=(c,pickIdx,ok,n,mode,stars,lv)=>LH.recordAttempt({questionInstanceId:c.iid,questionKey:`eigo:${c.tid}:${c.ans}`,subject:'eigo',topic:c.tid,skill:c.tid,difficulty:lv||0,mode,questionText:[c.label,c.main||(c.listen?'（おとを きいて）':'')].filter(Boolean).join(' '),correctAnswer:c.name(c.ans),userAnswer:c.name(c.choicesId[pickIdx]),isCorrect:ok,attemptNumber:n,earnedStars:stars,params:{id:c.ans}});
 function startQuiz(sel){
  const pool=sel==='mix'?enabled().map(t=>t.id):[sel];
- quiz={pool,sel,i:0,n:S.settings.perRound,ok:0,earned:0,res:[],cur:null,tries:0,ng:[],mood:'normal',msg:'',lock:false,used:new Set()};
+ quiz={pool,sel,i:0,n:S.settings.perRound,ok:0,earned:0,res:[],cur:null,tries:0,ng:[],mood:'normal',msg:'',lock:false,used:new Set()};LH.startSession({subject:'eigo',mode:'practice'});
  nextQ();view='quiz';render();$('main').scrollTop=0}
 function nextQ(){
  let q,g=0;
  do{q=makeQ(quiz.pool[r(0,quiz.pool.length-1)])}while((quiz.used.has(q.key)||q.key===quiz.lastKey)&&g++<30);
- quiz.used.add(q.key);quiz.lastKey=q.key;quiz.cur=q;quiz.tries=0;quiz.ng=[];quiz.mood='normal';quiz.msg='';$('main').scrollTop=0;
+ quiz.used.add(q.key);quiz.lastKey=q.key;q.iid=LH.newInstance();LH.begin(q.iid);quiz.cur=q;quiz.tries=0;quiz.ng=[];quiz.mood='normal';quiz.msg='';$('main').scrollTop=0;
  if(quiz.used.size>=4)quiz.used.clear();
  if(q.listen)setTimeout(sayQ,350)}
 function quizV(){
@@ -182,6 +185,7 @@ function pick(i){
  const q=quiz;if(!q||q.lock||q.ng.includes(i))return;
  const c=q.cur,tp=S.settings.etypes[c.tid].pts;
  logAbc(recKey(c.tid,c.ans),c.choicesId[i]===c.ans,q.tries===0);
+ {const ok=c.choicesId[i]===c.ans;lhRec(c,i,ok,q.tries+1,'practice',ok?(q.tries===0?tp:Math.ceil(tp/2)):0,0)}
  if(c.choicesId[i]===c.ans){sayLetter(c.voice);
   const pts=q.tries===0?tp:Math.ceil(tp/2);
   q.ok++;q.earned+=pts;q.res[q.i]=true;S.points+=pts;S.estats.q++;S.estats.ok++;save();
@@ -198,7 +202,7 @@ function advance(){
  if(q.i>=q.n){
   q.bonus=(q.ok===q.n&&S.settings.perfect>0)?S.settings.perfect:0;
   if(q.bonus){S.points+=q.bonus;save()}
-  view='result';if(q.bonus)sBuy();render();return}
+  LH.endSession();view='result';if(q.bonus)sBuy();render();return}
  nextQ();render()}
 function result(){
  const q=quiz,perfect=q.ok===q.n;
@@ -229,13 +233,14 @@ function stopTest(){clearInterval(tTimer);tTimer=null}
 function startTest(arg){
  closePop();stopTest();
  const [key,p]=arg.split('|'),{tid,lv}=parseKey(key),L=TLV[lv];
+ LH.startSession({subject:'eigo',mode:p==='p'?'testprac':'test'});
  test={key,tid,lv,prac:p==='p',earned:0,n:L.n,need:L.need,limit:testLimit(tid,lv)*1000,i:0,ok:0,cur:null,used:new Set(),pick:-1,lock:false,phase:'count',count:3,msg:'',t0:0};
  view='test';tNext();render();$('main').scrollTop=0;beep(660,.1);
  tTimer=setInterval(()=>{
   if(!test){stopTest();return}
   if(test.phase==='count'){test.count--;if(test.count<=0){test.phase='run';test.t0=performance.now();stopTest();beep(990,.2);render();tTimer=setInterval(tTick,100);if(test.cur.listen)setTimeout(sayQ,300)}else{beep(660,.1);render()}}
  },800)}
-function tNext(){let q,g=0;do{q=makeQ(test.tid)}while((q.key===test.lastKey)&&g++<30);test.lastKey=q.key;test.cur=q;test.pick=-1;test.msg='';if(q.listen&&test.phase==='run')setTimeout(sayQ,250)}
+function tNext(){let q,g=0;do{q=makeQ(test.tid)}while((q.key===test.lastKey)&&g++<30);test.lastKey=q.key;q.iid=LH.newInstance();LH.begin(q.iid);test.cur=q;test.pick=-1;test.msg='';if(q.listen&&test.phase==='run')setTimeout(sayQ,250)}
 function tLeft(){return Math.max(0,test.limit-(performance.now()-test.t0))}
 function tTick(){
  if(!test||test.phase!=='run')return;
@@ -256,6 +261,7 @@ function testPick(i){
  const t=test;if(!t||t.phase!=='run'||t.lock)return;
  const c=t.cur,right=c.choicesId[i]===c.ans;t.pick=i;
  logAbc(recKey(c.tid,c.ans),right,true);if(right)sayLetter(c.voice);
+ lhRec(c,i,right,1,t.prac?'testprac':'test',right&&t.prac?pracPts(t.tid):0,t.lv+1);
  S.estats.q++;
  if(right){t.ok++;S.estats.ok++;
   if(t.prac){const pts=pracPts(t.tid);t.earned+=pts;S.points+=pts;t.msg=`⭕ せいかい！ ⭐＋${pts}`}else t.msg='⭕ せいかい！';
@@ -267,7 +273,7 @@ function testPick(i){
  setTimeout(()=>{if(!test||view!=='test'||test!==t)return;t.lock=false;tNext();render();$('main').scrollTop=0},right?350:1000)}
 function finishTest(timeout){
  const t=test;if(!t||t.phase==='done')return;
- t.phase='done';stopTest();
+ t.phase='done';stopTest();LH.endSession();
  if(t.prac){
   const okLine=t.ok>=t.need,bonus=okLine?S.settings.practiceBonus:0;
   if(bonus){S.points+=bonus}save();view='tests';render();
@@ -308,6 +314,8 @@ Object.assign(ACT,{
 window.render = render; // core.js の resync から よばれる
 window.__eigo = { get quiz() { return quiz; }, get test() { return test; }, get view() { return view; }, go, makeQ }; // テスト よう
 render();
+// 学習レポートの「練習へ」：#start=しゅるい で その れんしゅうを はじめる
+{ const m = /^#start=(\w+)/.exec(location.hash); if (m) ready.then(() => { if (enabled().some(t => t.id === m[1])) startQuiz(m[1]); }); }
 // まちの じゅうにんの しゅくだい：その テストの れんしゅうを ひらく（まだ あそべない ときは あそべる しゅるいに かえる）
 if (HW) ready.then(() => {
   const en = enabled(); if (!en.length) return;

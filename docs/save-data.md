@@ -9,6 +9,7 @@
 | `piko-prog-v1` | localStorage | プログラミングの進み具合 `{best:{ステージ番号:★数}}` | `program/` |
 | `robomoko-build-v1` | localStorage ＋ IndexedDB（DB `robomoko-build`、ストア `kv`） | ブロックタウンの世界・カメラ・選んだブロック・ロボットとプログラム（`program/build/README.md`） | `program/build/` |
 | `moko-town-v1` | localStorage ＋ IndexedDB（DB `moko-town`、ストア `kv`） | モコの まち：たてもの・じめん・買ったパーツ・すむひと・カメラ（`machi/README.md`） | `machi/` |
+| `moko-learning-history` | IndexedDB（ストア `attempts`・`sessions`・`metadata`） | 保護者向け学習レポートの回答履歴（`docs/learning-report.md`）。ゲームのデータとは別。「データの ひきつぎ」コードには含まれない | `common/learning-history.js` |
 | `abc-adventure-v1` | localStorage | ABCぼうけんの進行・学習記録（`abc/js/game/state.js`）。`stars`＝ABCで集めた★の合計、`starsSent`＝おうちに届け終わった★ | `abc/` |
 
 ## `moko-math-v1` の形

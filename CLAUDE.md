@@ -15,6 +15,8 @@ program/build/  ロボモコの ブロックタウン：3Dでブロックを置�
 machi/          モコの まち：2Dの まちづくり（ES Modules＋core.js。まちの おみせ は おへやの おみせと別。machi/README.md）
 eigo/           えいご：「ぼうけん（abc/）」か「べんきょう（練習＋🏆テスト）」を選ぶ部屋。core.js ＋ abc のデータ・絵・音声を module で使う
 abc/            ABCぼうけん：英語の2Dアドベンチャー（独立モジュール、ES Modules。eigo/ の「ぼうけん」から入る）
+parent/         保護者向け 学習レポート（かけ算の確認 → ダッシュボード。docs/learning-report.md）
+common/learning-history.js 学習履歴の記録API（IndexedDB moko-learning-history）
 common/core.js  共通：保存・ポイント・アイテム定義・キャラ/部屋のSVG・音・ポップアップ
 common/style.css 共通の見た目
 sw.js           Service Worker（全部屋のオフライン用）。sansu/sw.js・program/sw.js は旧版の片付け専用
@@ -30,6 +32,7 @@ docs/           詳細仕様（下記）
 - `abc/README.md` … ABCぼうけんの構成・学習記録・データの足し方
 - `machi/README.md` … モコの まち：構成・保存・まちの おみせ・じゅうにん
 - `program/build/README.md` … ブロックタウンの構成・データ・保存・フェーズ2（ロボット）への準備
+- `docs/learning-report.md` … 保護者向け学習レポート：学習履歴の形式・指標の計算・保護者確認・バックアップ
 - `docs/abc-kotoba-mahou-spec.md` … ABCぼうけん「ことばの まほう」＋「くみあわせ」の仕様・決定事項・実装メモ（実装済み）
 
 ## 実行・テスト
@@ -41,7 +44,7 @@ docs/           詳細仕様（下記）
 `main` にマージすると GitHub Pages（main / root）が数分で反映。作業はブランチ → PR → ユーザーがマージ。
 
 ## ⚠️ 守ること（子どものデータを壊さない）
-1. 保存キーを変えない：`moko-math-v1`（localStorage と IndexedDB `moko-house`/`kv` の両方）、`piko-prog-v1`、`abc-adventure-v1`、`robomoko-build-v1`（localStorage と IndexedDB `robomoko-build`/`kv`）、`moko-town-v1`（localStorage と IndexedDB `moko-town`/`kv`）
+1. 保存キーを変えない：`moko-math-v1`（localStorage と IndexedDB `moko-house`/`kv` の両方）、`piko-prog-v1`、`abc-adventure-v1`、`robomoko-build-v1`（localStorage と IndexedDB `robomoko-build`/`kv`）、`moko-town-v1`（localStorage と IndexedDB `moko-town`/`kv`）、IndexedDB `moko-learning-history`（学習履歴）
 2. データの形は追加のみ。新項目は `defState()` に初期値＋`merge()` で補う。項目名の変更・削除をしない
 3. `ITEMS` の `id` を変えない・消さない（未知の id は持ち物から外れる）
 4. 公開URL・リポジトリ名・Pages 設定を変えない。データを消す処理を足さない（リセットは ⚙️設定のみ）
@@ -61,4 +64,5 @@ docs/           詳細仕様（下記）
 - ブロックタウン（`program/build/`）：フェーズ1（手で作る）・フェーズ2（ロボットに おねがい：命令を並べてロボモコが建てる）まで。入口リンクはまだない。次はフェーズ3（お題5ステージ・クリア判定・ごほうび）
 - モコの まち（`machi/`）：設計書のフェーズ1〜5（まちづくり・まちの おみせ・じゅうにん・まちレベルと とち・おねがい・家の みため／じぶんで つくる おうち／おきにいり）と おうちの なか（おへやの かぐ）まで
 - まちの パーツは `machi/js/data/parts.js`（おへやの `ITEMS` に入れない）
+- 学習レポート：問題を足したら、正誤が決まったところで `LH.recordAttempt()`（各ページの `lhRec`）を呼ぶ。記録の失敗で勉強を止めない
 - iPad でホーム画面アプリが別スコープになる問題があったため、アイコンは必ずトップ（`/game/`）から追加してもらう

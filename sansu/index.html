@@ -37,6 +37,7 @@ a.big{text-align:center;text-decoration:none}
   </nav>
 </div>
 <div id="ov" class="hide"></div>
+<script src="../common/learning-history.js"></script>
 <script src="../common/core.js"></script>
 <script>
 /* ---------- がめん ---------- */
@@ -56,14 +57,16 @@ function select(){
  ${en.map(t=>`<button class="tbtn" data-act="start" data-arg="${t.id}"><b>${t.name}</b>れい：${t.ex}<small>せいかいで ⭐${S.settings.types[t.id].pts}</small></button>`).join('')}
  ${en.length>1?`<button class="tbtn mix" data-act="start" data-arg="mix"><b>🎲 まぜまぜ</b>いろんな もんだいが でるよ</button>`:''}
  </div><p class="muted">${S.settings.perRound}もん ぜんぶ せいかいで ボーナス ⭐${S.settings.perfect}！</p>`}
+// 学習履歴（保護者レポート用）。せいかい・ほし の しょりは そのまま、けっかが きまったら きろく だけ する
+const lhRec=(c,tid,inp,ok,n,mode,stars,lv)=>{const [a,op,b]=c.p;LH.recordAttempt({questionInstanceId:c.iid,questionKey:`sansu:${tid}:${a}${op}${b}`,subject:'sansu',topic:tid,skill:tid,difficulty:lv||0,mode,questionText:`${a} ${op==='+'?'＋':'−'} ${b} = ?`,correctAnswer:String(c.ans),userAnswer:String(inp),isCorrect:ok,attemptNumber:n,earnedStars:stars,params:{p:c.p}})};
 function startQuiz(sel){
  const pool=sel==='mix'?enabled().map(t=>t.id):[sel];
- quiz={pool,sel,i:0,n:S.settings.perRound,ok:0,earned:0,res:[],cur:null,input:'',tries:0,mood:'normal',msg:'',lock:false,last:''};
+ quiz={pool,sel,i:0,n:S.settings.perRound,ok:0,earned:0,res:[],cur:null,input:'',tries:0,mood:'normal',msg:'',lock:false,last:''};LH.startSession({subject:'sansu',mode:'practice'});
  nextQ();view='quiz';render();$('main').scrollTop=0}
 function nextQ(){
  let p,tid,g=0;
  do{tid=quiz.pool[r(0,quiz.pool.length-1)];p=TYPE[tid].gen()}while(p.join()===quiz.last&&g++<10);
- quiz.last=p.join();quiz.cur={tid,p,ans:p[1]==='+'?p[0]+p[2]:p[0]-p[2]};quiz.input='';quiz.tries=0;quiz.mood='normal';quiz.msg=''}
+ quiz.last=p.join();quiz.cur={tid,p,ans:p[1]==='+'?p[0]+p[2]:p[0]-p[2],iid:LH.newInstance()};quiz.input='';quiz.tries=0;quiz.mood='normal';quiz.msg='';LH.begin(quiz.cur.iid)}
 function quizV(){
  const q=quiz,[a,op,b]=q.cur.p;
  const dots=Array.from({length:q.n},(_,i)=>`<i class="${q.res[i]===true?'ok':q.res[i]===false?'ng':i===q.i?'now':''}"></i>`).join('');
@@ -74,8 +77,9 @@ function quizV(){
  <div class="pad">${keys}<button class="key del" data-act="del">けす</button><button class="key" data-act="key" data-arg="0">0</button><button class="key ok" data-act="answer">こたえる</button></div>`}
 function answer(){
  const q=quiz;if(q.lock||q.input==='')return;
- const tp=S.settings.types[q.cur.tid].pts;
- if(Number(q.input)===q.cur.ans){
+ const tp=S.settings.types[q.cur.tid].pts,right=Number(q.input)===q.cur.ans;
+ lhRec(q.cur,q.cur.tid,q.input,right,q.tries+1,'practice',right?(q.tries===0?tp:Math.ceil(tp/2)):0,0);
+ if(right){
   const pts=q.tries===0?tp:Math.ceil(tp/2);
   q.ok++;q.earned+=pts;q.res[q.i]=true;S.points+=pts;S.stats.q++;S.stats.ok++;save();
   q.mood='happy';q.msg=`せいかい！ ⭐＋${pts}`;sOk();q.lock=true;render();
@@ -91,7 +95,7 @@ function advance(){
  if(q.i>=q.n){
   q.bonus=(q.ok===q.n&&S.settings.perfect>0)?S.settings.perfect:0;
   if(q.bonus){S.points+=q.bonus;save()}
-  view='result';if(q.bonus)sBuy();render();return}
+  LH.endSession();view='result';if(q.bonus)sBuy();render();return}
  nextQ();render()}
 function result(){
  const q=quiz,perfect=q.ok===q.n;
@@ -121,13 +125,14 @@ function stopTest(){clearInterval(tTimer);tTimer=null}
 function startTest(arg){
  closePop();stopTest();
  const [key,p]=arg.split('|'),{tid,lv}=parseKey(key),L=TLV[lv];
+ LH.startSession({subject:'sansu',mode:p==='p'?'testprac':'test'});
  test={key,tid,lv,prac:p==='p',earned:0,n:L.n,need:L.need,limit:testLimit(tid,lv)*1000,i:0,ok:0,input:'',cur:null,last:'',lock:false,phase:'count',count:3,msg:'',t0:0};
  view='test';tNext();render();$('main').scrollTop=0;beep(660,.1);
  tTimer=setInterval(()=>{
   if(!test){stopTest();return}
   if(test.phase==='count'){test.count--;if(test.count<=0){test.phase='run';test.t0=performance.now();stopTest();beep(990,.2);render();tTimer=setInterval(tTick,100)}else{beep(660,.1);render()}}
  },800)}
-function tNext(){let p,g=0;do{p=TYPE[test.tid].gen()}while(p.join()===test.last&&g++<10);test.last=p.join();test.cur={p,ans:p[1]==='+'?p[0]+p[2]:p[0]-p[2]};test.input=''}
+function tNext(){let p,g=0;do{p=TYPE[test.tid].gen()}while(p.join()===test.last&&g++<10);test.last=p.join();test.cur={p,ans:p[1]==='+'?p[0]+p[2]:p[0]-p[2],iid:LH.newInstance()};test.input='';LH.begin(test.cur.iid)}
 function tLeft(){return Math.max(0,test.limit-(performance.now()-test.t0))}
 function tTick(){
  if(!test||test.phase!=='run')return;
@@ -148,6 +153,7 @@ function testV(){
 function testAnswer(){
  const t=test;if(t.phase!=='run'||t.lock||t.input==='')return;
  S.stats.q++;
+ {const ok=Number(t.input)===t.cur.ans;lhRec(t.cur,t.tid,t.input,ok,1,t.prac?'testprac':'test',ok&&t.prac?pracPts(t.tid):0,t.lv+1)}
  if(Number(t.input)===t.cur.ans){t.ok++;S.stats.ok++;
   if(t.prac){const pts=pracPts(t.tid);t.earned+=pts;S.points+=pts;t.msg=`⭕ せいかい！ ⭐＋${pts}`}else t.msg='⭕ せいかい！';
   beep(1046,.08)}
@@ -159,7 +165,7 @@ function testAnswer(){
  else{tNext();render()}}
 function finishTest(timeout){
  const t=test;if(!t||t.phase==='done')return;
- t.phase='done';stopTest();
+ t.phase='done';stopTest();LH.endSession();
  if(t.prac){
   const okLine=t.ok>=t.need,bonus=okLine?S.settings.practiceBonus:0;
   if(bonus){S.points+=bonus}save();view='tests';render();
@@ -199,6 +205,8 @@ Object.assign(ACT,{
  close:a=>{closePop();if(a)go(a)},
 });
 render();
+// 学習レポートの「練習へ」：#start=しゅるい で その れんしゅうを はじめる
+{const m=/^#start=(\w+)/.exec(location.hash);if(m&&enabled().some(t=>t.id===m[1]))ready.then(()=>startQuiz(m[1]))}
 // まちの じゅうにんの しゅくだい：その テストの れんしゅうを ひらく
 if(HW)ready.then(()=>{if(!(TYPE)[parseKey(HW.key).tid])return;view='tests';render();testReady(HW.key+'|p')});
 </script>

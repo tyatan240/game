@@ -105,6 +105,7 @@ main{flex:1;padding:12px;display:flex;flex-direction:column;gap:12px}
 </head>
 <body>
 <div id="app"></div>
+<script src="../common/learning-history.js"></script>
 <script>
 // ===== ステージ =====
 // # かべ / S スタート / G ゴール / * ほし（ぜんぶ あつめてから ゴール）
@@ -234,7 +235,12 @@ function titleV(){
 
 // ===== プレイ =====
 let P,prog,target,running=false,pos,face,got,timer=null;
-function openLv(i){cur=i;P=parse(LEVELS[i]);prog=[];target=null;view='play';resetRun();render();sfx.tap()}
+// 学習履歴（保護者レポート用）：ステージを ひらくと 1つの しゅつだい、じっこう 1かいが 1かいの かいとう
+let lhIid=null,lhTry=0;
+const progTopic=i=>i<6?'seq':i<12?'loop':i<20?'seq2':'loop2';
+const progText=()=>prog.map(b=>b.t==='loop'?`🔁${b.n}[${b.body.map(c=>DIR[c.t][2]).join('')}]`:DIR[b.t][2]).join(' ');
+function lhRun(win,stars,earn){if(!lhIid)return;lhTry++;LH.recordAttempt({questionInstanceId:lhIid,questionKey:'prog:stage-'+(cur+1),subject:'prog',topic:progTopic(cur),skill:LEVELS[cur].loop?'loop':'sequence',difficulty:cur+1,mode:'stage',questionText:`ステージ ${cur+1}（${LEVELS[cur].hint}）`,correctAnswer:`ゴール（⭐3は ${LEVELS[cur].par}こ）`,userAnswer:`${count()}こ：${progText()}`,isCorrect:!!win,attemptNumber:lhTry,earnedStars:earn||0,params:{stage:cur,stars:stars||0}})}
+function openLv(i){cur=i;P=parse(LEVELS[i]);prog=[];target=null;view='play';resetRun();render();sfx.tap();LH.startSession({subject:'prog',mode:'stage'});lhIid=LH.newInstance();lhTry=0;LH.begin(lhIid)}
 function resetRun(){clearTimeout(timer);running=false;pos=[...P.s];face=1;got=new Set()}
 function count(){return prog.reduce((n,b)=>n+(b.t==='loop'?1+b.body.length:1),0)}
 
@@ -293,7 +299,7 @@ function undo(){if(running)return;stopIfMoved();
  sfx.tap();refresh()}
 function clearAll(){if(running)return;prog=[];target=null;stopIfMoved();sfx.tap();refresh()}
 function stopIfMoved(){if(pos[0]!==P.s[0]||pos[1]!==P.s[1]||got.size){resetRun()}}
-function back(){resetRun();view='title';render()}
+function back(){resetRun();view='title';render();LH.endSession();lhIid=null}
 function stop(){resetRun();render()}
 
 function drawRobot(instant){
@@ -334,12 +340,13 @@ function end(win,msg){
  running=false;document.querySelectorAll('.run').forEach(e=>e.classList.remove('run'));
  document.querySelectorAll('.pal button,.big').forEach(b=>b.disabled=false);
  const lv=LEVELS[cur];
- if(!win){
+ if(!win){lhRun(false);
   const left=P.stars.length-got.size;
   showPop(`<div style="font-size:48px">🤔</div><h3>${msg}</h3><div class="muted">${left&&!msg.includes('ぶつ')&&!msg.includes('そと')?`⭐ が あと ${left}こ のこってるよ。`:''}ブロックを なおして もういちど！</div>
    <div class="btns"><button class="big blue" onclick="closePop();stop()">なおす</button></div>`);return}
  const n=count(),stars=n<=lv.par?3:n<=lv.par+2?2:1;
  const prev=S.best[cur]||0,earn=Math.max(0,stars-prev)*starPts();if(stars>prev){S.best[cur]=stars;save()}houseAdd(earn);houseDaily();
+ lhRun(true,stars,earn);
  const hw=HW&&cur===HW.stage;if(hw)houseWrite(d=>{d.hw=d.hw||{};d.hw[HW.mob]=Date.now()});
  $('#robot').classList.add('yay');sfx.win();
  const last=cur>=LEVELS.length-1;
