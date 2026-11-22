@@ -195,7 +195,7 @@ Object.assign(ACT,{
  tready:a=>{sTap();testReady(a)},
  tlock:()=>{sNg();showPop(`<h3>🔒</h3><div>まえの テストに ごうかく すると ちょうせん できるよ！</div><div class="btns"><button class="big" data-act="close">OK</button></div>`)},
  tstart:a=>startTest(a),
- twear:a=>{closePop();const it=ITEM[a];if(it.cat!=='furn')S.equip[it.cat]=a;save();location.href=it.cat==='furn'?'../index.html':['outfit','hat','acc'].includes(it.cat)?'../index.html#dress':'../index.html#dress-room'},
+ twear:a=>{closePop();const it=ITEM[a];if(it.cat!=='furn')equipItem(a);save();location.href=it.cat==='furn'?'../index.html':['outfit','hat','acc'].includes(it.cat)?'../index.html#dress':'../index.html#dress-room'},
  close:a=>{closePop();if(a)go(a)},
 });
 render();

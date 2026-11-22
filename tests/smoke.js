@@ -314,6 +314,30 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
   }
 
+  console.log('8e. キャラごとに ふくを おぼえる');
+  {
+    const p = await page();
+    await p.goto(B + 'index.html'); await p.waitForTimeout(500);
+    await p.evaluate(() => { closePop(); S.settings.goalPts = 0; S.settings.goalAll = 0; S.owned.push('c_lily', 'c_sheep', 'o_heartdress', 'h_heartbow', 'o_moondress', 'a_wand'); save(); go('dress'); });
+    const wear = id => p.click(`[data-act=wear][data-arg=${id}]`);
+    await wear('o_heartdress'); await wear('h_heartbow');           // モコ：ハートの ドレス＋リボン
+    await wear('c_lily'); await wear('o_moondress'); await wear('a_wand'); // リリィ：おつきさまの ドレス＋ステッキ
+    await wear('c_sheep');                                           // はじめての ひつじ：いまの ふくの まま
+    const e1 = await p.evaluate(() => ({ ...S.equip }));
+    await wear('c_moko'); const e2 = await p.evaluate(() => ({ ...S.equip }));
+    await wear('c_lily'); const e3 = await p.evaluate(() => ({ ...S.equip }));
+    ok(e1.outfit === 'o_moondress' && e2.outfit === 'o_heartdress' && e2.hat === 'h_heartbow' && e2.acc === 'a_none' && e3.outfit === 'o_moondress' && e3.acc === 'a_wand', 'キャラを かえると その キャラの ふくに きがえる');
+    await p.reload(); await p.waitForTimeout(600);
+    await p.evaluate(() => { closePop(); go('dress'); }); await wear('c_moko');
+    ok(await p.evaluate(() => S.equip.outfit === 'o_heartdress' && S.looks.c_lily.outfit === 'o_moondress'), 'とじても おぼえている');
+    ok(await p.evaluate(() => thumb(ITEM.c_lily).includes(charSVG({ ...S.equip, ...S.looks.c_lily, char: 'c_lily' }, 'happy').slice(30, 200))), 'きせかえの キャラの えも その キャラの ふく');
+    // ふるい データ（looks なし）でも だいじょうぶ
+    await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('moko-math-v1')); delete d.looks; d.t = Date.now() + 5000; localStorage.setItem('moko-math-v1', JSON.stringify(d)); });
+    await p.reload(); await p.waitForTimeout(600);
+    ok(await p.evaluate(() => typeof S.looks === 'object' && S.equip.outfit === 'o_heartdress'), 'ふるい データ（looks なし）も よめる');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+  }
+
   console.log('12a. えいごの こえ（iPad で「Capital A」と よまれない）');
   {
     const p = await page(); await p.goto(B + 'abc/index.html'); await p.waitForTimeout(300);

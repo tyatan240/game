@@ -212,20 +212,20 @@ function buy(id){
 function doBuy(id){
  const it=ITEM[id];if(S.owned.includes(id)||S.points<it.price)return closePop();
  S.points-=it.price;S.owned.push(id);
- if(it.cat==='furn'){if(!S.furn.includes(id))S.furn.push(id)}else S.equip[it.cat]=id;
+ if(it.cat==='furn'){if(!S.furn.includes(id))S.furn.push(id)}else equipItem(id);
  save();sBuy();
  showPop(`<div style="width:220px;margin:0 auto">${it.cat==='furn'||it.cat==='wall'||it.cat==='floor'?roomSVG(S,'happy','hop'):charSVG(S.equip,'happy','hop')}</div><h3>かったよ！</h3><div>${it.cat==='char'?`🎉 ${it.name} が なかまに なったよ！`:it.name+(it.cat==='furn'?' を おへやに おいたよ':' に きがえたよ')}</div><div class="btns"><button class="big" data-act="close">やったー！</button></div>`);render()}
 function wear(id){
  const it=ITEM[id];
  if(it.cat==='furn'){S.furn=S.furn.includes(id)?S.furn.filter(x=>x!==id):[...S.furn,id]}
- else S.equip[it.cat]=id;
+ else equipItem(id);
  save();sTap();render()}
 function dress(){
  const sec=(cat,label)=>{const own=ITEMS.filter(i=>i.cat===cat&&S.owned.includes(i.id));
   return `<h2 style="font-size:15px">${label}</h2><div class="items">${own.map(it=>{const sel=cat==='furn'?S.furn.includes(it.id):S.equip[cat]===it.id;
    return `<button class="item ${sel?'sel':''}" data-act="wear" data-arg="${it.id}">${it.price===0&&['outfit','hat','acc'].includes(cat)?`<svg viewBox="0 0 100 100"><text x="50" y="62" text-anchor="middle" font-size="30" fill="#c9bcbc">なし</text></svg>`:thumb(it)}<div class="n">${it.name}</div>${cat==='furn'?`<div class="p">${sel?'おいてる':'しまってる'}</div>`:''}</button>`}).join('')||'<p class="muted">おみせで かってね</p>'}</div>`};
  let body;
- if(dressTab==='moko') body=`<div class="card preview">${charSVG(S.equip,'happy','sway')}</div>${sec('char','🐾 キャラ')}${sec('outfit','👗 ふく')}${sec('hat','👒 ぼうし')}${sec('acc','🎈 こもの')}`;
+ if(dressTab==='moko') body=`<div class="card preview">${charSVG(S.equip,'happy','sway')}</div>${sec('char','🐾 キャラ')}<p class="muted" style="text-align:left;margin-top:-4px">キャラごとに ふくを おぼえているよ。キャラを かえると その キャラの ふくに きがえるよ</p>${sec('outfit','👗 ふく')}${sec('hat','👒 ぼうし')}${sec('acc','🎈 こもの')}`;
  else body=`<div class="card room">${roomSVG(S)}</div>${sec('wall','🧱 かべ')}${sec('floor','🟫 ゆか')}${S.owned.some(i=>ITEM[i].cat==='furn')?sec('furn','🪴 かぐ（タップで おく／しまう）'):'<h2 style="font-size:15px">🪴 かぐ</h2><p class="muted">おみせで かってね</p>'}`;
  return tabs([['moko','🐾 キャラ・ふく'],['room','🏠 おへや']],dressTab,'dresstab')+body}
 
@@ -315,7 +315,7 @@ Object.assign(ACT,{
  etg:a=>{S.settings.etypes[a].on=!S.settings.etypes[a].on;save();sTap();render()},
  spin,
  gtg:()=>{S.settings.gachaOn=!S.settings.gachaOn;save();sTap();render()},
- gwear:a=>{closePop();const it=ITEM[a];if(it.cat==='furn'){if(!S.furn.includes(a))S.furn.push(a)}else S.equip[it.cat]=a;save();sTap();if(it.cat==='furn'||it.cat==='wall'||it.cat==='floor')go('home');else{dressTab='moko';go('dress')}},
+ gwear:a=>{closePop();const it=ITEM[a];if(it.cat==='furn'){if(!S.furn.includes(a))S.furn.push(a)}else equipItem(a);save();sTap();if(it.cat==='furn'||it.cat==='wall'||it.cat==='floor')go('home');else{dressTab='moko';go('dress')}},
  tscale:a=>{S.settings.testScale=Number(a);save();sTap();render()},
  snd:()=>{S.settings.sound=!S.settings.sound;save();render()},
  st:a=>stepSet(a),

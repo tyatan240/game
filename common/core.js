@@ -207,6 +207,18 @@ function goals(){
   {id:'prog',key:'prog',need:1,text:'プログラミングの ステージを 1かい クリア',href:'program/index.html',icon:'🤖'},
  ]}
 
+ // キャラごとに おぼえる きせかえ（S.looks[キャラid]={outfit,hat,acc}）
+const LOOK=['outfit','hat','acc'];
+const lookOf=eq=>Object.fromEntries(LOOK.map(k=>[k,eq[k]]));
+// アイテムを みに つける（キャラを かえると、まえの キャラの ふくを おぼえて、あたらしい キャラの ふくに きがえる）
+function equipItem(id){
+ const it=ITEM[id];if(!it||it.cat==='furn')return;
+ if(it.cat==='char'){
+  S.looks[S.equip.char]=lookOf(S.equip);
+  const l=S.looks[id];S.equip.char=id;
+  if(l) for(const k of LOOK) if(l[k]&&S.owned.includes(l[k])) S.equip[k]=l[k];
+  S.looks[id]=lookOf(S.equip);
+ }else{S.equip[it.cat]=id;if(LOOK.includes(it.cat))S.looks[S.equip.char]=lookOf(S.equip)}}
 function defState(){return{v:1,t:0,points:0,
  owned:['c_moko','o_none','h_none','a_none','w_cream','f_wood'],
  equip:{char:'c_moko',outfit:'o_none',hat:'h_none',acc:'a_none',wall:'w_cream',floor:'f_wood'},
@@ -215,7 +227,7 @@ function defState(){return{v:1,t:0,points:0,
   ktypes:Object.fromEntries(KTYPES.map(t=>[t.id,{on:true,pts:t.pts}])),
   etypes:Object.fromEntries(ETYPES.map(t=>[t.id,{on:true,pts:t.pts}])),
   perRound:5,perfect:3,daily:5,sound:true,testScale:1,practiceMul:2,practiceBonus:5,progPts:3,gachaOn:true,gachaCost:100,gachaDaily:0,abcPts:10,goalPts:10,goalAll:50},
- lastDay:'',stats:{q:0,ok:0},kstats:{q:0,ok:0},estats:{q:0,ok:0},tests:{},daily:newDaily(''),gacha:{day:'',count:0,pulls:0}}}
+ lastDay:'',stats:{q:0,ok:0},kstats:{q:0,ok:0},estats:{q:0,ok:0},tests:{},daily:newDaily(''),gacha:{day:'',count:0,pulls:0},looks:{}}}
 function merge(d){
  const s=defState(); if(!d||typeof d!=='object') return s;
  if(typeof d.points==='number') s.points=d.points;
@@ -234,6 +246,8 @@ function merge(d){
  if(d.estats) Object.assign(s.estats,d.estats);
  if(d.daily&&typeof d.daily==='object') s.daily={...s.daily,...d.daily,got:{...(d.daily.got||{})}};
  if(d.tests&&typeof d.tests==='object') s.tests=d.tests;
+ if(d.looks&&typeof d.looks==='object') for(const c in d.looks){const l=d.looks[c];if(!ITEM[c]||!l||typeof l!=='object')continue;
+  s.looks[c]={};for(const k of LOOK) if(l[k]&&ITEM[l[k]]) s.looks[c][k]=l[k]}
  return s}
 const LS='moko-math-v1';
 const loadState=()=>merge((()=>{try{return JSON.parse(localStorage.getItem(LS)||'null')}catch(e){return null}})());
@@ -809,7 +823,7 @@ FURN.u_sweets=()=>`<rect x="258" y="196" width="88" height="62" rx="4" fill="#ff
  <line x1="252" y1="262" x2="252" y2="226" stroke="#fff" stroke-width="4"/><line x1="252" y1="262" x2="252" y2="226" stroke="#f0c8d8" stroke-width="1.5"/><circle cx="252" cy="218" r="10" fill="#ff9ec7" stroke="#e8659f" stroke-width="2"/><path d="M246 218 a6 6 0 0 1 12 0 a3 3 0 0 1 -6 0" fill="none" stroke="#fff" stroke-width="2"/>`;
 
 function thumb(it){
- if(['char','outfit','hat','acc'].includes(it.cat)){const eq={...S.equip,[it.cat]:it.id};return charSVG(eq,it.cat==='char'?'happy':'normal')}
+ if(['char','outfit','hat','acc'].includes(it.cat)){const eq=it.cat==='char'?{...S.equip,...(S.looks[it.id]||{}),char:it.id}:{...S.equip,[it.cat]:it.id};return charSVG(eq,it.cat==='char'?'happy':'normal')}
  if(it.cat==='wall') return `<svg viewBox="0 0 360 200" preserveAspectRatio="xMidYMid slice">${wallSVG(it.id)}</svg>`;
  if(it.cat==='floor') return `<svg viewBox="0 200 360 100" preserveAspectRatio="xMidYMid slice">${floorSVG(it.id)}</svg>`;
  return `<svg viewBox="${it.box}">${FURN[it.id]()}</svg>`}
