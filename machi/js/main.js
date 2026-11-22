@@ -612,8 +612,8 @@ ACT.ttpl = oid => {
 
 /* ---------- はじめる ---------- */
 async function start() {
-  await ready; // core.js：おうちの データ（IndexedDB）
-  town = await loadTown();
+  // おうちの データ（core.js の ready）と まちの データを いっしょに よむ（どちらも まちじかんの じょうげん つき）
+  [, town] = await Promise.all([ready, loadTown()]);
   hist = new History(town);
   Object.assign(cam, town.camera || {});
   people = new People(); people.sync(town, avatar(), MOBS.map(m => m.id));
