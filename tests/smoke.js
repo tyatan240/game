@@ -469,6 +469,19 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     await ctx.close();
   }
 
+  console.log('14c. IndexedDB が へんじしない ときも まちが ひらく（iPad たいさく）');
+  {
+    const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 }, serviceWorkers: 'block' });
+    await ctx.addInitScript(() => { indexedDB.open = () => ({}); });
+    const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
+    await p.goto(B + 'index.html'); await p.waitForTimeout(300);
+    await p.click('.room .todoor');
+    const t0 = Date.now(); const okTown = await p.waitForSelector('body[data-ready="1"]', { timeout: 6000 }).then(() => true).catch(() => false);
+    ok(okTown && Date.now() - t0 < 4000, `まちが ひらく（${Date.now() - t0}ms）`);
+    if (okTown) { await p.click('#bShop'); ok(/まちの おみせ/.test(await p.textContent('#ov')), 'ボタンも うごく'); }
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await ctx.close();
+  }
+
   console.log('14b. まちの モブじゅうにん：しゅくだいの おてつだい');
   {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });

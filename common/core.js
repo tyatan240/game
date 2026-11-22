@@ -262,10 +262,13 @@ const lsHad=(()=>{try{return !!localStorage.getItem(LS)}catch(e){return false}})
 let idbT=null;
 function save(){S.t=Date.now();try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}IDB.put(S).then(()=>{idbT=S.t});updPts()}
 // ページを ひらいたら IndexedDB の ほうが あたらしければ そちらを つかう
-const ready=IDB.get().then(d=>{
+// iPad の ホームがめんアプリでは IndexedDB が へんじしない ことが ある → ready は 1.5びょうで さきへ すすむ
+// （おそく へんじが きたら そのとき とりこんで render() する）
+const idbLoad=IDB.get().then(d=>{
  if(d&&typeof d.points==='number'&&(!lsHad||(d.t||0)>(S.t||0))){S=merge(d);try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}idbT=S.t;if(typeof render==='function')render();else updPts()}
  else{idbT=d?d.t:null;if(lsHad)IDB.put(S).then(()=>{idbT=S.t})}
 }).catch(()=>{});
+const ready=Promise.race([idbLoad,new Promise(ok=>setTimeout(ok,1500))]);
 // アプリを とじる・うらに まわる ときにも ほぞん
 const flush=()=>{try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}IDB.put(S)};
 window.addEventListener('pagehide',flush);
