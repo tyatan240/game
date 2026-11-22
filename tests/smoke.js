@@ -331,6 +331,12 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     await p.evaluate(() => { closePop(); go('dress'); }); await wear('c_moko');
     ok(await p.evaluate(() => S.equip.outfit === 'o_heartdress' && S.looks.c_lily.outfit === 'o_moondress'), 'とじても おぼえている');
     ok(await p.evaluate(() => thumb(ITEM.c_lily).includes(charSVG({ ...S.equip, ...S.looks.c_lily, char: 'c_lily' }, 'happy').slice(30, 200))), 'きせかえの キャラの えも その キャラの ふく');
+    // キャラ・おへやの え は うごかず、アイテムだけ スクロール
+    const fx = await p.evaluate(async () => { closePop(); for (let i = 0; i < 30; i++) S.owned.push(...ITEMS.filter(x => ['outfit', 'hat', 'acc'].includes(x.cat)).map(x => x.id)); S.owned = [...new Set(S.owned)]; go('dress');
+      const l = document.querySelector('#view .dlist'); l.scrollTop = 600; const y0 = document.querySelector('#view .dpv').getBoundingClientRect().top;
+      ACT.wear(ITEMS.find(x => x.cat === 'hat' && x.id !== 'h_none').id); closePop(); const l2 = document.querySelector('#view .dlist'), pv = document.querySelector('#view .dpv').getBoundingClientRect();
+      return { y0, y1: pv.top, vis: pv.bottom <= innerHeight, keep: l2.scrollTop, main: document.getElementById('view').scrollTop }; });
+    ok(fx.y0 === fx.y1 && fx.vis && fx.keep > 300 && fx.main === 0, 'きせかえ：キャラの え は うえに こてい・えらんでも スクロールが もどらない ' + JSON.stringify(fx));
     // ふるい データ（looks なし）でも だいじょうぶ
     await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('moko-math-v1')); delete d.looks; d.t = Date.now() + 5000; localStorage.setItem('moko-math-v1', JSON.stringify(d)); });
     await p.reload(); await p.waitForTimeout(600);

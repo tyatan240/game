@@ -33,6 +33,12 @@ nav{grid-template-columns:repeat(5,1fr)}
 .streak .stamp{display:flex;flex-direction:column;align-items:center;font-size:11px;font-weight:800;color:#a88f8f}
 .streak .stamp svg{width:100%;max-width:40px}
 .streak .stamp.today span{color:#e0719a}
+.fixv{display:flex;flex-direction:column;overflow:hidden!important;padding-bottom:0!important}
+.fixv>.tabs{flex:none}
+.fixv .dpv{flex:none;margin-bottom:8px;padding:8px}
+.fixv .preview.dpv svg{max-height:min(30vh,240px)}
+.fixv .room.dpv svg{max-height:min(32vh,300px);width:auto;max-width:100%;margin:0 auto}
+.fixv .dlist{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:2px 2px 12px;margin:0 -2px;border-top:3px dashed #ffd9e3}
 .room .todoor{position:absolute;right:3%;top:30%;width:12%;display:flex;flex-direction:column;align-items:center;text-decoration:none;filter:drop-shadow(0 2px 0 rgba(0,0,0,.12))}
 .room .todoor svg{width:100%;border-radius:0}
 .room .todoor span{margin-top:-2px;background:#fff;border-radius:999px;padding:1px 8px;font-weight:800;font-size:12px;color:#7a9b4f;box-shadow:0 2px 0 #cfe8bd;white-space:nowrap}
@@ -100,8 +106,11 @@ function render(){
  updPts();
  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.arg===view));
  // タブの よこスクロールの いちを おぼえておく（えらぶたびに ひだりはしに もどらない ように）
- const keep=lastView===view?[...document.querySelectorAll('#view .tabs')].map(t=>t.scrollLeft):[];lastView=view;
+ const keep=lastView===view?[...document.querySelectorAll('#view .tabs')].map(t=>t.scrollLeft):[];
+ const dl=$('#view .dlist'),keepY=lastView===view&&dl&&dl.dataset.tab===dressTab?dl.scrollTop:0;lastView=view; // きせかえ：アイテムの スクロールいちを おぼえる
+ $('#view').classList.toggle('fixv',view==='dress'); // きせかえ：うえの キャラ・おへやは うごかさない
  $('#view').innerHTML={home,study,gacha,shop,dress,settings}[view]();
+ {const d=$('#view .dlist');if(d&&keepY)d.scrollTop=keepY}
  document.querySelectorAll('#view .tabs').forEach((t,i)=>{if(keep[i]!==undefined)t.scrollLeft=keep[i];
   const on=t.querySelector('button.on');if(!on)return;const l=on.offsetLeft-t.offsetLeft,r=l+on.offsetWidth;
   if(l<t.scrollLeft)t.scrollLeft=l-8;else if(r>t.scrollLeft+t.clientWidth)t.scrollLeft=r-t.clientWidth+8});
@@ -283,8 +292,8 @@ function dress(){
   return `<h2 style="font-size:15px">${label}</h2><div class="items">${own.map(it=>{const sel=cat==='furn'?S.furn.includes(it.id):S.equip[cat]===it.id;
    return `<button class="item ${sel?'sel':''}" data-act="wear" data-arg="${it.id}">${it.price===0&&['outfit','hat','acc'].includes(cat)?`<svg viewBox="0 0 100 100"><text x="50" y="62" text-anchor="middle" font-size="30" fill="#c9bcbc">なし</text></svg>`:thumb(it)}<div class="n">${it.name}</div>${cat==='furn'?`<div class="p">${sel?'おいてる':'しまってる'}</div>`:''}</button>`}).join('')||'<p class="muted">おみせで かってね</p>'}</div>`};
  let body;
- if(dressTab==='moko') body=`<div class="card preview">${charSVG(S.equip,'happy','sway')}</div>${sec('char','🐾 キャラ')}<p class="muted" style="text-align:left;margin-top:-4px">キャラごとに ふくを おぼえているよ。キャラを かえると その キャラの ふくに きがえるよ</p>${sec('outfit','👗 ふく')}${sec('hat','👒 ぼうし')}${sec('acc','🎈 こもの')}`;
- else body=`<div class="card room">${roomSVG(S)}</div>${sec('wall','🧱 かべ')}${sec('floor','🟫 ゆか')}${S.owned.some(i=>ITEM[i].cat==='furn')?sec('furn','🪴 かぐ（タップで おく／しまう）'):'<h2 style="font-size:15px">🪴 かぐ</h2><p class="muted">おみせで かってね</p>'}`;
+ if(dressTab==='moko') body=`<div class="card preview dpv">${charSVG(S.equip,'happy','sway')}</div><div class="dlist" data-tab="${dressTab}">${sec('char','🐾 キャラ')}<p class="muted" style="text-align:left;margin-top:-4px">キャラごとに ふくを おぼえているよ。キャラを かえると その キャラの ふくに きがえるよ</p>${sec('outfit','👗 ふく')}${sec('hat','👒 ぼうし')}${sec('acc','🎈 こもの')}</div>`;
+ else body=`<div class="card room dpv">${roomSVG(S)}</div><div class="dlist" data-tab="${dressTab}">${sec('wall','🧱 かべ')}${sec('floor','🟫 ゆか')}${S.owned.some(i=>ITEM[i].cat==='furn')?sec('furn','🪴 かぐ（タップで おく／しまう）'):'<h2 style="font-size:15px">🪴 かぐ</h2><p class="muted">おみせで かってね</p>'}</div>`;
  return tabs([['moko','🐾 キャラ・ふく'],['room','🏠 おへや']],dressTab,'dresstab')+body}
 
 
