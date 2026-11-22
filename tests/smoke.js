@@ -737,6 +737,18 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
   }
 
+  console.log('20b. ABCぼうけん：ドラコが うごいた ところに いても うごける');
+  {
+    const p = await page({ width: 844, height: 390 });
+    await p.goto(B + 'index.html');
+    await p.evaluate(() => localStorage.setItem('abc-adventure-v1', JSON.stringify({ v: 1, t: 1, started: true, stars: 5, starsSent: 5, learned: ['A', 'B', 'C', 'D', 'E'], flags: { intro: true, bossCleared: true, bridgeOpen: true }, quests: {}, world: {}, areas: ['island'], hero: { x: 25.5, y: 10.8, dir: 'down', area: 'island' } })));
+    await p.goto(B + 'abc/index.html'); await p.waitForTimeout(400); await p.click('#cont'); await p.waitForTimeout(800);
+    const at = () => p.evaluate(() => { const h = __abc.hero; return [h.x, h.y]; });
+    const a0 = await at(); await p.keyboard.down('ArrowLeft'); await p.waitForTimeout(500); await p.keyboard.up('ArrowLeft'); const a1 = await at();
+    ok(a1[0] < a0[0] && await p.evaluate(() => __abc.area()) === 'island', 'かさなっても とじこめられない（ずれて うごける） ' + JSON.stringify([a0, a1]));
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+  }
+
   console.log('12a. えいごの こえ（iPad で「Capital A」と よまれない）');
   {
     const p = await page(); await p.goto(B + 'abc/index.html'); await p.waitForTimeout(300);

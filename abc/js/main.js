@@ -10,7 +10,7 @@ import { WORD, WORDS } from './data/words.js';
 import { SPELLS } from './data/combos.js';
 import { START, ITEMS, INV, STORY } from './data/world1.js';
 import { AREAS, ORDER, CHAPTER, WHERE } from './data/areas.js';
-import { W, H, area, setArea, tileAt, isWater, isPath, things, move, facing, heroTile, markPos, exitAt, exitOpen, isOpenGate, vinesKey, solidAt, inside } from './game/world.js';
+import { W, H, area, setArea, tileAt, isWater, isPath, things, move, facing, heroTile, markPos, exitAt, exitOpen, isOpenGate, vinesKey, solidAt, inside, unstick } from './game/world.js';
 import { load, save, replayState, getRecord } from './game/state.js';
 import { record, pickTargets, choiceCount, levelOf } from './game/learning.js';
 import { letterQuestion, wordQuestion, shuffle , lowerQuestion } from './game/quiz.js';
@@ -320,6 +320,7 @@ function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
   const t = now / 1000;
   if (mode === 'play' && !ui.busy()) {
+    unstick(hero, S); // キャラが うごいて かさなった ときに とじこめられない
     const d = input.currentDir();
     hero.moving = false;
     if (d) {

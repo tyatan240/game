@@ -72,6 +72,17 @@ export function move(hero, dir, dist, st) {
   return moved;
 }
 
+// キャラが あとから うごいて きて かさなったら、ちかくの あいている マスへ ずらす（うごけなく ならないように）
+export function unstick(hero, st) {
+  if (!hits(hero.x, hero.y, st)) return false;
+  const tx = Math.floor(hero.x / TS), ty = Math.floor((hero.y - 4) / TS);
+  for (let r = 1; r <= 4; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+    if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+    const x = (tx + dx + 0.5) * TS, y = (ty + dy + 1) * TS - 2;
+    if (!hits(x, y, st)) { hero.x = x; hero.y = y; return true; }
+  }
+  return false;
+}
 export const inside = (t, x, y) => x >= t.x && x < t.x + (t.w || 1) && y >= t.y && y < t.y + (t.h || 1);
 // めじるしを だす いち（ひろい ものは まんなかの うえ）
 export const markPos = t => ({ x: t.x + (t.w || 1) / 2, y: t.y });

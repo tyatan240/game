@@ -512,7 +512,7 @@ Object.assign(ACT, {
 function liveIn(c) { return town.objects.find(o => (o.residents || []).includes(c)); }
 function openResidents(o) {
   const chars = myChars().filter(c => c !== avatar()), name = PART[o.type].name;
-  showPop(`<h3>${name}</h3><div style="font-weight:800">この おうちに だれが すむ？（2にん まで）</div>
+  showPop(`<h3>${name}</h3><div style="font-weight:800">この おうちに だれが すむ？（ふたり まで）</div>
   <div class="people" style="margin-top:8px">${chars.map(c => { const h = liveIn(c), here = h && h.id === o.id; return `<button class="person ${here ? 'on' : ''}" data-act="tres" data-arg="${o.id}|${c}">${charHTML(c)}${ITEM[c].name}<small>${here ? '✔ すんでいる' : h ? 'ほかの おうちに すんでいる' : ''}</small></button>`; }).join('') || '<p class="muted">ガチャや おみせで なかまを ふやそう！</p>'}</div>
   <p class="muted" style="margin:6px 0 0">${ITEM[avatar()].name} は モコの おうちに すんでいるよ</p>
   <div class="btns"><button class="big gray" data-act="close">とじる</button>${PART[o.type].bed ? '' : `<button class="big sub" data-act="tlooks" data-arg="${o.id}">🎨 みため</button>`}</div>
@@ -524,7 +524,7 @@ function toggleResident(oid, c) {
   const here = (o.residents || []).includes(c);
   if (here) o.residents = o.residents.filter(x => x !== c);
   else {
-    if ((o.residents || []).length >= 2) { toast('2にん まで だよ', true); return; }
+    if ((o.residents || []).length >= 2) { toast('ふたり まで だよ', true); return; }
     for (const x of town.objects) if (x.residents) x.residents = x.residents.filter(y => y !== c); // ひっこし
     o.residents = [...(o.residents || []), c];
     toast(`${ITEM[c].name} が すむ ことに なったよ！`);
