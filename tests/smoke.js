@@ -297,8 +297,8 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(await p.evaluate(() => ITEMS.filter(i => i.dream || i.secret).every(i => thumb(i).includes('<svg'))), 'ぜんぶ え が ある');
     await p.evaluate(() => { shopCat = 'special'; go('shop'); });
     ok(await p.isVisible('h2.dreamh') && await p.locator('.item.secret.lock').count() === 5, 'おみせに ゆめの ごほうび・ひみつ（？？？）');
-    await p.click('[data-act=buy][data-arg=c_dragon]'); await p.click('#ov [data-act=dobuy]');
-    ok(await p.evaluate(() => S.owned.includes('c_dragon') && S.points === 500 && S.equip.char === 'c_dragon'), '⭐3000 の ドラゴンを かえる');
+    await p.click('[data-act=buy][data-arg=c_lily]'); await p.click('#ov [data-act=dobuy]');
+    ok(await p.evaluate(() => S.owned.includes('c_lily') && S.points === 500 && S.equip.char === 'c_lily'), '⭐3000 の おひめさまを かえる');
     await p.click('#ov [data-act=close] >> nth=0').catch(() => {});
     await p.click('[data-act=sinfo][data-arg=c_starfox]');
     ok(/あと 10かい/.test(await p.textContent('#ov')), 'ひみつは あと なんかいで あえるか わかる');
