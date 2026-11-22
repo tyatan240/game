@@ -33,6 +33,7 @@ docs/           詳細仕様（下記）
 - `machi/README.md` … モコの まち：構成・保存・まちの おみせ・じゅうにん
 - `program/build/README.md` … ブロックタウンの構成・データ・保存・フェーズ2（ロボット）への準備
 - `docs/learning-report.md` … 保護者向け学習レポート：学習履歴の形式・指標の計算・保護者確認・バックアップ
+- `docs/abc-world3-spec.md` … ABCぼうけん ワールド3「ことばの まち」の仕様・決定事項（3回に分けて実装予定）
 - `docs/abc-kotoba-mahou-spec.md` … ABCぼうけん「ことばの まほう」＋「くみあわせ」の仕様・決定事項・実装メモ（実装済み）
 
 ## 実行・テスト
