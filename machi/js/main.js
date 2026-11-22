@@ -353,6 +353,7 @@ function buy(id) {
   if (ui.mode === 'build') renderBuild();
 }
 Object.assign(ACT, {
+  close: () => { closePop(); beep(600, .03); }, // とじる・まちに いる・おわり（core.js には ない ので ここで きめる）
   tshopcat: c => { shopCat = c; openShop(); },
   tshop: () => openShop(),
   tpart: id => { beep(660, .03); partInfo(id); },

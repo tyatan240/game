@@ -407,6 +407,15 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     // まちの おみせ（⭐は おうちと きょうつう）
     await T(() => __town.setMode('view')); await p.click('#bShop');
     ok(/まちの おみせ/.test(await p.textContent('#ov')), 'まちの おみせが ひらく');
+    await p.click('[data-act=tpart] >> nth=0'); await p.click('#ov [data-act=tshop]');
+    ok(/まちの おみせ/.test(await p.textContent('#ov')), '「もどる」で おみせの いちらんに もどる');
+    await p.click('#ov [data-act=close]');
+    ok(await p.evaluate(() => document.getElementById('ov').classList.contains('hide')), '「とじる」で とじる');
+    await p.evaluate(() => __town.tapView(19.5, 17.5)); await p.click('#ov [data-act=close]');
+    ok(await p.evaluate(() => document.getElementById('ov').classList.contains('hide')), 'モコの おうちの「まちに いる」で とじる');
+    await p.evaluate(() => { const h = __town.town.objects.find(o => o.type === 'moko_house'); ACT.tlooks(h.id); }); await p.click('#ov [data-act=close]');
+    ok(await p.evaluate(() => document.getElementById('ov').classList.contains('hide')), 'みための「おわり」で とじる');
+    await p.click('#bShop');
     await p.click('[data-act=tshopcat][data-arg=park]'); await p.click('[data-act=tpart][data-arg=lamp]'); await p.click('[data-act=tbuy]');
     ok(await T(() => S.points === 130 && JSON.parse(localStorage.getItem('moko-math-v1')).points === 130 && __town.town.unlockedParts.includes('lamp')), 'かうと ⭐が へって つかえる ように なる');
     await T(() => __town.buy('lamp')); ok(await T(() => S.points === 130), 'おなじ ものは 2かい かえない');
