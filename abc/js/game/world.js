@@ -32,7 +32,7 @@ export const isOpenGate = (o, st) => (o.ref.kind === 'gate' && st.world.gate ===
 
 // でぐち（エリアの はし）
 export const exitAt = (x, y) => A.exits.find(e => e.x === x && e.y === y);
-export const exitOpen = (e, st) => !e.needs || ((!e.needs.quest || st.quests[e.needs.quest] === 'done'));
+export const exitOpen = (e, st) => !e.needs || ((!e.needs.quest || st.quests[e.needs.quest] === 'done') && (!e.needs.flag || st.flags[e.needs.flag]));
 
 export function solidAt(tx, ty, st) {
   const c = tileAt(tx, ty);

@@ -12,6 +12,7 @@ export function defaultState() {
     starsSent: 0,
     clears: 0,            // ワールド1（A〜Z）を クリアした かいすう         // おうちの ⭐に とどけおわった ★の かず（おうちとの つなぎ）
     learned: [],          // おぼえた もじ（どうぶつの クイズに こたえた もの）
+    lower: [],            // おぼえた こもじ（ワールド2 こもじの もり）
     flags: {},            // intro / bridgeOpen / bossCleared / ending など
     chests: {},           // あけた たからばこ
     items: [],            // もっている アイテム
@@ -36,7 +37,7 @@ export function load() {
     // たりない こうもくは しょきち で おぎなう（ふるい データでも こわれない）
     return { ...base, ...d, hero: { ...base.hero, ...d.hero }, flags: { ...d.flags }, chests: { ...d.chests },
       wear: { ...base.wear, ...d.wear }, records: { ...d.records }, settings: { ...base.settings, ...d.settings },
-      learned: Array.isArray(d.learned) ? d.learned : [], items: Array.isArray(d.items) ? d.items : [],
+      learned: Array.isArray(d.learned) ? d.learned : [], lower: Array.isArray(d.lower) ? d.lower : [], items: Array.isArray(d.items) ? d.items : [],
       words: { ...d.words }, quests: { ...d.quests }, inv: { ...d.inv }, world: { ...d.world },
       combos: Array.isArray(d.combos) ? d.combos : [], areas: Array.isArray(d.areas) ? d.areas : ['meadow'] };
   } catch (e) { return base; }

@@ -65,6 +65,20 @@ export function teach(id) {
   });
 }
 
+// こもじを おしえる カード（ワールド2）：おおもじ と こもじ の ペア。タップで おと
+export function teachLower(ids) {
+  return new Promise(resolve => {
+    const el = open(h(`<div class="modal"><div class="card teach">
+      <div class="small">あたらしい こもじ</div>
+      <div class="pairs">${ids.map(id => `<button class="pair" data-id="${id}"><b>${LETTER[id].upper}</b><span>${LETTER[id].lower}</span></button>`).join('')}</div>
+      <div class="lname">タップすると よみかたが きこえるよ</div>
+      <button class="go">おぼえた！ クイズへ</button></div></div>`), () => done());
+    const done = () => { sfx.tap(); close(); resolve(); };
+    el.querySelectorAll('.pair').forEach(b => b.onclick = () => { sfx.tap(); sayLetter(LETTER[b.dataset.id]); b.classList.remove('pulse'); void b.offsetWidth; b.classList.add('pulse'); });
+    el.querySelector('.go').onclick = done;
+  });
+}
+
 /* ---------- クイズ ---------- */
 // qs：quiz.js の もんだいの はいれつ。onAnswer(q, ok, firstTry) で きろくする
 export function quiz(qs, { title = 'クイズ', onAnswer = () => {} } = {}) {
@@ -87,7 +101,7 @@ export function quiz(qs, { title = 'クイズ', onAnswer = () => {} } = {}) {
       const box = el.querySelector('.choices'); box.className = 'choices n' + q.choices.length; box.innerHTML = '';
       q.choices.forEach(c => {
         const r = q.render || 'letter';
-        const b = h(`<button class="ch ${r}" data-v="${c}">${r === 'letter' ? LETTER[c].upper : r === 'word' ? WORD[c].word : ''}</button>`);
+        const b = h(`<button class="ch ${r === 'lower' ? 'letter' : r}" data-v="${c}">${r === 'letter' ? LETTER[c].upper : r === 'lower' ? LETTER[c].lower : r === 'word' ? WORD[c].word : ''}</button>`);
         if (r === 'pic') b.appendChild(wordArt(WORD[c].art, 92));
         b.onclick = () => pick(c, b); box.appendChild(b);
       });

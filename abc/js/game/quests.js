@@ -27,6 +27,7 @@ export function advance(S, q) {
 export const isStep = (S, questId, stepId) => { const q = QUEST[questId]; return !!q && activeQuests(S).includes(q) && currentStep(S, q).id === stepId; };
 export const gateOpen = (S, ch) => ch.gate ? S.world['gate_' + ch.area] === 'open' : true;
 export function chapterDone(S, ch) {
+  if (ch.lower) return ch.lower.every(id => (S.lower || []).includes(id)) && gateOpen(S, ch);
   return ch.letters.every(id => S.learned.includes(id)) && (!ch.boss || S.flags.bossCleared) && ch.quests.every(q => S.quests[q] === 'done') && gateOpen(S, ch);
 }
 
@@ -34,6 +35,13 @@ export function chapterDone(S, ch) {
 export function objective(S) {
   if (!S.flags.intro) return null;
   for (const ch of CHAPTERS) {
+    if (ch.lower) { // ワールド2：こもじ
+      if (!S.flags.alphabetClear) break;
+      const ll = ch.lower.filter(id => !(S.lower || []).includes(id));
+      if (ll.length) return { text: `もりの せんせいに こもじを おそわろう！（あと ${ll.length}）`, targets: AREAS[ch.area].NPCS.filter(n => n.lower && n.lower.some(l => ll.includes(l))).map(n => n.id), area: ch.area };
+      if (!gateOpen(S, ch)) return { text: 'こもじの もんで さいごの おさらいを しよう！', targets: [ch.gate], area: ch.area };
+      continue;
+    }
     const left = ch.letters.filter(id => !S.learned.includes(id));
     if (left.length) {
       const ids = AREAS[ch.area].NPCS.filter(n => n.letter && left.includes(n.letter)).map(n => n.id);

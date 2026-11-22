@@ -493,7 +493,7 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     const T = f => p.evaluate(f);
     ok(await T(() => ['mob_pig', 'mob_tanuki', 'mob_chick', 'mob_frog'].every(id => __town.people.list.some(q => q.id === id && q.mob))), 'モブじゅうにん 4にんが まちに いる');
     const hw = await T(() => Object.fromEntries(['mob_pig', 'mob_tanuki', 'mob_chick', 'mob_frog'].map(id => [id, __town.hwState({ id, subj: { mob_pig: 'sansu', mob_tanuki: 'kokugo', mob_chick: 'eigo', mob_frog: 'prog' }[id] }).active])));
-    ok(/^(add|sub|mul|clock)/.test(hw.mob_pig.key) && /^k|^kotoba|^yomi/.test(hw.mob_tanuki.key) && /^ea/.test(hw.mob_chick.key) && +hw.mob_frog.key <= 2, 'しゅくだいは それぞれの きょうかの テスト・ステージ ' + JSON.stringify([hw.mob_pig.key, hw.mob_tanuki.key, hw.mob_chick.key, hw.mob_frog.key]));
+    ok(/^(add|sub|mul|clock)/.test(hw.mob_pig.key) && /^(k|kotoba|yomi|kata|bun)/.test(hw.mob_tanuki.key) && /^ea/.test(hw.mob_chick.key) && +hw.mob_frog.key <= 2, 'しゅくだいは それぞれの きょうかの テスト・ステージ ' + JSON.stringify([hw.mob_pig.key, hw.mob_tanuki.key, hw.mob_chick.key, hw.mob_frog.key]));
     await T(() => __town.openHomework({ id: 'mob_pig', name: 'こぶたの ブブ', subj: 'sansu', sname: 'さんすう', page: '../sansu/index.html' }));
     await p.click('#ov a.big'); await p.waitForLoadState(); await p.waitForTimeout(500);
     ok(/sansu\/index.html#hw=mob_pig\|/.test(p.url()) && /れんしゅう/.test(await p.textContent('#ov')), 'てつだう → さんすうの テストれんしゅう が ひらく');
@@ -697,6 +697,32 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     for (let i = 0; i < 5; i++) { await p.waitForFunction(() => quiz && !quiz.lock && view === 'quiz'); const a = await p.evaluate(() => quiz.cur.ans); for (const ch of String(a)) await p.click(`.pad [data-act=key][data-arg="${ch}"]`); await p.click('.pad [data-act=answer]'); await p.waitForTimeout(1300); }
     await p.evaluate(() => LH.flushed()); await p.goto(B + 'index.html'); await p.waitForTimeout(1500);
     ok(/おすすめ/.test(await p.textContent('#ov').catch(() => '')) && await p.evaluate(() => S.daily.got.rec === true), 'おすすめを 5もん で ごほうび');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+  }
+
+  console.log('20. ABCぼうけん ワールド2「こもじの もり」');
+  {
+    const p = await page({ width: 844, height: 390 });
+    await p.goto(B + 'abc/index.html'); await p.waitForTimeout(300);
+    const save = clear => ({ v: 1, t: 1, started: true, stars: 30, starsSent: 30, learned: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''), lower: clear ? 'abcdefghijklmnopqrstuvwxy'.split('') : [], flags: { intro: true, alphabetClear: clear, bossCleared: true, bridgeOpen: true }, quests: Object.fromEntries(['apple', 'flowers', 'bee', 'sun', 'dog', 'pie', 'cat', 'fish', 'bird', 'colors'].map(q => [q, 'done'])), world: { gate: 'open', gate_forest: 'open', gate_village: 'open', gate_lake: 'open', gate_garden: clear ? 'open' : '' }, areas: ['island', 'forest', 'village', 'lake', 'garden'], hero: { x: 41.5, y: 12.8, dir: 'right', area: 'garden' } });
+    // クリア まえは とおれない
+    await p.evaluate(s => localStorage.setItem('abc-adventure-v1', JSON.stringify(s)), save(false)); await p.reload(); await p.waitForTimeout(400); await p.click('#cont'); await p.waitForTimeout(800);
+    await p.keyboard.down('ArrowRight'); await p.waitForTimeout(900); await p.keyboard.up('ArrowRight'); await p.waitForTimeout(500);
+    ok(await p.evaluate(() => __abc.area()) === 'garden', 'アルファベットを クリアする まえは こもじの もりに いけない');
+    await p.goto(B + 'index.html'); await p.evaluate(s => localStorage.setItem('abc-adventure-v1', JSON.stringify(s)), save(true)); await p.goto(B + 'abc/index.html'); await p.waitForTimeout(400); await p.click('#cont'); await p.waitForTimeout(800);
+    ok(/こもじ/.test(await p.evaluate(() => __abc.objective().text)), 'クリアすると「つぎは」が こもじの もりへ');
+    await p.keyboard.down('ArrowRight'); await p.waitForTimeout(900); await p.keyboard.up('ArrowRight'); await p.waitForTimeout(900);
+    ok(await p.evaluate(() => __abc.area()) === 'lower', 'おしろの したの みちから こもじの もりへ');
+    const talkTo = async id => { await p.evaluate(id => __abc.approach(id), id); await p.keyboard.press('Enter'); await p.waitForTimeout(300); for (let k = 0; k < 12 && await p.$('.dlg'); k++) { await p.keyboard.press('Enter'); await p.waitForTimeout(80); } };
+    const answerAll = async n => { for (let i = 0; i < n; i++) { await p.waitForSelector('.quiz .ch', { timeout: 5000 }); await p.click(`.ch[data-v="${await p.evaluate(() => __abcQ.answer)}"]`); await p.waitForTimeout(1500); } };
+    await talkTo('lowTurtle'); await p.waitForSelector('.teach .pairs'); ok(/Zz/.test((await p.textContent('.teach .pairs')).replace(/\s/g, '')), 'せんせいが おおもじ と こもじの ペアを おしえる'); await p.click('.teach .go');
+    await answerAll(6); for (let k = 0; k < 20 && await p.$('.dlg, .notice, .flystar'); k++) { if (await p.$('.dlg')) await p.keyboard.press('Enter'); else if (await p.$('.notice button')) await p.click('.notice button'); await p.waitForTimeout(150); }
+    ok(await p.evaluate(() => __abc.S.lower.length === 26 && __abc.S.records['l:Z'] && __abc.S.records['l:Z'].asked >= 1), 'こもじを おぼえて きろく（l:Z）');
+    const settle = async () => { for (let k = 0; k < 60; k++) { if (await p.$('.dlg')) await p.keyboard.press('Enter'); else if (await p.$('.notice .go')) await p.click('.notice .go'); else if (await p.evaluate(() => __abc.mode === 'play')) return; await p.waitForTimeout(150); } };
+    await settle();
+    await talkTo('lowerGate'); await answerAll(6); await p.waitForTimeout(800);
+    await settle();
+    ok(await p.evaluate(() => __abc.S.flags.lowerClear === true && __abc.S.world.gate_lower === 'open' && __abc.S.stars >= 30 + 2 + 5), 'こもじの もんで さいごの おさらい → クリア（★）');
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
   }
 
