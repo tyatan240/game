@@ -28,8 +28,14 @@ function pickVoice() {
 if ('speechSynthesis' in window) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
 export const canSpeak = () => 'speechSynthesis' in window;
 
+// おおもじ 1つ だけ（'A' など）は iPad で「Capital A」と よまれるので、もじの なまえの つづりに かえる
+const NAME = { A: 'ay', B: 'bee', C: 'see', D: 'dee', E: 'ee', F: 'eff', G: 'gee', H: 'aitch', I: 'eye', J: 'jay', K: 'kay', L: 'el', M: 'em',
+  N: 'en', O: 'oh', P: 'pee', Q: 'queue', R: 'are', S: 'ess', T: 'tee', U: 'you', V: 'vee', W: 'double you', X: 'ex', Y: 'why', Z: 'zee' };
+export const speakable = text => (typeof text === 'string' && /^[A-Za-z]$/.test(text.trim()) ? NAME[text.trim().toUpperCase()] : text);
+
 export function speak(text, rate = 0.75) {
   if (!settings.voice || !canSpeak()) return;
+  text = speakable(text);
   try {
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);

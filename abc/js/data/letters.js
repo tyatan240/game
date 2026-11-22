@@ -2,18 +2,19 @@
 //   name   … にほんごの よみかた（もじの なまえ）
 //   speak  … おんせいごうせいに よませる ことば。もじ ひとつ だけ（例 'H'）だと へんな よみかたを する
 //            たんまつが あるので、もじの なまえの つづり（'aitch'・'jay' など）に している
+//            iPad（Safari）は おおもじ 1つ（'A'）を「Capital A」と よむので、おおもじ 1つは つかわない
 //   audio  … ろくおん ファイルを つかう ときは ここに パスを かく（あれば こちらを ゆうせん）
 //   phonics… フォニックスの おと（あとの ワールドで つかう。もじの なまえとは べつ）
 export const LETTERS = [
-  { id: 'A', upper: 'A', lower: 'a', name: 'エイ', speak: 'A', phonics: '/æ/', audio: null },
+  { id: 'A', upper: 'A', lower: 'a', name: 'エイ', speak: 'ay', phonics: '/æ/', audio: null },
   { id: 'B', upper: 'B', lower: 'b', name: 'ビー', speak: 'bee', phonics: '/b/', audio: null },
   { id: 'C', upper: 'C', lower: 'c', name: 'シー', speak: 'see', phonics: '/k/', audio: null },
   { id: 'D', upper: 'D', lower: 'd', name: 'ディー', speak: 'dee', phonics: '/d/', audio: null },
-  { id: 'E', upper: 'E', lower: 'e', name: 'イー', speak: 'E', phonics: '/e/', audio: null },
+  { id: 'E', upper: 'E', lower: 'e', name: 'イー', speak: 'ee', phonics: '/e/', audio: null },
   { id: 'F', upper: 'F', lower: 'f', name: 'エフ', speak: 'eff', phonics: '/f/', audio: null },
   { id: 'G', upper: 'G', lower: 'g', name: 'ジー', speak: 'gee', phonics: '/g/', audio: null },
   { id: 'H', upper: 'H', lower: 'h', name: 'エイチ', speak: 'aitch', phonics: '/h/', audio: null },
-  { id: 'I', upper: 'I', lower: 'i', name: 'アイ', speak: 'I', phonics: '/ɪ/', audio: null },
+  { id: 'I', upper: 'I', lower: 'i', name: 'アイ', speak: 'eye', phonics: '/ɪ/', audio: null },
   { id: 'J', upper: 'J', lower: 'j', name: 'ジェイ', speak: 'jay', phonics: '/dʒ/', audio: null },
   { id: 'K', upper: 'K', lower: 'k', name: 'ケイ', speak: 'kay', phonics: '/k/', audio: null },
   { id: 'L', upper: 'L', lower: 'l', name: 'エル', speak: 'el', phonics: '/l/', audio: null },

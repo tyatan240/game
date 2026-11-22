@@ -83,6 +83,7 @@ export class BuildScene {
     this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, .1, 400);
     this.target = new THREE.Vector3(world.w / 2, 1.5, world.d / 2);
     this.az = Math.PI / 4; this.azGoal = this.az; this.el = .62; this.zoom = 1;
+    this.inset = { l: 0, r: 0, t: 0, b: 0 };
 
     this.scene.add(new THREE.AmbientLight(0xffffff, .55));
     const sun = new THREE.DirectionalLight(0xffffff, .7); sun.position.set(.5, 1, .3); this.scene.add(sun);
@@ -110,6 +111,7 @@ export class BuildScene {
     this.eraseBox = new THREE.Mesh(new THREE.BoxGeometry(1.06, 1.06, 1.06), this.ghostNg);
 
     this.ray = new THREE.Raycaster(); this.ndc = new THREE.Vector2();
+    this.animators = [];   // まいフレーム update(now) を よぶ もの（ロボなど）。true の あいだ えがきつづける
     this.dirty = true;
     world.onChange(() => this.rebuild());
     this.resize(); this.rebuild();
@@ -129,12 +131,18 @@ export class BuildScene {
     const c = this.camera, T = this.target, d = 60;
     c.position.set(T.x + d * Math.cos(this.el) * Math.sin(this.az), T.y + d * Math.sin(this.el), T.z + d * Math.cos(this.el) * Math.cos(this.az));
     c.lookAt(T);
-    const aspect = this.vw / this.vh;
-    const h = Math.max(18, 24 / aspect) / this.zoom;
-    c.top = h / 2; c.bottom = -h / 2; c.left = -h * aspect / 2; c.right = h * aspect / 2;
+    // ボタンや パネルで かくれない ところ（inset）の まんなかに せかいが くるように する
+    const I = this.inset, vis = { w: Math.max(80, this.vw - I.l - I.r), h: Math.max(80, this.vh - I.t - I.b) };
+    const h = Math.max(18, 24 / (vis.w / vis.h)) / this.zoom, unit = h / vis.h;
+    const dx = (I.l - I.r) / 2, dy = (I.t - I.b) / 2;
+    c.left = -(this.vw / 2 + dx) * unit; c.right = c.left + this.vw * unit;
+    c.top = (this.vh / 2 + dy) * unit; c.bottom = c.top - this.vh * unit;
     c.updateProjectionMatrix();
     this.dirty = true;
+    if (this.onCamera) this.onCamera(this.az);
   }
+
+  setInset(i) { this.inset = { l: 0, r: 0, t: 0, b: 0, ...i }; this.updateCamera(); }
 
   // カメラ：90どずつ まわす / ドラッグ / ズーム / いどう / もとに もどす
   turn(dir) { this.azGoal += dir * Math.PI / 2; this.dirty = true; }
@@ -153,10 +161,10 @@ export class BuildScene {
     this.target.z = Math.min(this.world.d, Math.max(0, this.target.z));
     this.updateCamera();
   }
-  resetCamera() {
+  resetCamera(base = Math.PI / 4) {
     this.target.set(this.world.w / 2, 1.5, this.world.d / 2);
-    // いちばん ちかい「ななめ 45ど」へ くるっと もどす
-    this.azGoal = Math.round((this.az - Math.PI / 4) / (2 * Math.PI)) * 2 * Math.PI + Math.PI / 4;
+    // いちばん ちかい「もとの むき」（つくる：ななめ 45ど、ロボット：まっすぐ）へ くるっと もどす
+    this.azGoal = Math.round((this.az - base) / (2 * Math.PI)) * 2 * Math.PI + base;
     this.el = .62; this.zoom = 1; this.updateCamera();
   }
   camState() { return { az: +this.azGoal.toFixed(4), el: +this.el.toFixed(4), zoom: +this.zoom.toFixed(3) }; }
@@ -167,6 +175,11 @@ export class BuildScene {
     if (Number.isFinite(s.zoom)) this.zoom = Math.min(3.5, Math.max(.5, s.zoom));
     this.updateCamera();
   }
+  // いちばん ちかい 90どの むきに そろえる（ロボの やじるしが まっすぐに なる）
+  snapAz() {
+    const q = Math.PI / 2;
+    this.azGoal = Math.round((this.azGoal - .01) / q) * q; this.dirty = true;
+  }
   isTurning() { return Math.abs(this.azGoal - this.az) > 1e-3; }
 
   _tick() {
@@ -176,6 +189,8 @@ export class BuildScene {
       this.updateCamera();
       if (this.onTurn) this.onTurn();
     }
+    const now = performance.now();
+    for (const a of this.animators) if (a.update(now)) this.dirty = true;
     if (this.dirty) { this.renderer.render(this.scene, this.camera); this.dirty = false; }
   }
 

@@ -48,17 +48,29 @@ export class World {
     return true;
   }
 
-  // いくつかの そうさを 1かいの「もどす」に まとめる（ロボットの プログラム 1かい分 など）
+  // いくつかの そうさを 1かいの「もどす」に まとめる（「はじめから」など。おわってから 1かいだけ えがく）
   batch(fn) {
     if (this._batch) return fn(this);
-    this._batch = [];
-    let out;
-    try { out = fn(this); } finally {
-      const ops = this._batch; this._batch = null;
-      if (ops.length) this._push(ops);
-      if (ops.length) this._emit();
-    }
-    return out;
+    this.beginBatch();
+    try { return fn(this); } finally { this.endBatch(); }
+  }
+  // じかんを かけて すすむ まとめ（ロボットの じっこう 1かい分）。live:true なら 1つずつ えがく
+  beginBatch(opts = {}) {
+    if (this._batch) { this._depth++; return; }
+    this._batch = []; this._depth = 0; this._live = !!opts.live;
+  }
+  endBatch() {
+    if (!this._batch) return;
+    if (this._depth > 0) { this._depth--; return; }
+    const ops = this._batch, live = this._live; this._batch = null; this._live = false;
+    if (ops.length) this._push(ops);
+    if (ops.length || live) this._emit();
+  }
+  inBatch() { return !!this._batch; }
+  // その れつ（x,z）で いちばん うえの ブロックの うえ（なにも なければ 0）
+  topY(x, z) {
+    for (let y = this.h - 1; y >= 0; y--) if (this.has(x, y, z)) return y + 1;
+    return 0;
   }
 
   undo() {
@@ -105,7 +117,7 @@ export class World {
   _apply(k, before, after) {
     this._set(k, after);
     const op = { k, before: before ? { ...before } : null, after: after ? { ...after } : null };
-    if (this._batch) { this._batch.push(op); return; }
+    if (this._batch) { this._batch.push(op); if (this._live) this._emit(); return; }
     this._push([op]); this._emit();
   }
   _push(ops) {
