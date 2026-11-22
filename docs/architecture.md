@@ -85,3 +85,9 @@
 ## Service Worker（`sw.js`）
 - HTML/JS/CSS/JSON はネット優先（オンラインなら常に最新）→ 失敗時は自分のキャッシュ。画像・フォントはキャッシュ優先。
 - 取得は `cache:'no-cache'` でブラウザの一時保存を使わない。`activate` で自分以外のキャッシュを削除。
+
+## 管理者モード（⚙️設定）
+- オンで ぜんぶ アンロック：`S.owned` を ITEMS 全部にし、元の持ち物を `S.adminBackup` に保存。`testUnlocked` は全レベル true。
+- プログラミング：`program/index.html` の `unlocked()` が `moko-math-v1` の `settings.admin` を見る。まち：`town.js` の `usable`・`hasPart` が `ADMIN()` を見る（まちの保存データは変えない）。
+- オンの間に もらう ごほうびは `grantItem(id)` で渡す（`adminBackup` にも入るので、オフにしても残る）。新しく ごほうびを渡すコードを書くときも `grantItem` を使う。
+- オフ：`owned` を `adminBackup`＋初期の持ち物に戻し、持っていない きせかえ・かぐ・looks を外す。⭐ は変えない。

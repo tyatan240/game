@@ -152,7 +152,7 @@ function streakCard(){
  <div class="muted" style="margin:4px 0 0;text-align:left">${nx?`あと <b>${Math.max(0,nx.n-STREAK.n)}</b>にち つづけると ${nx.item?`「${ITEM[nx.item].name}」が もらえるよ`:`⭐${nx.pts} もらえるよ`}（${nx.n}にち れんぞく）`:'ぜんぶの ごほうびを もらったよ！ すごい！'}${STREAK.today?'':'<br>きょうも 1もん といて スタンプを もらおう！'}</div></div>`}
 function streakCheck(){
  if(!STREAK)return false;const g=STREAK_GOALS.find(x=>!S.streakGot.includes(x.n)&&STREAK.n>=x.n);if(!g)return false;
- S.streakGot.push(g.n);if(g.pts)S.points+=g.pts;if(g.item&&!S.owned.includes(g.item)){S.owned.push(g.item);if(ITEM[g.item].cat==='furn'&&!S.furn.includes(g.item))S.furn.push(g.item)}
+ S.streakGot.push(g.n);if(g.pts)S.points+=g.pts;if(g.item)grantItem(g.item)
  save();sBuy();setTimeout(sBuy,400);render();
  const it=g.item&&ITEM[g.item];
  showPop(`<div class="srlabel">📅 ${g.n}にち れんぞく！</div>${it?(it.cat==='furn'?`<div style="width:200px;margin:0 auto">${roomSVG(S,'happy','hop')}</div>`:charSVG({...S.equip,[it.cat]:it.id},'happy','hop')):charSVG(S.equip,'happy','hop')}
@@ -176,7 +176,7 @@ function goalsCheck(){
 // 🔒 テストの ごうかくで ひみつの なかまが くる（1かいに 1つずつ みせる）
 function secretCheck(){
  const it=newSecrets()[0];if(!it)return false;
- S.owned.push(it.id);if(it.cat==='furn'){if(!S.furn.includes(it.id))S.furn.push(it.id)}
+ grantItem(it.id);
  save();sBuy();setTimeout(sBuy,450);render();
  const pic=['char','outfit','hat','acc'].includes(it.cat)?charSVG({...S.equip,[it.cat]:it.id},'happy','hop'):thumb(it);
  showPop(`<div class="srlabel">🔒 ひみつの ${it.cat==='char'?'なかま':'アイテム'} 🔓</div><div class="gprev sr">${pic}</div><h3>${it.name}</h3>
@@ -328,6 +328,8 @@ function settings(){
  <div class="row"><div class="lbl"><b>ポイントを ちょうせい</b><small>いま ⭐${S.points}</small></div><div class="step"><button data-act="adj" data-arg="-10">−</button><span>10</span><button data-act="adj" data-arg="10">＋</button></div></div>
  </div>
  <div class="card"><div class="lbl"><b>きろく</b><small style="display:block;color:#a88f8f">さんすう：といた かず ${S.stats.q}もん ／ せいかい ${S.stats.ok}もん${S.stats.q?`（${Math.round(S.stats.ok/S.stats.q*100)}%）`:''}<br>こくご：といた かず ${S.kstats.q}もん ／ せいかい ${S.kstats.ok}もん${S.kstats.q?`（${Math.round(S.kstats.ok/S.kstats.q*100)}%）`:''}</small></div></div>
+ <div class="card"><b>🔑 管理者モード</b><div class="muted" style="text-align:left">オンの あいだ、おみせ・きせかえの アイテム ぜんぶ、🏆テストの ぜんレベル、プログラミングの ぜんステージ、まちの パーツ・とち ぜんぶが つかえます（お試し・確認用）。オフに すると もとの もちものに もどります（オンの あいだに テストなどで もらった ごほうびは のこります）。⭐は へりません。</div>
+ <div class="row"><div class="lbl"><b>ぜんぶ アンロック</b><small>${ADMIN()?'オン：ぜんぶ つかえる じょうたい':'オフ'}</small></div><button class="sw ${ADMIN()?'on':''}" data-act="admintg" aria-label="管理者モード"></button></div></div>
  <div class="card"><b>ほぞんの じょうたい</b><div class="muted" style="text-align:left" id="stinfo">しらべています…</div></div>
  <div class="card"><b>データの ひきつぎ（バックアップ）</b><div class="muted" style="text-align:left">べつの たんまつに うつす ときや、バックアップ したい ときに つかいます。「コードを つくる」で でた もじを コピーして、うつしさきの この がめんに はりつけて「よみこむ」を おしてください。<br>※ 学習レポートの履歴は このコードに 含まれません。「📊 学習レポート」の「学習データを保存」で べつに 保存できます。</div>
  <div class="tbtns"><button class="prac" data-act="bkmake">コードを つくる</button><button data-act="bkcopy">コピー</button></div>
@@ -418,6 +420,8 @@ Object.assign(ACT,{
  gwear:a=>{closePop();const it=ITEM[a];if(it.cat==='furn'){if(!S.furn.includes(a))S.furn.push(a)}else equipItem(a);save();sTap();if(it.cat==='furn'||it.cat==='wall'||it.cat==='floor')go('home');else{dressTab='moko';go('dress')}},
  tscale:a=>{S.settings.testScale=Number(a);save();sTap();render()},
  snd:()=>{S.settings.sound=!S.settings.sound;save();render()},
+ admintg:()=>{const on=!ADMIN();showPop(`<h3>🔑 管理者モードを ${on?'オン':'オフ'}に しますか？</h3><div style="text-align:left;font-size:14px">${on?'すべての アイテム・テスト・ステージ・まちの パーツと とちが つかえる ように なります。いまの もちものは 控えに のこして、オフに したとき もどします。':'もちものを 管理者モードに する まえに もどします（オンの あいだに もらった ごほうびは のこります）。着ている・かざっている ものが もっていない ものなら はずします。'}</div><div class="btns"><button class="big gray" data-act="close">やめる</button><button class="big" data-act="adminyes" data-arg="${on?1:0}">${on?'オンに する':'オフに する'}</button></div>`)},
+ adminyes:a=>{adminSet(a==='1');closePop();sTap();render()},
  st:a=>stepSet(a),
  adj:a=>{S.points=Math.max(0,S.points+Number(a));save();render()},
  fullsave:()=>fullSave(),

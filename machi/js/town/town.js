@@ -88,7 +88,9 @@ export function saveTown(t) {
 /* ---------- きまり ---------- */
 export const inMap = (x, y) => x >= 0 && y >= 0 && x < W && y < H;
 // ひらいている エリアか（まちレベルで ひらく）
-export const usable = (t, x, y) => { const a = inMap(x, y) && areaOf(x, y); return !!a && t.unlockedAreas.includes(a.id); };
+// かんりしゃモード（core.js の ADMIN）：ぜんぶの とち・パーツが つかえる（ほぞんデータは かえない）
+const admin = () => typeof ADMIN === 'function' && ADMIN();
+export const usable = (t, x, y) => { const a = inMap(x, y) && areaOf(x, y); return !!a && (t.unlockedAreas.includes(a.id) || admin()); };
 export const groundAt = (t, x, y) => t.ground[x + ',' + y] || 'grass';
 export const CUSTOM_SIZES = [[2, 2], [3, 2], [3, 3], [4, 2], [4, 3]];
 export function sizeOf(o) {
@@ -106,7 +108,7 @@ export function occupancy(t, ignoreId) {
 }
 
 // パーツを つかえるか（むりょう か かった もの）
-export const hasPart = (t, id) => FREE.includes(id) || t.unlockedParts.includes(id);
+export const hasPart = (t, id) => FREE.includes(id) || admin() || t.unlockedParts.includes(id);
 
 // おけるか → { ok, reason }  reason: out（そと）/ full（もう ある）/ water（みず）/ land（みずが ない）
 export function canPlace(t, o, ignoreId, occ = occupancy(t, ignoreId)) {

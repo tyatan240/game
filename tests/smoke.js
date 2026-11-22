@@ -745,6 +745,29 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
   }
 
+  console.log('21. 管理者モード（ぜんぶ アンロック → もとに もどる）');
+  {
+    const p = await page();
+    await p.goto(B + 'program/index.html'); // おうちの ページで かくと とじる ときに うわがき される
+    await p.evaluate(() => { localStorage.setItem('moko-math-v1', JSON.stringify({ v: 1, t: Date.now() + 9e9, points: 50, lastDay: new Date().toDateString(), owned: ['c_moko', 'o_none', 'h_none', 'a_none', 'w_cream', 'f_wood', 'h_hachimaki'] })); });
+    await p.goto(B + 'index.html'); await p.waitForTimeout(400);
+    await p.evaluate(() => { closePop(); go('settings'); });
+    await p.click('[data-act=admintg]'); await p.click('[data-act=adminyes]');
+    ok(await p.evaluate(() => ADMIN() && ITEMS.every(i => S.owned.includes(i.id)) && S.adminBackup.length === 7 && testUnlocked('add1-3') && S.points >= 50), 'オンで ぜんぶの アイテム・テストが つかえる（⭐は そのまま）');
+    const ch = await p.evaluate(() => { const c = ITEMS.find(i => i.cat === 'char' && i.id !== 'c_moko').id; S.equip.char = c; grantItem('a_watch'); save(); return c; });
+    await p.reload(); await p.waitForTimeout(400);
+    ok(await p.evaluate(() => ADMIN() && ITEMS.every(i => S.owned.includes(i.id)) && S.adminBackup.includes('a_watch')), 'ひらきなおしても オンの まま・もらった ごほうびは のこす ばしょに');
+    await p.goto(B + 'program/index.html'); await p.waitForTimeout(300);
+    ok(await p.evaluate(() => unlocked(20)), 'プログラミングの ステージが ぜんぶ ひらく');
+    await p.goto(B + 'machi/index.html'); await p.waitForSelector('body[data-ready="1"]', { timeout: 10000 });
+    ok(await p.evaluate(() => { closePop(); __town.setMode('build'); __town.chooseTool({ kind: 'part', id: 'fountain', r: 0 }); __town.tapBuild(15.5, 3.5); return __town.ui.pending && __town.ui.pending.ok && !__town.town.unlockedAreas.includes('forest') && !__town.town.unlockedParts.includes('fountain'); }), 'まち：ぜんぶの パーツ・とちが つかえる（まちの データは かえない）');
+    await p.goto(B + 'index.html'); await p.waitForTimeout(400);
+    await p.evaluate(() => { closePop(); go('settings'); });
+    await p.click('[data-act=admintg]'); await p.click('[data-act=adminyes]');
+    ok(await p.evaluate(c => !ADMIN() && S.adminBackup === null && S.owned.length === 8 && S.owned.includes('h_hachimaki') && S.owned.includes('a_watch') && S.equip.char === 'c_moko' && !testUnlocked('add1-3') && JSON.parse(localStorage.getItem('moko-math-v1')).owned.length === 8, ch), 'オフで もとの もちもの＋もらった ごほうびに もどる（もっていない きせかえは はずす）');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+  }
+
   console.log('20b. ABCぼうけん：ドラコが うごいた ところに いても うごける');
   {
     const p = await page({ width: 844, height: 390 });

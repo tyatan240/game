@@ -270,8 +270,8 @@ function defState(){return{v:1,t:0,points:0,
  settings:{types:Object.fromEntries(TYPES.map(t=>[t.id,{on:t.def||t.id.startsWith('add'),pts:t.pts}])),
   ktypes:Object.fromEntries(KTYPES.map(t=>[t.id,{on:true,pts:t.pts}])),
   etypes:Object.fromEntries(ETYPES.map(t=>[t.id,{on:true,pts:t.pts}])),
-  perRound:5,perfect:3,daily:5,sound:true,testScale:1,practiceMul:2,practiceBonus:5,progPts:3,gachaOn:true,gachaCost:100,gachaDaily:0,abcPts:10,goalPts:10,goalAll:50},
- lastDay:'',stats:{q:0,ok:0},kstats:{q:0,ok:0},estats:{q:0,ok:0},tests:{},daily:newDaily(''),gacha:{day:'',count:0,pulls:0},looks:{},hw:{},streakGot:[]}}
+  perRound:5,perfect:3,daily:5,sound:true,testScale:1,practiceMul:2,practiceBonus:5,progPts:3,gachaOn:true,gachaCost:100,gachaDaily:0,abcPts:10,goalPts:10,goalAll:50,admin:false},
+ lastDay:'',stats:{q:0,ok:0},kstats:{q:0,ok:0},estats:{q:0,ok:0},tests:{},daily:newDaily(''),gacha:{day:'',count:0,pulls:0},looks:{},hw:{},streakGot:[],adminBackup:null}}
 function merge(d){
  const s=defState(); if(!d||typeof d!=='object') return s;
  if(typeof d.points==='number') s.points=d.points;
@@ -283,6 +283,9 @@ function merge(d){
  for(const k of ['perRound','perfect','daily','practiceMul','practiceBonus','testScale','progPts','gachaCost','gachaDaily','abcPts','goalPts','goalAll']) if(typeof ds[k]==='number') s.settings[k]=ds[k];
  if(typeof ds.sound==='boolean') s.settings.sound=ds.sound;
  if(typeof ds.gachaOn==='boolean') s.settings.gachaOn=ds.gachaOn;
+ if(typeof ds.admin==='boolean') s.settings.admin=ds.admin;
+ if(Array.isArray(d.adminBackup)) s.adminBackup=d.adminBackup.filter(i=>ITEM[i]);
+ if(s.settings.admin){if(!s.adminBackup)s.adminBackup=[...s.owned];s.owned=[...new Set([...s.owned,...ITEMS.map(i=>i.id)])]} // かんりしゃモード：ぜんぶ もっている（もとの もちものは adminBackup）
  if(d.gacha&&typeof d.gacha==='object') Object.assign(s.gacha,d.gacha);
  for(const g of ['types','ktypes','etypes']) if(ds[g]) for(const id in s.settings[g]) if(ds[g][id]) Object.assign(s.settings[g][id],ds[g][id]);
  if(d.stats) Object.assign(s.stats,d.stats);
@@ -295,6 +298,20 @@ function merge(d){
  if(d.looks&&typeof d.looks==='object') for(const c in d.looks){const l=d.looks[c];if(!ITEM[c]||!l||typeof l!=='object')continue;
   s.looks[c]={};for(const k of LOOK) if(l[k]&&ITEM[l[k]]) s.looks[c][k]=l[k]}
  return s}
+/* かんりしゃモード（おうちのひと よう）：オンの あいだ ぜんぶ アンロック。
+   オンに した ときの もちものを adminBackup に のこし、オフで もどす（オンの あいだに もらった ごほうびは grantItem で adminBackup にも いれる） */
+const ADMIN=()=>!!(S&&S.settings&&S.settings.admin);
+function grantItem(id){const it=ITEM[id];if(!it)return;
+ if(!S.owned.includes(id))S.owned.push(id);if(it.cat==='furn'&&!S.furn.includes(id))S.furn.push(id);
+ if(S.settings.admin&&S.adminBackup&&!S.adminBackup.includes(id))S.adminBackup.push(id)}
+function adminSet(on){
+ if(on===ADMIN())return;
+ if(on){S.adminBackup=[...S.owned];S.owned=[...new Set([...S.owned,...ITEMS.map(i=>i.id)])];S.settings.admin=true}
+ else{const own=new Set([...defState().owned,...(S.adminBackup||S.owned)].filter(i=>ITEM[i]));S.owned=[...own];S.adminBackup=null;S.settings.admin=false;
+  const d=defState().equip;for(const k in S.equip)if(!own.has(S.equip[k]))S.equip[k]=d[k];
+  S.furn=S.furn.filter(i=>own.has(i));
+  for(const c in S.looks){if(!own.has(c)){delete S.looks[c];continue}for(const k in S.looks[c])if(!own.has(S.looks[c][k]))delete S.looks[c][k]}}
+ save()}
 const LS='moko-math-v1';
 const loadState=()=>merge((()=>{try{return JSON.parse(localStorage.getItem(LS)||'null')}catch(e){return null}})());
 let S=loadState();
@@ -933,7 +950,7 @@ const SECRETS=ITEMS.filter(i=>i.secret).sort((a,b)=>a.secret-b.secret);
 // あたらしく あえる ひみつの なかま（まだ もっていない もの）
 const newSecrets=()=>{const n=passCount();return SECRETS.filter(i=>n>=i.secret&&!S.owned.includes(i.id))};
 const parseKey=key=>{const [tid,l]=key.split('-');return{tid,lv:Number(l)-1}};
-const testUnlocked=key=>{const {tid,lv}=parseKey(key);return lv===0||!!(S.tests[tid+'-'+lv]||{}).pass};
+const testUnlocked=key=>{const {tid,lv}=parseKey(key);return lv===0||ADMIN()||!!(S.tests[tid+'-'+lv]||{}).pass};
 const passRule=L=>L.need===L.n?'ぜんもん せいかい':`${L.need}もん いじょう せいかい`;
 
 /* ---------- ポップアップと ボタン ---------- */

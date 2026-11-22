@@ -198,7 +198,8 @@ function houseAdd(n){if(n<=0)return;const d=houseWrite(d=>{d.points=(d.points||0
 idbOpen().then(db=>{const r=db.transaction('kv').objectStore('kv').get(HOUSE);r.onsuccess=()=>{const v=r.result,d=houseGet();if(v&&(v.t||0)>(d.t||0)){try{localStorage.setItem(HOUSE,JSON.stringify(v))}catch(e){}const c=document.querySelector('.hbtn.pts');if(c)c.textContent='⭐ '+v.points}}}).catch(()=>{});
 const ptsChip=()=>`<span class="hbtn pts">⭐ ${housePts()}</span>`;
 const cleared=i=>(S.best[i]||0)>0;
-const unlocked=i=>i===0||cleared(i-1);
+const adminOn=()=>{try{return !!((houseGet().settings||{}).admin)}catch(e){return false}}; // おうちの 管理者モード
+const unlocked=i=>i===0||cleared(i-1)||adminOn();
 
 // ===== おと =====
 let AC=null;

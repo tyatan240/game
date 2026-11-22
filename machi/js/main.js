@@ -65,7 +65,7 @@ function draw(time) {
   const [ox, oy] = toScreen(0, 0);
   g.imageSmoothingEnabled = true; g.drawImage(gcv, ox, oy, W * t, H * t);
   g.strokeStyle = 'rgba(80,120,60,.5)'; g.lineWidth = 3; g.strokeRect(ox, oy, W * t, H * t);
-  for (const a of AREAS) if (!town.unlockedAreas.includes(a.id)) drawLocked(a, t, time);
+  for (const a of AREAS) if (!town.unlockedAreas.includes(a.id) && !ADMIN()) drawLocked(a, t, time);
   if (ui.mode === 'build') { // ます目
     g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 1; g.beginPath();
     const [x0, y0] = toWorld(0, 0), [x1, y1] = toWorld(vw, vh);
@@ -329,7 +329,7 @@ function tapView(wx, wy) {
   if (p && p.mob) { beep(880, .05); return openHomework(MOB[p.id]); }
   if (p) { const aq = activeQuestsCache.find(a => a.who === p.id); if (aq && Math.random() < .6) { p.say = aq.ok ? 'できたね！ おねがいを みて！' : aq.q.text; p.sayT = 3.5; } else people.talk(p); beep(880, .05); return; }
   const o = objectAt(wx, wy);
-  if (!o) { const a = areaOf(Math.floor(wx), Math.floor(wy)); if (a && !town.unlockedAreas.includes(a.id)) { beep(660, .03); landInfo(a.id); } return; }
+  if (!o) { const a = areaOf(Math.floor(wx), Math.floor(wy)); if (a && !town.unlockedAreas.includes(a.id) && !ADMIN()) { beep(660, .03); landInfo(a.id); } return; }
   if (o.type === 'town_shop') return openShop();
   if (o.type === 'moko_house') return openMokoHouse(o);
   if (PART[o.type] && PART[o.type].home) return openResidents(o);
