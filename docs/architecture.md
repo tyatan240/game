@@ -74,6 +74,10 @@
 - 数え方：各部屋の `finishTest`（練習は除く）で `dailyOf(S).sansu++` など。プログラミングは `houseDaily()`、ABC は `house.js` の `sendStars()` が おうちのデータの `daily` を直接増やす。
 - ごほうび：おうちに戻ったとき `goalsCheck()` が達成済み・未受け取りの目標に ⭐`goalPts`（既定10）、全部達成で さらに ⭐`goalAll`（既定50）。`daily.got`・`daily.all` で1回だけ。
 
+## きょうの おすすめ・がんばり カレンダー（`index.html`）
+- `learnLoad()`：学習記録（`LH`）を読み、この30日で10問以上・初回正答率70%未満の単元から1つを「🌟 おすすめ」に（`S.daily.rec`。決まったらその日は同じ）。今日その単元で解いた問題数（出題数）が5で ⭐`goalPts`（`daily.got.rec`）。リンクは `#start=種類` で練習が始まる。
+- 連続日数は学習記録の日付から数える。3日 ⭐20／7日「がんばりの はなかんむり」／14日 ⭐50／30日「がんばりの おおきな トロフィー」（`S.streakGot` に もらった日数。1回だけ）。
+
 ## ガチャ
 - `S.settings.gachaCost`（既定100）で1回。10% で ちょうレア（`GACHA_SR` 12種）、それ以外は ふつう（`GACHA_N` 20種）から等確率。
 - 持っているものが出たら ⭐10 返却。`gachaDaily`（0＝無制限）で1日の回数制限、`gachaOn` でオン/オフ。回数は `S.gacha`（`day`,`count`,`pulls`）。

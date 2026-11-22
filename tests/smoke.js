@@ -679,6 +679,27 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await ctx.close();
   }
 
+  console.log('19. きょうの おすすめ・がんばり カレンダー');
+  {
+    const p = await page();
+    await p.goto(B + 'index.html'); await p.waitForTimeout(400);
+    await p.evaluate(async () => { closePop(); const out = [], now = Date.now(); let k = 0;
+      for (let d = 1; d < 8; d++) { const ts = now - d * 864e5; for (let i = 0; i < 3; i++) out.push({ id: 's' + (k++), ts, day: LH.dayKey(ts), questionInstanceId: 'q' + k, questionKey: 'sansu:sub21:' + i, subject: 'sansu', topic: 'sub21', isCorrect: i === 0, attemptNumber: 1, mode: 'practice', activeMs: 5000 }); }
+      await LH.importData({ format: 'moko-learning-history', version: 1, attempts: out, sessions: [] }); S.settings.types.sub21.on = true; S.points = 0; S.settings.goalAll = 0; save(); });
+    await p.reload(); await p.waitForTimeout(1200);
+    const pops = []; for (let i = 0; i < 4 && await p.$('#ov:not(.hide) .pop'); i++) { pops.push((await p.textContent('#ov')).replace(/\s+/g, '')); await p.click('#ov [data-act=close] >> nth=0'); await p.waitForTimeout(400); }
+    ok(pops.some(t => /3にちれんぞく/.test(t)) && pops.some(t => /7にちれんぞく/.test(t)) && await p.evaluate(() => S.owned.includes('h_gambaricrown') && S.points === 20), 'れんぞく 3にち・7にちの ごほうび（⭐20・はなかんむり）');
+    ok(/れんぞく.*7.*にち/.test((await p.textContent('.streak')).replace(/\s+/g, '')), 'がんばり カレンダーに れんぞく にちすう');
+    ok(await p.isVisible('a.goal.osu[href="sansu/index.html#start=sub21"]'), 'にがてな たんげんが「おすすめ」に でる（れんしゅうへの リンク）');
+    // おすすめを 5もん
+    await p.click('a.goal.osu'); await p.waitForTimeout(500);
+    ok(await p.evaluate(() => view === 'quiz' && quiz.sel === 'sub21'), 'おすすめから その れんしゅうが はじまる');
+    for (let i = 0; i < 5; i++) { await p.waitForFunction(() => quiz && !quiz.lock && view === 'quiz'); const a = await p.evaluate(() => quiz.cur.ans); for (const ch of String(a)) await p.click(`.pad [data-act=key][data-arg="${ch}"]`); await p.click('.pad [data-act=answer]'); await p.waitForTimeout(1300); }
+    await p.evaluate(() => LH.flushed()); await p.goto(B + 'index.html'); await p.waitForTimeout(1500);
+    ok(/おすすめ/.test(await p.textContent('#ov').catch(() => '')) && await p.evaluate(() => S.daily.got.rec === true), 'おすすめを 5もん で ごほうび');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+  }
+
   console.log('12a. えいごの こえ（iPad で「Capital A」と よまれない）');
   {
     const p = await page(); await p.goto(B + 'abc/index.html'); await p.waitForTimeout(300);

@@ -186,6 +186,9 @@ const ITEMS=[
  {id:'a_glasses',cat:'acc',name:'まるめがね',test:'yomi-1'},
  {id:'o_sweater',cat:'outfit',name:'ほんの セーター',test:'yomi-2'},
  {id:'u_books',cat:'furn',name:'ほんの やま',test:'yomi-3',box:'148 248 48 54'},
+ /* 📅 れんぞくで もらえる（streak＝れんぞく にちすう。かえない）*/
+ {id:'h_gambaricrown',cat:'hat',name:'がんばりの はなかんむり',streak:7},
+ {id:'u_bigtrophy',cat:'furn',name:'がんばりの おおきな トロフィー',streak:30,box:'240 168 64 112'},
  {id:'a_crayon',cat:'acc',name:'クレヨン',test:'kata-1'},
  {id:'o_parka',cat:'outfit',name:'きいろの パーカー',test:'kata-2'},
  {id:'u_easel',cat:'furn',name:'えを かく イーゼル',test:'kata-3',box:'14 160 70 104'},
@@ -268,7 +271,7 @@ function defState(){return{v:1,t:0,points:0,
   ktypes:Object.fromEntries(KTYPES.map(t=>[t.id,{on:true,pts:t.pts}])),
   etypes:Object.fromEntries(ETYPES.map(t=>[t.id,{on:true,pts:t.pts}])),
   perRound:5,perfect:3,daily:5,sound:true,testScale:1,practiceMul:2,practiceBonus:5,progPts:3,gachaOn:true,gachaCost:100,gachaDaily:0,abcPts:10,goalPts:10,goalAll:50},
- lastDay:'',stats:{q:0,ok:0},kstats:{q:0,ok:0},estats:{q:0,ok:0},tests:{},daily:newDaily(''),gacha:{day:'',count:0,pulls:0},looks:{},hw:{}}}
+ lastDay:'',stats:{q:0,ok:0},kstats:{q:0,ok:0},estats:{q:0,ok:0},tests:{},daily:newDaily(''),gacha:{day:'',count:0,pulls:0},looks:{},hw:{},streakGot:[]}}
 function merge(d){
  const s=defState(); if(!d||typeof d!=='object') return s;
  if(typeof d.points==='number') s.points=d.points;
@@ -287,6 +290,7 @@ function merge(d){
  if(d.estats) Object.assign(s.estats,d.estats);
  if(d.daily&&typeof d.daily==='object') s.daily={...s.daily,...d.daily,got:{...(d.daily.got||{})}};
  if(d.tests&&typeof d.tests==='object') s.tests=d.tests;
+ if(Array.isArray(d.streakGot)) s.streakGot=d.streakGot.filter(n=>typeof n==='number');
  if(d.hw&&typeof d.hw==='object') for(const k in d.hw) if(typeof d.hw[k]==='number') s.hw[k]=d.hw[k];
  if(d.looks&&typeof d.looks==='object') for(const c in d.looks){const l=d.looks[c];if(!ITEM[c]||!l||typeof l!=='object')continue;
   s.looks[c]={};for(const k of LOOK) if(l[k]&&ITEM[l[k]]) s.looks[c][k]=l[k]}
@@ -548,7 +552,7 @@ const FURN={
 // chars を わたすと その キャラたち（[equip…]、0〜2にん）を かく（まちの おうちの なか よう）。わたさなければ いままで どおり
 function roomSVG(st,mood='normal',cls='sway',chars){
  const has=id=>st.furn.includes(id),f=id=>has(id)&&!(id==='u_bed'&&has('u_canopy'))?FURN[id]():'';
- return `<svg viewBox="0 0 360 300">${wallSVG(st.equip.wall)}${f('u_poster')}${f('u_shelf')}${f('u_kukuchart')}${f('u_garland')}${f('u_chandelier')}${f('u_lantern')}${f('u_clock')}${f('u_flowerbox')}${floorSVG(st.equip.floor)}${f('u_castle')}${f('u_sweets')}${f('u_rug')}${f('u_bed')}${f('u_canopy')}${f('u_carriage')}${f('u_cactus')}${f('u_easel')}${f('u_globe')}${f('u_tower')}${f('u_abcblocks')}${f('u_lamp')}${f('u_plant')}
+ return `<svg viewBox="0 0 360 300">${wallSVG(st.equip.wall)}${f('u_poster')}${f('u_shelf')}${f('u_kukuchart')}${f('u_garland')}${f('u_chandelier')}${f('u_lantern')}${f('u_clock')}${f('u_flowerbox')}${floorSVG(st.equip.floor)}${f('u_castle')}${f('u_sweets')}${f('u_rug')}${f('u_bed')}${f('u_canopy')}${f('u_carriage')}${f('u_cactus')}${f('u_bigtrophy')}${f('u_easel')}${f('u_globe')}${f('u_tower')}${f('u_abcblocks')}${f('u_lamp')}${f('u_plant')}
  ${chars?chars.map((eq,i,a)=>`<g transform="translate(${a.length>1?[66,172][i]:118} 100) scale(.62)"><g class="${cls}">${charInner(eq,mood)}</g></g>`).join(''):`<g transform="translate(118 100) scale(.62)" data-act="pet"><g class="${cls}">${charInner(st.equip,mood)}</g></g>`}${f('u_cushion')}${f('u_bear')}${f('u_piano')}${f('u_musicbox')}${f('u_books')}${f('u_unipl')}${f('u_trophy')}${f('u_fish')}${f('u_cake')}${f('u_alarm')}</svg>`}
 
 /* ---------- 🎰 ガチャ げんてい アイテムの え ---------- */
@@ -908,6 +912,9 @@ Object.assign(WALLX,{
  w_letters:()=>{let s=`<rect width="360" height="200" fill="#fff8ee"/>`;const ch='あいうえおかきくけこさしすせそたちつてとなにぬねの',cs=['#ff8fb1','#8fc8ff','#ffd34f','#8fd46d','#c3a8ff'];let k=0;for(let y=30;y<200;y+=38)for(let x=(y/38|0)%2?150:168;x<360;x+=40){s+=`<text x="${x}" y="${y}" font-size="22" font-weight="800" fill="${cs[k%5]}" opacity=".7">${ch[(k*7)%ch.length]}</text>`;k++}return s}
 });
 FURN.u_easel=()=>`<g stroke="#a06a3e" stroke-width="5" stroke-linecap="round"><line x1="32" y1="262" x2="48" y2="170"/><line x1="72" y1="262" x2="56" y2="170"/><line x1="52" y1="250" x2="52" y2="170"/></g><rect x="20" y="164" width="64" height="54" rx="3" fill="#fff" stroke="#c98f55" stroke-width="3"/><circle cx="40" cy="186" r="9" fill="#ffd34f"/><path d="M24 214 Q44 192 60 206 Q70 196 80 214 Z" fill="#8fd46d"/><path d="M60 180 q6 -6 12 0" stroke="#5a8fe0" stroke-width="2.5" fill="none"/><rect x="22" y="216" width="60" height="6" rx="2" fill="#c98f55"/>`;
+/* ---------- れんぞくの ごほうび ---------- */
+HAT.h_gambaricrown=flowerCrown()+`<polygon points="${star(100,42,13,5.5)}" fill="#ffd34f" stroke="#e5a91c" stroke-width="2.5" stroke-linejoin="round"/><path d="M150 82 q16 4 18 22 M150 82 q10 10 4 26" stroke="#ff8fb1" stroke-width="5" fill="none" stroke-linecap="round"/>`;
+FURN.u_bigtrophy=()=>`<ellipse cx="272" cy="276" rx="30" ry="6" fill="rgba(0,0,0,.1)"/><rect x="250" y="254" width="44" height="20" rx="3" fill="#a06a3e"/><rect x="262" y="236" width="20" height="20" fill="#ffd34f" stroke="#e5a91c" stroke-width="2"/><path d="M248 176 h48 v12 q0 36 -24 46 q-24 -10 -24 -46 z" fill="#ffd34f" stroke="#e5a91c" stroke-width="3"/><path d="M248 186 q-16 0 -14 14 q2 12 18 14 M296 186 q16 0 14 14 q-2 12 -18 14" fill="none" stroke="#e5a91c" stroke-width="4"/><polygon points="${star(272,200,10,4.5)}" fill="#fff6a8"/><text x="272" y="268" font-size="10" font-weight="800" text-anchor="middle" fill="#fff">30にち</text>`;
 function thumb(it){
  if(['char','outfit','hat','acc'].includes(it.cat)){const eq=it.cat==='char'?{...S.equip,...(S.looks[it.id]||{}),char:it.id}:{...S.equip,[it.cat]:it.id};return charSVG(eq,it.cat==='char'?'happy':'normal')}
  if(it.cat==='wall') return `<svg viewBox="0 0 360 200" preserveAspectRatio="xMidYMid slice">${wallSVG(it.id)}</svg>`;
