@@ -252,6 +252,17 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
   }
 
+  console.log('12a. えいごの こえ（iPad で「Capital A」と よまれない）');
+  {
+    const p = await page(); await p.goto(B + 'abc/index.html'); await p.waitForTimeout(300);
+    const r = await p.evaluate(async () => {
+      const { LETTERS } = await import('./js/data/letters.js'), { speakable } = await import('./js/engine/audio.js');
+      return { bad: LETTERS.filter(L => /^[A-Z]$/.test(L.speak)).map(L => L.id), A: speakable('A'), e: speakable('e'), word: speakable('apple') };
+    });
+    ok(r.bad.length === 0 && r.A === 'ay' && r.e === 'ee' && r.word === 'apple', 'もじの よみは おおもじ 1つに しない ' + JSON.stringify(r));
+    await p.context().close();
+  }
+
   console.log('12. ブロックタウン（program/build/）');
   {
     const ctx = await browser.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true, serviceWorkers: 'block' });
