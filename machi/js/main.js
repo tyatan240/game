@@ -296,6 +296,10 @@ function openLevel() {
 }
 function paintAt(cx, cy) {
   const id = ui.tool.id;
+  if (PART[id].paint) { // かべ：なぞった マスに 1こずつ おく
+    const o = { type: id, x: cx, y: cy, r: 0 }; if (!canPlace(town, o).ok) return false;
+    town.objects.push({ id: 'o' + town.seq++, ...o }); return true;
+  }
   if (!canPaint(town, cx, cy, id)) return false;
   if (id === 'grass') delete town.ground[cx + ',' + cy]; else town.ground[cx + ',' + cy] = id;
   ui.dirtyGround = true; return true;
@@ -308,7 +312,7 @@ const pop = () => { beep(520); setTimeout(() => beep(780), 60); };
 function tapBuild(wx, wy) {
   const cx = Math.floor(wx), cy = Math.floor(wy), tl = ui.tool;
   if (!tl) return;
-  if (tl.kind === 'part' && PART[tl.id].layer === 'ground') return; // ぬる のは pointer で
+  if (tl.kind === 'part' && (PART[tl.id].layer === 'ground' || PART[tl.id].paint)) return; // ぬる・かべ は pointer で
   if (tl.kind === 'part' || ui.moving) {
     const type = ui.moving ? ui.moving.type : tl.id, r = ui.moving ? (ui.pending ? ui.pending.r : ui.moving.r) : (tl.r || 0), tp = !ui.moving && tplOf(tl);
     const size = ui.moving ? ui.moving.size : tp ? tp.size : undefined, look = ui.moving ? ui.moving.look : tp ? tp.look : undefined;
@@ -337,7 +341,7 @@ function setupInput() {
   const pts = new Map(); let st = null, pinch = null, painting = false;
   const dist = () => { const [a, b] = [...pts.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
   const mid = () => { const [a, b] = [...pts.values()]; return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; };
-  const paintMode = () => ui.mode === 'build' && ui.tool && ui.tool.kind === 'part' && PART[ui.tool.id].layer === 'ground';
+  const paintMode = () => ui.mode === 'build' && ui.tool && ui.tool.kind === 'part' && (PART[ui.tool.id].layer === 'ground' || PART[ui.tool.id].paint);
   cv.addEventListener('pointerdown', e => {
     cv.setPointerCapture(e.pointerId); pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pts.size === 1) {
@@ -397,7 +401,7 @@ function renderBuild() {
 function refreshUndo() { if (!hist) return; $id('tUndo').disabled = !hist.undo.length; $id('tRedo').disabled = !hist.redo.length; }
 function chooseTool(tl) {
   ui.tool = tl; ui.pending = null; ui.sel = null; ui.moving = null;
-  if (tl && tl.kind === 'part') hint(PART[tl.id].layer === 'ground' ? 'ゆびで なぞって ぬろう（ふたゆびで うごかす）' : 'おきたい ところを タップ → もういちど タップで おく');
+  if (tl && tl.kind === 'part') hint(PART[tl.id].layer === 'ground' ? 'ゆびで なぞって ぬろう（ふたゆびで うごかす）' : PART[tl.id].paint ? 'ゆびで なぞって かべを つくろう（ふたゆびで うごかす）' : 'おきたい ところを タップ → もういちど タップで おく');
   else if (tl && tl.kind === 'select') hint('うごかしたい もの・けしたい ものを タップ');
   else hint('');
   renderBuild(); renderAct();
@@ -424,7 +428,7 @@ function renderAct() {
     const p = PART[ui.sel.type];
     b.push(`<button data-a="move">✋ うごかす</button>`);
     if (p.rotate) b.push(`<button data-a="rotsel">🔄 まわす</button>`);
-    if (p.home || ui.sel.type === 'moko_house') b.push(`<button data-a="looks">🎨 みため</button>`);
+    if ((p.home && !p.bed) || ui.sel.type === 'moko_house') b.push(`<button data-a="looks">🎨 みため</button>`);
     if (p.home) b.push(`<button data-a="res">🐾 すむひと</button>`);
     if (!p.fixed) b.push(`<button class="del" data-a="del">🗑 けす</button>`);
   }
@@ -511,8 +515,8 @@ function openResidents(o) {
   showPop(`<h3>${name}</h3><div style="font-weight:800">この おうちに だれが すむ？（2にん まで）</div>
   <div class="people" style="margin-top:8px">${chars.map(c => { const h = liveIn(c), here = h && h.id === o.id; return `<button class="person ${here ? 'on' : ''}" data-act="tres" data-arg="${o.id}|${c}">${charHTML(c)}${ITEM[c].name}<small>${here ? '✔ すんでいる' : h ? 'ほかの おうちに すんでいる' : ''}</small></button>`; }).join('') || '<p class="muted">ガチャや おみせで なかまを ふやそう！</p>'}</div>
   <p class="muted" style="margin:6px 0 0">${ITEM[avatar()].name} は モコの おうちに すんでいるよ</p>
-  <div class="btns"><button class="big gray" data-act="close">とじる</button><button class="big sub" data-act="tlooks" data-arg="${o.id}">🎨 みため</button></div>
-  <div class="btns" style="margin-top:8px"><button class="big" data-act="tinside" data-arg="${o.id}">🏠 なかを みる</button></div>`);
+  <div class="btns"><button class="big gray" data-act="close">とじる</button>${PART[o.type].bed ? '' : `<button class="big sub" data-act="tlooks" data-arg="${o.id}">🎨 みため</button>`}</div>
+  ${PART[o.type].bed ? '' : `<div class="btns" style="margin-top:8px"><button class="big" data-act="tinside" data-arg="${o.id}">🏠 なかを みる</button></div>`}`);
   wide();
 }
 function toggleResident(oid, c) {

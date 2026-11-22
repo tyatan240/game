@@ -84,9 +84,15 @@ localStorage と IndexedDB（DB `moko-town`、ストア `kv`）に二重保存�
 - 家をタップ →「なかを みる」。おへやと同じ形の部屋に、**おへやで持っている** かぐ・かべ・ゆか（`S.owned`）を置ける（持っているもの を使うので、おへやと同じ かぐを使っても減らない）。
 - すんでいる キャラ（2にんまで）が部屋の中に表示される。絵は core.js の `roomSVG(st, mood, cls, chars)`（chars を渡すと そのキャラたちを描く。渡さなければ今までどおり）。
 
+## 1マスずつ つくる（🧱 かべ・ゆか）
+- つくる の カテゴリ「かべ・ゆか」（`cat:'room'`）。まちの じめんに 直接、家の間取りを作る。
+- ゆか（`floor_wood`・`floor_tile`・`floor_carpet`）は じめん（`layer:'ground'`）。みちと同じく なぞって ぬる。
+- かべ（`wall_wood`・`wall_white`・`wall_brick`・`wall_window`）は `paint:true` の 1×1 の もの。なぞった マスに 1こずつ置く（1回なぞる＝「もどす」1回）。あるけない。
+- `door1`（あるける）・`table`・`chair`・`sofa`・`bookshelf`・`bed`。`bed` は `home:true, bed:true`：キャラが すめる（ベッドの下の マスから出入り）。みため・なかを みる は出さない。
+- 保存は今までどおり `objects` と `ground` に入るだけ（形は変えていない）。
+
 ## パーツを足す
 `js/data/parts.js` に1行足し、絵が必要なら `js/render/art.js` の `drawObject` に `case` を足す。ファイルを増やしたら `sw.js` の ASSETS と CACHE。
 
 ## これから（案）
-- かべ・ゆかを 1マスずつ置く ほんかくてきな建築モード
 - おねがいの追加（`quests.js` に足すだけ）

@@ -457,6 +457,17 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     await T(() => { __town.setMode('build'); __town.ui.cat = 'house'; __town.chooseTool({ kind: 'select' }); });
     await p.click('#bparts [data-tpl]'); await T(() => { __town.tapBuild(18.5, 26.5); __town.tapBuild(18.5, 26.5); __town.setMode('view'); });
     ok(await T(() => __town.town.objects.filter(o => o.type === 'house_custom' && o.look.shape === 'round' && o.size.join() === '3,2').length === 2), 'おきにいりから おなじ おうちを たてる');
+    // 1マスずつ つくる（かべ・ゆか・ドア・ベッド）
+    await T(() => { __town.setMode('build'); __town.chooseTool({ kind: 'part', id: 'wall_wood' }); __town.cam.x = 20; __town.cam.y = 22; __town.cam.zoom = 1; });
+    const w1 = await T(() => __town.toScreen(18.5, 22.5)), w2 = await T(() => __town.toScreen(22.5, 22.5));
+    await p.mouse.move(w1[0], w1[1]); await p.mouse.down(); await p.mouse.move(w2[0], w2[1], { steps: 10 }); await p.mouse.up();
+    ok(await T(() => [18, 19, 20, 21, 22].every(x => __town.town.objects.some(o => o.type === 'wall_wood' && o.x === x && o.y === 22))), 'かべを なぞって 1マスずつ おく');
+    await T(() => { __town.chooseTool({ kind: 'part', id: 'floor_wood' }); });
+    const f1 = await T(() => __town.toScreen(19.5, 23.5)), f2 = await T(() => __town.toScreen(21.5, 23.5));
+    await p.mouse.move(f1[0], f1[1]); await p.mouse.down(); await p.mouse.move(f2[0], f2[1], { steps: 8 }); await p.mouse.up();
+    ok(await T(() => [19, 20, 21].every(x => __town.town.ground[x + ',23'] === 'floor_wood')), 'ゆかを ぬる');
+    await T(() => { __town.town.unlockedParts.push('bed'); __town.chooseTool({ kind: 'part', id: 'bed', r: 0 }); __town.tapBuild(20.5, 24.5); __town.tapBuild(20.5, 24.5); __town.chooseTool({ kind: 'part', id: 'door1', r: 0 }); __town.tapBuild(23.5, 23.5); __town.tapBuild(23.5, 23.5); __town.setMode('view'); });
+    ok(await T(() => { const b = __town.town.objects.find(o => o.type === 'bed'); return !!b && Array.isArray(b.residents) && __town.town.objects.some(o => o.type === 'door1'); }), 'ベッドに すめる・ドアを おける');
     // ほぞん・もどる
     await T(() => __town.saveNow()); await p.reload(); await p.waitForSelector('body[data-ready="1"]');
     ok(await T(() => __town.town.objects.some(o => o.type === 'lamp') && __town.town.templates.length === 1 && __town.town.quests.done.includes('flowers') && __town.town.unlockedAreas.includes('forest') && __town.town.objects.find(o => o.room).room.furn[0] === 'u_bed' && __town.town.ground['14,12'] === 'road_dirt' && __town.town.objects.find(o => o.type === 'house_basic').residents[0] === 'c_hamster'), 'とじても のこる（たてもの・みち・すむひと）');
