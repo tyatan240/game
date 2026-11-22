@@ -4,6 +4,7 @@ import * as forest from './areas/forest.js';
 import * as village from './areas/village.js';
 import * as lake from './areas/lake.js';
 import * as garden from './areas/garden.js';
+import * as lower from './areas/lower.js';
 
 const mk = (id, name, m) => ({ id, name, MAP: m.MAP, NPCS: m.NPCS, OBJECTS: m.OBJECTS || [], SIGNS: m.SIGNS || [], CHESTS: m.CHESTS || [], entries: m.entries, exits: m.exits || [] });
 export const AREAS = {
@@ -12,8 +13,9 @@ export const AREAS = {
   village: mk('village', 'どうぶつ むら', village),
   lake: mk('lake', 'みずうみ', lake),
   garden: mk('garden', 'いろの にわ', garden),
+  lower: mk('lower', 'こもじの もり', lower),
 };
-export const ORDER = ['island', 'forest', 'village', 'lake', 'garden'];
+export const ORDER = ['island', 'forest', 'village', 'lake', 'garden', 'lower'];
 
 // チャプター：もじを おぼえる → クエスト → もじの もん（おさらい）→ つぎの エリア
 export const CHAPTERS = [
@@ -21,7 +23,9 @@ export const CHAPTERS = [
   { area: 'forest', letters: ['F', 'G', 'H', 'I', 'J'], quests: ['sun', 'dog'], gate: 'forestGate', next: 'village' },
   { area: 'village', letters: ['K', 'L', 'M', 'N', 'O'], quests: ['pie', 'cat'], gate: 'villageGate', next: 'lake' },
   { area: 'lake', letters: ['P', 'Q', 'R', 'S', 'T'], quests: ['fish', 'bird'], gate: 'lakeGate', next: 'garden' },
-  { area: 'garden', letters: ['U', 'V', 'W', 'X', 'Y', 'Z'], quests: ['colors'], gate: 'castle', final: true },
+  { area: 'garden', letters: ['U', 'V', 'W', 'X', 'Y', 'Z'], quests: ['colors'], gate: 'castle', final: true, next: 'lower' },
+  // ワールド2：こもじ（S.lower に おぼえた こもじ）
+  { area: 'lower', letters: [], lower: 'abcdefghijklmnopqrstuvwxyz'.split(''), quests: [], gate: 'lowerGate' },
 ];
 export const CHAPTER = Object.fromEntries(CHAPTERS.map(c => [c.area, c]));
 

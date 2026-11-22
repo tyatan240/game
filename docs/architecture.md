@@ -9,7 +9,7 @@
 ## common/core.js の主な定義
 | 種類 | 名前 |
 |---|---|
-| 問題の種類 | `TYPES`/`TYPE`（さんすう：add1, add21, add22, sub1, sub21, sub22。`gen()` で出題）、`KTYPES`/`KTYPE`（こくご：k1yomi, k1kaki, k2yomi, k2kaki, kotoba, yomi） |
+| 問題の種類 | `TYPES`/`TYPE`（さんすう：add1, add21, add22, sub1, sub21, sub22, mul1, mul2（九九）, clock1, clock2（時計）。`gen()` で出題、答えは `ansOf(p)`、表示は `probHTML(p,入力)`。時計は `[時,'⏰',分,'h'|'m']`、`def:true` は最初からオン）、`KTYPES`/`KTYPE`（こくご：k1yomi, k1kaki, k2yomi, k2kaki, kotoba, yomi, kata（かたかな）, bun（ぶんの しくみ）） |
 | アイテム | `ITEMS`/`ITEM`、`CATS`（おみせのタブ）、`GACHA_SR`/`GACHA_N` |
 | 保存 | `defState()`、`merge(d)`、`S`（現在の状態）、`save()`、`ready`（IndexedDB 読込完了の Promise）、`resync()` |
 | 絵 | `charSVG(equip,mood,cls)`、`roomSVG(state)`、`thumb(item)`。パーツ：`CH`（キャラ）`OUTFIT` `HAT` `ACC` `ACC_BACK` `WALLX`/`wallSVG` `FLOORX`/`floorSVG` `FURN` |
@@ -27,7 +27,7 @@
 ### さんすう（`sansu/`）・こくご（`kokugo/`）
 - 練習：`perRound` 問。1回目正解で満点、2回目は半分。全問正解ボーナス `perfect`。
 - 🏆テスト：種類×3段階。制限時間＝問題数×`TBASE[種類]`×段階倍率×`testScale`。間違えるとやり直しなし。合格で限定アイテム（`ITEMS` の `test:'種類-段階'`）。前の段階に合格すると次が開く。練習モードはポイント×`practiceMul`、合格ライン到達で `practiceBonus`。
-- こくごの問題データは `kokugo/index.html` 内の `K1`・`K2`（漢字語 [漢字,よみ]）、`KOTOBA`（[問題,正解,誤答…]）、`STORIES`（よみとり）。`makeQ(種類)` が4択を作る。
+- こくごの問題データは `kokugo/index.html` 内の `K1`・`K2`（漢字語 [漢字,よみ]）、`KOTOBA`（[問題,正解,誤答…]）、`STORIES`（よみとり）、`KATA_W`（[ひらがな,カタカナ]。誤答は `KATA_MIX` のまぎらわしい字で作る）、`BUN`（いつ・だれが・どこで・どうする の部品）。`makeQ(種類)` が4択を作る。
 
 ### えいご（`eigo/`）
 - 最初の画面で「ぼうけんに いく」（`abc/`）か「べんきょう する」を選ぶ。べんきょうは さんすう・こくごと同じ（練習＋🏆テスト、限定アイテム）。
@@ -74,6 +74,10 @@
 - 数え方：各部屋の `finishTest`（練習は除く）で `dailyOf(S).sansu++` など。プログラミングは `houseDaily()`、ABC は `house.js` の `sendStars()` が おうちのデータの `daily` を直接増やす。
 - ごほうび：おうちに戻ったとき `goalsCheck()` が達成済み・未受け取りの目標に ⭐`goalPts`（既定10）、全部達成で さらに ⭐`goalAll`（既定50）。`daily.got`・`daily.all` で1回だけ。
 
+## きょうの おすすめ・がんばり カレンダー（`index.html`）
+- `learnLoad()`：学習記録（`LH`）を読み、この30日で10問以上・初回正答率70%未満の単元から1つを「🌟 おすすめ」に（`S.daily.rec`。決まったらその日は同じ）。今日その単元で解いた問題数（出題数）が5で ⭐`goalPts`（`daily.got.rec`）。リンクは `#start=種類` で練習が始まる。
+- 連続日数は学習記録の日付から数える。3日 ⭐20／7日「がんばりの はなかんむり」／14日 ⭐50／30日「がんばりの おおきな トロフィー」（`S.streakGot` に もらった日数。1回だけ）。
+
 ## ガチャ
 - `S.settings.gachaCost`（既定100）で1回。10% で ちょうレア（`GACHA_SR` 12種）、それ以外は ふつう（`GACHA_N` 20種）から等確率。
 - 持っているものが出たら ⭐10 返却。`gachaDaily`（0＝無制限）で1日の回数制限、`gachaOn` でオン/オフ。回数は `S.gacha`（`day`,`count`,`pulls`）。
@@ -81,3 +85,9 @@
 ## Service Worker（`sw.js`）
 - HTML/JS/CSS/JSON はネット優先（オンラインなら常に最新）→ 失敗時は自分のキャッシュ。画像・フォントはキャッシュ優先。
 - 取得は `cache:'no-cache'` でブラウザの一時保存を使わない。`activate` で自分以外のキャッシュを削除。
+
+## 管理者モード（⚙️設定）
+- オンで ぜんぶ アンロック：`S.owned` を ITEMS 全部にし、元の持ち物を `S.adminBackup` に保存。`testUnlocked` は全レベル true。
+- プログラミング：`program/index.html` の `unlocked()` が `moko-math-v1` の `settings.admin` を見る。まち：`town.js` の `usable`・`hasPart` が `ADMIN()` を見る（まちの保存データは変えない）。
+- オンの間に もらう ごほうびは `grantItem(id)` で渡す（`adminBackup` にも入るので、オフにしても残る）。新しく ごほうびを渡すコードを書くときも `grantItem` を使う。
+- オフ：`owned` を `adminBackup`＋初期の持ち物に戻し、持っていない きせかえ・かぐ・looks を外す。⭐ は変えない。

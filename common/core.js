@@ -12,7 +12,27 @@ const TYPES=[
  {id:'sub1', name:'1けた − 1けた', ex:'8 − 3',  pts:1, gen:()=>{const a=r(2,9);return [a,'-',r(1,a)]}},
  {id:'sub21',name:'2けた − 1けた', ex:'25 − 7', pts:2, gen:()=>[r(10,99),'-',r(1,9)]},
  {id:'sub22',name:'2けた − 2けた', ex:'52 − 18',pts:3, gen:()=>{const a=r(11,99);return [a,'-',r(10,a)]}},
+ /* ふえた もんだい（2026-11）。def＝さいしょから オン。とけいは [じ,'⏰',ふん,'h'(じを こたえる)|'m'(ふんを こたえる)] */
+ {id:'mul1', name:'くく（2・3・4・5のだん）',ex:'3 × 4',pts:2,def:true, gen:()=>[r(2,5),'×',r(1,9)]},
+ {id:'mul2', name:'くく（6・7・8・9・1のだん）',ex:'7 × 8',pts:3,def:true, gen:()=>[[1,6,7,8,9][r(0,4)],'×',r(1,9)]},
+ {id:'clock1',name:'とけい（なんじ・なんじはん）',ex:'3じはん',pts:1,def:true, gen:()=>{const h=r(1,12),half=Math.random()<.5;return [h,'⏰',half?30:0,half?'m':'h']}},
+ {id:'clock2',name:'とけい（なんじ なんぷん）',ex:'4じ25ふん',pts:2,def:true, gen:()=>[r(1,12),'⏰',Math.random()<.7?r(0,11)*5:r(0,59),'m']},
 ];
+// こたえ（たしざん・ひきざん・かけざん・とけい）
+const ansOf=p=>p[1]==='+'?p[0]+p[2]:p[1]==='-'?p[0]-p[2]:p[1]==='×'?p[0]*p[2]:p[3]==='h'?p[0]:p[2];
+// とけいの え（なんじ なんぷん）
+function clockSVG(h,m,size=150){
+ const a=d=>(d-90)*Math.PI/180,hd=((h%12)+m/60)*30,md=m*6,hx=50+Math.cos(a(hd))*24,hy=50+Math.sin(a(hd))*24,mx=50+Math.cos(a(md))*36,my=50+Math.sin(a(md))*36;
+ let s=`<svg viewBox="0 0 100 100" width="${size}" height="${size}" class="clock"><circle cx="50" cy="50" r="47" fill="#fff" stroke="#ff8fb1" stroke-width="4"/>`;
+ for(let i=0;i<60;i++){const r1=i%5?42:39,x1=50+Math.cos(a(i*6))*r1,y1=50+Math.sin(a(i*6))*r1,x2=50+Math.cos(a(i*6))*44,y2=50+Math.sin(a(i*6))*44;s+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#c9b4b4" stroke-width="${i%5?.8:1.8}"/>`}
+ for(let n=1;n<=12;n++)s+=`<text x="${(50+Math.cos(a(n*30))*32).toFixed(1)}" y="${(50+Math.sin(a(n*30))*32+3.6).toFixed(1)}" font-size="10" font-weight="800" text-anchor="middle" fill="#5a4646">${n}</text>`;
+ return s+`<line x1="50" y1="50" x2="${hx.toFixed(1)}" y2="${hy.toFixed(1)}" stroke="#5a4646" stroke-width="4.5" stroke-linecap="round"/><line x1="50" y1="50" x2="${mx.toFixed(1)}" y2="${my.toFixed(1)}" stroke="#4a8fe0" stroke-width="3" stroke-linecap="round"/><circle cx="50" cy="50" r="3.5" fill="#ff8fb1"/></svg>`}
+// もんだいの ひょうじ（にゅうりょく ちゅうの こたえ つき）
+function probHTML(p,input){
+ const box=`<span class="ans">${input||'&nbsp;'}</span>`;
+ if(p[1]==='⏰')return `<div class="clockq">${clockSVG(p[0],p[2])}<div>${p[3]==='h'?`${box} じ`:`${p[0]} じ ${box} ふん`}</div></div>`;
+ return `${p[0]} ${{'+':'＋','-':'−','×':'×'}[p[1]]} ${p[2]} = ${box}`}
+const probText=p=>p[1]==='⏰'?`とけい ${p[0]}じ${p[2]}ふん（${p[3]==='h'?'なんじ':'なんぷん'}）`:`${p[0]} ${{'+':'＋','-':'−','×':'×'}[p[1]]} ${p[2]} = ?`;
 const TYPE=Object.fromEntries(TYPES.map(t=>[t.id,t]));
 const KTYPES=[
  {id:'k1yomi',name:'かん字よみ 1ねん',ex:'山 → やま',pts:1},
@@ -21,6 +41,8 @@ const KTYPES=[
  {id:'k2kaki',name:'かん字かき 2ねん',ex:'あう → 会う',pts:3},
  {id:'kotoba',name:'ことば・ぶん',ex:'はんたいことば・は を へ',pts:2},
  {id:'yomi',name:'よみとり',ex:'おはなしを よんで こたえる',pts:3},
+ {id:'kata',name:'かたかな',ex:'ばなな → バナナ',pts:1},
+ {id:'bun',name:'ぶんの しくみ',ex:'だれが？ どうする？',pts:2},
 ];
 const KTYPE=Object.fromEntries(KTYPES.map(t=>[t.id,t]));
 // えいご（ABCぼうけんで おぼえた もじ・ことばを つかう）
@@ -97,6 +119,19 @@ const ITEMS=[
  {id:'a_heart',cat:'acc',name:'ハートのステッキ',test:'sub22-1'},
  {id:'h_halo',cat:'hat',name:'てんしのわっか',test:'sub22-2'},
  {id:'o_rainbow',cat:'outfit',name:'にじいろドレス',test:'sub22-3'},
+ /* くく・とけい の テスト */
+ {id:'a_abacus',cat:'acc',name:'そろばん',test:'mul1-1'},
+ {id:'h_hachimaki',cat:'hat',name:'がんばる はちまき',test:'mul1-2'},
+ {id:'u_kukuchart',cat:'furn',name:'くくの ひょう',test:'mul1-3',box:'222 112 70 58'},
+ {id:'a_medal',cat:'acc',name:'きんの メダル',test:'mul2-1'},
+ {id:'o_kukushirt',cat:'outfit',name:'くくの Tシャツ',test:'mul2-2'},
+ {id:'w_numbers',cat:'wall',name:'すうじの かべ',test:'mul2-3'},
+ {id:'a_watch',cat:'acc',name:'うでどけい',test:'clock1-1'},
+ {id:'h_sunclip',cat:'hat',name:'おひさまの かみかざり',test:'clock1-2'},
+ {id:'u_alarm',cat:'furn',name:'めざましどけい',test:'clock1-3',box:'296 228 58 70'},
+ {id:'a_hourglass',cat:'acc',name:'すなどけい',test:'clock2-1'},
+ {id:'o_vest',cat:'outfit',name:'ちょうネクタイの ベスト',test:'clock2-2'},
+ {id:'f_clockrug',cat:'floor',name:'とけいの じゅうたん',test:'clock2-3'},
 
  /* 🎰 ガチャ げんてい（sr＝ちょうレア／n＝ふつう）。おみせでは かえない */
  {id:'c_princess',cat:'char',name:'おひめさまの ロゼ',gacha:'sr'},
@@ -151,6 +186,15 @@ const ITEMS=[
  {id:'a_glasses',cat:'acc',name:'まるめがね',test:'yomi-1'},
  {id:'o_sweater',cat:'outfit',name:'ほんの セーター',test:'yomi-2'},
  {id:'u_books',cat:'furn',name:'ほんの やま',test:'yomi-3',box:'148 248 48 54'},
+ /* 📅 れんぞくで もらえる（streak＝れんぞく にちすう。かえない）*/
+ {id:'h_gambaricrown',cat:'hat',name:'がんばりの はなかんむり',streak:7},
+ {id:'u_bigtrophy',cat:'furn',name:'がんばりの おおきな トロフィー',streak:30,box:'240 168 64 112'},
+ {id:'a_crayon',cat:'acc',name:'クレヨン',test:'kata-1'},
+ {id:'o_parka',cat:'outfit',name:'きいろの パーカー',test:'kata-2'},
+ {id:'u_easel',cat:'furn',name:'えを かく イーゼル',test:'kata-3',box:'14 160 70 104'},
+ {id:'a_notebook',cat:'acc',name:'ノート',test:'bun-1'},
+ {id:'h_pencilclip',cat:'hat',name:'えんぴつの かみかざり',test:'bun-2'},
+ {id:'w_letters',cat:'wall',name:'ひらがなの かべ',test:'bun-3'},
  /* 🔤 えいご テスト ごうかくで もらえる アイテム */
  {id:'a_abcballoon',cat:'acc',name:'ABCの ふうせん',test:'ealisten-1'},
  {id:'h_abccap',cat:'hat',name:'ABCの キャップ',test:'ealisten-2'},
@@ -223,11 +267,11 @@ function defState(){return{v:1,t:0,points:0,
  owned:['c_moko','o_none','h_none','a_none','w_cream','f_wood'],
  equip:{char:'c_moko',outfit:'o_none',hat:'h_none',acc:'a_none',wall:'w_cream',floor:'f_wood'},
  furn:[],
- settings:{types:Object.fromEntries(TYPES.map(t=>[t.id,{on:t.id.startsWith('add'),pts:t.pts}])),
+ settings:{types:Object.fromEntries(TYPES.map(t=>[t.id,{on:t.def||t.id.startsWith('add'),pts:t.pts}])),
   ktypes:Object.fromEntries(KTYPES.map(t=>[t.id,{on:true,pts:t.pts}])),
   etypes:Object.fromEntries(ETYPES.map(t=>[t.id,{on:true,pts:t.pts}])),
-  perRound:5,perfect:3,daily:5,sound:true,testScale:1,practiceMul:2,practiceBonus:5,progPts:3,gachaOn:true,gachaCost:100,gachaDaily:0,abcPts:10,goalPts:10,goalAll:50},
- lastDay:'',stats:{q:0,ok:0},kstats:{q:0,ok:0},estats:{q:0,ok:0},tests:{},daily:newDaily(''),gacha:{day:'',count:0,pulls:0},looks:{},hw:{}}}
+  perRound:5,perfect:3,daily:5,sound:true,testScale:1,practiceMul:2,practiceBonus:5,progPts:3,gachaOn:true,gachaCost:100,gachaDaily:0,abcPts:10,goalPts:10,goalAll:50,admin:false},
+ lastDay:'',stats:{q:0,ok:0},kstats:{q:0,ok:0},estats:{q:0,ok:0},tests:{},daily:newDaily(''),gacha:{day:'',count:0,pulls:0},looks:{},hw:{},streakGot:[],adminBackup:null}}
 function merge(d){
  const s=defState(); if(!d||typeof d!=='object') return s;
  if(typeof d.points==='number') s.points=d.points;
@@ -239,6 +283,9 @@ function merge(d){
  for(const k of ['perRound','perfect','daily','practiceMul','practiceBonus','testScale','progPts','gachaCost','gachaDaily','abcPts','goalPts','goalAll']) if(typeof ds[k]==='number') s.settings[k]=ds[k];
  if(typeof ds.sound==='boolean') s.settings.sound=ds.sound;
  if(typeof ds.gachaOn==='boolean') s.settings.gachaOn=ds.gachaOn;
+ if(typeof ds.admin==='boolean') s.settings.admin=ds.admin;
+ if(Array.isArray(d.adminBackup)) s.adminBackup=d.adminBackup.filter(i=>ITEM[i]);
+ if(s.settings.admin){if(!s.adminBackup)s.adminBackup=[...s.owned];s.owned=[...new Set([...s.owned,...ITEMS.map(i=>i.id)])]} // かんりしゃモード：ぜんぶ もっている（もとの もちものは adminBackup）
  if(d.gacha&&typeof d.gacha==='object') Object.assign(s.gacha,d.gacha);
  for(const g of ['types','ktypes','etypes']) if(ds[g]) for(const id in s.settings[g]) if(ds[g][id]) Object.assign(s.settings[g][id],ds[g][id]);
  if(d.stats) Object.assign(s.stats,d.stats);
@@ -246,10 +293,25 @@ function merge(d){
  if(d.estats) Object.assign(s.estats,d.estats);
  if(d.daily&&typeof d.daily==='object') s.daily={...s.daily,...d.daily,got:{...(d.daily.got||{})}};
  if(d.tests&&typeof d.tests==='object') s.tests=d.tests;
+ if(Array.isArray(d.streakGot)) s.streakGot=d.streakGot.filter(n=>typeof n==='number');
  if(d.hw&&typeof d.hw==='object') for(const k in d.hw) if(typeof d.hw[k]==='number') s.hw[k]=d.hw[k];
  if(d.looks&&typeof d.looks==='object') for(const c in d.looks){const l=d.looks[c];if(!ITEM[c]||!l||typeof l!=='object')continue;
   s.looks[c]={};for(const k of LOOK) if(l[k]&&ITEM[l[k]]) s.looks[c][k]=l[k]}
  return s}
+/* かんりしゃモード（おうちのひと よう）：オンの あいだ ぜんぶ アンロック。
+   オンに した ときの もちものを adminBackup に のこし、オフで もどす（オンの あいだに もらった ごほうびは grantItem で adminBackup にも いれる） */
+const ADMIN=()=>!!(S&&S.settings&&S.settings.admin);
+function grantItem(id){const it=ITEM[id];if(!it)return;
+ if(!S.owned.includes(id))S.owned.push(id);if(it.cat==='furn'&&!S.furn.includes(id))S.furn.push(id);
+ if(S.settings.admin&&S.adminBackup&&!S.adminBackup.includes(id))S.adminBackup.push(id)}
+function adminSet(on){
+ if(on===ADMIN())return;
+ if(on){S.adminBackup=[...S.owned];S.owned=[...new Set([...S.owned,...ITEMS.map(i=>i.id)])];S.settings.admin=true}
+ else{const own=new Set([...defState().owned,...(S.adminBackup||S.owned)].filter(i=>ITEM[i]));S.owned=[...own];S.adminBackup=null;S.settings.admin=false;
+  const d=defState().equip;for(const k in S.equip)if(!own.has(S.equip[k]))S.equip[k]=d[k];
+  S.furn=S.furn.filter(i=>own.has(i));
+  for(const c in S.looks){if(!own.has(c)){delete S.looks[c];continue}for(const k in S.looks[c])if(!own.has(S.looks[c][k]))delete S.looks[c][k]}}
+ save()}
 const LS='moko-math-v1';
 const loadState=()=>merge((()=>{try{return JSON.parse(localStorage.getItem(LS)||'null')}catch(e){return null}})());
 let S=loadState();
@@ -507,8 +569,8 @@ const FURN={
 // chars を わたすと その キャラたち（[equip…]、0〜2にん）を かく（まちの おうちの なか よう）。わたさなければ いままで どおり
 function roomSVG(st,mood='normal',cls='sway',chars){
  const has=id=>st.furn.includes(id),f=id=>has(id)&&!(id==='u_bed'&&has('u_canopy'))?FURN[id]():'';
- return `<svg viewBox="0 0 360 300">${wallSVG(st.equip.wall)}${f('u_poster')}${f('u_shelf')}${f('u_garland')}${f('u_chandelier')}${f('u_lantern')}${f('u_clock')}${f('u_flowerbox')}${floorSVG(st.equip.floor)}${f('u_castle')}${f('u_sweets')}${f('u_rug')}${f('u_bed')}${f('u_canopy')}${f('u_carriage')}${f('u_cactus')}${f('u_globe')}${f('u_tower')}${f('u_abcblocks')}${f('u_lamp')}${f('u_plant')}
- ${chars?chars.map((eq,i,a)=>`<g transform="translate(${a.length>1?[66,172][i]:118} 100) scale(.62)"><g class="${cls}">${charInner(eq,mood)}</g></g>`).join(''):`<g transform="translate(118 100) scale(.62)" data-act="pet"><g class="${cls}">${charInner(st.equip,mood)}</g></g>`}${f('u_cushion')}${f('u_bear')}${f('u_piano')}${f('u_musicbox')}${f('u_books')}${f('u_unipl')}${f('u_trophy')}${f('u_fish')}${f('u_cake')}</svg>`}
+ return `<svg viewBox="0 0 360 300">${wallSVG(st.equip.wall)}${f('u_poster')}${f('u_shelf')}${f('u_kukuchart')}${f('u_garland')}${f('u_chandelier')}${f('u_lantern')}${f('u_clock')}${f('u_flowerbox')}${floorSVG(st.equip.floor)}${f('u_castle')}${f('u_sweets')}${f('u_rug')}${f('u_bed')}${f('u_canopy')}${f('u_carriage')}${f('u_cactus')}${f('u_bigtrophy')}${f('u_easel')}${f('u_globe')}${f('u_tower')}${f('u_abcblocks')}${f('u_lamp')}${f('u_plant')}
+ ${chars?chars.map((eq,i,a)=>`<g transform="translate(${a.length>1?[66,172][i]:118} 100) scale(.62)"><g class="${cls}">${charInner(eq,mood)}</g></g>`).join(''):`<g transform="translate(118 100) scale(.62)" data-act="pet"><g class="${cls}">${charInner(st.equip,mood)}</g></g>`}${f('u_cushion')}${f('u_bear')}${f('u_piano')}${f('u_musicbox')}${f('u_books')}${f('u_unipl')}${f('u_trophy')}${f('u_fish')}${f('u_cake')}${f('u_alarm')}</svg>`}
 
 /* ---------- 🎰 ガチャ げんてい アイテムの え ---------- */
 const RB=['#ffb3cf','#ffd59a','#fff09a','#bdf0c0','#b3dcff','#d6c2ff'];
@@ -827,6 +889,49 @@ FURN.u_sweets=()=>`<rect x="258" y="196" width="88" height="62" rx="4" fill="#ff
  <rect x="266" y="210" width="18" height="16" rx="3" fill="#fff6c2" stroke="#e8659f" stroke-width="2"/><rect x="322" y="210" width="18" height="16" rx="3" fill="#fff6c2" stroke="#e8659f" stroke-width="2"/>
  <line x1="252" y1="262" x2="252" y2="226" stroke="#fff" stroke-width="4"/><line x1="252" y1="262" x2="252" y2="226" stroke="#f0c8d8" stroke-width="1.5"/><circle cx="252" cy="218" r="10" fill="#ff9ec7" stroke="#e8659f" stroke-width="2"/><path d="M246 218 a6 6 0 0 1 12 0 a3 3 0 0 1 -6 0" fill="none" stroke="#fff" stroke-width="2"/>`;
 
+/* ---------- くく・とけい の テストの ごほうび ---------- */
+Object.assign(ACC,{
+ a_abacus:`<g transform="translate(150 176) rotate(-14)"><rect x="-20" y="-16" width="40" height="32" rx="3" fill="#c98f55" stroke="#8f5e33" stroke-width="2.5"/><rect x="-16" y="-12" width="32" height="24" fill="#fff6e6"/><line x1="-16" y1="-4" x2="16" y2="-4" stroke="#8f5e33" stroke-width="2"/>${[-11,-4,3,10].map(x=>`<line x1="${x}" y1="-12" x2="${x}" y2="12" stroke="#c9a67a" stroke-width="1"/><ellipse cx="${x}" cy="-8" rx="3.2" ry="2.2" fill="#e8605a"/><ellipse cx="${x}" cy="3" rx="3.2" ry="2.2" fill="#5a8fe0"/><ellipse cx="${x}" cy="8" rx="3.2" ry="2.2" fill="#5a8fe0"/>`).join('')}</g>`,
+ a_medal:`<path d="M84 160 L100 186 L116 160" fill="none" stroke="#5a8fe0" stroke-width="6"/><circle cx="100" cy="194" r="13" fill="#ffd34f" stroke="#e5a91c" stroke-width="3"/><polygon points="${star(100,194,7,3)}" fill="#fff6a8"/>`,
+ a_watch:`<rect x="134" y="176" width="16" height="10" rx="3" fill="#ff8fb1" transform="rotate(-25 142 181)"/><circle cx="142" cy="181" r="8" fill="#fff" stroke="#e0719a" stroke-width="2.5"/><path d="M142 181 v-4 M142 181 h3" stroke="#5a4646" stroke-width="1.6" stroke-linecap="round"/>`,
+ a_hourglass:`<g transform="translate(156 168) rotate(10)"><rect x="-13" y="-22" width="26" height="5" rx="2" fill="#c98f55"/><rect x="-13" y="17" width="26" height="5" rx="2" fill="#c98f55"/><path d="M-10 -17 L10 -17 L2 0 L10 17 L-10 17 L-2 0 Z" fill="#e3f4ff" stroke="#9ec3e0" stroke-width="2"/><path d="M-6 -12 L6 -12 L1 -3 L-1 -3 Z" fill="#ffd34f"/><path d="M-7 15 L7 15 L0 7 Z" fill="#ffd34f"/></g>${sparkle(176,146,5)}`
+});
+Object.assign(HAT,{
+ h_hachimaki:`<path d="M44 92 Q100 70 156 92 L154 104 Q100 82 46 104 Z" fill="#fff" stroke="#e0719a" stroke-width="2.5"/><circle cx="100" cy="88" r="8" fill="#ff5c6c"/><path d="M152 96 q18 -6 26 4 M154 102 q16 4 20 16" stroke="#fff" stroke-width="7" stroke-linecap="round" fill="none"/><path d="M152 96 q18 -6 26 4 M154 102 q16 4 20 16" stroke="#e0719a" stroke-width="2" fill="none"/>`,
+ h_sunclip:`<g transform="translate(136 62)"><g stroke="#ffb73a" stroke-width="4" stroke-linecap="round">${[0,45,90,135,180,225,270,315].map(d=>{const a=d*Math.PI/180;return `<line x1="${(Math.cos(a)*13).toFixed(1)}" y1="${(Math.sin(a)*13).toFixed(1)}" x2="${(Math.cos(a)*19).toFixed(1)}" y2="${(Math.sin(a)*19).toFixed(1)}"/>`}).join('')}</g><circle r="11" fill="#ffd34f" stroke="#ffb73a" stroke-width="2.5"/><circle cx="-4" cy="-2" r="1.6" fill="#5a4646"/><circle cx="4" cy="-2" r="1.6" fill="#5a4646"/><path d="M-4 3 Q0 7 4 3" stroke="#5a4646" stroke-width="1.6" fill="none" stroke-linecap="round"/></g>`
+});
+Object.assign(OUTFIT,{
+ o_kukushirt:`<path d="M66 162 Q100 152 134 162 L142 220 Q100 228 58 220 Z" fill="#8fd4ff" stroke="#5aa8d6" stroke-width="3"/><text x="100" y="200" font-size="22" font-weight="800" text-anchor="middle" fill="#fff" stroke="#5aa8d6" stroke-width="1">9×9</text>`,
+ o_vest:`<path d="M66 162 Q100 152 134 162 L142 220 Q100 228 58 220 Z" fill="#fff" stroke="#c9bcbc" stroke-width="3"/><path d="M72 164 L100 214 L128 164 L136 220 Q100 228 64 220 Z" fill="#5a6bb8" stroke="#3f4f94" stroke-width="2.5"/><path d="M100 172 l-12 -7 v14z M100 172 l12 -7 v14z" fill="#e8605a" stroke="#b8403e" stroke-width="1.5"/><circle cx="100" cy="172" r="3" fill="#b8403e"/><g fill="#ffd34f"><circle cx="100" cy="192" r="2.5"/><circle cx="100" cy="204" r="2.5"/></g>`
+});
+Object.assign(WALLX,{
+ w_numbers:()=>{let s=`<rect width="360" height="200" fill="#f2f8ff"/>`;const cs=['#ff8fb1','#8fc8ff','#ffd34f','#8fd46d','#c3a8ff'];let k=0;for(let y=24;y<200;y+=40)for(let x=(y/40|0)%2?150:170;x<360;x+=46){s+=`<text x="${x}" y="${y}" font-size="24" font-weight="800" fill="${cs[k%5]}" opacity=".75" transform="rotate(${(k%3-1)*10} ${x} ${y})">${(k*7)%10}</text>`;k++}return s}
+});
+Object.assign(FLOORX,{
+ f_clockrug:()=>`<rect y="200" width="360" height="100" fill="#e9c89d"/><ellipse cx="180" cy="256" rx="150" ry="38" fill="#fff6e6" stroke="#ff8fb1" stroke-width="5"/>${[...Array(12)].map((_,i)=>{const a=(i*30-90)*Math.PI/180;return `<text x="${(180+Math.cos(a)*126).toFixed(1)}" y="${(260+Math.sin(a)*28).toFixed(1)}" font-size="12" font-weight="800" text-anchor="middle" fill="#c8577f">${i||12}</text>`}).join('')}<line x1="180" y1="256" x2="180" y2="234" stroke="#5a4646" stroke-width="4" stroke-linecap="round"/><line x1="180" y1="256" x2="252" y2="256" stroke="#4a8fe0" stroke-width="3" stroke-linecap="round"/>`
+});
+Object.assign(FURN,{
+ u_kukuchart:()=>`<rect x="226" y="116" width="62" height="50" rx="4" fill="#fffbe8" stroke="#8fc8ff" stroke-width="3"/><text x="257" y="130" font-size="9" font-weight="800" text-anchor="middle" fill="#4a8fe0">くくの ひょう</text>${[0,1,2].map(j=>[0,1,2,3].map(i=>`<rect x="${232+i*13}" y="${135+j*9}" width="11" height="7" rx="1.5" fill="${['#ffd6e2','#d6ecff','#fff3c4'][j]}"/>`).join('')).join('')}`,
+ u_alarm:()=>`<ellipse cx="325" cy="294" rx="24" ry="5" fill="rgba(0,0,0,.08)"/><g stroke="#e0719a" stroke-width="3" stroke-linecap="round"><line x1="308" y1="288" x2="302" y2="296"/><line x1="342" y1="288" x2="348" y2="296"/></g><circle cx="308" cy="244" r="8" fill="#ffd34f" stroke="#e5a91c" stroke-width="2"/><circle cx="342" cy="244" r="8" fill="#ffd34f" stroke="#e5a91c" stroke-width="2"/><circle cx="325" cy="266" r="24" fill="#ff8fb1" stroke="#e0719a" stroke-width="3"/><circle cx="325" cy="266" r="18" fill="#fff"/><path d="M325 266 v-11 M325 266 h8" stroke="#5a4646" stroke-width="2.5" stroke-linecap="round"/>`
+});
+/* ---------- かたかな・ぶんの しくみ の ごほうび ---------- */
+Object.assign(ACC,{
+ a_crayon:`<g transform="translate(152 172) rotate(-12)"><rect x="-18" y="-12" width="36" height="24" rx="3" fill="#ffd34f" stroke="#e5a91c" stroke-width="2.5"/>${['#ff6b7d','#5a8fe0','#5bb36a','#b48cff'].map((c,i)=>`<rect x="${-14+i*8}" y="-22" width="6" height="14" rx="1.5" fill="${c}"/><path d="M${-14+i*8} -22 l3 -5 l3 5z" fill="${c}"/>`).join('')}</g>`,
+ a_notebook:`<g transform="translate(150 174) rotate(-10)"><rect x="-16" y="-20" width="32" height="40" rx="3" fill="#8fc8ff" stroke="#5a96d8" stroke-width="2.5"/><rect x="-11" y="-14" width="22" height="9" rx="2" fill="#fff"/><text x="0" y="-7" font-size="7" font-weight="800" text-anchor="middle" fill="#5a96d8">こくご</text><line x1="-16" y1="8" x2="16" y2="8" stroke="#5a96d8" stroke-width="1.5"/></g>`
+});
+Object.assign(HAT,{
+ h_pencilclip:`<g transform="translate(134 60) rotate(30)"><rect x="-4" y="-18" width="8" height="30" fill="#ffd34f" stroke="#e5a91c" stroke-width="2"/><path d="M-4 12 L0 22 L4 12 Z" fill="#f6dcb4" stroke="#c9a67a" stroke-width="1.5"/><path d="M-1.2 18 L0 22 L1.2 18Z" fill="#5a4646"/><rect x="-4" y="-24" width="8" height="6" rx="2" fill="#ff9fb8"/></g>`
+});
+Object.assign(OUTFIT,{
+ o_parka:`<path d="M64 162 Q100 150 136 162 L144 220 Q100 230 56 220 Z" fill="#ffd34f" stroke="#e5a91c" stroke-width="3"/><path d="M78 160 Q100 178 122 160" fill="#ffe680" stroke="#e5a91c" stroke-width="2.5"/><line x1="100" y1="170" x2="100" y2="220" stroke="#e5a91c" stroke-width="2"/><g stroke="#fff" stroke-width="2.5" stroke-linecap="round"><line x1="92" y1="168" x2="90" y2="184"/><line x1="108" y1="168" x2="110" y2="184"/></g><rect x="74" y="196" width="52" height="14" rx="5" fill="#ffe680" stroke="#e5a91c" stroke-width="2"/>`
+});
+Object.assign(WALLX,{
+ w_letters:()=>{let s=`<rect width="360" height="200" fill="#fff8ee"/>`;const ch='あいうえおかきくけこさしすせそたちつてとなにぬねの',cs=['#ff8fb1','#8fc8ff','#ffd34f','#8fd46d','#c3a8ff'];let k=0;for(let y=30;y<200;y+=38)for(let x=(y/38|0)%2?150:168;x<360;x+=40){s+=`<text x="${x}" y="${y}" font-size="22" font-weight="800" fill="${cs[k%5]}" opacity=".7">${ch[(k*7)%ch.length]}</text>`;k++}return s}
+});
+FURN.u_easel=()=>`<g stroke="#a06a3e" stroke-width="5" stroke-linecap="round"><line x1="32" y1="262" x2="48" y2="170"/><line x1="72" y1="262" x2="56" y2="170"/><line x1="52" y1="250" x2="52" y2="170"/></g><rect x="20" y="164" width="64" height="54" rx="3" fill="#fff" stroke="#c98f55" stroke-width="3"/><circle cx="40" cy="186" r="9" fill="#ffd34f"/><path d="M24 214 Q44 192 60 206 Q70 196 80 214 Z" fill="#8fd46d"/><path d="M60 180 q6 -6 12 0" stroke="#5a8fe0" stroke-width="2.5" fill="none"/><rect x="22" y="216" width="60" height="6" rx="2" fill="#c98f55"/>`;
+/* ---------- れんぞくの ごほうび ---------- */
+HAT.h_gambaricrown=flowerCrown()+`<polygon points="${star(100,42,13,5.5)}" fill="#ffd34f" stroke="#e5a91c" stroke-width="2.5" stroke-linejoin="round"/><path d="M150 82 q16 4 18 22 M150 82 q10 10 4 26" stroke="#ff8fb1" stroke-width="5" fill="none" stroke-linecap="round"/>`;
+FURN.u_bigtrophy=()=>`<ellipse cx="272" cy="276" rx="30" ry="6" fill="rgba(0,0,0,.1)"/><rect x="250" y="254" width="44" height="20" rx="3" fill="#a06a3e"/><rect x="262" y="236" width="20" height="20" fill="#ffd34f" stroke="#e5a91c" stroke-width="2"/><path d="M248 176 h48 v12 q0 36 -24 46 q-24 -10 -24 -46 z" fill="#ffd34f" stroke="#e5a91c" stroke-width="3"/><path d="M248 186 q-16 0 -14 14 q2 12 18 14 M296 186 q16 0 14 14 q-2 12 -18 14" fill="none" stroke="#e5a91c" stroke-width="4"/><polygon points="${star(272,200,10,4.5)}" fill="#fff6a8"/><text x="272" y="268" font-size="10" font-weight="800" text-anchor="middle" fill="#fff">30にち</text>`;
 function thumb(it){
  if(['char','outfit','hat','acc'].includes(it.cat)){const eq=it.cat==='char'?{...S.equip,...(S.looks[it.id]||{}),char:it.id}:{...S.equip,[it.cat]:it.id};return charSVG(eq,it.cat==='char'?'happy':'normal')}
  if(it.cat==='wall') return `<svg viewBox="0 0 360 200" preserveAspectRatio="xMidYMid slice">${wallSVG(it.id)}</svg>`;
@@ -835,7 +940,7 @@ function thumb(it){
 const tabs=(list,cur,act)=>`<div class="tabs">${list.map(([k,l])=>`<button class="${k===cur?'on':''}" data-act="${act}" data-arg="${k}">${l}</button>`).join('')}</div>`;
 
 /* ---------- さんすうの テスト（ていぎ）---------- */
-const TBASE={add1:4,add21:7,add22:12,sub1:4.5,sub21:8,sub22:14,k1yomi:5,k1kaki:5,k2yomi:6,k2kaki:6,kotoba:8,yomi:15,ealisten:5,eaname:5,ewlisten:6,ewpic:6}; // 1もん あたりの きほん びょうすう
+const TBASE={add1:4,add21:7,add22:12,sub1:4.5,sub21:8,sub22:14,mul1:4,mul2:4.5,clock1:7,clock2:10,k1yomi:5,k1kaki:5,k2yomi:6,k2kaki:6,kotoba:8,yomi:15,kata:6,bun:10,ealisten:5,eaname:5,ewlisten:6,ewpic:6}; // 1もん あたりの きほん びょうすう
 const TLV=[{n:10,need:9,mul:1,medal:'🥉',name:'テスト1'},{n:15,need:14,mul:.8,medal:'🥈',name:'テスト2'},{n:20,need:20,mul:.65,medal:'🥇',name:'テスト3'}];
 const testLimit=(tid,lv)=>Math.round(TLV[lv].n*TBASE[tid]*TLV[lv].mul*S.settings.testScale);
 const testItem=key=>ITEMS.find(i=>i.test===key);
@@ -845,7 +950,7 @@ const SECRETS=ITEMS.filter(i=>i.secret).sort((a,b)=>a.secret-b.secret);
 // あたらしく あえる ひみつの なかま（まだ もっていない もの）
 const newSecrets=()=>{const n=passCount();return SECRETS.filter(i=>n>=i.secret&&!S.owned.includes(i.id))};
 const parseKey=key=>{const [tid,l]=key.split('-');return{tid,lv:Number(l)-1}};
-const testUnlocked=key=>{const {tid,lv}=parseKey(key);return lv===0||!!(S.tests[tid+'-'+lv]||{}).pass};
+const testUnlocked=key=>{const {tid,lv}=parseKey(key);return lv===0||ADMIN()||!!(S.tests[tid+'-'+lv]||{}).pass};
 const passRule=L=>L.need===L.n?'ぜんもん せいかい':`${L.need}もん いじょう せいかい`;
 
 /* ---------- ポップアップと ボタン ---------- */

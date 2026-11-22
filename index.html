@@ -28,6 +28,11 @@ nav{grid-template-columns:repeat(5,1fr)}
 @keyframes drop{0%{opacity:1;transform:translateY(-26px)}60%{opacity:1;transform:translateY(4px)}80%{transform:translateY(-3px)}100%{opacity:1;transform:translateY(0)}}
 .ginfo{text-align:center;font-weight:800;margin:6px 0 10px}
 .items .item.unk .n{color:#c9bcbc}
+.goal.osu{background:linear-gradient(90deg,#fff7d6,#fff)}
+.streak .stamps{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:6px}
+.streak .stamp{display:flex;flex-direction:column;align-items:center;font-size:11px;font-weight:800;color:#a88f8f}
+.streak .stamp svg{width:100%;max-width:40px}
+.streak .stamp.today span{color:#e0719a}
 .room .todoor{position:absolute;right:3%;top:30%;width:12%;display:flex;flex-direction:column;align-items:center;text-decoration:none;filter:drop-shadow(0 2px 0 rgba(0,0,0,.12))}
 .room .todoor svg{width:100%;border-radius:0}
 .room .todoor span{margin-top:-2px;background:#fff;border-radius:999px;padding:1px 8px;font-weight:800;font-size:12px;color:#7a9b4f;box-shadow:0 2px 0 #cfe8bd;white-space:nowrap}
@@ -81,6 +86,7 @@ a.big{text-align:center;text-decoration:none}
   </nav>
 </div>
 <div id="ov" class="hide"></div>
+<script src="common/learning-history.js"></script>
 <script src="common/core.js"></script>
 <script>
 /* ---------- がめん ---------- */
@@ -113,12 +119,52 @@ function goalsCard(){
  const d=dailyOf(S),gs=goals(),n=gs.filter(g=>d[g.key]>=g.need).length;
  return `<div class="card goals"><div class="ghead"><b>🎯 きょうの もくひょう</b><span>${n} / ${gs.length}</span></div>
  ${gs.map(g=>{const v=Math.min(d[g.key],g.need),ok=v>=g.need;return `<a class="goal ${ok?'ok':''}" href="${g.href}"><span class="gi">${ok?'✅':g.icon}</span><span class="gt">${g.text}<small>${v} / ${g.need}　${ok?'たっせい！':'ごほうび ⭐'+S.settings.goalPts}</small></span><span class="gbar"><i style="width:${v/g.need*100}%"></i></span></a>`}).join('')}
- <div class="gall ${d.all?'ok':''}">${d.all?'🎉 ぜんぶ たっせい！ ⭐'+S.settings.goalAll+' もらったよ':'ぜんぶ たっせいで ボーナス ⭐'+S.settings.goalAll+'！'}</div></div>`}
+ ${OSU?`<a class="goal osu ${d.got.rec?'ok':''}" href="${OSU.href}"><span class="gi">${d.got.rec?'✅':'🌟'}</span><span class="gt">おすすめ：「${OSU.name}」を ${OSU_NEED}もん れんしゅう<small>${OSU.count} / ${OSU_NEED}　${d.got.rec?'たっせい！':'ごほうび ⭐'+S.settings.goalPts}</small></span><span class="gbar"><i style="width:${OSU.count/OSU_NEED*100}%"></i></span></a>`:''}
+ <div class="gall ${d.all?'ok':''}">${d.all?'🎉 ぜんぶ たっせい！ ⭐'+S.settings.goalAll+' もらったよ':'ぜんぶ たっせいで ボーナス ⭐'+S.settings.goalAll+'！'}</div></div>
+ ${streakCard()}`}
+/* ---------- きょうの おすすめ（学習レポートと れんどう）---------- */
+// この30にちで 10もん いじょう といて、さいしょの せいかいが 70% みまんの たんげん を 1つ（1にち おなじ）。といた かずは 学習記録 から かぞえる
+let OSU=null,STREAK=null;const OSU_NEED=5;
+const OSU_T={sansu:['types',()=>TYPE,'sansu'],kokugo:['ktypes',()=>KTYPE,'kokugo'],eigo:['etypes',()=>ETYPE,'eigo']};
+async function learnLoad(){
+ if(!window.LH)return;
+ const now=Date.now(),all=await LH.getAttempts({startDate:now-400*864e5}),d=dailyOf(S),month=all.filter(a=>a.ts>=now-30*864e5);
+ if(!d.rec||!d.rec.s){ // まだ きまって いない ときは ひらく たびに さがす（きまったら その日は おなじ）
+  const ok=t=>OSU_T[t.subject]&&S.settings[OSU_T[t.subject][0]][t.topic]&&S.settings[OSU_T[t.subject][0]][t.topic].on;
+  const w=LH.byTopic(month.filter(a=>a.subject!=='prog')).filter(t=>t.questions>=10&&t.firstOk/t.questions<.7&&ok(t)).sort((a,b)=>a.firstOk/a.questions-b.firstOk/b.questions)[0];
+  const nr=w?{s:w.subject,t:w.topic}:{s:'',t:''};if(!d.rec||d.rec.s!==nr.s){d.rec=nr;save()}}
+ if(d.rec.s&&OSU_T[d.rec.s]){
+  const T=OSU_T[d.rec.s],tbl=T[1](),today=all.filter(a=>a.day===LH.dayKey(now)&&a.subject===d.rec.s&&a.topic===d.rec.t);
+  OSU={name:(tbl[d.rec.t]||{}).name||d.rec.t,href:`${T[2]}/index.html#start=${d.rec.t}`,count:Math.min(OSU_NEED,LH.instances(today).filter(q=>q.hasFirst).length)}}
+ else OSU=null;
+ // れんぞく べんきょう（学習記録の ひにち から）
+ const days=new Set(all.map(a=>a.day)),t0=new Date();t0.setHours(0,0,0,0);
+ let n=0;for(let i=days.has(LH.dayKey(+t0))?0:1;days.has(LH.dayKey(+t0-i*864e5));i++)n++;
+ STREAK={n,week:[...Array(7)].map((_,i)=>days.has(LH.dayKey(+t0-(6-i)*864e5))),today:days.has(LH.dayKey(+t0))};
+ if(view==='home')render();goalsCheck()}
+/* ---------- ずっと つづけた ごほうび ---------- */
+const STREAK_GOALS=[{n:3,pts:20},{n:7,item:'h_gambaricrown'},{n:14,pts:50},{n:30,item:'u_bigtrophy'}];
+function streakCard(){
+ if(!STREAK)return '';const nx=STREAK_GOALS.find(g=>!S.streakGot.includes(g.n));
+ const lab=['日','月','火','水','木','金','土'],t0=new Date();
+ return `<div class="card streak"><div class="ghead"><b>📅 がんばり カレンダー</b><span>れんぞく <b style="font-size:20px;color:#e0719a">${STREAK.n}</b> にち</span></div>
+ <div class="stamps">${STREAK.week.map((on,i)=>{const d=new Date(+t0-(6-i)*864e5);return `<div class="stamp ${on?'on':''} ${i===6?'today':''}"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" fill="${on?'#ffb3cf':'#f3e6e6'}" stroke="${on?'#e0719a':'#e5d6d6'}" stroke-width="2.5"/>${on?`<path d="M20 9 l3 7 7 .6 -5.4 4.6 1.7 7 -6.3 -3.8 -6.3 3.8 1.7 -7 -5.4 -4.6 7 -.6z" fill="#fff"/>`:''}</svg><span>${lab[d.getDay()]}</span></div>`}).join('')}</div>
+ <div class="muted" style="margin:4px 0 0;text-align:left">${nx?`あと <b>${Math.max(0,nx.n-STREAK.n)}</b>にち つづけると ${nx.item?`「${ITEM[nx.item].name}」が もらえるよ`:`⭐${nx.pts} もらえるよ`}（${nx.n}にち れんぞく）`:'ぜんぶの ごほうびを もらったよ！ すごい！'}${STREAK.today?'':'<br>きょうも 1もん といて スタンプを もらおう！'}</div></div>`}
+function streakCheck(){
+ if(!STREAK)return false;const g=STREAK_GOALS.find(x=>!S.streakGot.includes(x.n)&&STREAK.n>=x.n);if(!g)return false;
+ S.streakGot.push(g.n);if(g.pts)S.points+=g.pts;if(g.item)grantItem(g.item)
+ save();sBuy();setTimeout(sBuy,400);render();
+ const it=g.item&&ITEM[g.item];
+ showPop(`<div class="srlabel">📅 ${g.n}にち れんぞく！</div>${it?(it.cat==='furn'?`<div style="width:200px;margin:0 auto">${roomSVG(S,'happy','hop')}</div>`:charSVG({...S.equip,[it.cat]:it.id},'happy','hop')):charSVG(S.equip,'happy','hop')}
+ <h3>${it?it.name:`⭐＋${g.pts}`}</h3><div>まいにち がんばって えらいね！${it?'<br>とくべつな ごほうびだよ':''}</div><div class="btns"><button class="big" data-act="close">やったー！</button></div>`);
+ $('#ov .pop').classList.add('sr');return true}
 // たっせい した もくひょうの ごほうびを わたす（おうちに もどった とき）
 function goalsCheck(){
  if(!$('#ov').classList.contains('hide'))return;
  if(secretCheck())return; // ひみつの なかまが さき（とじると もういちど goalsCheck が よばれる）
+ if(streakCheck())return;
  const d=dailyOf(S),gs=goals(),newly=gs.filter(g=>d[g.key]>=g.need&&!d.got[g.id]);
+ if(OSU&&OSU.count>=OSU_NEED&&!d.got.rec)newly.push({id:'rec',text:`🌟 おすすめ：「${OSU.name}」を ${OSU_NEED}もん`});
  const allNow=gs.every(g=>d[g.key]>=g.need)&&!d.all;
  if(!newly.length&&!allNow)return;
  let add=0;newly.forEach(g=>{d.got[g.id]=true;add+=S.settings.goalPts});
@@ -130,7 +176,7 @@ function goalsCheck(){
 // 🔒 テストの ごうかくで ひみつの なかまが くる（1かいに 1つずつ みせる）
 function secretCheck(){
  const it=newSecrets()[0];if(!it)return false;
- S.owned.push(it.id);if(it.cat==='furn'){if(!S.furn.includes(it.id))S.furn.push(it.id)}
+ grantItem(it.id);
  save();sBuy();setTimeout(sBuy,450);render();
  const pic=['char','outfit','hat','acc'].includes(it.cat)?charSVG({...S.equip,[it.cat]:it.id},'happy','hop'):thumb(it);
  showPop(`<div class="srlabel">🔒 ひみつの ${it.cat==='char'?'なかま':'アイテム'} 🔓</div><div class="gprev sr">${pic}</div><h3>${it.name}</h3>
@@ -145,7 +191,7 @@ function secretInfo(id){
 function study(){
  const card=(href,ic,bg,name,col,desc)=>`<a class="study" href="${href}"><div class="ic" style="background:${bg}">${ic}</div><div><b style="color:${col}">${name}</b><span>${desc}</span></div></a>`;
  return `<h2>📚 おべんきょう</h2><p class="muted" style="text-align:left">どの へやでも ⭐ポイントが もらえるよ。ためた ポイントは おみせで つかえるよ！</p>
- ${card('sansu/index.html','✏️','#ffe3ea','さんすう','#c8577f','たしざん・ひきざん、🏆テストで とくべつな アイテム')}
+ ${card('sansu/index.html','✏️','#ffe3ea','さんすう','#c8577f','たしざん・ひきざん・くく・とけい、🏆テストで とくべつな アイテム')}
  ${card('kokugo/index.html','📖','#e3f4e8','こくご','#3f9a63','かん字・ことば・よみとり、🏆テストで とくべつな アイテム')}
  ${card('program/index.html','🤖','#dff3fc','プログラミング','#2b7fa8','ブロックを ならべて ロボットの ピコを うごかそう')}
  ${card('eigo/index.html','🔤','#fff0d6','えいご','#d9822b','ぼうけん（ABCぼうけん）と、れんしゅう・🏆テスト')}`}
@@ -282,15 +328,59 @@ function settings(){
  <div class="row"><div class="lbl"><b>ポイントを ちょうせい</b><small>いま ⭐${S.points}</small></div><div class="step"><button data-act="adj" data-arg="-10">−</button><span>10</span><button data-act="adj" data-arg="10">＋</button></div></div>
  </div>
  <div class="card"><div class="lbl"><b>きろく</b><small style="display:block;color:#a88f8f">さんすう：といた かず ${S.stats.q}もん ／ せいかい ${S.stats.ok}もん${S.stats.q?`（${Math.round(S.stats.ok/S.stats.q*100)}%）`:''}<br>こくご：といた かず ${S.kstats.q}もん ／ せいかい ${S.kstats.ok}もん${S.kstats.q?`（${Math.round(S.kstats.ok/S.kstats.q*100)}%）`:''}</small></div></div>
+ <div class="card"><b>🔑 管理者モード</b><div class="muted" style="text-align:left">オンの あいだ、おみせ・きせかえの アイテム ぜんぶ、🏆テストの ぜんレベル、プログラミングの ぜんステージ、まちの パーツ・とち ぜんぶが つかえます（お試し・確認用）。オフに すると もとの もちものに もどります（オンの あいだに テストなどで もらった ごほうびは のこります）。⭐は へりません。</div>
+ <div class="row"><div class="lbl"><b>ぜんぶ アンロック</b><small>${ADMIN()?'オン：ぜんぶ つかえる じょうたい':'オフ'}</small></div><button class="sw ${ADMIN()?'on':''}" data-act="admintg" aria-label="管理者モード"></button></div></div>
  <div class="card"><b>ほぞんの じょうたい</b><div class="muted" style="text-align:left" id="stinfo">しらべています…</div></div>
  <div class="card"><b>データの ひきつぎ（バックアップ）</b><div class="muted" style="text-align:left">べつの たんまつに うつす ときや、バックアップ したい ときに つかいます。「コードを つくる」で でた もじを コピーして、うつしさきの この がめんに はりつけて「よみこむ」を おしてください。<br>※ 学習レポートの履歴は このコードに 含まれません。「📊 学習レポート」の「学習データを保存」で べつに 保存できます。</div>
  <div class="tbtns"><button class="prac" data-act="bkmake">コードを つくる</button><button data-act="bkcopy">コピー</button></div>
  <textarea id="bkout" readonly style="width:100%;height:60px;margin-top:8px;font-size:11px;border:2px solid #ffd0dc;border-radius:10px"></textarea>
  <textarea id="bkin" placeholder="ここに コードを はりつけ" style="width:100%;height:60px;margin-top:8px;font-size:11px;border:2px solid #ffd0dc;border-radius:10px;-webkit-user-select:text;user-select:text"></textarea>
  <div class="tbtns"><button data-act="bkload">${bkArm?'もう いちど おすと うわがき します':'よみこむ'}</button></div><div class="msg" id="bkmsg"></div></div>
+ <div class="card"><b>まるごと バックアップ（ファイル）</b><div class="muted" style="text-align:left">おうち・プログラミング・ABCぼうけん・ブロックタウン・まち・学習レポートの記録を、ぜんぶ 1つの ファイルに 保存します。iPad の かいかえ や こしょうに そなえて、ときどき 保存してください。</div>
+ <div class="tbtns"><button class="prac" data-act="fullsave">ぜんぶ 保存</button><label style="flex:1;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;border-radius:12px;padding:8px 4px;font-weight:800;font-size:13px;background:#ff8fb1;color:#fff;box-shadow:0 3px 0 #e0688f">ファイルから 復元<input type="file" id="fullin" accept="application/json,.json" hidden></label></div><div class="msg" id="fullmsg"></div></div>
  <button class="big gray" data-act="reset">${resetArm?'もう いちど おすと ぜんぶ けします':'データを リセット'}</button>
  <div style="height:10px"></div><button class="big" data-act="go" data-arg="home">おわる</button>`}
 let bkArm=false;
+/* ---------- まるごと バックアップ（ぜんぶの へやの データ ＋ 学習記録）---------- */
+// 保存キーは そのまま（形は かえない）。ふくげん は かくにん してから、それぞれの キーに かきもどす
+const FULL_KEYS=['moko-math-v1','piko-prog-v1','abc-adventure-v1','robomoko-build-v1','moko-town-v1'];
+const FULL_NAME={'moko-math-v1':'おうち（⭐・もちもの・きせかえ・テスト）','piko-prog-v1':'プログラミング','abc-adventure-v1':'ABCぼうけん','robomoko-build-v1':'ブロックタウン','moko-town-v1':'モコの まち'};
+async function fullSave(){
+ save();const data={};
+ for(const k of FULL_KEYS){try{const v=k==='moko-math-v1'?S:JSON.parse(localStorage.getItem(k)||'null');if(v)data[k]=v}catch(e){}}
+ let history=null;try{if(window.LH)history=await LH.exportAll()}catch(e){}
+ const o={format:'moko-house-backup',version:1,savedAt:new Date().toISOString(),data,history};
+ const d=new Date(),name=`moko-backup-${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.json`;
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(o)],{type:'application/json'}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);
+ const m=$('#fullmsg');if(m)m.textContent=`ほぞん しました（${Object.keys(data).length}この へや${history?`・学習記録 ${history.attempts.length}件`:''}）`}
+let fullPending=null;
+function fullCheck(o){
+ if(!o||o.format!=='moko-house-backup'||typeof o.version!=='number'||!o.data||typeof o.data!=='object')throw new Error('format');
+ if(o.version>1)throw new Error('version');
+ const keys=FULL_KEYS.filter(k=>o.data[k]&&typeof o.data[k]==='object');
+ if(o.data['moko-math-v1']&&typeof o.data['moko-math-v1'].points!=='number')throw new Error('format');
+ if(!keys.length)throw new Error('empty');
+ return keys}
+async function fullPick(f){
+ const m=$('#fullmsg');let o;
+ try{o=JSON.parse(await f.text());fullPending={o,keys:fullCheck(o)}}catch(e){fullPending=null;if(m)m.textContent=e.message==='version'?'この アプリより あたらしい ファイルです':'バックアップの ファイルでは ありません';return}
+ const h=o.history&&Array.isArray(o.history.attempts)?o.history.attempts.length:0,md=o.data['moko-math-v1'];
+ showPop(`<h3 style="font-size:20px">ファイルから 復元しますか？</h3><div style="text-align:left;line-height:1.7">${fullPending.keys.map(k=>'・'+FULL_NAME[k]).join('<br>')}${h?`<br>・学習記録 ${h}件（今の記録に たします）`:''}</div>
+ ${md?`<div style="margin-top:6px">⭐ ${md.points}（いまは ⭐ ${S.points}）</div>`:''}<div class="muted" style="margin-top:6px">ファイルに ある へやの データは、いまの データと いれかわります。<br>（${new Date(o.savedAt||0).toLocaleString('ja-JP')} に ほぞん）</div>
+ <div class="btns"><button class="big gray" data-act="close">やめる</button><button class="big" data-act="fullyes">復元する</button></div>`)}
+async function fullRestore(){
+ const P=fullPending;if(!P)return closePop();fullPending=null;const now=Date.now();
+ for(const k of P.keys){
+  const v=JSON.parse(JSON.stringify(P.o.data[k]));
+  if(k==='moko-math-v1'){S=merge(v);save();continue} // おうちは merge を とおして 2かしょに ほぞん
+  if('t' in v||k!=='piko-prog-v1')v.t=now;           // あたらしい ほうが つかわれる ように
+  try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}
+  const db={'robomoko-build-v1':'robomoko-build','moko-town-v1':'moko-town'}[k];
+  if(db)try{const q=indexedDB.open(db,1);q.onupgradeneeded=()=>q.result.createObjectStore('kv');q.onsuccess=()=>{try{q.result.transaction('kv','readwrite').objectStore('kv').put(v,k)}catch(e){}}}catch(e){}
+ }
+ let hm='';try{if(P.o.history&&window.LH){const r=await LH.importData(P.o.history);hm=`・学習記録 ${r.added}件`}}catch(e){}
+ closePop();render();const m=$('#fullmsg');if(m)m.textContent=`復元しました（${P.keys.length}この へや${hm}）`}
+document.addEventListener('change',e=>{if(e.target&&e.target.id==='fullin'){const f=e.target.files[0];e.target.value='';if(f)fullPick(f)}});
 const bkEnc=o=>btoa(unescape(encodeURIComponent(JSON.stringify(o))));
 const bkDec=t=>JSON.parse(decodeURIComponent(escape(atob(t.replace(/\s/g,'')))));
 const LIM={perRound:[3,20],perfect:[0,50],daily:[0,50],t:[0,20],practiceMul:[1,5],practiceBonus:[0,50],progPts:[0,10],abcPts:[0,30],goalPts:[0,50],goalAll:[0,200],gachaCost:[10,500],gachaDaily:[0,10]};
@@ -330,8 +420,12 @@ Object.assign(ACT,{
  gwear:a=>{closePop();const it=ITEM[a];if(it.cat==='furn'){if(!S.furn.includes(a))S.furn.push(a)}else equipItem(a);save();sTap();if(it.cat==='furn'||it.cat==='wall'||it.cat==='floor')go('home');else{dressTab='moko';go('dress')}},
  tscale:a=>{S.settings.testScale=Number(a);save();sTap();render()},
  snd:()=>{S.settings.sound=!S.settings.sound;save();render()},
+ admintg:()=>{const on=!ADMIN();showPop(`<h3>🔑 管理者モードを ${on?'オン':'オフ'}に しますか？</h3><div style="text-align:left;font-size:14px">${on?'すべての アイテム・テスト・ステージ・まちの パーツと とちが つかえる ように なります。いまの もちものは 控えに のこして、オフに したとき もどします。':'もちものを 管理者モードに する まえに もどします（オンの あいだに もらった ごほうびは のこります）。着ている・かざっている ものが もっていない ものなら はずします。'}</div><div class="btns"><button class="big gray" data-act="close">やめる</button><button class="big" data-act="adminyes" data-arg="${on?1:0}">${on?'オンに する':'オフに する'}</button></div>`)},
+ adminyes:a=>{adminSet(a==='1');closePop();sTap();render()},
  st:a=>stepSet(a),
  adj:a=>{S.points=Math.max(0,S.points+Number(a));save();render()},
+ fullsave:()=>fullSave(),
+ fullyes:()=>fullRestore(),
  bkmake:()=>{const o=$('#bkout');if(o){o.value=bkEnc(S);$('#bkmsg').textContent='コードを つくりました'}},
  bkcopy:()=>{const o=$('#bkout');if(!o||!o.value)return;const done=()=>{$('#bkmsg').textContent='コピーしました'};try{navigator.clipboard.writeText(o.value).then(done,()=>{o.select();try{document.execCommand('copy');done()}catch(e){$('#bkmsg').textContent='てで せんたくして コピーしてください'}})}catch(e){o.select()}},
  bkload:()=>{const i=$('#bkin'),v=i?i.value:'';let d=null;try{d=bkDec(v)}catch(e){}
@@ -342,8 +436,8 @@ Object.assign(ACT,{
 });
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&$('#gatein'))gateOk()});
 render();
-ready.then(()=>{dailyCheck();goalsCheck()});
-window.addEventListener('pageshow',e=>{if(e.persisted)setTimeout(goalsCheck,300)});
+ready.then(()=>{dailyCheck();goalsCheck();learnLoad()});
+window.addEventListener('pageshow',e=>{if(e.persisted){setTimeout(goalsCheck,300);learnLoad()}});
 </script>
 </body>
 </html>

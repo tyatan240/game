@@ -7,6 +7,7 @@
 //   walk  … うえを あるける（はな・くさ・はし）    water … みず（あるけない）   onWater … みずの うえに だけ おける
 //   kind  … 'look' の とき：やね・かべ・ドア・まどの いろ／かたち（おうちの みための へんこうに つかう）
 //   fav   … すきな ばしょ グループ（キャラの このみ）
+//   paint … ゆびで なぞって つづけて おける（かべ）  wall … かべ   bed … ベッド（すめるが みため・なかは ない）
 //   quest … おねがいの ごほうび（おみせでは うらない）  custom … おおきさを かえられる おうち  tall … 2かいだて
 export const CATS = [
   { id: 'house', name: 'おうち', icon: '🏠' },
@@ -16,6 +17,7 @@ export const CATS = [
   { id: 'garden', name: 'おにわ', icon: '🌷' },
   { id: 'park', name: 'こうえん', icon: '⛲' },
   { id: 'special', name: 'とくべつ', icon: '✨' },
+  { id: 'room', name: 'かべ・ゆか', icon: '🧱' },
 ];
 
 export const PARTS = [
@@ -100,6 +102,20 @@ export const PARTS = [
   { id: 'school', cat: 'special', name: 'がっこう', size: [3, 3], price: 450 },
   { id: 'cafe', cat: 'special', name: 'ケーキやさん', size: [2, 2], price: 360, fav: 'bench' },
   { id: 'rainbow', cat: 'special', name: 'にじの アーチ', size: [2, 1], price: 300, walk: true, fav: 'park' },
+  // 🧱 1マスずつ つくる（かべ・ゆか・かぐ）。paint … ゆびで なぞって つづけて おける
+  { id: 'floor_wood', cat: 'room', name: 'きの ゆか', layer: 'ground', price: 0 },
+  { id: 'floor_tile', cat: 'room', name: 'タイルの ゆか', layer: 'ground', price: 60 },
+  { id: 'floor_carpet', cat: 'room', name: 'ピンクの じゅうたん', layer: 'ground', price: 90 },
+  { id: 'wall_wood', cat: 'room', name: 'きの かべ', size: [1, 1], price: 0, paint: true, wall: true },
+  { id: 'wall_white', cat: 'room', name: 'しろい かべ', size: [1, 1], price: 60, paint: true, wall: true },
+  { id: 'wall_brick', cat: 'room', name: 'レンガの かべ', size: [1, 1], price: 60, paint: true, wall: true },
+  { id: 'wall_window', cat: 'room', name: 'まどの ある かべ', size: [1, 1], price: 90, paint: true, wall: true },
+  { id: 'door1', cat: 'room', name: 'ドア（1マス）', size: [1, 1], price: 0, walk: true },
+  { id: 'bed', cat: 'room', name: 'ベッド（すめる）', size: [1, 2], price: 90, home: true, bed: true },
+  { id: 'table', cat: 'room', name: 'テーブル', size: [1, 1], price: 30 },
+  { id: 'chair', cat: 'room', name: 'いす', size: [1, 1], price: 30, walk: true },
+  { id: 'sofa', cat: 'room', name: 'ソファ', size: [2, 1], price: 90, fav: 'bench' },
+  { id: 'bookshelf', cat: 'room', name: 'ほんだな', size: [1, 1], price: 60 },
   // 🎁 おねがいの ごほうび（おみせでは うらない。quest＝その おねがいで もらえる）
   { id: 'flower_rainbow', cat: 'nature', name: 'にじいろの はな', size: [1, 1], price: 0, quest: 'flowers', walk: true, fav: 'flower' },
   { id: 'well', cat: 'garden', name: 'いど', size: [1, 1], price: 0, quest: 'house2' },

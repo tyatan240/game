@@ -14,7 +14,7 @@ export const MAP = [
   'T....,....:...,.....T.....:................T',
   '::::::::::::::::::::::::::::::::::::::.....T',
   'T.........:..........T....:................T',
-  'T.........:............,..:......,...TTTTTTT',
+  'T.........:............,..:......,...T......',
   'T.......,.:...............:..........TTTTTTT',
   'T.........:..wwwww........:..........TTTTTTT',
   'T.........:...........b...:......TT..TTTTTTT',
@@ -24,8 +24,9 @@ export const MAP = [
   'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT',
 ];
 
-export const entries = { west: { x: 1, y: 10, dir: 'right' }, east: { x: 38, y: 10, dir: 'left' } };
-export const exits = [{ x: 0, y: 10, to: 'lake', entry: 'east' }];
+export const entries = { west: { x: 1, y: 10, dir: 'right' }, east: { x: 38, y: 10, dir: 'left' }, east2: { x: 42, y: 12, dir: 'left' } };
+// みぎしたの でぐち（おしろの した）は アルファベット クリアで ひらく → こもじの もり（ワールド2）
+export const exits = [{ x: 0, y: 10, to: 'lake', entry: 'east' }, { x: 43, y: 12, to: 'lower', entry: 'west', needs: { flag: 'alphabetClear' } }];
 
 export const NPCS = [
   { id: 'zebra', kind: 'zebra', x: 4, y: 6, name: 'しまうまさん', letter: 'U' },

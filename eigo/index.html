@@ -287,7 +287,7 @@ function finishTest(timeout){
  const L=TLV[t.lv],it=testItem(t.key),pass=t.ok>=t.need,st=S.tests[t.key]||{},first=pass&&!st.pass;
  dailyOf(S).eigo++; // きょうの もくひょう
  S.tests[t.key]={pass:!!(st.pass||pass),best:Math.max(st.best||0,t.ok)};
- if(first&&!S.owned.includes(it.id)){S.owned.push(it.id);if(it.cat==='furn'&&!S.furn.includes(it.id))S.furn.push(it.id)}
+ if(first)grantItem(it.id)
  save();view='tests';render();
  if(pass){sBuy();
   showPop(`<div class="medal">${L.medal}</div><h3>ごうかく！</h3><div>${t.n}もん ちゅう ${t.ok}もん せいかい</div>

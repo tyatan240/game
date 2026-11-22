@@ -1,11 +1,11 @@
-// まちの エリア（まちレベルで ひらく）。ちずは 40×40 マス、x0〜x1・y0〜y1 は はしを ふくむ。
+// まちの エリア（⭐で かって ひらく。price … ひつような ⭐。lv は むかしの めやす で いまは つかわない）。ちずは 40×40 マス、x0〜x1・y0〜y1 は はしを ふくむ。
 // fill … はじめて ひらいた ときに おく しぜん・じめん（なにも ない マスだけ）
 export const AREAS = [
   { id: 'central', name: 'まんなかの まち', lv: 1, x0: 8, y0: 8, x1: 31, y1: 31 },
-  { id: 'forest', name: 'もりの エリア', lv: 2, x0: 8, y0: 0, x1: 31, y1: 7, icon: '🌲', fill: 'forest' },
-  { id: 'river', name: 'かわの エリア', lv: 3, x0: 32, y0: 0, x1: 39, y1: 39, icon: '🏞️', fill: 'river' },
-  { id: 'beach', name: 'うみべの エリア', lv: 4, x0: 8, y0: 32, x1: 31, y1: 39, icon: '🏖️', fill: 'beach' },
-  { id: 'meadow', name: 'おはなばたけ', lv: 5, x0: 0, y0: 0, x1: 7, y1: 39, icon: '🌷', fill: 'meadow' },
+  { id: 'forest', name: 'もりの エリア', lv: 2, price: 3000, x0: 8, y0: 0, x1: 31, y1: 7, icon: '🌲', fill: 'forest' },
+  { id: 'river', name: 'かわの エリア', lv: 3, price: 4000, x0: 32, y0: 0, x1: 39, y1: 39, icon: '🏞️', fill: 'river' },
+  { id: 'beach', name: 'うみべの エリア', lv: 4, price: 5000, x0: 8, y0: 32, x1: 31, y1: 39, icon: '🏖️', fill: 'beach' },
+  { id: 'meadow', name: 'おはなばたけ', lv: 5, price: 6000, x0: 0, y0: 0, x1: 7, y1: 39, icon: '🌷', fill: 'meadow' },
 ];
 export const AREA = Object.fromEntries(AREAS.map(a => [a.id, a]));
 export const areaOf = (x, y) => AREAS.find(a => x >= a.x0 && x <= a.x1 && y >= a.y0 && y <= a.y1) || null;

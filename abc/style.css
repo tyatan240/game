@@ -218,3 +218,11 @@ body.portrait #goal{top:max(96px,calc(env(safe-area-inset-top) + 90px))}
 .go.replay{background:#ffb020;box-shadow:0 5px 0 #d9901a}
 .ending .row2{flex-wrap:wrap}
 @media (max-height:440px){.ending .pic{display:none}.ending p{font-size:13px;margin:2px 0}.ending .sum{margin:4px 0}.ending .sum b{font-size:18px}.ending .row2 .go{padding:8px 14px;font-size:16px}}
+
+/* こもじ（ワールド2） */
+.teach .pairs { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 8px 0; }
+.teach .pair { border: 0; border-radius: 14px; background: #fff7e6; box-shadow: 0 3px 0 #f0d9a8; padding: 6px 10px; font: inherit; font-weight: 800; display: flex; align-items: baseline; gap: 4px; cursor: pointer; }
+.teach .pair b { font-size: 38px; color: #e0719a; }
+.teach .pair span { font-size: 38px; color: #4a8fe0; }
+.teach .pair.pulse { animation: lowpulse .4s; }
+@keyframes lowpulse { 50% { transform: scale(1.15); } }

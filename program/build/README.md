@@ -77,3 +77,10 @@ localStorage と IndexedDB（DB `robomoko-build`、ストア `kv`）に二重保
 1. 入口：`program/index.html`（またはおうちの `study()`）に `build/index.html` へのリンクを足す。
 2. 「もどる」は今 `../index.html`（プログラミングの部屋）。
 3. 星を出すなら `docs/save-data.md` の方法で `moko-math-v1` の `points` だけ加算する。
+
+## おだい（フェーズ3）
+- `js/quest/quests.js`：5ステージ。見た目の完全一致ではなく条件でクリア（`check(world)` → [いま, ひつよう]、`need(st)`）。
+  1 かべ（きを よこに4こ）→ 2 ながい かべ（つながった8こ＋ロボットの くりかえしで ブロックを置いた）→ 3 へや（3×3以上を かべで かこむ）→ 4 おうち（へやに ドア・ガラス・やね3こ以上）→ 5 むら（おうち3けん、重ならない）
+- クリアで ⭐ を おうち（`moko-math-v1` の `points`）に足す（`js/quest/house.js`。localStorage にすぐ、IndexedDB は後から）。20/30/40/50/80。
+- 保存は `robomoko-build-v1` の `quest:{done:[番号], loopBuilt}`（追加のみ）。作ったものはクリア後も残る。
+- 入口：プログラミングの部屋（`program/index.html`）のカード。「もどる」でプログラミングの部屋へ。

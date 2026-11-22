@@ -20,6 +20,8 @@ nav{grid-template-columns:repeat(3,1fr)}
 nav a{text-decoration:none;padding:8px 0 10px;font-weight:800;font-size:12px;color:#b89a9a;display:flex;flex-direction:column;align-items:center;gap:2px}
 nav a span{font-size:24px}
 a.big{text-align:center;text-decoration:none}
+.clockq{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:30px}
+.clockq svg{width:150px;height:150px}
 </style>
 </head>
 <body>
@@ -58,7 +60,7 @@ function select(){
  ${en.length>1?`<button class="tbtn mix" data-act="start" data-arg="mix"><b>🎲 まぜまぜ</b>いろんな もんだいが でるよ</button>`:''}
  </div><p class="muted">${S.settings.perRound}もん ぜんぶ せいかいで ボーナス ⭐${S.settings.perfect}！</p>`}
 // 学習履歴（保護者レポート用）。せいかい・ほし の しょりは そのまま、けっかが きまったら きろく だけ する
-const lhRec=(c,tid,inp,ok,n,mode,stars,lv)=>{const [a,op,b]=c.p;LH.recordAttempt({questionInstanceId:c.iid,questionKey:`sansu:${tid}:${a}${op}${b}`,subject:'sansu',topic:tid,skill:tid,difficulty:lv||0,mode,questionText:`${a} ${op==='+'?'＋':'−'} ${b} = ?`,correctAnswer:String(c.ans),userAnswer:String(inp),isCorrect:ok,attemptNumber:n,earnedStars:stars,params:{p:c.p}})};
+const lhRec=(c,tid,inp,ok,n,mode,stars,lv)=>{LH.recordAttempt({questionInstanceId:c.iid,questionKey:`sansu:${tid}:${c.p.join('')}`,subject:'sansu',topic:tid,skill:tid,difficulty:lv||0,mode,questionText:probText(c.p),correctAnswer:String(c.ans),userAnswer:String(inp),isCorrect:ok,attemptNumber:n,earnedStars:stars,params:{p:c.p}})};
 function startQuiz(sel){
  const pool=sel==='mix'?enabled().map(t=>t.id):[sel];
  quiz={pool,sel,i:0,n:S.settings.perRound,ok:0,earned:0,res:[],cur:null,input:'',tries:0,mood:'normal',msg:'',lock:false,last:''};LH.startSession({subject:'sansu',mode:'practice'});
@@ -66,13 +68,13 @@ function startQuiz(sel){
 function nextQ(){
  let p,tid,g=0;
  do{tid=quiz.pool[r(0,quiz.pool.length-1)];p=TYPE[tid].gen()}while(p.join()===quiz.last&&g++<10);
- quiz.last=p.join();quiz.cur={tid,p,ans:p[1]==='+'?p[0]+p[2]:p[0]-p[2],iid:LH.newInstance()};quiz.input='';quiz.tries=0;quiz.mood='normal';quiz.msg='';LH.begin(quiz.cur.iid)}
+ quiz.last=p.join();quiz.cur={tid,p,ans:ansOf(p),iid:LH.newInstance()};quiz.input='';quiz.tries=0;quiz.mood='normal';quiz.msg='';LH.begin(quiz.cur.iid)}
 function quizV(){
  const q=quiz,[a,op,b]=q.cur.p;
  const dots=Array.from({length:q.n},(_,i)=>`<i class="${q.res[i]===true?'ok':q.res[i]===false?'ng':i===q.i?'now':''}"></i>`).join('');
  const keys=[1,2,3,4,5,6,7,8,9].map(n=>`<button class="key" data-act="key" data-arg="${n}">${n}</button>`).join('');
  return `<div class="dots">${dots}</div>
- <div class="card qcard">${charSVG(S.equip,q.mood,q.mood==='happy'?'hop':'')}<div class="prob">${a} ${op==='+'?'＋':'−'} ${b} = <span class="ans">${q.input||'&nbsp;'}</span></div></div>
+ <div class="card qcard">${charSVG(S.equip,q.mood,q.mood==='happy'?'hop':'')}<div class="prob">${probHTML(q.cur.p,q.input)}</div></div>
  <div class="msg">${q.msg||'⭐'+S.settings.types[q.cur.tid].pts+' の もんだい'}</div>
  <div class="pad">${keys}<button class="key del" data-act="del">けす</button><button class="key" data-act="key" data-arg="0">0</button><button class="key ok" data-act="answer">こたえる</button></div>`}
 function answer(){
@@ -132,7 +134,7 @@ function startTest(arg){
   if(!test){stopTest();return}
   if(test.phase==='count'){test.count--;if(test.count<=0){test.phase='run';test.t0=performance.now();stopTest();beep(990,.2);render();tTimer=setInterval(tTick,100)}else{beep(660,.1);render()}}
  },800)}
-function tNext(){let p,g=0;do{p=TYPE[test.tid].gen()}while(p.join()===test.last&&g++<10);test.last=p.join();test.cur={p,ans:p[1]==='+'?p[0]+p[2]:p[0]-p[2],iid:LH.newInstance()};test.input='';LH.begin(test.cur.iid)}
+function tNext(){let p,g=0;do{p=TYPE[test.tid].gen()}while(p.join()===test.last&&g++<10);test.last=p.join();test.cur={p,ans:ansOf(p),iid:LH.newInstance()};test.input='';LH.begin(test.cur.iid)}
 function tLeft(){return Math.max(0,test.limit-(performance.now()-test.t0))}
 function tTick(){
  if(!test||test.phase!=='run')return;
@@ -147,7 +149,7 @@ function testV(){
  const keys=[1,2,3,4,5,6,7,8,9].map(n=>`<button class="key" data-act="key" data-arg="${n}">${n}</button>`).join('');
  return `<div class="tbarw"><div class="tbar ${pct<25?'low':''}" id="tbar" style="width:${pct}%"></div></div>
  <div class="tinfo"><span>⏱ <b id="tsec">${Math.ceil(left/1000)}</b>びょう</span><span>${t.prac?'✏️ ':''}${t.i+1} / ${t.n}もんめ</span><span>⭕ ${t.ok}</span></div>
- <div class="card qcard"><div class="prob" style="font-size:44px">${a} ${op==='+'?'＋':'−'} ${b} = <span class="ans">${t.input||'&nbsp;'}</span></div></div>
+ <div class="card qcard"><div class="prob" style="font-size:44px">${probHTML(t.cur.p,t.input)}</div></div>
  <div class="msg">${t.msg||'&nbsp;'}</div>
  <div class="pad">${keys}<button class="key del" data-act="del">けす</button><button class="key" data-act="key" data-arg="0">0</button><button class="key ok" data-act="answer">こたえる</button></div>`}
 function testAnswer(){
@@ -179,7 +181,7 @@ function finishTest(timeout){
  const L=TLV[t.lv],it=testItem(t.key),pass=t.ok>=t.need,st=S.tests[t.key]||{},first=pass&&!st.pass;
  dailyOf(S).sansu++; // きょうの もくひょう
  S.tests[t.key]={pass:!!(st.pass||pass),best:Math.max(st.best||0,t.ok)};
- if(first&&!S.owned.includes(it.id)){S.owned.push(it.id);if(it.cat==='furn'&&!S.furn.includes(it.id))S.furn.push(it.id)}
+ if(first)grantItem(it.id)
  save();view='tests';render();
  if(pass){sBuy();
   showPop(`<div class="medal">${L.medal}</div><h3>ごうかく！</h3><div>${t.n}もん ちゅう ${t.ok}もん せいかい</div>

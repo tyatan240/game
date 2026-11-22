@@ -9,12 +9,14 @@ import { RobotView } from './render/robotModel.js';
 import { Robot, Runner, ERR } from './robot/robot.js';
 import { sanitize } from './robot/program.js';
 import { RobotPanel } from './ui/robotPanel.js';
+import { QUESTS } from './quest/quests.js';
+import { addHousePoints } from './quest/house.js';
 
 const $ = id => document.getElementById(id);
 const MSG = { out: 'そこには おけないよ', full: 'もう ブロックが あるよ', top: 'はなの うえには おけないよ', id: 'その ブロックは つかえないよ' };
 
 // app: 'free'（じゆうに つくる）/ 'robot'（ロボットに おねがい）
-const ui = { app: 'free', sel: 'wood', rot: 0, mode: 'place', pending: null, seenHelp: false };
+const ui = { quest: { done: [], loopBuilt: false }, app: 'free', sel: 'wood', rot: 0, mode: 'place', pending: null, seenHelp: false };
 let world, scene, robot, runner, rview, panel, prog = [];
 
 // ---------- おと（WebAudio。みじかい「ぽん」）----------
@@ -37,7 +39,7 @@ function saveNow() {
   clearTimeout(saveTimer); saveTimer = 0;
   if (!world) return;
   writeSave({ world: world.toJSON(), cam: scene.camState(), sel: ui.sel, rot: ui.rot, seenHelp: ui.seenHelp,
-    app: ui.app, robot: robot.toJSON(), prog, speed: runner.speed });
+    app: ui.app, robot: robot.toJSON(), prog, speed: runner.speed, quest: ui.quest });
 }
 function saveSoon() { clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 300); }
 addEventListener('pagehide', saveNow);
@@ -306,7 +308,7 @@ function setupRobot(data) {
     state() { panel.updateControls(); refreshButtons(); },
     end(r) {
       if (!r.ok) { toast(ERR[r.reason] || 'うまく いかなかったよ'); panel.mark(r.step, true); }
-      else { panel.mark(null); if (r.done) { toast('できた！', true); beep(660, .1); setTimeout(() => beep(880, .12), 110); } }
+      else { panel.mark(null); if (r.done) { toast('できた！', true); beep(660, .1); setTimeout(() => beep(880, .12), 110); if (prog.some(c => c.t === 'loop' && c.n >= 2 && c.body.some(d => d.t === 'put'))) { ui.quest.loopBuilt = true; questCheck(); } } }
       refreshButtons(); saveNow();
     },
   });
@@ -319,6 +321,47 @@ function setupRobot(data) {
   panel.setArrows(scene.az);
   // てで つくりかえたら ロボは その れつの うえに のる
   world.onChange(() => { if (runner.state === 'idle') rview.place(robot.pos(), robot.dir); });
+}
+
+/* ---------- おだい（5ステージ）---------- */
+const curQuest = () => QUESTS.find(q => !ui.quest.done.includes(q.id)) || null;
+function qState(q) { const [have, need] = q.check(world, ui.quest); const extra = q.need ? q.need(ui.quest) : true; return { have, need, ok: have >= need && extra, extra }; }
+function questBar() {
+  const q = curQuest(), b = $('qbar');
+  if (!q) { b.hidden = false; b.className = 'qbar ok'; b.textContent = '🏆 おだい ぜんぶ クリア！'; return; }
+  const s = qState(q); b.hidden = false; b.className = 'qbar';
+  b.textContent = `🎯 おだい${q.id}：${q.name}（${s.have}/${s.need}${q.need && !s.extra ? '・くりかえし' : ''}）`;
+}
+let qT = 0;
+function questCheck() { clearTimeout(qT); qT = setTimeout(questNow, 250); }
+function questNow() {
+  const q = curQuest(); if (!q) return questBar();
+  if (qState(q).ok) {
+    ui.quest.done.push(q.id); addHousePoints(q.reward); saveNow();
+    confetti(); beep(523, .1); setTimeout(() => beep(659, .1), 110); setTimeout(() => beep(784, .1), 220); setTimeout(() => beep(1047, .2), 340);
+    const next = curQuest();
+    $('questCard').innerHTML = `<div class="h">🎉 おだい${q.id} クリア！</div><p style="font-size:17px;font-weight:800">「${q.name}」</p>
+      ${q.id === 5 ? '<p>むらびとが あそびに きたよ！ すてきな むらだね！</p>' : '<p>すごい！ つくった ものは そのまま のこるよ</p>'}
+      <p style="font-size:20px;font-weight:800;color:#e0719a">おうちの ⭐ ＋${q.reward}</p>
+      <p class="muted" style="font-size:12px">まなんだ こと：${q.learn}</p>
+      <button class="big" id="qnext">${next ? `つぎの おだいへ（${next.name}）` : 'やったー！'}</button>`;
+    $('questDlg').hidden = false; $('qnext').onclick = () => { $('questDlg').hidden = true; questBar(); };
+  }
+  questBar();
+}
+function openQuests() {
+  const cur = curQuest();
+  $('questCard').innerHTML = `<div class="h">🎯 おだい</div><div class="qlist">${QUESTS.map(q => { const done = ui.quest.done.includes(q.id), s = qState(q);
+    return `<div class="qrow ${done ? 'done' : ''} ${cur && cur.id === q.id ? 'now' : ''}"><span class="n">${done ? '✔' : q.id}</span><span style="flex:1"><b>${q.name}</b><small>${q.text}</small>
+    ${!done && cur && cur.id === q.id ? `<span class="qprog"><i style="width:${Math.min(100, s.have / s.need * 100)}%"></i></span>${q.need && !s.extra ? `<small>💡 ${q.hint}</small>` : ''}` : ''}<small>ごほうび ⭐${q.reward}</small></span></div>`; }).join('')}</div>
+    <p class="muted" style="font-size:12px">みた目は じゆう！ じょうけんを みたせば クリアだよ</p><button class="big sub" id="qclose">とじる</button>`;
+  $('questDlg').hidden = false; $('qclose').onclick = () => { $('questDlg').hidden = true; };
+}
+function confetti() {
+  const c = document.createElement('div'); c.className = 'confetti';
+  const cs = ['#ff8fb1', '#ffd34f', '#5bbbe6', '#3dbb6a', '#c3a8ff'];
+  for (let i = 0; i < 40; i++) { const e = document.createElement('i'); e.style.left = Math.random() * 100 + '%'; e.style.background = cs[i % 5]; e.style.animationDelay = Math.random() * .6 + 's'; c.appendChild(e); }
+  document.body.appendChild(c); setTimeout(() => c.remove(), 2600);
 }
 
 async function start() {
@@ -335,6 +378,10 @@ async function start() {
   world.onChange(() => { refreshButtons(); saveSoon(); if (hoverXY) showHover(); });
   scene.onTurn = () => { if (hoverXY) showHover(); };
   refreshButtons();
+  if (data && data.quest && Array.isArray(data.quest.done)) ui.quest = { done: data.quest.done.filter(n => QUESTS.some(q => q.id === n)), loopBuilt: !!data.quest.loopBuilt };
+  world.onChange(() => questCheck());
+  $('questBtn').onclick = () => { sTap(); openQuests(); }; $('qbar').onclick = () => { sTap(); openQuests(); };
+  questBar();
   setApp(data && data.app === 'robot' ? 'robot' : 'free', true);
   layout();
   if (!ui.seenHelp) $('help').hidden = false;
@@ -342,7 +389,7 @@ async function start() {
 
   // テストと、あとで つなぐ ロボット用の いりぐち
   window.__build = {
-    world, scene, ui, BLOCKS, robot, runner, panel, setApp,
+    world, scene, ui, BLOCKS, robot, runner, panel, setApp, questNow, openQuests, QUESTS,
     get prog() { return prog; }, set prog(p) { prog = sanitize(p); panel.render(); },
     select, setMode, rotate, commit, tap, saveNow,
     targetAt, toScreen: (x, y, z) => scene.toScreen(x, y, z),

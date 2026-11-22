@@ -28,6 +28,8 @@
   tests:{'add1-1':{pass,best}, 'k1yomi-2':{…}, …},
   gacha:{day,count,pulls},
   daily:{day,sansu,kokugo,eigo,abc,prog,got:{sansu,kokugo,eigo,prog},all}（きょうの もくひょう。day が変わるとリセット）,
+  streakGot:[3,7,…]（がんばり カレンダーで もらった れんぞく日数）,
+  settings.admin:true/false（管理者モード）, adminBackup:[id…]|null（管理者モードを オンに した ときの もちもの。オフで owned に もどす）, daily.rec:{s:教科,t:単元}（きょうの おすすめ）,
   hw:{mob_pig:じこく,…}（まちの モブじゅうにんの しゅくだいを おえた じこく。core.js の hwDone()、program/ の houseWrite）,
   looks:{キャラid:{outfit,hat,acc}}（キャラごとに おぼえている きせかえ。core.js の equipItem() で更新。キャラを変えると前のキャラの服を保存し、次のキャラの服に着がえる）
 }
@@ -38,6 +40,8 @@
 - IndexedDB との二重化：起動時に両方を見て `t` が新しいほうを採用（localStorage が空なら IndexedDB を採用）。`pagehide`・`visibilitychange` でも保存。iOS Safari で localStorage の書き込みが遅れて消える対策。
 - 他の部屋で増えたポイントは、ページ読込時と `pageshow`（戻る）・`storage` イベントで取り込む（`resync()`、`t` が新しい場合のみ）。
 - バックアップ：⚙️設定 →「データの ひきつぎ」。`S` を JSON → Base64 にしたコード。読込は `merge()` を通す。
+- まるごと バックアップ：⚙️設定 →「まるごと バックアップ（ファイル）」。`{format:'moko-house-backup', version:1, savedAt, data:{moko-math-v1, piko-prog-v1, abc-adventure-v1, robomoko-build-v1, moko-town-v1}, history:学習記録}` の JSON ファイル。
+  復元は 中身を確認してから、ファイルにある部屋のデータを それぞれの保存キーに書き戻す（おうちは `merge()`＋`save()`、ほかは `t` を今にして localStorage と IndexedDB へ）。学習記録は今の記録に足す（同じIDは足さない）。
 
 ## 互換ルール（変更時に必ず守る）
 1. キー名・DB名を変えない。

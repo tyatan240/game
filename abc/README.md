@@ -100,3 +100,11 @@ abc/
 - 文字：`letters.js` の `WORLD1_LETTERS` を増やす／新しいワールド用の配列を作る
 - マップ：`world1.js` の `MAP`（1文字＝1マス）を書き換え、`NPCS`・`SIGNS`・`CHESTS` に座標を足す
 - 動物の種類：`art.js` の `KIND` に色・耳の形を足す
+
+## ワールド2「こもじの もり」（a〜z）
+- 入口：いろの にわ の おしろの下の みち（右下）。`exits` の `needs:{flag:'alphabetClear'}` で、アルファベットを クリアするまでは通れない。
+- `data/areas/lower.js`：せんせい5にん（ふくろう a〜e・りす f〜j・きつね k〜o・たぬき p〜t・かめ u〜z。NPC の `lower`）と「こもじの もん」（`lowerGate`）。
+- せんせい：おおもじ と こもじ の ペアのカード（`ui.teachLower`）→ クイズ（「A の こもじは どれ？」／音を聞いて こもじ）→ その こもじを `S.lower` に（★＋2）。2回目からは おさらい（「a の おおもじは？」も）。
+- もん：26こ おぼえると さいごの おさらい6問 → `S.world.gate_lower='open'`・`S.flags.lowerClear`（★＋5）。
+- 学習記録は `S.records['l:A']`（こもじ）。出題は `quiz.js` の `lowerQuestion(target, pool, 'match'|'listen'|'upper', 選択肢の数)`。
+- 保存：`abc-adventure-v1` に `lower:[]` を追加（`state.js` で補う）。

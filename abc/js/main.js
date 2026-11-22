@@ -10,10 +10,10 @@ import { WORD, WORDS } from './data/words.js';
 import { SPELLS } from './data/combos.js';
 import { START, ITEMS, INV, STORY } from './data/world1.js';
 import { AREAS, ORDER, CHAPTER, WHERE } from './data/areas.js';
-import { W, H, area, setArea, tileAt, isWater, isPath, things, move, facing, heroTile, markPos, exitAt, exitOpen, isOpenGate, vinesKey, solidAt, inside } from './game/world.js';
+import { W, H, area, setArea, tileAt, isWater, isPath, things, move, facing, heroTile, markPos, exitAt, exitOpen, isOpenGate, vinesKey, solidAt, inside, unstick } from './game/world.js';
 import { load, save, replayState, getRecord } from './game/state.js';
 import { record, pickTargets, choiceCount, levelOf } from './game/learning.js';
-import { letterQuestion, wordQuestion, shuffle } from './game/quiz.js';
+import { letterQuestion, wordQuestion, shuffle , lowerQuestion } from './game/quiz.js';
 import { activeQuests, currentStep, stepFor, advance, objective, QUEST } from './game/quests.js';
 import { tryCast, hintFor, applyEffects, comboKey } from './game/magic.js';
 import * as ui from './ui/ui.js';
@@ -160,7 +160,7 @@ function draw(t) {
     else if (k === 'well') list.push([Y + TS, spr(wellSprite(s), o.x, o.y - 1)]);
     else if (k === 'hive') list.push([Y + TS - 2, at(X, Y, () => drawHive(ctx, !!S.world.bees))]);
     else if (k === 'gate') list.push([Y + TS - 1, at(X, Y, () => drawGate(ctx, S.world.gate === 'open'))]);
-    else if (k === 'lettergate') list.push([Y + TS, at(X, Y, () => drawLetterGate(ctx, CHAPTER[o.ref.area].letters, isOpenGate(o, S), t))]);
+    else if (k === 'lettergate') list.push([Y + TS, at(X, Y, () => drawLetterGate(ctx, CHAPTER[o.ref.area].lower ? ['a', 'b', 'c', 'x', 'y', 'z'] : CHAPTER[o.ref.area].letters, isOpenGate(o, S), t))]);
     else if (k === 'castlegate') list.push([bottom, at(X, Y, () => drawCastle(ctx, S.world.gate_garden === 'open', t))]);
     else if (k === 'sunstone') list.push([Y + TS - 2, at(X, Y, () => drawSunstone(ctx, t))]);
     else if (k === 'mound') list.push([Y + TS - 2, at(X, Y, () => drawMound(ctx, S.world.mound === 'dug'))]);
@@ -206,6 +206,7 @@ function draw(t) {
     const n = o.ref, X = (o.x + 0.5) * TS, Y = o.y * TS - (n.boss ? 20 : 12);
     let label = null, col = '#fff';
     if (n.letter) label = S.learned.includes(n.letter) ? n.letter : '?';
+    if (n.lower) label = n.lower.every(l => (S.lower || []).includes(l)) ? n.lower[0] + '〜' + n.lower[n.lower.length - 1] : '?';
     if (n.boss && !S.flags.bossCleared) { label = S.learned.length >= 5 ? '!' : '…'; }
     if (n.id === 'rabbit' && !S.flags.intro) label = null;
     if (questT.has(n.id)) { label = '!'; col = '#ffe08a'; }
@@ -278,8 +279,10 @@ function bubble(x, y, label, col, s) {
 let lastGoal = '';
 function hud() {
   document.getElementById('starN').textContent = S.stars;
-  const letters = (CHAPTER[area().id] || CHAPTER.island).letters;
-  document.getElementById('slots').innerHTML = letters.map(id => `<i class="${S.learned.includes(id) ? 'got' : ''}">${S.learned.includes(id) ? id : ''}</i>`).join('') + `<em>${S.learned.length}/26</em>`;
+  const ch = CHAPTER[area().id] || CHAPTER.island, lw = S.lower || [];
+  document.getElementById('slots').innerHTML = ch.lower
+    ? ch.lower.filter((_, i) => i % 5 === 0 || i === 25).map(id => `<i class="${lw.includes(id) ? 'got' : ''}">${lw.includes(id) ? id : ''}</i>`).join('') + `<em>${lw.length}/26</em>`
+    : ch.letters.map(id => `<i class="${S.learned.includes(id) ? 'got' : ''}">${S.learned.includes(id) ? id : ''}</i>`).join('') + `<em>${S.learned.length}/26</em>`;
   curObj = objective(S);
   const text = curObj ? curObj.text : '';
   if (text !== lastGoal) {
@@ -317,6 +320,7 @@ function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
   const t = now / 1000;
   if (mode === 'play' && !ui.busy()) {
+    unstick(hero, S); // キャラが うごいて かさなった ときに とじこめられない
     const d = input.currentDir();
     hero.moving = false;
     if (d) {
@@ -355,7 +359,7 @@ addEventListener('pagehide', () => { if (mode !== 'title' && S.started) persist(
 
 /* ---------- イベント ---------- */
 const sayH = lines => ui.say(lines, S.wear);
-function answerLog(q, ok, first) { const key = q.voice && q.voice.word ? 'w:' + q.target : q.target; S.records[key] = record(getRecord(S, key), ok, first); }
+function answerLog(q, ok, first) { const key = q.recKey || (q.voice && q.voice.word ? 'w:' + q.target : q.target); S.records[key] = record(getRecord(S, key), ok, first); }
 const wordStatus = id => levelOf(S.records['w:' + id]) >= 2 ? 'おぼえた' : 'まほうが つかえる';
 const SPEAKER_SAY = n => (n.talk && (!n.talkWhen || S.quests[n.talkWhen.quest] === 'done')) ? n.talk : null;
 
@@ -372,6 +376,7 @@ async function talk(o) {
     else if (o.ref.kind === 'lettergate' || o.ref.kind === 'castlegate') await letterGate(o.ref);
     else if (o.type === 'obj') await examine(o.ref);
     else if (o.ref.boss) await bossEvent();
+    else if (o.ref.lower) await lowerTeacher(o.ref);
     else if (o.ref.letter && !S.learned.includes(o.ref.letter)) await teacher(o.ref);
     else if (SPEAKER_SAY(o.ref)) { await sayH(SPEAKER_SAY(o.ref)); await offerReview(o.ref.id); }
     else if (o.ref.letter) await teacher(o.ref);
@@ -500,8 +505,45 @@ async function teacher(n) {
   }
 }
 
+/* ---------- ワールド2：こもじの もり ---------- */
+const UP = l => l.toUpperCase();
+async function lowerTeacher(n) {
+  S.lower = S.lower || [];
+  const ids = n.lower.map(UP), left = n.lower.filter(l => !S.lower.includes(l));
+  if (left.length) {
+    await sayH([[n.name, 'こんにちは！ もりへ ようこそ。'], [n.name, `おおきな もじには、ちいさな「こもじ」の なかまが いるんだよ。`], [n.name, `${ids.join('・')} の こもじを おしえて あげるね！`]]);
+    await ui.teachLower(ids);
+    const pool = ids, qs = shuffle(ids).map((id, i) => lowerQuestion(id, pool, i % 3 === 2 ? 'listen' : 'match', 3));
+    await ui.quiz(qs, { title: `${n.name}の クイズ`, onAnswer: answerLog });
+    for (const l of n.lower) if (!S.lower.includes(l)) S.lower.push(l);
+    S.stars += 2; persist(); await ui.starFly(2, hud);
+    await sayH([[n.name, `${n.lower.join(' ')} を おぼえたね！ すごい！`]]);
+    if ('abcdefghijklmnopqrstuvwxyz'.split('').every(l => S.lower.includes(l))) await ui.notice('こもじを ぜんぶ おぼえた！', 'もりの おくの「こもじの もん」で さいごの おさらいを しよう！');
+  } else {
+    await sayH([[n.name, 'おさらい しよう！']]);
+    const [t] = pickTargets(ids, Object.fromEntries(ids.map(id => [id, S.records['l:' + id]])), 1);
+    await ui.quiz([lowerQuestion(t, ids, ['match', 'listen', 'upper'][(Math.random() * 3) | 0], 4)], { title: 'おさらい', onAnswer: answerLog });
+    await sayH([[n.name, 'よく できました！']]);
+  }
+}
+async function lowerGate(ob) {
+  const key = 'gate_lower';
+  if (S.world[key] === 'open') return sayH([['', 'こもじの もんは ひらいているよ。 a から z まで ぜんぶ おぼえたね！']]);
+  const all = 'abcdefghijklmnopqrstuvwxyz'.split(''), left = all.filter(l => !(S.lower || []).includes(l));
+  if (left.length) return sayH([['', 'こもじの もんだ。a から z の もじが きざまれている。'], ['', `あと ${left.length}この こもじを おぼえたら おさらい できるよ。`]]);
+  await sayH([['', 'こもじの もんが ひかっている！'], ['', 'さいごの おさらい！ 6もん こたえよう！']]);
+  const ALLU = all.map(UP), recs = Object.fromEntries(ALLU.map(id => [id, S.records['l:' + id]]));
+  const ids = pickTargets(ALLU, recs, 6);
+  await ui.quiz(ids.map((id, i) => lowerQuestion(id, ALLU, ['match', 'listen', 'upper'][i % 3], 4)), { title: 'こもじの おさらい', onAnswer: answerLog });
+  S.world[key] = 'open'; S.flags.lowerClear = true; sfx.unlock(); persist();
+  await playFx('burst', 1.0, { c: center(ob) });
+  S.stars += 5; persist(); await ui.starFly(5, hud);
+  await ui.notice('こもじ ぜんぶ クリア！', 'おおもじも こもじも よめる ように なったね！<br>えいごの「べんきょう」でも れんしゅう できるよ。');
+}
+
 // もじの もん・おしろの もん（エリアの さいごの おさらい）
 async function letterGate(ob) {
+  if (ob.area === 'lower') return lowerGate(ob);
   const ch = CHAPTER[ob.area], key = 'gate_' + ob.area;
   if (S.world[key] === 'open') return sayH([['', ob.final ? 'おしろの もんは ひらいているよ。' : 'もじの もんは ひらいているよ。']]);
   const left = ch.letters.filter(l => !S.learned.includes(l));

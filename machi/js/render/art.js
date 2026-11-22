@@ -13,7 +13,7 @@ function line(g, c, w) { g.strokeStyle = c; g.lineWidth = w; g.lineJoin = 'round
 
 /* ---------- じめん（1マス） ---------- */
 const GROUND = {
-  grass: '#a6dc78', sand: '#f6e3b0', road_dirt: '#e2c497', road_stone: '#cfd2da', road_brick: '#e0957a', road_pink: '#f9c6d8', water: '#86cdf2', plaza: '#efe6d6',
+  grass: '#a6dc78', sand: '#f6e3b0', floor_wood: '#e2b77e', floor_tile: '#f4eee6', floor_carpet: '#f7b6cf', road_dirt: '#e2c497', road_stone: '#cfd2da', road_brick: '#e0957a', road_pink: '#f9c6d8', water: '#86cdf2', plaza: '#efe6d6',
 };
 export function drawGround(g, id, x, y, T, nb) {
   const R = rnd(hash(x, y)), c = GROUND[id] || GROUND.grass;
@@ -42,6 +42,13 @@ export function drawGround(g, id, x, y, T, nb) {
   } else if (id === 'road_brick' || id === 'road_pink') {
     g.strokeStyle = id === 'road_pink' ? '#fff' : '#c97a62'; g.lineWidth = T / 28;
     for (let j = 0; j < 4; j++) { g.beginPath(); g.moveTo(0, j * T / 4); g.lineTo(T, j * T / 4); g.stroke(); for (let i = 0; i < 2; i++) { const xx = (i + (j % 2) * .5) * T / 2; g.beginPath(); g.moveTo(xx, j * T / 4); g.lineTo(xx, (j + 1) * T / 4); g.stroke(); } }
+  } else if (id === 'floor_wood') {
+    g.strokeStyle = '#c99a5f'; g.lineWidth = T / 28; for (let j = 1; j < 4; j++) { g.beginPath(); g.moveTo(0, j * T / 4); g.lineTo(T, j * T / 4); g.stroke(); }
+    for (let j = 0; j < 4; j++) { const xx = (j % 2 ? .3 : .7) * T; g.beginPath(); g.moveTo(xx, j * T / 4); g.lineTo(xx, (j + 1) * T / 4); g.stroke(); } return;
+  } else if (id === 'floor_tile') {
+    g.fillStyle = (x + y) % 2 ? '#e6eef7' : '#f4eee6'; g.fillRect(0, 0, T, T); g.strokeStyle = '#d6d0c8'; g.lineWidth = T / 30; g.strokeRect(0, 0, T, T); return;
+  } else if (id === 'floor_carpet') {
+    g.fillStyle = '#fff'; for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) { circ(g, (i + .5) * T / 3, (j + .5) * T / 3, T * .035); g.fill(); } return;
   } else if (id === 'sand') {
     g.fillStyle = '#ead29a'; for (let i = 0; i < 6; i++) { circ(g, R() * T, R() * T, T * .025); g.fill(); } return;
   } else {
@@ -223,6 +230,24 @@ export function drawObject(g, o, T, t) {
     case 'slide': { shadow(g, Wd / 2, Hd - T * .2, Wd * .45, T * .14); g.fillStyle = '#5a8fe0'; g.fillRect(T * .35, -T * .2, T * .5, Hd - T * .1); line(g, '#3d6fbd', T / 22); g.strokeRect(T * .35, -T * .2, T * .5, Hd - T * .1); for (let y = 0; y < Hd - T * .4; y += T * .25) { g.beginPath(); g.moveTo(T * .35, y); g.lineTo(T * .85, y); g.stroke(); } g.fillStyle = '#ff8fb8'; line(g, '#e0608f', T / 22); g.beginPath(); g.moveTo(T * .85, -T * .2); g.quadraticCurveTo(Wd - T * .2, T * .6, Wd - T * .1, Hd - T * .2); g.lineTo(Wd - T * .45, Hd - T * .2); g.quadraticCurveTo(Wd - T * .6, T * .8, T * .85, T * .2); g.closePath(); g.fill(); g.stroke(); break; }
     case 'fountain': { shadow(g, Wd / 2, Hd - T * .25, Wd * .46, T * .2); g.fillStyle = '#d6dae2'; line(g, '#a4aab6', T / 18); g.beginPath(); g.ellipse(Wd / 2, Hd * .62, Wd * .44, Hd * .3, 0, 0, Math.PI * 2); g.fill(); g.stroke(); g.fillStyle = '#86cdf2'; g.beginPath(); g.ellipse(Wd / 2, Hd * .6, Wd * .36, Hd * .22, 0, 0, Math.PI * 2); g.fill(); g.fillStyle = '#d6dae2'; g.fillRect(Wd / 2 - T * .1, Hd * .2, T * .2, Hd * .4); g.strokeRect(Wd / 2 - T * .1, Hd * .2, T * .2, Hd * .4); const tt = (t || 0) / 300; g.strokeStyle = 'rgba(255,255,255,.9)'; g.lineWidth = T / 16; for (const d of [-1, 1]) { g.beginPath(); g.moveTo(Wd / 2, Hd * .2); g.quadraticCurveTo(Wd / 2 + d * T * .5, -T * .3 + Math.sin(tt) * T * .05, Wd / 2 + d * T * .7, Hd * .55); g.stroke(); } g.fillStyle = '#bfe6ff'; circ(g, Wd / 2, Hd * .18, T * .14); g.fill(); break; }
     case 'rainbow': { const cs = ['#ffadad', '#ffd29a', '#fff0a0', '#bfeab0', '#addcff', '#d4c2ff']; cs.forEach((c, i) => { g.strokeStyle = c; g.lineWidth = T * .1; g.beginPath(); g.arc(Wd / 2, T * .9, Wd * .46 - i * T * .1, Math.PI, 0); g.stroke(); }); g.fillStyle = '#fff'; [[T * .2, T * .85], [Wd - T * .2, T * .85]].forEach(([x, y]) => { circ(g, x, y, T * .18); g.fill(); circ(g, x + T * .14, y + T * .04, T * .13); g.fill(); }); break; }
+    // 🧱 1マスずつ つくる
+    case 'wall_wood': case 'wall_white': case 'wall_brick': case 'wall_window': {
+      const c = { wall_wood: ['#d9a066', '#b07a45', '#e8bd85'], wall_white: ['#f4f1ec', '#cfc8bd', '#ffffff'], wall_brick: ['#d9775f', '#a8503c', '#e89580'], wall_window: ['#f4f1ec', '#cfc8bd', '#ffffff'] }[o.type];
+      const h = T * .65; // かべの たかさ（うえに はみだす）
+      g.fillStyle = c[1]; g.fillRect(0, T * .35 - h + T * .3, T, h + T * .35); // まえの めん
+      g.fillStyle = c[2]; g.fillRect(0, T * .35 - h, T, T * .3 + .5);          // うえの めん
+      g.strokeStyle = 'rgba(0,0,0,.12)'; g.lineWidth = 1; g.strokeRect(.5, T * .35 - h + .5, T - 1, h + T * .65 - 1);
+      if (o.type === 'wall_brick') { g.strokeStyle = '#8f3f2e'; g.lineWidth = T / 40; for (let k = 0; k < 4; k++) { const yy = T * .35 - h + T * .3 + k * (h + T * .35) / 4; g.beginPath(); g.moveTo(0, yy); g.lineTo(T, yy); g.stroke(); } }
+      if (o.type === 'wall_wood') { g.strokeStyle = '#9a6538'; g.lineWidth = T / 40; for (let k = 1; k < 4; k++) { g.beginPath(); g.moveTo(k * T / 4, T * .35 - h + T * .3); g.lineTo(k * T / 4, T); g.stroke(); } }
+      if (o.type === 'wall_window') { g.fillStyle = '#bfe6ff'; g.strokeStyle = '#fff'; g.lineWidth = T / 16; g.fillRect(T * .2, T * .25, T * .6, T * .4); g.strokeRect(T * .2, T * .25, T * .6, T * .4); g.beginPath(); g.moveTo(T * .5, T * .25); g.lineTo(T * .5, T * .65); g.stroke(); }
+      break;
+    }
+    case 'door1': { g.fillStyle = '#a86e45'; line(g, '#7a4b2c', T / 20); g.fillRect(T * .2, -T * .3, T * .6, T * 1.1); g.strokeRect(T * .2, -T * .3, T * .6, T * 1.1); g.fillStyle = '#ffd34f'; circ(g, T * .68, T * .3, T * .05); g.fill(); break; }
+    case 'bed': { shadow(g, Wd / 2, Hd - T * .1, Wd * .45, T * .1); g.fillStyle = '#c98f55'; rr(g, T * .06, T * .02, Wd - T * .12, Hd - T * .1, T * .1); g.fill(); g.fillStyle = '#fff'; rr(g, T * .14, T * .1, Wd - T * .28, T * .42, T * .1); g.fill(); g.fillStyle = '#ffb3cf'; rr(g, T * .12, T * .6, Wd - T * .24, Hd - T * .78, T * .1); g.fill(); g.fillStyle = '#fff'; for (let k = 0; k < 3; k++) { circ(g, T * .3 + k * T * .2, T * 1.2, T * .05); g.fill(); } break; }
+    case 'table': { shadow(g, T / 2, T * .85, T * .36, T * .1); g.fillStyle = '#a86e45'; g.fillRect(T * .45, T * .45, T * .1, T * .4); g.fillStyle = '#e2b77e'; line(g, '#b8864e', T / 24); g.beginPath(); g.ellipse(T / 2, T * .42, T * .4, T * .24, 0, 0, Math.PI * 2); g.fill(); g.stroke(); g.fillStyle = '#ff8fb1'; circ(g, T * .5, T * .38, T * .07); g.fill(); break; }
+    case 'chair': { g.fillStyle = '#c98f55'; line(g, '#8f5e33', T / 26); g.fillRect(T * .28, T * .1, T * .44, T * .3); g.strokeRect(T * .28, T * .1, T * .44, T * .3); g.fillRect(T * .25, T * .4, T * .5, T * .25); g.strokeRect(T * .25, T * .4, T * .5, T * .25); g.fillRect(T * .28, T * .65, T * .07, T * .2); g.fillRect(T * .65, T * .65, T * .07, T * .2); break; }
+    case 'sofa': { shadow(g, Wd / 2, T * .88, Wd * .45, T * .1); g.fillStyle = '#8fc8ff'; line(g, '#5a96d8', T / 22); rr(g, T * .08, T * .05, Wd - T * .16, T * .45, T * .15); g.fill(); g.stroke(); rr(g, T * .04, T * .4, Wd - T * .08, T * .42, T * .14); g.fill(); g.stroke(); g.fillStyle = '#ffd6e2'; circ(g, T * .5, T * .55, T * .12); g.fill(); circ(g, Wd - T * .5, T * .55, T * .12); g.fill(); break; }
+    case 'bookshelf': { g.fillStyle = '#a86e45'; line(g, '#7a4b2c', T / 24); g.fillRect(T * .1, -T * .4, T * .8, T * 1.2); g.strokeRect(T * .1, -T * .4, T * .8, T * 1.2); const cs = ['#ff8fb1', '#8fc8ff', '#ffd34f', '#8fd46d', '#c3a8ff']; for (let r2 = 0; r2 < 3; r2++) { g.fillStyle = '#7a4b2c'; g.fillRect(T * .1, -T * .4 + (r2 + 1) * T * .38, T * .8, T * .04); for (let k = 0; k < 4; k++) { g.fillStyle = cs[(k + r2) % 5]; g.fillRect(T * (.16 + k * .17), -T * .4 + r2 * T * .38 + T * .1, T * .12, T * .28); } } break; }
     // 🎁 おねがいの ごほうび
     case 'flower_rainbow': { const cs = ['#ff6b7d', '#ffb35a', '#ffe14f', '#7fd46a', '#6fb6ff', '#b48cff']; g.strokeStyle = '#4fae4a'; g.lineWidth = T / 20; g.beginPath(); g.moveTo(T / 2, T * .45); g.lineTo(T / 2, T * .9); g.stroke(); cs.forEach((c, k) => { const a = k * Math.PI / 3; g.fillStyle = c; circ(g, T / 2 + Math.cos(a) * T * .14, T * .4 + Math.sin(a) * T * .14, T * .1); g.fill(); }); g.fillStyle = '#fff6a8'; circ(g, T / 2, T * .4, T * .08); g.fill(); break; }
     case 'well': shadow(g, T / 2, T * .86, T * .38, T * .1); g.fillStyle = '#b9bec8'; line(g, '#8d939f', T / 24); g.beginPath(); g.ellipse(T / 2, T * .62, T * .36, T * .2, 0, 0, Math.PI * 2); g.fill(); g.stroke(); g.fillStyle = '#86cdf2'; g.beginPath(); g.ellipse(T / 2, T * .6, T * .26, T * .12, 0, 0, Math.PI * 2); g.fill(); g.strokeStyle = '#8f5e33'; g.lineWidth = T / 16; g.beginPath(); g.moveTo(T * .18, T * .62); g.lineTo(T * .18, T * .02); g.moveTo(T * .82, T * .62); g.lineTo(T * .82, T * .02); g.stroke(); g.fillStyle = '#e8605a'; g.beginPath(); g.moveTo(T * .05, T * .1); g.lineTo(T / 2, -T * .22); g.lineTo(T * .95, T * .1); g.closePath(); g.fill(); break;

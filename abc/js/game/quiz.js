@@ -36,4 +36,19 @@ export function wordQuestion(target, kind, nChoices = 3, rand = Math.random) {
     label: id => `${WORD[id].word}（${WORD[id].ja}）`,
   };
 }
+// こもじの もんだい（ワールド2）。target は おおもじの id（'A'）、こたえは その こもじ
+//   'match'  …「A」の こもじは どれ？（えらぶのは こもじ）
+//   'listen' … きこえた こもじは どれ？
+//   'upper'  …「a」の おおもじは どれ？（えらぶのは おおもじ）
+export function lowerQuestion(target, pool, kind, nChoices, rand = Math.random) {
+  const L = LETTER[target];
+  const others = shuffle(pool.filter(id => id !== target), rand);
+  const extra = shuffle(Object.keys(LETTER).filter(id => id !== target && !pool.includes(id)), rand);
+  const choices = shuffle([target, ...[...others, ...extra].slice(0, nChoices - 1)], rand);
+  return {
+    kind, target, choices, answer: target, recKey: 'l:' + target,
+    prompt: kind === 'listen' ? 'きこえた こもじは どれかな？' : kind === 'upper' ? `「${L.lower}」の おおもじは どれ？` : `「${L.upper}」の こもじは どれ？`,
+    say: L.speak, voice: L, render: kind === 'upper' ? 'letter' : 'lower', label: id => `${LETTER[id].upper} ${LETTER[id].lower}（${LETTER[id].name}）`,
+  };
+}
 export { shuffle };
