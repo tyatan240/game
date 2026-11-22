@@ -351,6 +351,32 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     await p.context().close();
   }
 
+  console.log('8g. プログラミングの もっと ステージ（ぜんぶ クリアできて ⭐3 が とれる）');
+  {
+    const sols = JSON.parse(fs.readFileSync(path.join(__dirname, 'program-solutions.json'), 'utf8'));
+    const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 }, serviceWorkers: 'block' });
+    await ctx.addInitScript(() => { const st = window.setTimeout; window.setTimeout = (f, t, ...a) => st(f, Math.min(t || 0, 10), ...a); });
+    const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
+    await p.goto(B + 'program/index.html'); await p.waitForTimeout(300);
+    const first = await p.evaluate(() => LEVELS.findIndex(l => l.set === 2));
+    ok(first === 12 && await p.evaluate(() => LEVELS.length) === 30, `ステージ 13〜30 を うしろに ついか（${first}〜）`);
+    const res = [];
+    for (let k = 0; k < sols.length; k++) {
+      const i = first + k;
+      await p.evaluate(([i, prg]) => { closePop(); openLv(i); prog = prg; render(); run(); }, [i, sols[k].prog]);
+      await p.waitForSelector('#pop', { timeout: 15000 });
+      res.push(await p.evaluate(([i, par]) => ({ i: i + 1, best: S.best[i] || 0, par: LEVELS[i].par === par, max: LEVELS[i].max > LEVELS[i].par }), [i, sols[k].par]));
+    }
+    const bad = res.filter(r => r.best !== 3 || !r.par || !r.max);
+    ok(bad.length === 0, 'ぜんぶの ステージが ⭐3 で クリアできる ' + JSON.stringify(bad));
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / '));
+    // iPad よこ：やじるしと じっこうボタンが スクロール しなくても みえる
+    await p.evaluate(() => { closePop(); openLv(28); });
+    const vis = await p.evaluate(() => [...document.querySelectorAll('.pbtn, .big')].every(b => { const r = b.getBoundingClientRect(); return r.bottom <= innerHeight && r.top >= 0; }));
+    ok(vis, 'iPad よこで やじるし・じっこうが がめんに おさまる');
+    await ctx.close();
+  }
+
   console.log('12a. えいごの こえ（iPad で「Capital A」と よまれない）');
   {
     const p = await page(); await p.goto(B + 'abc/index.html'); await p.waitForTimeout(300);

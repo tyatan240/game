@@ -87,6 +87,20 @@ main{flex:1;padding:12px;display:flex;flex-direction:column;gap:12px}
 .pop .stars{font-size:40px;letter-spacing:4px;margin:6px 0}
 .pop .stars .off{filter:grayscale(1);opacity:.3}
 .pop .btns{display:grid;gap:10px;margin-top:14px}
+
+/* iPad などの よこむき：ばめんを ひだり、プログラムと やじるしを みぎに（スクロール しなくても みえる） */
+.colL,.colR{display:contents}
+@media (orientation:landscape) and (min-width:700px){
+ #app:has(main.play){max-width:1180px}
+ main.play{display:grid;grid-template-columns:minmax(0,1fr) minmax(340px,440px);gap:14px;align-items:start}
+ main.play .colL,main.play .colR{display:flex;flex-direction:column;gap:12px;min-width:0}
+ main.play .colR{position:sticky;top:8px}
+ main.play .boardwrap{max-width:min(100%,calc((100dvh - 150px) * var(--ar)))!important}
+ main.play .pbtn{height:66px}
+ main.play .pbtn:not(.sub):not(.lp){font-size:36px}
+ main.play .pbtn.lp{font-size:16px}
+ main.play .blk{width:48px;height:48px;font-size:27px}
+}
 </style>
 </head>
 <body>
@@ -110,6 +124,26 @@ const LEVELS=[
  {map:['.....','.###.','.###.','.###.','S###G'],loop:true,par:6,max:7,hint:'🔁 を 3つ つかおう'},
  {map:['S.....','#####.','......','.#####','.....G'],loop:true,par:10,max:11,hint:'ながい みち！ 🔁 で みじかく しよう'},
  {map:['S......','..*....','....*..','......G'],loop:true,par:4,max:5,hint:'→→↓ の くりかえし かな？'},
+ /* ---- もっと ステージ（set:2。うしろに たすだけ：まえの ステージの ばんごう・★の きろくは かわらない） ---- */
+ // par（⭐3 の ブロックの かず）は すべて じどうの さがしかたで たしかめた さいしょうの かず
+ {set:2,map:['S.#.G','..#..','.....'],hint:'かべの したを まわって いこう'},
+ {set:2,map:['..*..','.###.','S...G'],hint:'⭐ は かべの うえに あるよ'},
+ {set:2,map:['S...#','.##.#','.#*.#','.#..G'],hint:'⭐ を とって 🏁 へ。みちを よく みてね'},
+ {set:2,map:['..*#G.','.#.#..','S..*.#','##.#..'],hint:'⭐ 2こ。どっちから とる？'},
+ {set:2,map:['*...*','.#.#.','..S..','.#.#.','....G'],hint:'まんなかから スタート！ ⭐ を 2こ'},
+ {set:2,map:['S.#..*','.#..#.','...#..','##...G'],hint:'くねくね みちの おくに ⭐'},
+ {set:2,map:['S#...','.#.#.','.#.#.','...#G'],hint:'したに いって、うえに いって…'},
+ {set:2,map:['G.#*','..#.','.##.','S...'],hint:'ちょうせん！ ⭐ を とってから 🏁'},
+ {set:2,map:['S.........G'],loop:true,par:3,max:4,hint:'10ぽ すすむには？ 🔁 は 9かい まで'},
+ {set:2,map:['S......','.......','..*....','.......','....*..','.......','......G'],loop:true,par:3,max:4,hint:'ながい かいだんを おりよう'},
+ {set:2,map:['#*#*#*#','S.....G'],loop:true,par:5,max:6,hint:'⭐ を とって もどる、を くりかえそう'},
+ {set:2,map:['...G','..#.','..*.','#...','.*..','S...'],loop:true,par:5,max:6,hint:'1つ うごいてから くりかえし'},
+ {set:2,map:['S.....','#####.','G.....'],loop:true,par:6,max:7,hint:'🔁 を 3つ つかおう'},
+ {set:2,map:['...*...','..#.#..','.#...#.','S.....G'],loop:true,par:6,max:7,hint:'やまの てっぺんの ⭐ を とろう'},
+ {set:2,map:['......G','.....#.','...*...','..#....','S......'],loop:true,par:6,max:7,hint:'うえに いく？ みぎに いく？'},
+ {set:2,map:['S.....*','.#####.','.#####.','G.....*'],loop:true,par:6,max:7,hint:'ぐるっと まわって ⭐ を 2こ'},
+ {set:2,map:['S#...#..G','.#.#.#.##','...#...##'],loop:true,par:9,max:10,hint:'いったり きたり。おなじ かたちが 2かい'},
+ {set:2,map:['S.....*','#####..','*.....#','..#####','......G'],loop:true,par:11,max:12,hint:'さいごの ちょうせん！ ながい みちを 🔁 で'},
 ];
 const DIR={U:[0,-1,'↑'],D:[0,1,'↓'],L:[-1,0,'←'],R:[1,0,'→']};
 
@@ -191,8 +225,10 @@ function titleV(){
  return `<header><a class="hbtn" href="../index.html" style="text-decoration:none;display:flex;align-items:center">🏠</a><div class="ttl">ピコの プログラミング</div>${ptsChip()}</header>
  <main>
  <div class="card hero">${robotSVG(0)}<h1>ピコを うごかそう！</h1><div class="muted">めいれいブロックを ならべて ▶ を おすと、ピコが そのとおりに うごくよ<br>はじめて とった ★ 1つで ⭐${starPts()} ポイント！</div></div>
- <div class="card"><div class="sec">➡️ ならべて うごかす</div><div class="stages">${a.filter(([l])=>!l.loop).map(([l,i])=>btn(l,i)).join('')}</div></div>
- <div class="card"><div class="sec">🔁 くりかえし</div><div class="stages">${a.filter(([l])=>l.loop).map(([l,i])=>btn(l,i)).join('')}</div></div>
+ <div class="card"><div class="sec">➡️ ならべて うごかす</div><div class="stages">${a.filter(([l])=>!l.loop&&!l.set).map(([l,i])=>btn(l,i)).join('')}</div></div>
+ <div class="card"><div class="sec">🔁 くりかえし</div><div class="stages">${a.filter(([l])=>l.loop&&!l.set).map(([l,i])=>btn(l,i)).join('')}</div></div>
+ <div class="card"><div class="sec">🌟 もっと ならべて</div><div class="stages">${a.filter(([l])=>!l.loop&&l.set===2).map(([l,i])=>btn(l,i)).join('')}</div></div>
+ <div class="card"><div class="sec">🌟 もっと くりかえし</div><div class="stages">${a.filter(([l])=>l.loop&&l.set===2).map(([l,i])=>btn(l,i)).join('')}</div></div>
  </main>`;
 }
 
@@ -208,12 +244,13 @@ function playV(){
   cs.push(`<div class="cell ${c==='#'?'wall':c==='G'?'goal':''}">${c==='G'?'🏁':c==='*'?`<span class="star" id="st${x}_${y}" style="${got.has(x+'_'+y)?'opacity:0':''}">⭐</span>`:''}</div>`)}
  const n=count();
  return `<header><button class="hbtn" onclick="back()">◀</button><div class="ttl">ステージ ${cur+1}</div>${ptsChip()}</header>
- <main>
+ <main class="play"><div class="colL">
  <div class="hint">${lv.hint}</div>
- <div class="boardwrap" id="bw" style="max-width:${P.H>P.W?Math.round(P.W/P.H*100)+'%':'100%'}">
+ <div class="boardwrap" id="bw" style="max-width:${P.H>P.W?Math.round(P.W/P.H*100)+'%':'100%'};--ar:${(P.W/P.H).toFixed(3)}">
   <div class="board" id="board" style="grid-template-columns:repeat(${P.W},1fr)">${cs.join('')}</div>
   <div class="robot" id="robot"></div>
  </div>
+</div><div class="colR">
  <div class="card">
   <div class="counter"><span>プログラム</span><span>ブロック <b class="${n>lv.max?'over':''}">${n}</b> / ${lv.max}　⭐3 は ${lv.par} こ</span></div>
   <div class="prog ${target===null&&lv.loop?'target':''}" onclick="setTarget(event,-1)" id="prog">${progHTML()}</div>
@@ -229,7 +266,7 @@ function playV(){
   <button class="big" onclick="run()" ${running||!n?'disabled':''}>▶ じっこう</button>
  </div>
  <div class="muted">ブロックを タップすると けせるよ${lv.loop?'。🔁 の かずを タップすると かいすうが かわるよ':''}</div>
- </main>`;
+ </div></main>`;
 }
 function progHTML(){
  if(!prog.length)return `<span class="empty">↓ の ボタンで ブロックを いれてね</span>`;
