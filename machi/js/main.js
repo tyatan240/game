@@ -1,13 +1,14 @@
 // モコの まち：がめん・そうさ・つくる・まちの おみせ・じゅうにん
 // core.js（クラシック）の S・save()・charSVG・ITEM・showPop・ACT を つかう（ほし と キャラ は おうちと きょうつう）
 import { CATS, PARTS, PART, SHOP_PARTS, LOOK, FAV, FAV_NAME } from './data/parts.js';
-import { W, H, loadTown, saveTown, groundAt, sizeOf, occupancy, canPlace, canPaint, hasPart, History, inMap } from './town/town.js';
+import { W, H, loadTown, saveTown, groundAt, sizeOf, occupancy, canPlace, canPaint, hasPart, History, inMap, openArea } from './town/town.js';
+import { AREAS, AREA, scoreTown } from './data/areas.js';
 import { drawGround, drawObject, drawIcon } from './render/art.js';
 import { People, charImage } from './town/people.js';
 
 const $id = id => document.getElementById(id);
 const TS = 48;                                   // zoom 1 の 1マス（CSS px）
-const MSG = { out: 'そこには おけないよ', full: 'もう なにか あるよ', water: 'みずの うえには おけないよ', land: 'はしは みずの うえに おいてね' };
+const MSG = { out: 'そこには おけないよ', full: 'もう なにか あるよ', water: 'みずの うえには おけないよ', land: 'はしは みずの うえに おいてね', lock: 'まだ ひらいて いない とち だよ' };
 
 let town, hist, people;
 const cam = { x: 20, y: 20, zoom: 1 };
@@ -62,6 +63,7 @@ function draw(time) {
   const [ox, oy] = toScreen(0, 0);
   g.imageSmoothingEnabled = true; g.drawImage(gcv, ox, oy, W * t, H * t);
   g.strokeStyle = 'rgba(80,120,60,.5)'; g.lineWidth = 3; g.strokeRect(ox, oy, W * t, H * t);
+  for (const a of AREAS) if (!town.unlockedAreas.includes(a.id)) drawLocked(a, t, time);
   if (ui.mode === 'build') { // ます目
     g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 1; g.beginPath();
     const [x0, y0] = toWorld(0, 0), [x1, y1] = toWorld(vw, vh);
@@ -97,6 +99,23 @@ function draw(time) {
     g.globalAlpha = pv.ok ? .7 : .45; drawObject(g, pv, t, time); g.restore();
   }
   for (const p of people.visible()) if (p.say) bubble(p, t);
+}
+
+// まだ ひらいて いない とち：くもで おおう
+function drawLocked(a, t, time) {
+  const [x0, y0] = toScreen(a.x0, a.y0), w = (a.x1 - a.x0 + 1) * t, h = (a.y1 - a.y0 + 1) * t;
+  if (x0 > vw || y0 > vh || x0 + w < 0 || y0 + h < 0) return;
+  g.save(); g.beginPath(); g.rect(x0, y0, w, h); g.clip();
+  g.fillStyle = 'rgba(236,246,255,.86)'; g.fillRect(x0, y0, w, h);
+  g.fillStyle = 'rgba(255,255,255,.9)';
+  for (let y = a.y0; y <= a.y1; y += 3) for (let x = a.x0 + ((y / 3) % 2) * 1.5; x <= a.x1; x += 3) { const [sx, sy] = toScreen(x + .5, y + .8); g.beginPath(); g.arc(sx, sy, t * .55, 0, 7); g.arc(sx + t * .55, sy - t * .25, t * .5, 0, 7); g.arc(sx + t * 1.1, sy, t * .45, 0, 7); g.fill(); }
+  const [cx, cy] = toScreen((a.x0 + a.x1 + 1) / 2, (a.y0 + a.y1 + 1) / 2);
+  g.font = `800 ${Math.max(13, t * .34)}px "M PLUS Rounded 1c",sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  const label = `🔒 ${a.name}`, sub = `まち レベル ${a.lv} で ひらくよ`, tw = Math.max(g.measureText(label).width, g.measureText(sub).width) + 28, bh = Math.max(56, t * 1.3);
+  g.fillStyle = '#fff'; g.strokeStyle = '#c9dcef'; g.lineWidth = 3;
+  g.beginPath(); { const x = cx - tw / 2, y = cy - bh / 2, r = 14; g.moveTo(x + r, y); g.arcTo(x + tw, y, x + tw, y + bh, r); g.arcTo(x + tw, y + bh, x, y + bh, r); g.arcTo(x, y + bh, x, y, r); g.arcTo(x, y, x + tw, y, r); g.closePath(); } g.fill(); g.stroke();
+  g.fillStyle = '#5a7fa8'; g.fillText(label, cx, cy - bh * .2); g.fillStyle = '#9aaebf'; g.font = `800 ${Math.max(11, t * .26)}px "M PLUS Rounded 1c",sans-serif`; g.fillText(sub, cx, cy + bh * .22);
+  g.restore();
 }
 
 function drawPerson(p, t) {
@@ -158,7 +177,45 @@ function placePending() {
   }
   ui.pending = null; changed(); renderAct(); renderBuild();
 }
-function changed() { people.changed(town); saveSoon(); refreshUndo(); }
+function changed() { people.changed(town); checkLevel(); saveSoon(); refreshUndo(); }
+
+/* ---------- まちレベル・あたらしい とち ---------- */
+function levelInfo() { return scoreTown(town, PART); }
+function showLevel() {
+  const L = levelInfo(), lv = town.townLevel, nx = AREAS.find(a => a.lv > lv);
+  $id('lv').textContent = 'Lv' + lv;
+  const pr = L.next == null ? 1 : Math.max(0, Math.min(1, (L.score - L.prev) / (L.next - L.prev)));
+  $id('lvbar').style.width = (pr * 100) + '%';
+  return { L, nx };
+}
+// レベルが あがったら とちを ひらく（いちど ひらいた とちは とじない）
+function checkLevel(quiet) {
+  const L = levelInfo();
+  if (L.lv > town.townLevel) {
+    const before = town.townLevel; town.townLevel = L.lv;
+    const opened = AREAS.filter(a => a.lv <= L.lv && !town.unlockedAreas.includes(a.id)).filter(a => openArea(town, a.id));
+    if (opened.length) { people.changed(town); ui.dirtyGround = true; }
+    if (!quiet) levelUp(before, L.lv, opened);
+    saveSoon();
+  }
+  showLevel();
+}
+function levelUp(from, to, opened) {
+  beep(523); setTimeout(() => beep(659), 100); setTimeout(() => beep(784), 200); setTimeout(() => beep(1047, .15), 320);
+  showPop(`<div class="srlabel">🎉 まち レベル アップ！</div><h3>Lv${from} → Lv${to}</h3>
+  ${opened.length ? `<div>あたらしい とちが ひらいたよ！</div><div style="font-size:20px;font-weight:800;margin:6px 0">${opened.map(a => a.icon + ' ' + a.name).join('<br>')}</div>` : '<div>まちが すてきに なってきたね！</div>'}
+  <div class="btns">${opened.length ? `<button class="big" data-act="tgoarea" data-arg="${opened[0].id}">みに いく</button>` : '<button class="big" data-act="close">やったー！</button>'}</div>`);
+}
+function openLevel() {
+  const { L, nx } = showLevel();
+  const rows = Object.entries(L.parts).map(([k, v]) => `<tr><td>${k}</td><td style="text-align:right">${v}</td></tr>`).join('');
+  showPop(`<h3>🏙️ まち レベル ${town.townLevel}</h3>
+  <div>まちの すてきポイント：<b>${L.score}</b>${L.next != null ? `　つぎの レベルまで あと <b>${Math.max(0, L.next - L.score)}</b>` : ''}</div>
+  <table style="margin:8px auto;font-weight:800;font-size:14px;border-spacing:12px 2px">${rows}</table>
+  <div class="muted" style="margin:0">いろんな しゅるいを おいたり、なかまを すませたり、こうえんを つくると あがるよ</div>
+  ${nx ? `<div style="margin-top:8px;font-weight:800">つぎの とち：${nx.icon} ${nx.name}（Lv${nx.lv}）</div>` : '<div style="margin-top:8px;font-weight:800">ぜんぶの とちが ひらいたよ！</div>'}
+  <div class="btns"><button class="big gray" data-act="close">とじる</button></div>`);
+}
 function paintAt(cx, cy) {
   const id = ui.tool.id;
   if (!canPaint(town, cx, cy, id)) return false;
@@ -319,6 +376,7 @@ function setupButtons() {
   });
   $id('bShop').onclick = () => openShop();
   $id('bFriends').onclick = () => openFriends();
+  $id('lvchip').onclick = () => openLevel();
 }
 
 /* ---------- まちの おみせ（おへやの おみせとは べつ）---------- */
@@ -353,6 +411,7 @@ function buy(id) {
   if (ui.mode === 'build') renderBuild();
 }
 Object.assign(ACT, {
+  tgoarea: id => { closePop(); const a = AREA[id]; if (a) { cam.x = (a.x0 + a.x1 + 1) / 2; cam.y = (a.y0 + a.y1 + 1) / 2; clampCam(); saveSoon(); } },
   close: () => { closePop(); beep(600, .03); }, // とじる・まちに いる・おわり（core.js には ない ので ここで きめる）
   tshopcat: c => { shopCat = c; openShop(); },
   tshop: () => openShop(),
@@ -368,7 +427,8 @@ function openResidents(o) {
   showPop(`<h3>${name}</h3><div style="font-weight:800">この おうちに だれが すむ？（2にん まで）</div>
   <div class="people" style="margin-top:8px">${chars.map(c => { const h = liveIn(c), here = h && h.id === o.id; return `<button class="person ${here ? 'on' : ''}" data-act="tres" data-arg="${o.id}|${c}">${charHTML(c)}${ITEM[c].name}<small>${here ? '✔ すんでいる' : h ? 'ほかの おうちに すんでいる' : ''}</small></button>`; }).join('') || '<p class="muted">ガチャや おみせで なかまを ふやそう！</p>'}</div>
   <p class="muted" style="margin:6px 0 0">${ITEM[avatar()].name} は モコの おうちに すんでいるよ</p>
-  <div class="btns"><button class="big gray" data-act="close">とじる</button><button class="big sub" data-act="tlooks" data-arg="${o.id}">🎨 みため</button></div>`);
+  <div class="btns"><button class="big gray" data-act="close">とじる</button><button class="big sub" data-act="tlooks" data-arg="${o.id}">🎨 みため</button></div>
+  <div class="btns" style="margin-top:8px"><button class="big" data-act="tinside" data-arg="${o.id}">🏠 なかを みる</button></div>`);
   wide();
 }
 function toggleResident(oid, c) {
@@ -381,7 +441,7 @@ function toggleResident(oid, c) {
     o.residents = [...(o.residents || []), c];
     toast(`${ITEM[c].name} が すむ ことに なったよ！`);
   }
-  people.sync(town, avatar()); saveNow(); beep(here ? 400 : 700, .06); openResidents(o);
+  people.sync(town, avatar()); saveNow(); beep(here ? 400 : 700, .06); openResidents(o); checkLevel();
 }
 function openMokoHouse(o) {
   showPop(`${charSVG(S.equip, 'happy', 'hop')}<h3>モコの おうち</h3><div>おへやに もどる？</div>
@@ -401,6 +461,38 @@ Object.assign(ACT, {
   tfind: c => { closePop(); const p = people.list.find(q => q.id === c); if (p && p.state !== 'home') { cam.x = p.x + .5; cam.y = p.y; people.talk(p); } else { const h = c === avatar() ? town.objects.find(o => o.type === 'moko_house') : liveIn(c); if (h) { cam.x = h.x + 1; cam.y = h.y + 1; toast(h ? 'おうちの なかに いるよ' : ''); } else toast('おうちを たてて すんで もらおう！'); } clampCam(); },
   tlooks: id => openLooks(town.objects.find(o => o.id === id)),
 });
+
+/* ---------- おうちの なか（おへやで もっている かぐ・かべ・ゆかで かざる）---------- */
+// o.room = { wall, floor, furn:[] }（もっている もの だけ つかえる。おへやと おなじ かぐを つかっても だいじょうぶ）
+let inTab = 'furn';
+function roomOf(o) { const r = o.room || {}; return { wall: r.wall && owns(r.wall) ? r.wall : 'w_cream', floor: r.floor && owns(r.floor) ? r.floor : 'f_wood', furn: (r.furn || []).filter(owns) }; }
+function openInside(o, tab) {
+  if (!o) return closePop(); if (tab) inTab = tab;
+  const r = roomOf(o), who = (o.residents || []).filter(owns).slice(0, 2);
+  const svg = roomSVG({ equip: { wall: r.wall, floor: r.floor }, furn: r.furn }, 'happy', 'sway', who.map(lookFor));
+  const list = S.owned.filter(id => ITEM[id] && ITEM[id].cat === inTab);
+  const sel = id => inTab === 'furn' ? r.furn.includes(id) : r[inTab] === id;
+  showPop(`<h3>🏠 ${PART[o.type].name}の なか</h3><div class="inroom">${svg}</div>
+  <div class="muted" style="margin:4px 0">${who.length ? who.map(c => ITEM[c].name).join(' と ') + ' が すんでいるよ' : 'まだ だれも すんで いないよ'}</div>
+  ${tabs([['furn', '🪴 かぐ'], ['wall', '🧱 かべ'], ['floor', '🟫 ゆか']], inTab, 'tintab')}
+  <div class="items intems">${list.map(id => `<button class="item ${sel(id) ? 'sel' : ''}" data-act="tinset" data-arg="${o.id}|${id}">${thumb(ITEM[id])}<div class="n">${ITEM[id].name}</div>${inTab === 'furn' ? `<div class="p">${sel(id) ? 'おいてる' : ''}</div>` : ''}</button>`).join('') || '<p class="muted">おへやの おみせや ガチャで あつめよう！</p>'}</div>
+  <div class="btns"><button class="big gray" data-act="close">とじる</button>${who.length < 2 ? `<button class="big sub" data-act="tresof" data-arg="${o.id}">🐾 すむひと</button>` : ''}</div>`);
+  wide();
+}
+function setInside(oid, id) {
+  const o = town.objects.find(x => x.id === oid), it = ITEM[id]; if (!o || !it || !owns(id)) return;
+  const r = roomOf(o);
+  if (it.cat === 'furn') r.furn = r.furn.includes(id) ? r.furn.filter(x => x !== id) : [...r.furn, id];
+  else if (it.cat === 'wall' || it.cat === 'floor') r[it.cat] = id;
+  o.room = r; saveSoon(); beep(700, .04); openInside(o);
+}
+Object.assign(ACT, {
+  tinside: id => { lastInside = id; openInside(town.objects.find(o => o.id === id), 'furn'); },
+  tintab: k => { inTab = k; openInside(town.objects.find(o => o.id === lastInside)); },
+  tinset: a => { const [oid, id] = a.split('|'); lastInside = oid; setInside(oid, id); },
+  tresof: id => openResidents(town.objects.find(o => o.id === id)),
+});
+let lastInside = null;
 
 /* ---------- おうちの みため ---------- */
 function openLooks(o) {
@@ -424,6 +516,7 @@ async function start() {
   resize(); setupInput(); setupButtons();
   $id('tname').textContent = town.townName;
   updPts();
+  checkLevel(true);
   // あたらしい なかま（ガチャ・おみせで ふえた キャラ）
   const mine = myChars();
   if (!Array.isArray(town.knownChars)) town.knownChars = mine;
@@ -431,7 +524,7 @@ async function start() {
   saveTown(town);
   requestAnimationFrame(t => { last = t; frame(t); });
   // テスト・あとの フェーズ よう
-  window.__town = { get town() { return town; }, cam, ui, people, hist, toScreen, toWorld, setMode, chooseTool, tapBuild, tapView, placePending, buy, toggleResident, saveNow, objectAt };
+  window.__town = { get town() { return town; }, cam, ui, people, hist, toScreen, toWorld, setMode, chooseTool, tapBuild, tapView, placePending, buy, toggleResident, saveNow, objectAt, levelInfo, checkLevel, openInside, setInside, changed };
   document.body.dataset.ready = '1';
 }
 // ほかの へやで ⭐ が かわったら（core.js の resync から よばれる）

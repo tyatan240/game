@@ -1,6 +1,7 @@
 // まちの データと きまり（えがく ことは しない）
 // ほぞんキー moko-town-v1（localStorage ＋ IndexedDB moko-town/kv）。かたちは ついかのみ。
 import { PART, FREE } from '../data/parts.js';
+import { AREAS, AREA, areaOf } from '../data/areas.js';
 
 export const W = 40, H = 40;
 export const KEY = 'moko-town-v1';
@@ -80,6 +81,8 @@ export function saveTown(t) {
 
 /* ---------- きまり ---------- */
 export const inMap = (x, y) => x >= 0 && y >= 0 && x < W && y < H;
+// ひらいている エリアか（まちレベルで ひらく）
+export const usable = (t, x, y) => { const a = inMap(x, y) && areaOf(x, y); return !!a && t.unlockedAreas.includes(a.id); };
 export const groundAt = (t, x, y) => t.ground[x + ',' + y] || 'grass';
 export function sizeOf(o) { const p = PART[o.type]; const [w, h] = p && p.size ? p.size : [1, 1]; return (o.r & 1) && p && p.rotate ? [h, w] : [w, h]; }
 export function cellsOf(o) { const [w, h] = sizeOf(o), out = []; for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) out.push([o.x + i, o.y + j]); return out; }
@@ -99,6 +102,7 @@ export function canPlace(t, o, ignoreId, occ = occupancy(t, ignoreId)) {
   const p = PART[o.type]; if (!p) return { ok: false, reason: 'out' };
   for (const [x, y] of cellsOf(o)) {
     if (!inMap(x, y)) return { ok: false, reason: 'out' };
+    if (!usable(t, x, y)) return { ok: false, reason: 'lock' };
     if (occ.has(x + ',' + y)) return { ok: false, reason: 'full' };
     const g = PART[groundAt(t, x, y)];
     if (p.onWater) { if (!g || !g.water) return { ok: false, reason: 'land' }; }
@@ -108,14 +112,14 @@ export function canPlace(t, o, ignoreId, occ = occupancy(t, ignoreId)) {
 }
 // じめんを ぬれるか（もの が ある ところは ぬれない。みずの うえの はし は べつ）
 export function canPaint(t, x, y, id, occ = occupancy(t)) {
-  if (!inMap(x, y)) return false;
+  if (!usable(t, x, y)) return false;
   if (occ.has(x + ',' + y)) return false;
   return groundAt(t, x, y) !== id;
 }
 
 // あるけるか（キャラ）
 export function walkable(t, x, y, occ) {
-  if (!inMap(x, y)) return false;
+  if (!usable(t, x, y)) return false;
   const o = occ.get(x + ',' + y), p = o && PART[o.type];
   if (o && !(p && p.walk)) return false;
   const g = PART[groundAt(t, x, y)];
@@ -124,6 +128,24 @@ export function walkable(t, x, y, occ) {
 }
 // おうちの げんかん（ドアの まえの マス）
 export function doorCell(o) { const [w, h] = sizeOf(o); return [o.x + Math.floor(w / 2), o.y + h]; }
+
+/* ---------- エリアを ひらく ---------- */
+// はじめて ひらいた とき、エリアの けしきを おく（なにも ない マスだけ）
+export function openArea(t, id) {
+  const a = AREA[id]; if (!a || t.unlockedAreas.includes(id)) return false;
+  t.unlockedAreas.push(id);
+  let s = [...id].reduce((h, c) => h * 31 + c.charCodeAt(0), 7) >>> 0; const R = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
+  const occ = occupancy(t), free = (x, y) => !occ.has(x + ',' + y) && !t.ground[x + ',' + y];
+  const put = (type, x, y, r = 0) => { if (!free(x, y)) return; const o = { id: 'o' + t.seq++, type, x, y, r }; t.objects.push(o); occ.set(x + ',' + y, o); };
+  for (let y = a.y0; y <= a.y1; y++) for (let x = a.x0; x <= a.x1; x++) {
+    if (a.fill === 'forest') { const r = R(); if (r < .22) put(R() < .5 ? 'tree_pine' : 'tree_basic', x, y); else if (r < .27) put('bush', x, y); else if (r < .31) put('tuft', x, y); }
+    if (a.fill === 'river') { if (x === 35 || x === 36) { if (y === 18) { t.ground[x + ',' + y] = 'water'; put('bridge', x, y); } else if (free(x, y)) t.ground[x + ',' + y] = 'water'; } else if (R() < .1) put(R() < .5 ? 'tree_round' : 'tuft', x, y); }
+    if (a.fill === 'beach') { if (y >= 37) { if (free(x, y)) t.ground[x + ',' + y] = 'water'; } else if (y >= 34) { if (free(x, y)) t.ground[x + ',' + y] = 'sand'; if (R() < .06) put('rock', x, y); } else if (R() < .06) put('tuft', x, y); }
+    if (a.fill === 'meadow') { const r = R(); if (r < .3) put(['flower_red', 'flower_yellow', 'flower_pink', 'flower_tulip'][(R() * 4) | 0], x, y); else if (r < .36) put('tree_round', x, y); }
+  }
+  return true;
+}
+export { AREAS };
 
 /* ---------- もどす（スナップショット）---------- */
 export class History {

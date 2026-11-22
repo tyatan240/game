@@ -500,10 +500,11 @@ const FURN={
   ${[150,165,180,195,210].map((x,i)=>{const y=[30,38,41,38,30][i];return `<rect x="${x-2.5}" y="${y-14}" width="5" height="12" fill="#fff" stroke="#e8d9c0" stroke-width="1"/><path d="M${x} ${y-21} q3 4 0 6 q-3 -2 0 -6" fill="#ffb347"/><path d="M${x} ${y+2} l4 6 l-4 6 l-4 -6z" fill="#cde8ff" stroke="#8fc8ff" stroke-width="1"/>`}).join('')}`,
  u_rug:()=>`<ellipse cx="182" cy="252" rx="94" ry="20" fill="#ffd9a8" stroke="#ffbf75" stroke-width="3" stroke-dasharray="7 5"/><ellipse cx="182" cy="252" rx="70" ry="13" fill="none" stroke="#fff" stroke-width="2"/>`
 };
-function roomSVG(st,mood='normal',cls='sway'){
+// chars を わたすと その キャラたち（[equip…]、0〜2にん）を かく（まちの おうちの なか よう）。わたさなければ いままで どおり
+function roomSVG(st,mood='normal',cls='sway',chars){
  const has=id=>st.furn.includes(id),f=id=>has(id)&&!(id==='u_bed'&&has('u_canopy'))?FURN[id]():'';
  return `<svg viewBox="0 0 360 300">${wallSVG(st.equip.wall)}${f('u_poster')}${f('u_shelf')}${f('u_garland')}${f('u_chandelier')}${f('u_lantern')}${f('u_clock')}${f('u_flowerbox')}${floorSVG(st.equip.floor)}${f('u_castle')}${f('u_sweets')}${f('u_rug')}${f('u_bed')}${f('u_canopy')}${f('u_carriage')}${f('u_cactus')}${f('u_globe')}${f('u_tower')}${f('u_abcblocks')}${f('u_lamp')}${f('u_plant')}
- <g transform="translate(118 100) scale(.62)" data-act="pet"><g class="${cls}">${charInner(st.equip,mood)}</g></g>${f('u_cushion')}${f('u_bear')}${f('u_piano')}${f('u_musicbox')}${f('u_books')}${f('u_unipl')}${f('u_trophy')}${f('u_fish')}${f('u_cake')}</svg>`}
+ ${chars?chars.map((eq,i,a)=>`<g transform="translate(${a.length>1?[66,172][i]:118} 100) scale(.62)"><g class="${cls}">${charInner(eq,mood)}</g></g>`).join(''):`<g transform="translate(118 100) scale(.62)" data-act="pet"><g class="${cls}">${charInner(st.equip,mood)}</g></g>`}${f('u_cushion')}${f('u_bear')}${f('u_piano')}${f('u_musicbox')}${f('u_books')}${f('u_unipl')}${f('u_trophy')}${f('u_fish')}${f('u_cake')}</svg>`}
 
 /* ---------- 🎰 ガチャ げんてい アイテムの え ---------- */
 const RB=['#ffb3cf','#ffd59a','#fff09a','#bdf0c0','#b3dcff','#d6c2ff'];

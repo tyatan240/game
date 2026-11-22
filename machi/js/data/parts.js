@@ -25,6 +25,7 @@ export const PARTS = [
   { id: 'road_brick', cat: 'road', name: 'レンガの みち', layer: 'ground', price: 30, road: true },
   { id: 'road_pink', cat: 'road', name: 'ピンクの みち', layer: 'ground', price: 40, road: true },
   { id: 'water', cat: 'nature', name: 'いけ・かわ', layer: 'ground', price: 0, water: true },
+  { id: 'sand', cat: 'nature', name: 'すなはま', layer: 'ground', price: 20 },
   { id: 'plaza', cat: 'special', name: 'ひろば', layer: 'ground', price: 40, road: true, fav: 'park' },
   // おうち
   { id: 'house_basic', cat: 'house', name: 'ちいさな おうち', size: [2, 2], price: 0, home: true, look: { roof: 'red', wall: 'cream', door: 'basic', window: 'square' } },

@@ -382,7 +382,7 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
     const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
     await p.goto(B + 'index.html'); await p.waitForTimeout(500);
-    await p.evaluate(() => { closePop(); S.points = 150; S.settings.goalPts = 0; S.settings.goalAll = 0; S.owned.push('c_hamster', 'c_cat'); save(); render(); });
+    await p.evaluate(() => { closePop(); S.points = 150; S.settings.goalPts = 0; S.settings.goalAll = 0; S.owned.push('c_hamster', 'c_cat', 'u_bed', 'w_dots'); save(); render(); });
     const owned0 = await p.evaluate(() => [...S.owned].sort().join());
     ok(await p.isVisible('.room .todoor'), 'おへやに「まちへ」の ドア');
     await p.click('.room .todoor'); await p.waitForSelector('body[data-ready="1"]', { timeout: 10000 });
@@ -393,10 +393,10 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(await T(() => __town.town.objects.some(o => o.type === 'house_basic' && o.x === 10 && o.y === 9)), 'おうちを おく（タップ 2かい）');
     await T(() => { __town.chooseTool({ kind: 'part', id: 'tree_basic', r: 0 }); __town.tapBuild(10.5, 9.5); });
     ok(await T(() => __town.ui.pending && !__town.ui.pending.ok), 'かさなる ところは おけない（あかい プレビュー）');
-    await T(() => { __town.chooseTool({ kind: 'part', id: 'road_dirt' }); __town.cam.x = 6; __town.cam.y = 6; __town.cam.zoom = 1; });
-    const s1 = await T(() => __town.toScreen(3.5, 5.5)), s2 = await T(() => __town.toScreen(6.5, 5.5));
+    await T(() => { __town.chooseTool({ kind: 'part', id: 'road_dirt' }); __town.cam.x = 15; __town.cam.y = 12; __town.cam.zoom = 1; });
+    const s1 = await T(() => __town.toScreen(13.5, 12.5)), s2 = await T(() => __town.toScreen(16.5, 12.5));
     await p.mouse.move(s1[0], s1[1]); await p.mouse.down(); await p.mouse.move(s2[0], s2[1], { steps: 8 }); await p.mouse.up();
-    ok(await T(() => [3, 4, 5, 6].every(x => __town.town.ground[x + ',5'] === 'road_dirt')), 'みちを なぞって ぬる');
+    ok(await T(() => [13, 14, 15, 16].every(x => __town.town.ground[x + ',12'] === 'road_dirt')), 'みちを なぞって ぬる');
     await T(() => { __town.chooseTool({ kind: 'select' }); __town.tapBuild(10.5, 10.5); });
     await p.click('#act [data-a=move]'); await T(() => { __town.tapBuild(12.5, 13.5); __town.tapBuild(12.5, 13.5); });
     ok(await T(() => __town.town.objects.some(o => o.type === 'house_basic' && o.x === 12 && o.y === 12)), 'うごかす');
@@ -420,16 +420,29 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(await T(() => S.points === 130 && JSON.parse(localStorage.getItem('moko-math-v1')).points === 130 && __town.town.unlockedParts.includes('lamp')), 'かうと ⭐が へって つかえる ように なる');
     await T(() => __town.buy('lamp')); ok(await T(() => S.points === 130), 'おなじ ものは 2かい かえない');
     await T(() => __town.buy('fountain')); ok(await T(() => S.points === 130 && !__town.town.unlockedParts.includes('fountain')), '⭐が たりないと かえない');
-    await T(() => { closePop(); __town.setMode('build'); __town.chooseTool({ kind: 'part', id: 'lamp', r: 0 }); __town.tapBuild(5.5, 8.5); __town.tapBuild(5.5, 8.5); __town.setMode('view'); });
+    await T(() => { closePop(); __town.setMode('build'); __town.chooseTool({ kind: 'part', id: 'lamp', r: 0 }); __town.tapBuild(24.5, 26.5); __town.tapBuild(24.5, 26.5); __town.setMode('view'); });
     ok(await T(() => __town.town.objects.some(o => o.type === 'lamp')), 'かった パーツを おける');
     // じゅうにん
     await T(() => { const h = __town.town.objects.find(o => o.type === 'house_basic'); __town.toggleResident(h.id, 'c_hamster'); __town.toggleResident(h.id, 'c_unicorn'); closePop(); });
     ok(await T(() => JSON.stringify(__town.town.objects.find(o => o.type === 'house_basic').residents)) === '["c_hamster"]', 'もっている キャラだけ すめる');
     await T(() => __town.people.list.forEach(q => { q.wait = 0; })); await p.waitForTimeout(2500);
     ok(await T(() => __town.people.list.some(q => q.id === 'c_hamster' && q.state !== 'home')), 'じゅうにんが まちを あるく');
+    // まちレベル・あたらしい とち
+    ok(await T(() => __town.town.townLevel === 1 && !__town.town.unlockedAreas.includes('forest')), 'さいしょは Lv1・まんなかだけ');
+    await T(() => { __town.setMode('build'); __town.chooseTool({ kind: 'part', id: 'tree_basic', r: 0 }); __town.tapBuild(15.5, 3.5); });
+    ok(await T(() => __town.ui.pending && __town.ui.pending.reason === 'lock'), 'ひらいて いない とちには おけない');
+    await T(() => { const add = (type, x, y) => __town.town.objects.push({ id: 'z' + x + y, type, x, y, r: 0, residents: [] }); add('house_basic', 9, 26); add('house_basic', 12, 26); add('flowerbed', 9, 29); add('swing', 12, 29); add('tree_pine', 15, 29); add('mailbox', 16, 29); add('rock', 17, 29); __town.changed(); });
+    ok(await T(() => __town.town.townLevel >= 2 && __town.town.unlockedAreas.includes('forest') && __town.town.objects.some(o => o.y <= 7 && /tree/.test(o.type))), 'レベルが あがると もりの エリアが ひらく ' + await T(() => JSON.stringify(__town.levelInfo())));
+    ok(/レベル アップ/.test(await p.textContent('#ov')), 'レベル アップの おしらせ');
+    await T(() => { closePop(); __town.setMode('view'); });
+    // おうちの なか（おへやで もっている かぐ）
+    await T(() => { const h = __town.town.objects.find(o => o.type === 'house_basic' && o.residents && o.residents.includes('c_hamster')); __town.setInside(h.id, 'u_bed'); __town.setInside(h.id, 'w_dots'); __town.setInside(h.id, 'u_castle'); __town.openInside(h); });
+    ok(await T(() => { const h = __town.town.objects.find(o => o.residents && o.residents.includes('c_hamster')); return JSON.stringify(h.room); }) === '{"wall":"w_dots","floor":"f_wood","furn":["u_bed"]}', 'おうちの なかに もっている かぐ・かべを おける（もっていない ものは おけない）');
+    ok(/ハムスター/.test(await p.textContent('#ov')) && await p.locator('#ov .inroom svg').count() === 1, 'おうちの なかに すんでいる キャラ');
+    await T(() => closePop());
     // ほぞん・もどる
     await T(() => __town.saveNow()); await p.reload(); await p.waitForSelector('body[data-ready="1"]');
-    ok(await T(() => __town.town.objects.some(o => o.type === 'lamp') && __town.town.ground['4,5'] === 'road_dirt' && __town.town.objects.find(o => o.type === 'house_basic').residents[0] === 'c_hamster'), 'とじても のこる（たてもの・みち・すむひと）');
+    ok(await T(() => __town.town.objects.some(o => o.type === 'lamp') && __town.town.unlockedAreas.includes('forest') && __town.town.objects.find(o => o.room).room.furn[0] === 'u_bed' && __town.town.ground['14,12'] === 'road_dirt' && __town.town.objects.find(o => o.type === 'house_basic').residents[0] === 'c_hamster'), 'とじても のこる（たてもの・みち・すむひと）');
     await p.click('#toRoom'); await p.waitForLoadState(); await p.waitForTimeout(500);
     ok(!p.url().includes('machi') && await T(() => S.points) === 130, 'おへやに もどる（⭐が いっしょ）');
     await T(() => { closePop(); go('shop'); });

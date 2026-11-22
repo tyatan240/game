@@ -13,7 +13,7 @@ function line(g, c, w) { g.strokeStyle = c; g.lineWidth = w; g.lineJoin = 'round
 
 /* ---------- じめん（1マス） ---------- */
 const GROUND = {
-  grass: '#a6dc78', road_dirt: '#e2c497', road_stone: '#cfd2da', road_brick: '#e0957a', road_pink: '#f9c6d8', water: '#86cdf2', plaza: '#efe6d6',
+  grass: '#a6dc78', sand: '#f6e3b0', road_dirt: '#e2c497', road_stone: '#cfd2da', road_brick: '#e0957a', road_pink: '#f9c6d8', water: '#86cdf2', plaza: '#efe6d6',
 };
 export function drawGround(g, id, x, y, T, nb) {
   const R = rnd(hash(x, y)), c = GROUND[id] || GROUND.grass;
@@ -42,6 +42,8 @@ export function drawGround(g, id, x, y, T, nb) {
   } else if (id === 'road_brick' || id === 'road_pink') {
     g.strokeStyle = id === 'road_pink' ? '#fff' : '#c97a62'; g.lineWidth = T / 28;
     for (let j = 0; j < 4; j++) { g.beginPath(); g.moveTo(0, j * T / 4); g.lineTo(T, j * T / 4); g.stroke(); for (let i = 0; i < 2; i++) { const xx = (i + (j % 2) * .5) * T / 2; g.beginPath(); g.moveTo(xx, j * T / 4); g.lineTo(xx, (j + 1) * T / 4); g.stroke(); } }
+  } else if (id === 'sand') {
+    g.fillStyle = '#ead29a'; for (let i = 0; i < 6; i++) { circ(g, R() * T, R() * T, T * .025); g.fill(); } return;
   } else {
     g.fillStyle = shade(c, .93); for (let i = 0; i < 5; i++) { circ(g, R() * T, R() * T, T * .03); g.fill(); }
   }
