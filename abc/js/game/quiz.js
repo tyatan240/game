@@ -26,7 +26,10 @@ export function letterQuestion(target, pool, kind, nChoices, rand = Math.random)
 //   'wordPic'   … えいごを よんで（きいて）えを えらぶ
 export function wordQuestion(target, kind, nChoices = 3, rand = Math.random) {
   const W = WORD[target];
-  const others = shuffle(WORDS.filter(w => w.id !== target).map(w => w.id), rand).slice(0, nChoices - 1);
+  // おなじ ワールドの ことば（ワールド3は なるべく おなじ なかま：かず なら かず）から えらぶ
+  const same = WORDS.filter(w => w.id !== target && !w.future && (w.world || 1) === (W.world || 1));
+  const kin = same.filter(w => W.kind && w.kind === W.kind), rest = same.filter(w => !kin.includes(w));
+  const others = [...shuffle(kin, rand), ...shuffle(rest, rand)].slice(0, nChoices - 1).map(w => w.id);
   const choices = shuffle([target, ...others], rand);
   return {
     kind, target, choices, answer: target, voice: W,

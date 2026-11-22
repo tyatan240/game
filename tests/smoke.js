@@ -792,6 +792,75 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
   }
 
+  console.log('20d. ABCぼうけん ワールド3「ことばの まち」（あいさつの ひろば・かずの いちば）');
+  {
+    const p = await page({ width: 1024, height: 768 });
+    await p.goto(B + 'index.html');
+    await p.evaluate(() => { const L = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''); localStorage.setItem('abc-adventure-v1', JSON.stringify({ v: 1, t: 1, started: true, clears: 1, stars: 50, starsSent: 50, learned: L, lower: L.map(x => x.toLowerCase()),
+      flags: { intro: true, bossCleared: true, bridgeOpen: true, alphabetClear: true }, quests: Object.fromEntries(['apple', 'flowers', 'bee', 'honey', 'sun', 'dog', 'pie', 'cat', 'fish', 'bird', 'colors'].map(q => [q, 'done'])),
+      world: { gate: 'open', gate_forest: 'open', gate_village: 'open', gate_lake: 'open', gate_garden: 'open' }, areas: ['meadow', 'hill', 'island', 'forest', 'village', 'lake', 'garden', 'lower'], hero: { x: 38.5, y: 10.8, dir: 'right', area: 'lower' } })); });
+    await p.goto(B + 'abc/index.html'); await p.waitForTimeout(400); await p.click('#cont'); await p.waitForTimeout(800);
+    const go = async ms => { await p.keyboard.down('ArrowRight'); await p.waitForTimeout(ms); await p.keyboard.up('ArrowRight'); await p.waitForTimeout(1000); };
+    await go(1200);
+    ok(await p.evaluate(() => __abc.area()) === 'lower', 'こもじの もんを ひらく まえは ことばの まちに いけない');
+    await p.evaluate(() => { __abc.S.flags.lowerClear = true; __abc.S.world.gate_lower = 'open'; __abc.hero.x = 41.5 * 32; });
+    await go(900);
+    ok(await p.evaluate(() => __abc.area() === 'w3plaza' && /せんせい/.test(__abc.objective().text)), 'こもじの もりの ひがしから「あいさつの ひろば」へ');
+    const kinds = await p.evaluate(async () => { const { WORDS } = await import('./js/data/words.js'); return Object.fromEntries(WORDS.map(w => [w.id, w.kind])); });
+    let sentShot = null;
+    const drive = async (opt = {}) => {
+      for (let k = 0; k < 200; k++) {
+        if (await p.$('.dlg')) { await p.keyboard.press('Enter'); await p.waitForTimeout(60); continue; }
+        if (await p.$('.quiz .ch')) { const a = await p.evaluate(() => window.__abcQ.answer); const bt = await p.$(`.quiz .ch[data-v="${a}"]:not(.ok)`); if (bt) await bt.click(); await p.waitForTimeout(1450); continue; }
+        if (await p.$('.w3sent')) {
+          if (opt.wrong) { // まちがえた ぶんは とおらない
+            const ids = opt.wrong; opt.wrong = null;
+            for (const id of ids) await p.click(`.w3sent .w3c[data-id="${id}"]`);
+            await p.click('.w3sent [data-a=say]'); await p.waitForTimeout(300);
+            sentShot = { msg: await p.textContent('.w3sent .mmsg'), open: !!(await p.$('.w3sent')) };
+            for (const id of ids) await p.click(`.w3sent .w3c[data-id="${id}"]`); // はずす
+          }
+          const h = await p.$('.w3sent [data-a=hint]');
+          if (h) { await h.click(); for (const c of await p.$$('.w3sent .w3c.glow')) await c.click(); }
+          else { const seen = new Set(); for (const c of await p.$$('.w3sent .w3c')) { const kd = kinds[await c.getAttribute('data-id')]; if (!seen.has(kd)) { seen.add(kd); await c.click(); } } }
+          await p.click('.w3sent [data-a=say]'); await p.waitForTimeout(1800); continue;
+        }
+        if (await p.$('.w3teach .go')) { await p.click('.w3teach .go'); continue; }
+        if (await p.$('.notice .go')) { await p.click('.notice .go'); continue; }
+        if (await p.$('.modal [data-a=no]')) { await p.click('.modal [data-a=no]'); continue; }
+        if (await p.evaluate(() => __abc.mode === 'play')) return;
+        await p.waitForTimeout(120);
+      }
+    };
+    const talk = async (id, opt) => { await p.evaluate(i => __abc.approach(i), id); await p.keyboard.press('Enter'); await p.waitForTimeout(250); await drive(opt); };
+    await talk('w3Parrot');
+    ok(await p.evaluate(() => ['hello', 'goodbye', 'thankyou', 'sorry'].every(id => __abc.S.words[id]) && __abc.S.records['w:hello'] && __abc.S.stars >= 52), 'せんせいに ことばを ならう（よむ・きく クイズ → ことばに とうろく）');
+    await talk('w3Sheep'); await talk('w3Pig');
+    ok(await p.evaluate(() => __abc.S.sentences.im && __abc.S.sentences.im.made.length === 1 && /アヒル/.test(__abc.objective().text)), 'ぶんカード「I\'m ＿.」を ならって ぶんを つくる → クエストへ');
+    for (const id of ['w3Duck', 'w3Cow', 'w3Penguin']) await talk(id);
+    ok(await p.evaluate(() => __abc.S.quests.w3hello === 'done'), 'かいわ：あいさつを えらんで みんなの こえが もどる');
+    await talk('w3Koala'); await talk('w3Monkey'); await talk('w3Lion', { wrong: ['sleepy'] });
+    ok(sentShot && sentShot.open && /うれしい/.test(sentShot.msg), 'ちがう ぶんは とおらない（ヒントが でる） ' + JSON.stringify(sentShot));
+    ok(await p.evaluate(() => __abc.S.quests.w3feel === 'done' && __abc.S.records['w:sleepy'] && /あいさつの もん/.test(__abc.objective().text)), 'How are you? → へんじを よんで あう ものを わたす・ぶんカードで こたえる');
+    await talk('w3gate1');
+    ok(await p.evaluate(() => __abc.S.world.gate_w3plaza === 'open'), 'あいさつの もんで おさらい → ひらく');
+    await p.evaluate(() => { __abc.hero.x = 36.5 * 32; __abc.hero.y = 11 * 32 - 4; }); await go(1500);
+    ok(await p.evaluate(() => __abc.area()) === 'w3market', 'かずの いちばへ');
+    // いちばは ことばを ならった ことに して クエストから
+    await p.evaluate(() => { for (const id of ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'apples', 'bananas', 'eggs']) __abc.S.words[id] = { at: 1 }; __abc.S.sentences.please = { at: 1, made: [] }; });
+    await talk('w3Baker'); await talk('w3FruitKeeper', { wrong: ['two', 'apples'] });
+    ok(sentShot && /3こ/.test(sentShot.msg) && await p.evaluate(() => __abc.S.inv.apples3 === 1 && __abc.S.sentences.please.made.includes('please:three+apples')), 'おみせで「Three apples, please.」（かずが ちがうと もらえない）');
+    await talk('w3EggKeeper'); await talk('w3Baker');
+    ok(await p.evaluate(() => __abc.S.quests.w3pie === 'done' && !__abc.S.inv.apples3 && !__abc.S.inv.eggs2), 'りんご 3こ と たまご 2こを とどけて アップルパイ');
+    await talk('w3Clown');
+    ok(await p.evaluate(() => __abc.S.quests.w3balloon === 'done' && __abc.S.records['w:ten']), 'ふうせんを かぞえて えいごで こたえる');
+    await talk('w3gate2');
+    ok(await p.evaluate(() => __abc.S.world.gate_w3market === 'open' && /じゅんびちゅう/.test(__abc.objective().text)), 'かずの もん → つぎは じゅんびちゅう');
+    await p.goto(B + 'index.html'); await p.waitForTimeout(300);
+    ok(await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('abc-adventure-v1')); return d.sentences.im && d.sentences.please && d.words.happy && d.quests.w3pie === 'done'; }), 'ほぞん：おぼえた ことば・ぶん・クエスト');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+  }
+
   console.log('20b. ABCぼうけん：ドラコが うごいた ところに いても うごける');
   {
     const p = await page({ width: 844, height: 390 });

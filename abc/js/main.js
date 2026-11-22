@@ -8,13 +8,15 @@ import { unlockAudio, setAudioSettings, sfx } from './engine/audio.js';
 import { LETTERS } from './data/letters.js';
 import { WORD, WORDS } from './data/words.js';
 import { SPELLS } from './data/combos.js';
-import { START, ITEMS, INV, STORY } from './data/world1.js';
+import { FRAME, sentenceKey } from './data/sentences.js';
+import { drawStall } from './engine/art3.js';
+import { START, ITEMS, INV, STORY, GIFTS } from './data/world1.js';
 import { AREAS, ORDER, CHAPTER, WHERE } from './data/areas.js';
 import { W, H, area, setArea, tileAt, isWater, isPath, things, move, facing, heroTile, markPos, exitAt, exitOpen, isOpenGate, vinesKey, solidAt, inside, unstick } from './game/world.js';
 import { load, save, replayState, getRecord, world2State } from './game/state.js';
 import { record, pickTargets, choiceCount, levelOf } from './game/learning.js';
 import { letterQuestion, wordQuestion, shuffle , lowerQuestion } from './game/quiz.js';
-import { activeQuests, currentStep, stepFor, advance, objective, QUEST } from './game/quests.js';
+import { activeQuests, currentStep, stepFor, advance, objective, QUEST, w3Learned } from './game/quests.js';
 import { tryCast, hintFor, applyEffects, comboKey } from './game/magic.js';
 import * as ui from './ui/ui.js';
 import { sendStars, housePoints } from './game/house.js';
@@ -160,7 +162,8 @@ function draw(t) {
     else if (k === 'well') list.push([Y + TS, spr(wellSprite(s), o.x, o.y - 1)]);
     else if (k === 'hive') list.push([Y + TS - 2, at(X, Y, () => drawHive(ctx, !!S.world.bees))]);
     else if (k === 'gate') list.push([Y + TS - 1, at(X, Y, () => drawGate(ctx, S.world.gate === 'open'))]);
-    else if (k === 'lettergate') list.push([Y + TS, at(X, Y, () => drawLetterGate(ctx, CHAPTER[o.ref.area].lower ? ['a', 'b', 'c', 'x', 'y', 'z'] : CHAPTER[o.ref.area].letters, isOpenGate(o, S), t))]);
+    else if (k === 'lettergate') list.push([Y + TS, at(X, Y, () => drawLetterGate(ctx, CHAPTER[o.ref.area].lower ? ['a', 'b', 'c', 'x', 'y', 'z'] : CHAPTER[o.ref.area].gateLabel || CHAPTER[o.ref.area].letters, isOpenGate(o, S), t))]);
+    else if (k === 'stall') list.push([Y + TS - 2, at(X, Y, () => drawStall(ctx, o.ref.color, o.ref.goods))]);
     else if (k === 'castlegate') list.push([bottom, at(X, Y, () => drawCastle(ctx, S.world.gate_garden === 'open', t))]);
     else if (k === 'sunstone') list.push([Y + TS - 2, at(X, Y, () => drawSunstone(ctx, t))]);
     else if (k === 'mound') list.push([Y + TS - 2, at(X, Y, () => drawMound(ctx, S.world.mound === 'dug'))]);
@@ -207,6 +210,7 @@ function draw(t) {
     let label = null, col = '#fff';
     if (n.letter) label = S.learned.includes(n.letter) ? n.letter : '?';
     if (n.lower) label = n.lower.every(l => (S.lower || []).includes(l)) ? n.lower[0] + '〜' + n.lower[n.lower.length - 1] : '?';
+    if (n.teach) label = n.teach.every(w => S.words[w]) && (!n.frame || (S.sentences || {})[n.frame]) ? '♪' : '?';
     if (n.boss && !S.flags.bossCleared) { label = S.learned.length >= 5 ? '!' : '…'; }
     if (n.id === 'rabbit' && !S.flags.intro) label = null;
     if (questT.has(n.id)) { label = '!'; col = '#ffe08a'; }
@@ -280,7 +284,9 @@ let lastGoal = '';
 function hud() {
   document.getElementById('starN').textContent = S.stars;
   const ch = CHAPTER[area().id] || CHAPTER.island, lw = S.lower || [];
-  document.getElementById('slots').innerHTML = ch.lower
+  document.getElementById('slots').innerHTML = ch.w3
+    ? `<em>ことば ${ch.words.filter(id => S.words[id]).length}/${ch.words.length}</em>`
+    : ch.lower
     ? ch.lower.filter((_, i) => i % 5 === 0 || i === 25).map(id => `<i class="${lw.includes(id) ? 'got' : ''}">${lw.includes(id) ? id : ''}</i>`).join('') + `<em>${lw.length}/26</em>`
     : ch.letters.map(id => `<i class="${S.learned.includes(id) ? 'got' : ''}">${S.learned.includes(id) ? id : ''}</i>`).join('') + `<em>${S.learned.length}/26</em>`;
   curObj = objective(S);
@@ -377,6 +383,7 @@ async function talk(o) {
     else if (o.type === 'obj') await examine(o.ref);
     else if (o.ref.boss) await bossEvent();
     else if (o.ref.lower) await lowerTeacher(o.ref);
+    else if (o.ref.teach) await w3Teacher(o.ref);
     else if (o.ref.letter && !S.learned.includes(o.ref.letter)) await teacher(o.ref);
     else if (SPEAKER_SAY(o.ref)) { await sayH(SPEAKER_SAY(o.ref)); await offerReview(o.ref.id); }
     else if (o.ref.letter) await teacher(o.ref);
@@ -420,6 +427,7 @@ async function runStep(q, st, o) {
     await finishStep(q, st); return true;
   }
   if (st.on === 'spell') { await castAt(o, q, st); return true; }
+  if (st.on === 'convo' || st.on === 'ask' || st.on === 'sentence' || st.on === 'count') return w3Step(q, st, o);
   return false;
 }
 async function finishStep(q, st) {
@@ -541,8 +549,104 @@ async function lowerGate(ob) {
   await ui.notice('こもじ ぜんぶ クリア！', 'おおもじも こもじも よめる ように なったね！<br>えいごの「べんきょう」でも れんしゅう できるよ。');
 }
 
+/* ---------- ワールド3：ことばの まち ---------- */
+const W3KINDS = ['listenPic', 'wordPic', 'picWord'];
+async function w3Teacher(n) {
+  S.sentences = S.sentences || {};
+  const left = n.teach.filter(id => !S.words[id]), fr = n.frame && FRAME[n.frame];
+  if (left.length) {
+    await sayH([[n.name, 'Hello! ことばの まちへ ようこそ。'], [n.name, `えいごの ことばを ${n.teach.length}こ おしえて あげるね！ よんで、きいて、おぼえよう！`]]);
+    await ui.teachWords(n.teach);
+    await ui.quiz(shuffle(n.teach).map((id, i) => wordQuestion(id, i % 2 ? 'wordPic' : 'listenPic', 3)), { title: `${n.name}の クイズ`, onAnswer: answerLog });
+    for (const id of n.teach) if (!S.words[id]) S.words[id] = { at: Date.now() };
+    S.stars += 2; persist(); await ui.starFly(2, hud);
+    await sayH([[n.name, 'よく できました！ おぼえた ことばは メニューの「ことばずかん」でも きけるよ。']]);
+  }
+  if (fr && !S.sentences[fr.id]) {
+    await sayH([[n.name, 'つぎは「ぶんカード」！ ことばカードを はめると えいごの ぶんが できるよ。']]);
+    await ui.teachFrame(fr, fr.example.map(id => WORD[id]));
+    const ids = await makeSentence(fr, { title: 'すきな ことばで ぶんを つくって みよう！' });
+    if (!ids) { await sayH([[n.name, 'また いつでも つくりに きてね！']]); return; }
+    S.sentences[fr.id] = { at: Date.now(), made: [sentenceKey(fr.id, ids)] };
+    S.stars += 1; persist(); await ui.starFly(1, hud);
+    await ui.notice('ぶんカード ゲット！', `「${fr.tpl.join(' ').replace(' .', '.').replace(' ,', ',')}」の ぶんが つくれる ように なった！<br>まちの みんなと はなす ときに つかおう。`);
+    if (w3Learned(S, area().id)) await ui.notice('ことばを ぜんぶ ならった！', 'まちの こまっている ひとを えいごで たすけよう！ うえの「つぎは」を みてね。');
+    return;
+  }
+  if (!left.length) {
+    await sayH([[n.name, 'おさらい しよう！']]);
+    const recs = Object.fromEntries(n.teach.map(id => [id, S.records['w:' + id]]));
+    const [t] = pickTargets(n.teach, recs, 1);
+    await ui.quiz([wordQuestion(t, W3KINDS[(Math.random() * 3) | 0], levelOf(S.records['w:' + t]) >= 2 ? 4 : 3)], { title: 'おさらい', onAnswer: answerLog });
+    await sayH([[n.name, 'Good job! よく できました！']]);
+  } else if (w3Learned(S, area().id)) await ui.notice('ことばを ぜんぶ ならった！', 'まちの こまっている ひとを えいごで たすけよう！ うえの「つぎは」を みてね。');
+}
+// ぶんカードで ぶんを つくる（want が あれば その ぶん だけ せいかい）
+async function makeSentence(fr, { want, wrong, title } = {}) {
+  let fails = 0, hinted = false;
+  const ids = await ui.sentence(S, {
+    frame: fr, title: title || 'ぶんカードで ぶんを つくろう！',
+    check: sel => { if (want && sel.join() !== want.join()) { fails++; return { ok: false, msg: wrong || 'ちがう みたい。もういちど！' }; } return { ok: true }; },
+    hint: want ? () => { hinted = true; return { text: `「${fr.make(want.map(id => WORD[id]))}」 と いって みよう！`, highlight: want }; } : null,
+  });
+  if (!ids) return null;
+  ids.forEach(id => { S.records['w:' + id] = record(getRecord(S, 'w:' + id), true, fails === 0 && !hinted); });
+  const e = S.sentences[fr.id]; const k = sentenceKey(fr.id, ids);
+  if (e && !e.made.includes(k)) e.made.push(k);
+  persist(); return ids;
+}
+const optOf = id => ({ text: WORD[id].word, art: WORD[id].art });
+async function w3Step(q, st, o) {
+  if (st.pre) await sayH(st.pre);
+  if (st.on === 'convo') {
+    const ch = shuffle(st.choices);
+    await ui.quiz([{ kind: 'convo', target: st.answer, answer: st.answer, choices: ch, render: 'opt', opts: Object.fromEntries(ch.map(id => [id, optOf(id)])),
+      prompt: st.ask, en: st.line || null, voice: st.line ? { speak: st.line } : null, silent: !st.line, okVoice: WORD[st.answer], recKey: 'w:' + st.answer, label: id => WORD[id].word }], { title: 'かいわ', onAnswer: answerLog });
+  } else if (st.on === 'ask') {
+    const greet = shuffle(WORDS.filter(w => w.kind === 'greet' && w.id !== st.answer && S.words[w.id]).map(w => w.id)).slice(0, 2);
+    const ch1 = shuffle([st.answer, ...greet]), feel = ['happy', 'sleepy', 'hungry'].find(f => st.reply.includes(f));
+    await ui.quiz([
+      { kind: 'convo', target: st.answer, answer: st.answer, choices: ch1, render: 'opt', opts: Object.fromEntries(ch1.map(id => [id, optOf(id)])), prompt: `${o.ref.name}に「げんき？」って きこう！`, silent: true, okVoice: WORD[st.answer], recKey: 'w:' + st.answer, label: id => WORD[id].word },
+      { kind: 'gift', target: st.give, answer: st.give, choices: shuffle(st.items), render: 'opt', opts: Object.fromEntries(st.items.map(id => [id, { text: GIFTS[id].ja, art: GIFTS[id].art }])),
+        prompt: 'なんて いったかな？ あう ものを あげよう！', en: st.reply, voice: { speak: st.reply }, recKey: feel ? 'w:' + feel : null, label: id => GIFTS[id].ja },
+    ], { title: 'かいわ', onAnswer: (qq, ok, first) => { if (qq.recKey) answerLog(qq, ok, first); } });
+  } else if (st.on === 'sentence') {
+    const fr = FRAME[st.frame];
+    const ids = await makeSentence(fr, { want: st.want, wrong: st.wrong, title: `ぶんカードで いおう！（${fr.ja}）` });
+    if (!ids) return true; // やめた：あとで もういちど
+    if (st.give) S.inv[st.give] = (S.inv[st.give] || 0) + 1;
+  } else if (st.on === 'count') {
+    await ui.quiz(st.rounds.map(n => {
+      const ids = WORDS.filter(w => w.kind === 'number'), ans = ids[n - 1].id;
+      const near = shuffle(ids.filter(w => w.id !== ans && Math.abs(w.n - n) <= 3).map(w => w.id)).slice(0, 2), ch = shuffle([ans, ...near]);
+      return { kind: 'count', target: ans, answer: ans, choices: ch, render: 'opt', opts: Object.fromEntries(ch.map(id => [id, { text: WORD[id].word }])), picture: 'balloon' + n,
+        prompt: 'ふうせんは いくつ？ えいごで こたえよう！', silent: true, okVoice: WORD[ans], recKey: 'w:' + ans, label: id => WORD[id].word };
+    }), { title: 'かぞえて みよう', onAnswer: answerLog });
+  }
+  if (st.after) await sayH(st.after);
+  if (st.give && INV[st.give]) await ui.notice(`${INV[st.give].name}を もらった！`, 'メニューの「もちもの」で みられるよ。', wordArt(INV[st.give].art, 110));
+  await finishStep(q, st);
+  return true;
+}
+async function w3Gate(ob) {
+  const ch = CHAPTER[ob.area], key = 'gate_' + ob.area;
+  if (S.world[key] === 'open') return sayH([['', `${ob.name}は ひらいているよ。`]]);
+  if (!w3Learned(S, ob.area) || !ch.quests.every(id => S.quests[id] === 'done'))
+    return sayH([['', `${ob.name}だ。えいごの ことばが きざまれている。`], ['', 'ことばを ならって、まちの みんなを たすけたら おさらい できるよ。']]);
+  await sayH([['', `${ob.name}が ひかっている！`], ['', 'おさらい クイズ！ 5もん こたえよう！']]);
+  const recs = Object.fromEntries(ch.words.map(id => [id, S.records['w:' + id]]));
+  const ids = pickTargets(ch.words, recs, 5);
+  await ui.quiz(ids.map((id, i) => wordQuestion(id, W3KINDS[i % 3], 4)), { title: 'ことばの おさらい', onAnswer: answerLog });
+  S.world[key] = 'open'; sfx.unlock(); persist();
+  await playFx('burst', 1.0, { c: center(ob) });
+  S.stars += 3; persist(); await ui.starFly(3, hud);
+  if (ch.next) await ui.notice('もんが ひらいた！', `つぎは「${AREAS[ch.next].name}」へ いこう！`);
+  else await ui.notice('もんが ひらいた！', 'つぎの まちは いま じゅんびちゅう！ たのしみに まっててね。<br>ことばの まちの せんせいと おさらいも できるよ。');
+}
+
 // もじの もん・おしろの もん（エリアの さいごの おさらい）
 async function letterGate(ob) {
+  if (CHAPTER[ob.area] && CHAPTER[ob.area].w3) return w3Gate(ob);
   if (ob.area === 'lower') return lowerGate(ob);
   const ch = CHAPTER[ob.area], key = 'gate_' + ob.area;
   if (S.world[key] === 'open') return sayH([['', ob.final ? 'おしろの もんは ひらいているよ。' : 'もじの もんは ひらいているよ。']]);
@@ -642,7 +746,7 @@ async function startWorld2() {
   unlockAudio();
   if (S.started && !(await ui.confirm('ワールド2「こもじの もり」から はじめる？<br><small>おぼえた もじの きろく・ほし・きがえは のこるよ</small>', 'はじめる', 'やめる'))) return;
   const ch = CHAPTER.lower, ent = AREAS.lower.entries.west;
-  S = world2State(S, { letters: LETTERS.map(l => l.id), words: WORDS, spells: SPELLS, quests: Object.values(QUEST), areas: ORDER.filter(a => a !== 'lower') });
+  S = world2State(S, { letters: LETTERS.map(l => l.id), words: WORDS.filter(w => (w.world || 1) === 1), spells: SPELLS, quests: Object.values(QUEST).filter(q => !q.id.startsWith('w3')), areas: ORDER.slice(0, ORDER.indexOf('lower')) });
   S.hero = { x: ent.x + 0.5, y: ent.y + 0.8, dir: ent.dir || 'right', area: 'lower' };
   if (!S.areas.includes(ch.area)) S.areas.push(ch.area);
   await startGame(false); // persist() は startGame の なか（さきに よぶと いまの いちで うわがき される）

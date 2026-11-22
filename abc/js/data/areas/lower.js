@@ -23,8 +23,9 @@ export const MAP = [
   'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT',
 ];
 
-export const entries = { west: { x: 1, y: 10, dir: 'right' } };
-export const exits = [{ x: 0, y: 10, to: 'garden', entry: 'east2' }];
+export const entries = { west: { x: 1, y: 10, dir: 'right' }, east: { x: 42, y: 10, dir: 'left' } };
+// ひがしは ワールド3「ことばの まち」（こもじの もんを ひらくと とおれる）
+export const exits = [{ x: 0, y: 10, to: 'garden', entry: 'east2' }, { x: 43, y: 10, to: 'w3plaza', entry: 'west', needs: { flag: 'lowerClear' } }];
 
 // lower … その せんせいが おしえる こもじ
 export const NPCS = [

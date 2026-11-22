@@ -24,6 +24,7 @@ export function defaultState() {
     quests: {},           // クエストの すすみ { apple: 'harvest', flowers: 'done' }（がくしゅう きろくとは べつ）
     inv: {},              // クエストの もちもの { apple: 1, bridgeKey: 1 }（きがえの items とは べつ）
     world: {},            // マップの へんか { gate: 'open', flowerbed: 'bloom', vines: 'open', bees: true }
+    sentences: {},        // ワールド3：おぼえた ぶんの かた { im: { at, made:['im:happy'] } }
     areas: ['meadow'],    // いける ばしょ
     settings: { bgm: true, se: true, voice: true },
   };
@@ -38,7 +39,7 @@ export function load() {
     return { ...base, ...d, hero: { ...base.hero, ...d.hero }, flags: { ...d.flags }, chests: { ...d.chests },
       wear: { ...base.wear, ...d.wear }, records: { ...d.records }, settings: { ...base.settings, ...d.settings },
       learned: Array.isArray(d.learned) ? d.learned : [], lower: Array.isArray(d.lower) ? d.lower : [], items: Array.isArray(d.items) ? d.items : [],
-      words: { ...d.words }, quests: { ...d.quests }, inv: { ...d.inv }, world: { ...d.world },
+      words: { ...d.words }, sentences: { ...d.sentences }, quests: { ...d.quests }, inv: { ...d.inv }, world: { ...d.world },
       combos: Array.isArray(d.combos) ? d.combos : [], areas: Array.isArray(d.areas) ? d.areas : ['meadow'] };
   } catch (e) { return base; }
 }
