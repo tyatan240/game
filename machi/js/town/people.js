@@ -39,7 +39,7 @@ function path(t, occ, from, to) {
 export class People {
   constructor() { this.list = []; this.occ = null; }
   // まちの データ と もっている キャラ から じゅうにんを きめる
-  sync(t, avatar) {
+  sync(t, avatar, mobs = []) {
     const keep = new Map(this.list.map(p => [p.id, p]));
     const want = [];
     for (const o of t.objects) {
@@ -52,6 +52,8 @@ export class People {
       if (p.home !== home.id) { p.home = home.id; p.state = 'home'; p.path = null; p.wait = Math.min(p.wait, 1 + Math.random() * 2); }
       return p;
     });
+    // モブじゅうにん（おうちは なく、まちを ぶらぶら）
+    for (const id of mobs) this.list.push(keep.get(id) || { id, mob: true, home: null, x: 0, y: 0, state: 'home', wait: Math.random() * 2, path: null, say: null, sayT: 0, bob: Math.random() * 6, trips: 0, face: 1 });
     this.t = t; this.occ = occupancy(t);
   }
   // まちが かわったら みちを つくりなおす
@@ -75,6 +77,7 @@ export class People {
     for (const p of this.list) {
       p.bob += dt * 8;
       if (p.sayT > 0) { p.sayT -= dt; if (p.sayT <= 0) p.say = null; }
+      if (p.mob) { this.updateMob(p, dt); continue; }
       const home = this.homeOf(p.home); if (!home) continue;
       const door = doorCell(home);
       if (p.state === 'home') {
@@ -98,6 +101,26 @@ export class People {
         else { p.x += dx / d * sp; p.y += dy / d * sp; }
       }
     }
+  }
+
+  // モブ：まんなかの あたりに でてきて、ずっと まちを あるく
+  updateMob(p, dt) {
+    if (p.state === 'home') {
+      p.wait -= dt; if (p.wait > 0) return;
+      for (let i = 0; i < 60; i++) { const x = 12 + ((Math.random() * 16) | 0), y = 12 + ((Math.random() * 16) | 0); if (walkable(this.t, x, y, this.occ)) { p.x = x; p.y = y; p.state = 'idle'; p.wait = .5; return; } }
+      p.wait = 3; return;
+    }
+    if (p.state === 'idle') {
+      p.wait -= dt; if (p.wait > 0) return;
+      const to = this.pickTarget(p), pa = to && path(this.t, this.occ, [Math.round(p.x), Math.round(p.y)], to);
+      if (pa && pa.length) { p.path = pa; p.state = 'walk'; } else p.wait = 1 + Math.random() * 2;
+      return;
+    }
+    if (!p.path) { p.state = 'idle'; p.wait = .3; return; }
+    const [tx, ty] = p.path[0], dx = tx - p.x, dy = ty - p.y, d = Math.hypot(dx, dy), sp = 1.4 * dt;
+    if (dx) p.face = Math.sign(dx);
+    if (d <= sp) { p.x = tx; p.y = ty; p.path.shift(); if (!p.path.length) { p.path = null; p.state = 'idle'; p.wait = 2 + Math.random() * 4; } }
+    else { p.x += dx / d * sp; p.y += dy / d * sp; }
   }
 
   talk(p) {

@@ -227,7 +227,7 @@ function defState(){return{v:1,t:0,points:0,
   ktypes:Object.fromEntries(KTYPES.map(t=>[t.id,{on:true,pts:t.pts}])),
   etypes:Object.fromEntries(ETYPES.map(t=>[t.id,{on:true,pts:t.pts}])),
   perRound:5,perfect:3,daily:5,sound:true,testScale:1,practiceMul:2,practiceBonus:5,progPts:3,gachaOn:true,gachaCost:100,gachaDaily:0,abcPts:10,goalPts:10,goalAll:50},
- lastDay:'',stats:{q:0,ok:0},kstats:{q:0,ok:0},estats:{q:0,ok:0},tests:{},daily:newDaily(''),gacha:{day:'',count:0,pulls:0},looks:{}}}
+ lastDay:'',stats:{q:0,ok:0},kstats:{q:0,ok:0},estats:{q:0,ok:0},tests:{},daily:newDaily(''),gacha:{day:'',count:0,pulls:0},looks:{},hw:{}}}
 function merge(d){
  const s=defState(); if(!d||typeof d!=='object') return s;
  if(typeof d.points==='number') s.points=d.points;
@@ -246,6 +246,7 @@ function merge(d){
  if(d.estats) Object.assign(s.estats,d.estats);
  if(d.daily&&typeof d.daily==='object') s.daily={...s.daily,...d.daily,got:{...(d.daily.got||{})}};
  if(d.tests&&typeof d.tests==='object') s.tests=d.tests;
+ if(d.hw&&typeof d.hw==='object') for(const k in d.hw) if(typeof d.hw[k]==='number') s.hw[k]=d.hw[k];
  if(d.looks&&typeof d.looks==='object') for(const c in d.looks){const l=d.looks[c];if(!ITEM[c]||!l||typeof l!=='object')continue;
   s.looks[c]={};for(const k of LOOK) if(l[k]&&ITEM[l[k]]) s.looks[c][k]=l[k]}
  return s}
@@ -849,4 +850,9 @@ function showPop(html){const o=$('#ov');o.innerHTML=`<div class="pop">${html}</d
 function closePop(){$('#ov').classList.add('hide');$('#ov').innerHTML=''}
 const ACT={};
 document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;const f=ACT[b.dataset.act];if(f)f(b.dataset.arg,b)});
+/* ---------- まちの じゅうにんの「しゅくだい」（machi/ から #hw=だれ|テスト で くる）---------- */
+// れんしゅうを さいごまで やると S.hw[だれ]＝じこく。まちに もどると おれいを してくれる
+const HW=(()=>{const m=/[#&]hw=([a-z_]+)\|([\w-]+)/.exec(location.hash);return m?{mob:m[1],key:m[2]}:null})();
+function hwDone(){if(!HW)return false;S.hw[HW.mob]=Date.now();save();return true}
+const hwBack=()=>HW?`<div class="hwdone">📒 しゅくだい できたね！<a class="big" href="../machi/index.html" style="text-decoration:none;text-align:center;display:block;margin-top:6px">🏘️ まちに もどって おしえる</a></div>`:'';
 if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register(document.querySelector('meta[name=sw]').content).catch(()=>{});

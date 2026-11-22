@@ -1,7 +1,9 @@
 // モコの まち：がめん・そうさ・つくる・まちの おみせ・じゅうにん
 // core.js（クラシック）の S・save()・charSVG・ITEM・showPop・ACT を つかう（ほし と キャラ は おうちと きょうつう）
 import { CATS, PARTS, PART, SHOP_PARTS, LOOK, FAV, FAV_NAME } from './data/parts.js';
-import { W, H, loadTown, saveTown, groundAt, sizeOf, occupancy, canPlace, canPaint, hasPart, History, inMap, openArea } from './town/town.js';
+import { W, H, loadTown, saveTown, groundAt, sizeOf, occupancy, canPlace, canPaint, hasPart, History, inMap, openArea, CUSTOM_SIZES } from './town/town.js';
+import { QUESTS, QUEST } from './data/quests.js';
+import { MOBS, MOB, HW_COOLDOWN, HW_REWARD, newHomework, NOT_YET, mobEquip } from './data/mobs.js';
 import { AREAS, AREA, scoreTown } from './data/areas.js';
 import { drawGround, drawObject, drawIcon } from './render/art.js';
 import { People, charImage } from './town/people.js';
@@ -98,7 +100,8 @@ function draw(time) {
     g.strokeStyle = pv.ok ? '#fff' : '#ff4d4d'; g.lineWidth = 3; g.strokeRect(1, 1, w * t - 2, h * t - 2);
     g.globalAlpha = pv.ok ? .7 : .45; drawObject(g, pv, t, time); g.restore();
   }
-  for (const p of people.visible()) if (p.say) bubble(p, t);
+  const asking = new Set([...activeQuestsCache.map(a => a.who), ...MOBS.filter(m => hwState(m).active).map(m => m.id)]);
+  for (const p of people.visible()) { if (p.say) bubble(p, t); else if (asking.has(p.id)) mark(p, t, time); }
 }
 
 // まだ ひらいて いない とち：くもで おおう
@@ -118,8 +121,14 @@ function drawLocked(a, t, time) {
   g.restore();
 }
 
+let activeQuestsCache = [];
+function mark(p, t, time) {
+  const [sx, sy] = toScreen(p.x + .5, p.y + .85 - 1.35), r = Math.max(10, t * .2), bob = Math.sin(time / 250) * r * .2;
+  g.fillStyle = '#ff6fae'; g.beginPath(); g.arc(sx, sy + bob, r, 0, 7); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 2; g.stroke();
+  g.fillStyle = '#fff'; g.font = `800 ${r * 1.4}px "M PLUS Rounded 1c",sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('！', sx, sy + bob + 1);
+}
 function drawPerson(p, t) {
-  const img = charImage(lookFor(p.id)); if (!img.complete || !img.naturalWidth) return;
+  const img = charImage(p.mob ? mobEquip(p.id) : lookFor(p.id)); if (!img.complete || !img.naturalWidth) return;
   const [sx, sy] = toScreen(p.x + .5, p.y + .85), h = t * 1.25, w = h * 200 / 240;
   const hop = p.state === 'walk' ? Math.abs(Math.sin(p.bob)) * t * .08 : 0;
   g.fillStyle = 'rgba(40,70,40,.2)'; g.beginPath(); g.ellipse(sx, sy, w * .3, t * .08, 0, 0, Math.PI * 2); g.fill();
@@ -156,7 +165,8 @@ function objectAt(wx, wy) {
 }
 
 /* ---------- つくる ---------- */
-function anchorFor(type, r, cx, cy) { const o = { type, r, x: 0, y: 0 }, [w, h] = sizeOf(o); return { x: cx - Math.floor((w - 1) / 2), y: cy - (h - 1) }; }
+function anchorFor(type, r, cx, cy, size) { const o = { type, r, x: 0, y: 0, size }, [w, h] = sizeOf(o); return { x: cx - Math.floor((w - 1) / 2), y: cy - (h - 1) }; }
+const tplOf = tl => tl && tl.tpl ? town.templates.find(x => x.id === tl.tpl) : null;
 function setPending(p) {
   ui.pending = p;
   renderAct();
@@ -171,13 +181,81 @@ function placePending() {
     toast('うごかしたよ！');
   } else {
     const p = PART[pv.type], o = { id: 'o' + town.seq++, type: pv.type, x: pv.x, y: pv.y, r: pv.r };
-    if (p.home) { o.look = { ...p.look }; o.residents = []; }
+    if (p.home) { o.look = JSON.parse(JSON.stringify(pv.look || p.look || {})); o.residents = []; if (p.custom) o.size = pv.size || [...p.size]; }
     town.objects.push(o);
     pop();
   }
   ui.pending = null; changed(); renderAct(); renderBuild();
 }
-function changed() { people.changed(town); checkLevel(); saveSoon(); refreshUndo(); }
+function changed() { people.changed(town); checkLevel(); questBadge(); saveSoon(); refreshUndo(); }
+
+/* ---------- じゅうにんの おねがい（フェーズ4）---------- */
+// おわって いない おねがいを じゅんばんに 3つ。たのむ ひと は じゅうにん（いなければ モコ）
+function activeQuests() {
+  const who = [avatar(), ...town.objects.flatMap(o => o.residents || [])].filter(owns);
+  return QUESTS.filter(q => !town.quests.done.includes(q.id)).slice(0, 3).map((q, i) => {
+    const [have, need] = q.check(town, PART);
+    return { q, have: Math.min(have, need), need, ok: have >= need, who: who[(QUESTS.indexOf(q) + 1) % who.length] || avatar() };
+  });
+}
+function questBadge() { activeQuestsCache = activeQuests(); const n = activeQuestsCache.filter(a => a.ok).length; const b = $id('qbadge'); if (b) { b.hidden = !n; b.textContent = n; } }
+function openQuests() {
+  const list = activeQuests(), done = town.quests.done.length;
+  showPop(`<h3>💌 じゅうにんの おねがい</h3>
+  <div class="quests">${list.map(a => `<div class="quest ${a.ok ? 'ok' : ''}"><div class="qwho">${charHTML(a.who)}</div><div class="qbody"><b>${ITEM[a.who].name}</b><div class="qtext">「${a.q.text}」</div>
+   <div class="qbar"><i style="width:${a.have / a.need * 100}%"></i></div><div class="qrow"><span>${a.have} / ${a.need}</span><span class="qrew"><img alt="" src="${iconURL(a.q.reward)}">${PART[a.q.reward].name}</span></div>
+   ${a.ok ? `<button class="big" data-act="tclaim" data-arg="${a.q.id}">🎁 できた！ うけとる</button>` : ''}</div></div>`).join('') || '<p>ぜんぶの おねがいを かなえたよ！ ありがとう！</p>'}</div>
+  <h3 style="font-size:18px;margin-top:14px">📒 しゅくだいの おてつだい</h3>
+  <div class="quests">${MOBS.map(m => { const h = hwState(m); return `<div class="quest ${h.active ? '' : 'ok'}"><div class="qwho">${charSVG(mobEquip(m.id), 'happy')}</div><div class="qbody"><b>${m.name}</b>（${m.sname}）
+   <div class="qtext">${h.active ? `「しゅくだいを てつだって！」<br><small>${h.active.label}</small>` : h.cool ? `ありがとう！ また あとで たのむね<br><small>あと ${h.cool}ぷん</small>` : `<small>${NOT_YET[m.subj] || ''}</small>`}</div>
+   ${h.active ? `<a class="big" href="${hwLink(m, h.active)}" style="text-decoration:none;text-align:center;display:block">✏️ てつだう</a>` : ''}</div></div>`; }).join('')}</div>
+  <p class="muted" style="margin:6px 0 0">かなえた おねがい：${done} / ${QUESTS.length}</p>
+  <div class="btns"><button class="big gray" data-act="close">とじる</button></div>`);
+  wide();
+}
+/* ---------- モブじゅうにんの しゅくだい ---------- */
+// かなえてから 1じかん たつと、あたらしい しゅくだい（もんだい・レベルは ランダム）
+function hwState(m) {
+  const now = Date.now(); let st = town.mobs[m.id];
+  if (!st || (st.doneAt && now - st.doneAt >= HW_COOLDOWN)) {
+    const h = newHomework(m.subj); if (!h) return {};
+    st = town.mobs[m.id] = { key: h.key, label: h.label, at: now }; saveSoon();
+  }
+  if (st.doneAt) return { cool: Math.max(1, Math.ceil((st.doneAt + HW_COOLDOWN - now) / 60000)) };
+  return { active: st };
+}
+const hwLink = (m, st) => `${m.page}#hw=${m.id}|${st.key}`;
+function openHomework(m) {
+  const h = hwState(m);
+  showPop(`${charSVG(mobEquip(m.id), h.active ? 'normal' : 'happy', 'hop')}<h3>${m.name}</h3>
+  ${h.active ? `<div style="font-weight:800;font-size:17px">「${m.sname}の しゅくだいを てつだって！」</div><div class="muted" style="margin:6px 0">${h.active.label}</div><div>おわったら まちに もどってきてね。おれいに ⭐${HW_REWARD}</div>
+   <div class="btns"><button class="big gray" data-act="close">あとで</button><a class="big" href="${hwLink(m, h.active)}" style="text-decoration:none;text-align:center">✏️ てつだう</a></div>`
+    : h.cool ? `<div>この まえは ありがとう！<br>また あとで たのむね（あと ${h.cool}ぷん）</div><div class="btns"><button class="big" data-act="close">うん！</button></div>`
+      : `<div>${NOT_YET[m.subj] || 'いまは だいじょうぶ！'}</div><div class="btns"><button class="big" data-act="close">うん！</button></div>`}`);
+}
+// しゅくだいが おわっていたら おれい（おうちの データ S.hw に おわった じこくが はいる）
+function hwCheck() {
+  for (const m of MOBS) {
+    const st = town.mobs[m.id];
+    if (!st || st.doneAt || !(S.hw && S.hw[m.id] > st.at)) continue;
+    st.doneAt = Date.now(); S.points += HW_REWARD; save(); saveNow(); updPts();
+    if ($id('ov').classList.contains('hide')) {
+      beep(523); setTimeout(() => beep(659), 90); setTimeout(() => beep(784), 180);
+      showPop(`<div class="srlabel">📒 しゅくだい おわったよ！</div>${charSVG(mobEquip(m.id), 'happy', 'hop')}<h3>${m.name}</h3><div>「てつだって くれて ありがとう！」</div><div class="stars" style="margin:8px 0">⭐＋${HW_REWARD}</div><div class="muted">1じかん たったら また たのむね</div><div class="btns"><button class="big" data-act="close">どういたしまして！</button></div>`);
+    }
+  }
+}
+
+function claimQuest(id) {
+  const q = QUEST[id]; if (!q || town.quests.done.includes(id)) return;
+  const [have, need] = q.check(town, PART); if (have < need) return openQuests();
+  town.quests.done.push(id); if (!town.unlockedParts.includes(q.reward)) town.unlockedParts.push(q.reward); saveNow();
+  beep(523); setTimeout(() => beep(659), 90); setTimeout(() => beep(784), 180); setTimeout(() => beep(1047, .15), 280);
+  showPop(`<div class="srlabel">🎁 おねがい かなえたよ！</div><img class="bigprev" alt="" src="${iconURL(q.reward)}"><h3>${PART[q.reward].name}</h3><div>ありがとう！ おれいに これを どうぞ。<br>「つくる」で おけるよ（おみせには ない とくべつな もの）</div>
+  <div class="btns"><button class="big gray" data-act="tquests">おねがいへ</button><button class="big" data-act="tuse" data-arg="${q.reward}">つくる</button></div>`);
+  questBadge(); if (ui.mode === 'build') renderBuild();
+}
+Object.assign(ACT, { tclaim: id => claimQuest(id), tquests: () => openQuests() });
 
 /* ---------- まちレベル・あたらしい とち ---------- */
 function levelInfo() { return scoreTown(town, PART); }
@@ -232,8 +310,9 @@ function tapBuild(wx, wy) {
   if (!tl) return;
   if (tl.kind === 'part' && PART[tl.id].layer === 'ground') return; // ぬる のは pointer で
   if (tl.kind === 'part' || ui.moving) {
-    const type = ui.moving ? ui.moving.type : tl.id, r = ui.moving ? (ui.pending ? ui.pending.r : ui.moving.r) : (tl.r || 0);
-    const a = anchorFor(type, r, cx, cy), o = { type, r, ...a };
+    const type = ui.moving ? ui.moving.type : tl.id, r = ui.moving ? (ui.pending ? ui.pending.r : ui.moving.r) : (tl.r || 0), tp = !ui.moving && tplOf(tl);
+    const size = ui.moving ? ui.moving.size : tp ? tp.size : undefined, look = ui.moving ? ui.moving.look : tp ? tp.look : undefined;
+    const a = anchorFor(type, r, cx, cy, size), o = { type, r, ...a, size, look };
     const c = canPlace(town, o, ui.moving && ui.moving.id);
     if (ui.pending && ui.pending.x === a.x && ui.pending.y === a.y && c.ok) { placePending(); return; }
     setPending({ ...o, ok: c.ok, reason: c.reason });
@@ -245,7 +324,8 @@ function tapBuild(wx, wy) {
 
 function tapView(wx, wy) {
   const p = people.at(wx, wy);
-  if (p) { people.talk(p); beep(880, .05); return; }
+  if (p && p.mob) { beep(880, .05); return openHomework(MOB[p.id]); }
+  if (p) { const aq = activeQuestsCache.find(a => a.who === p.id); if (aq && Math.random() < .6) { p.say = aq.ok ? 'できたね！ おねがいを みて！' : aq.q.text; p.sayT = 3.5; } else people.talk(p); beep(880, .05); return; }
   const o = objectAt(wx, wy); if (!o) return;
   if (o.type === 'town_shop') return openShop();
   if (o.type === 'moko_house') return openMokoHouse(o);
@@ -308,7 +388,8 @@ const BUILD_CATS = CATS.filter(c => c.id !== 'look');
 function renderBuild() {
   $id('bcats').innerHTML = BUILD_CATS.map(c => `<button class="${c.id === ui.cat ? 'on' : ''}" data-c="${c.id}">${c.icon} ${c.name}</button>`).join('');
   const list = PARTS.filter(p => p.cat === ui.cat && !p.fixed && hasPart(town, p.id));
-  $id('bparts').innerHTML = list.map(p => `<button class="pt ${ui.tool && ui.tool.kind === 'part' && ui.tool.id === p.id ? 'on' : ''}" data-p="${p.id}"><img alt="" src="${iconURL(p.id)}">${p.name}</button>`).join('')
+  const tpls = ui.cat === 'house' ? town.templates.filter(x => hasPart(town, x.type)) : [];
+  $id('bparts').innerHTML = tpls.map(x => `<button class="pt tpl ${ui.tool && ui.tool.tpl === x.id ? 'on' : ''}" data-tpl="${x.id}"><img alt="" src="${iconURL(x.type, { ...x.look, size: x.size })}">⭐ おきにいり<i class="x" data-deltpl="${x.id}">×</i></button>`).join('') + list.map(p => `<button class="pt ${ui.tool && ui.tool.kind === 'part' && !ui.tool.tpl && ui.tool.id === p.id ? 'on' : ''}" data-p="${p.id}"><img alt="" src="${iconURL(p.id)}">${p.name}</button>`).join('')
     + `<button class="pt more" data-shop="${ui.cat}"><span>🛍️</span>おみせで<br>ふやす</button>`;
   $id('tSel').classList.toggle('on', !!ui.tool && ui.tool.kind === 'select');
   refreshUndo();
@@ -360,6 +441,8 @@ function setupButtons() {
   $id('bcats').addEventListener('click', e => { const b = e.target.closest('[data-c]'); if (!b) return; ui.cat = b.dataset.c; beep(660, .03); renderBuild(); });
   $id('bparts').addEventListener('click', e => {
     const s = e.target.closest('[data-shop]'); if (s) return openShop(s.dataset.shop);
+    const d = e.target.closest('[data-deltpl]'); if (d) { town.templates = town.templates.filter(x => x.id !== d.dataset.deltpl); if (ui.tool && ui.tool.tpl === d.dataset.deltpl) ui.tool = null; saveSoon(); renderBuild(); toast('おきにいりから はずしたよ'); return; }
+    const tb = e.target.closest('[data-tpl]'); if (tb) { const x = town.templates.find(y => y.id === tb.dataset.tpl); if (x) { beep(660, .03); chooseTool({ kind: 'part', id: x.type, r: 0, tpl: x.id }); } return; }
     const b = e.target.closest('[data-p]'); if (!b) return; beep(660, .03); chooseTool({ kind: 'part', id: b.dataset.p, r: 0 });
   });
   $id('act').addEventListener('click', e => {
@@ -376,6 +459,7 @@ function setupButtons() {
   });
   $id('bShop').onclick = () => openShop();
   $id('bFriends').onclick = () => openFriends();
+  $id('bQuest').onclick = () => openQuests();
   $id('lvchip').onclick = () => openLevel();
 }
 
@@ -441,7 +525,7 @@ function toggleResident(oid, c) {
     o.residents = [...(o.residents || []), c];
     toast(`${ITEM[c].name} が すむ ことに なったよ！`);
   }
-  people.sync(town, avatar()); saveNow(); beep(here ? 400 : 700, .06); openResidents(o); checkLevel();
+  people.sync(town, avatar(), MOBS.map(m => m.id)); saveNow(); beep(here ? 400 : 700, .06); openResidents(o); checkLevel(); questBadge();
 }
 function openMokoHouse(o) {
   showPop(`${charSVG(S.equip, 'happy', 'hop')}<h3>モコの おうち</h3><div>おへやに もどる？</div>
@@ -498,13 +582,33 @@ let lastInside = null;
 function openLooks(o) {
   if (!o) return closePop();
   const p = PART[o.type], look = { ...(p.look || {}), ...(o.look || {}) };
-  const row = (kind, label) => `<h4>${label}</h4><div class="swl">${LOOK(kind).filter(x => hasPart(town, x.id)).map(x => { const v = x.id.replace(kind + '_', ''); return `<button class="${look[kind] === v ? 'on' : ''}" data-act="tlook" data-arg="${o.id}|${kind}|${v}"><img alt="" src="${iconURL(x.id)}">${x.name.replace(/の (やね|かべ|ドア|まど)$/, '')}</button>`; }).join('')}</div>`;
-  showPop(`<h3>🎨 みためを かえる</h3><img class="bigprev" alt="" src="${iconURL(o.type, look)}">
-  <div class="looks">${row('roof', 'やね')}${row('wall', 'かべ')}${row('door', 'ドア')}${row('window', 'まど')}</div>
-  <div class="btns"><button class="big gray" data-act="close">おわり</button><button class="big sub" data-act="tshopcat" data-arg="look">🛍️ いろを ふやす</button></div>`);
+  if (!look.shape) look.shape = o.type === 'house_castle' || o.type === 'school' ? 'flat' : 'gable';
+  if (!Array.isArray(look.deco)) look.deco = [];
+  const on = (kind, v) => kind === 'deco' ? look.deco.includes(v) : look[kind] === v;
+  const row = (kind, label) => `<h4>${label}</h4><div class="swl">${LOOK(kind).filter(x => hasPart(town, x.id)).map(x => { const v = x.id.replace(kind + '_', ''); return `<button class="${on(kind, v) ? 'on' : ''}" data-act="tlook" data-arg="${o.id}|${kind}|${v}"><img alt="" src="${iconURL(x.id)}">${x.name.replace(/の (やね|かべ|ドア|まど)$/, '')}</button>`; }).join('')}</div>`;
+  const sizes = p.custom ? `<h4>おおきさ</h4><div class="swl">${CUSTOM_SIZES.map(([w, h]) => { const cur = sizeOf(o); return `<button class="${cur[0] === w && cur[1] === h ? 'on' : ''}" data-act="tlook" data-arg="${o.id}|size|${w}x${h}"><b style="font-size:18px">${w}×${h}</b><br>マス</button>`; }).join('')}</div>` : '';
+  showPop(`<h3>🎨 みためを かえる</h3><img class="bigprev" alt="" src="${iconURL(o.type, { ...look, size: o.size })}">
+  <div class="looks">${sizes}${row('shape', 'やねの かたち')}${row('roof', 'やねの いろ')}${row('wall', 'かべ')}${row('door', 'ドア')}${row('window', 'まど')}${row('deco', 'かざり（いくつでも）')}</div>
+  <div class="btns"><button class="big gray" data-act="close">おわり</button><button class="big sub" data-act="tshopcat" data-arg="look">🛍️ ふやす</button></div>
+  ${p.home ? `<div class="btns" style="margin-top:8px"><button class="big" data-act="ttpl" data-arg="${o.id}">⭐ おきにいりに いれる</button></div>` : ''}`);
   wide();
 }
-ACT.tlook = a => { const [oid, kind, v] = a.split('|'); const o = town.objects.find(x => x.id === oid); if (!o) return; hist.push(); o.look = { ...(PART[o.type].look || {}), ...(o.look || {}), [kind]: v }; changed(); beep(700, .04); openLooks(o); };
+ACT.tlook = a => {
+  const [oid, kind, v] = a.split('|'); const o = town.objects.find(x => x.id === oid); if (!o) return;
+  if (kind === 'size') { const sz = v.split('x').map(Number), c = canPlace(town, { ...o, size: sz }, o.id); if (!c.ok) { toast('その おおきさだと ぶつかるよ', true); beep(200, .08, 'square', .05); return; } hist.push(); o.size = sz; changed(); beep(700, .04); return openLooks(o); }
+  hist.push();
+  const base = { ...(PART[o.type].look || {}), ...(o.look || {}) };
+  if (kind === 'deco') { const d = Array.isArray(base.deco) ? base.deco : []; base.deco = d.includes(v) ? d.filter(x => x !== v) : [...d, v]; } else base[kind] = v;
+  o.look = base; changed(); beep(700, .04); openLooks(o);
+};
+// おきにいり（テンプレート）：おなじ みための おうちを なんけんでも
+ACT.ttpl = oid => {
+  const o = town.objects.find(x => x.id === oid); if (!o) return;
+  if (town.templates.length >= 8) { toast('おきにいりは 8こ まで だよ', true); return; }
+  const type = o.type === 'moko_house' ? 'house_basic' : o.type;
+  town.templates.push({ id: 't' + Date.now().toString(36), type, look: JSON.parse(JSON.stringify({ ...(PART[o.type].look || {}), ...(o.look || {}) })), size: o.size ? [...o.size] : undefined });
+  saveSoon(); beep(784, .06); toast('おきにいりに いれたよ！「つくる」の おうちで つかえるよ');
+};
 
 /* ---------- はじめる ---------- */
 async function start() {
@@ -512,11 +616,13 @@ async function start() {
   town = await loadTown();
   hist = new History(town);
   Object.assign(cam, town.camera || {});
-  people = new People(); people.sync(town, avatar());
+  people = new People(); people.sync(town, avatar(), MOBS.map(m => m.id));
   resize(); setupInput(); setupButtons();
   $id('tname').textContent = town.townName;
   updPts();
   checkLevel(true);
+  questBadge();
+  setTimeout(hwCheck, 400);
   // あたらしい なかま（ガチャ・おみせで ふえた キャラ）
   const mine = myChars();
   if (!Array.isArray(town.knownChars)) town.knownChars = mine;
@@ -524,9 +630,9 @@ async function start() {
   saveTown(town);
   requestAnimationFrame(t => { last = t; frame(t); });
   // テスト・あとの フェーズ よう
-  window.__town = { get town() { return town; }, cam, ui, people, hist, toScreen, toWorld, setMode, chooseTool, tapBuild, tapView, placePending, buy, toggleResident, saveNow, objectAt, levelInfo, checkLevel, openInside, setInside, changed };
+  window.__town = { get town() { return town; }, cam, ui, people, hist, toScreen, toWorld, setMode, chooseTool, tapBuild, tapView, placePending, buy, toggleResident, saveNow, objectAt, levelInfo, checkLevel, openInside, setInside, changed, activeQuests, claimQuest, openLooks, hwState, hwCheck, openHomework };
   document.body.dataset.ready = '1';
 }
 // ほかの へやで ⭐ が かわったら（core.js の resync から よばれる）
-window.render = () => updPts();
+window.render = () => { updPts(); if (town) hwCheck(); };
 start();

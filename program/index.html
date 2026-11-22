@@ -340,6 +340,7 @@ function end(win,msg){
    <div class="btns"><button class="big blue" onclick="closePop();stop()">なおす</button></div>`);return}
  const n=count(),stars=n<=lv.par?3:n<=lv.par+2?2:1;
  const prev=S.best[cur]||0,earn=Math.max(0,stars-prev)*starPts();if(stars>prev){S.best[cur]=stars;save()}houseAdd(earn);houseDaily();
+ const hw=HW&&cur===HW.stage;if(hw)houseWrite(d=>{d.hw=d.hw||{};d.hw[HW.mob]=Date.now()});
  $('#robot').classList.add('yay');sfx.win();
  const last=cur>=LEVELS.length-1;
  setTimeout(()=>showPop(`<div style="font-size:48px">🎉</div><h3>クリア！</h3>
@@ -348,6 +349,7 @@ function end(win,msg){
   <div class="muted">ブロック ${n}こ で できたよ${stars<3?`<br>${lv.par}こ で できたら ⭐3！`:'<br>さいこうの プログラム！'}</div>
   <div class="btns">${last?'':`<button class="big" onclick="closePop();openLv(${cur+1})">つぎの ステージ ▶</button>`}
   ${stars<3?`<button class="big blue" onclick="closePop();stop()">もういちど ちょうせん</button>`:''}
+  ${hw?`<a class="big" href="../machi/index.html" style="text-decoration:none;text-align:center;background:#7cc46a;box-shadow:0 4px 0 #5aa04a">📒 しゅくだい できた！ まちへ</a>`:''}
   <button class="big gray" onclick="closePop();back()">ステージ いちらん</button></div>`),700);
 }
 
@@ -356,7 +358,10 @@ function showPop(h){closePop();const d=document.createElement('div');d.className
 function closePop(){const p=$('#pop');if(p)p.remove()}
 let flT;function flash(t){const h=$('.hint');if(!h)return;const o=LEVELS[cur].hint;h.textContent=t;h.style.color='#e5484d';clearTimeout(flT);flT=setTimeout(()=>{const hh=$('.hint');if(hh){hh.textContent=o;hh.style.color=''}},1400)}
 
+// まちの じゅうにんの しゅくだい（#hw=だれ|ステージばんごう）：その ステージを ひらく
+const HW=(()=>{const m=/[#&]hw=([a-z_]+)\|(\d+)/.exec(location.hash);return m?{mob:m[1],stage:Math.min(LEVELS.length-1,+m[2])}:null})();
 render();
+if(HW&&unlocked(HW.stage))openLv(HW.stage);
 if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('../sw.js').catch(()=>{});
 </script>
 </body>

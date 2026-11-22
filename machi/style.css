@@ -83,3 +83,31 @@ body { background: #bfe8a4; }
 /* おうちの なか */
 .pop .inroom svg { width: 100%; border-radius: 16px; display: block; }
 .pop .intems { max-height: 32vh; overflow: auto; }
+
+/* おねがい */
+.tnav { grid-template-columns: repeat(5, 1fr); }
+.nb { position: relative; }
+.qbadge { position: absolute; top: 4px; left: 56%; min-width: 20px; height: 20px; border-radius: 99px; background: #ff4d6d; color: #fff; font-style: normal; font-size: 12px; line-height: 20px; padding: 0 5px; box-shadow: 0 0 0 2px #fff; }
+.qbadge[hidden] { display: none; }
+.pop .quests { display: flex; flex-direction: column; gap: 10px; text-align: left; max-height: 58vh; overflow: auto; }
+.pop .quest { display: flex; gap: 8px; background: #fff7f2; border-radius: 16px; padding: 8px; }
+.pop .quest.ok { background: #fff0f5; box-shadow: 0 0 0 3px #ffb3cf inset; }
+.pop .qwho svg { width: 64px; height: 76px; }
+.pop .qbody { flex: 1; min-width: 0; font-size: 13px; }
+.pop .qtext { font-weight: 800; font-size: 15px; margin: 2px 0 6px; color: #5a4646; }
+.pop .qbar { height: 10px; border-radius: 99px; background: #f3e2e2; overflow: hidden; }
+.pop .qbar i { display: block; height: 100%; background: linear-gradient(90deg, #8fd46d, #ffb3cf); }
+.pop .qrow { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; font-weight: 800; color: #a88f8f; }
+.pop .qrew { display: flex; align-items: center; gap: 2px; color: #e0719a; }
+.pop .qrew img { width: 34px; height: 34px; }
+.pop .quest .big { font-size: 16px; padding: 10px; margin-top: 6px; }
+.pt.tpl { position: relative; background: #fff8e1; }
+.pt .x { position: absolute; top: -4px; right: -4px; width: 22px; height: 22px; border-radius: 50%; background: #fff; color: #c63d46; font-style: normal; font-size: 14px; line-height: 22px; box-shadow: 0 1px 0 #e5c4c4; }
+@media (orientation: landscape) and (min-width: 700px) { .tnav { width: 460px; } }
+/* ポップアップが たかく なっても とじるボタンまで スクロールできる */
+#ov .pop { max-height: calc(100dvh - 40px); overflow-y: auto; overscroll-behavior: contain; }
+@media (max-width: 480px) {
+  .pop .swl button { width: 54px; font-size: 9.5px; }
+  .pop .swl button img { width: 44px; height: 44px; }
+  .pop .bigprev { width: 110px; height: 110px; }
+}

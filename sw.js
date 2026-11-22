@@ -1,10 +1,10 @@
 // オフラインで あそべるように ファイルを キャッシュする（ぜんぶの へや きょうつう）
-const CACHE='moko-house-v19';
+const CACHE='moko-house-v21';
 const ASSETS=['./','./index.html','./manifest.json','./icon-180.png','./icon-192.png','./icon-512.png',
   './common/core.js','./common/style.css','./common/piko-192.png',
   './sansu/','./sansu/index.html','./kokugo/','./kokugo/index.html','./program/','./program/index.html','./eigo/','./eigo/index.html',
   './abc/','./abc/index.html','./abc/js/data/areas.js','./abc/js/data/areas/forest.js','./abc/js/data/areas/garden.js','./abc/js/data/areas/lake.js','./abc/js/data/areas/village.js','./abc/js/data/combos.js','./abc/js/data/letters.js','./abc/js/data/quests.js','./abc/js/data/words.js','./abc/js/data/world1.js','./abc/js/engine/art.js','./abc/js/engine/art2.js','./abc/js/engine/audio.js','./abc/js/engine/input.js','./abc/js/game/house.js','./abc/js/game/learning.js','./abc/js/game/magic.js','./abc/js/game/quests.js','./abc/js/game/quiz.js','./abc/js/game/state.js','./abc/js/game/world.js','./abc/js/main.js','./abc/js/ui/ui.js','./abc/style.css',
-  './machi/','./machi/index.html','./machi/style.css','./machi/js/main.js','./machi/js/data/parts.js','./machi/js/data/areas.js','./machi/js/town/town.js','./machi/js/town/people.js','./machi/js/render/art.js',
+  './machi/','./machi/index.html','./machi/style.css','./machi/js/main.js','./machi/js/data/parts.js','./machi/js/data/areas.js','./machi/js/data/quests.js','./machi/js/data/mobs.js','./machi/js/town/town.js','./machi/js/town/people.js','./machi/js/render/art.js',
   './program/build/','./program/build/index.html','./program/build/style.css','./program/build/js/main.js','./program/build/js/data/blocks.js','./program/build/js/world/world.js','./program/build/js/world/storage.js','./program/build/js/render/scene.js','./program/build/js/render/textures.js','./program/build/js/render/icons.js','./program/build/js/render/robotModel.js','./program/build/js/robot/program.js','./program/build/js/robot/robot.js','./program/build/js/ui/robotPanel.js','./program/build/js/vendor/three.module.min.js'];
 // ブラウザの キャッシュを つかわず、かならず サーバーに たしかめて とってくる
 const net=req=>fetch(typeof req==='string'||req.mode==='navigate'?(req.url||req):req,{cache:'no-cache'});
