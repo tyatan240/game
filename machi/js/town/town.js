@@ -18,6 +18,7 @@ export function defTown() {
     knownChars: null,           // まちで もう しらせた キャラ（null＝はじめて）
     quests: { done: [] },       // おわった おねがい（ごほうびを もらった もの）
     templates: [],              // おきにいりの おうち [{id, type, look, size?}]
+    mobs: {},                   // モブじゅうにんの しゅくだい {mob_pig:{key, label, at, doneAt?}}
     seq: 1,
   };
 }
@@ -50,6 +51,7 @@ export function mergeTown(d) {
   if (d.camera && typeof d.camera === 'object') Object.assign(t.camera, d.camera);
   if (Array.isArray(d.knownChars)) t.knownChars = d.knownChars;
   if (d.quests && Array.isArray(d.quests.done)) t.quests.done = d.quests.done.filter(q => typeof q === 'string');
+  if (d.mobs && typeof d.mobs === 'object') for (const k in d.mobs) { const m = d.mobs[k]; if (m && typeof m.key === 'string') t.mobs[k] = { key: m.key, label: String(m.label || ''), at: +m.at || 0, ...(m.doneAt ? { doneAt: +m.doneAt } : {}) }; }
   if (Array.isArray(d.templates)) t.templates = d.templates.filter(x => x && typeof x.type === 'string').slice(0, 8);
   t.seq = Math.max(d.seq | 0, ...t.objects.map(o => +String(o.id).replace(/\D/g, '') + 1 || 1), 1);
   t.t = d.t || 0;

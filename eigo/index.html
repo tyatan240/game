@@ -276,7 +276,7 @@ function finishTest(timeout){
   <div class="stars" style="margin:8px 0">⭐＋${t.earned+bonus}${bonus?` <small style="font-size:15px">（ボーナス＋${bonus}）</small>`:''}</div>
   <div class="muted">${okLine?'テストなら ごうかく できる ちょうし！🏆':`テストの ごうかくまで あと ${t.need-t.ok}もん！`}</div>
   <div class="btns"><button class="big sub" data-act="tstart" data-arg="${t.key}|p">もういちど</button>${testUnlocked(t.key)?`<button class="big" data-act="tready" data-arg="${t.key}">テストへ 🏆</button>`:''}</div>
-  <div class="btns"><button class="big gray" data-act="close">とじる</button></div>`);
+  <div class="btns"><button class="big gray" data-act="close">とじる</button></div>${hwDone()?hwBack():''}`);
   test=null;return}
  const L=TLV[t.lv],it=testItem(t.key),pass=t.ok>=t.need,st=S.tests[t.key]||{},first=pass&&!st.pass;
  dailyOf(S).eigo++; // きょうの もくひょう
@@ -308,6 +308,13 @@ Object.assign(ACT,{
 window.render = render; // core.js の resync から よばれる
 window.__eigo = { get quiz() { return quiz; }, get test() { return test; }, get view() { return view; }, go, makeQ }; // テスト よう
 render();
+// まちの じゅうにんの しゅくだい：その テストの れんしゅうを ひらく（まだ あそべない ときは あそべる しゅるいに かえる）
+if (HW) ready.then(() => {
+  const en = enabled(); if (!en.length) return;
+  let key = HW.key; const { tid, lv } = parseKey(key);
+  if (!en.some(t => t.id === tid)) key = en[(Math.random() * en.length) | 0].id + '-' + (lv + 1);
+  view = 'tests'; render(); testReady(key + '|p');
+});
 </script>
 </body>
 </html>

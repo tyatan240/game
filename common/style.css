@@ -92,3 +92,5 @@ h2{font-size:18px;margin:4px 0 10px;color:#c8577f}
 .seg{display:flex;gap:4px}.seg button{border:0;border-radius:999px;padding:6px 10px;font:inherit;font-weight:800;font-size:12px;background:#ffe3ea;color:#c8577f}.seg button.on{background:#ff8fb1;color:#fff}
 .item.lock .p{color:#c9a04a;font-size:11px}
 .medal{font-size:56px;line-height:1}
+
+.hwdone{margin-top:12px;font-weight:800;color:#3f9a63}

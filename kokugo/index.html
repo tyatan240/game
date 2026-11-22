@@ -294,7 +294,7 @@ function finishTest(timeout){
   <div class="stars" style="margin:8px 0">⭐＋${t.earned+bonus}${bonus?` <small style="font-size:15px">（ボーナス＋${bonus}）</small>`:''}</div>
   <div class="muted">${okLine?'テストなら ごうかく できる ちょうし！🏆':`テストの ごうかくまで あと ${t.need-t.ok}もん！`}</div>
   <div class="btns"><button class="big sub" data-act="tstart" data-arg="${t.key}|p">もういちど</button>${testUnlocked(t.key)?`<button class="big" data-act="tready" data-arg="${t.key}">テストへ 🏆</button>`:''}</div>
-  <div class="btns"><button class="big gray" data-act="close">とじる</button></div>`);
+  <div class="btns"><button class="big gray" data-act="close">とじる</button></div>${hwDone()?hwBack():''}`);
   test=null;return}
  const L=TLV[t.lv],it=testItem(t.key),pass=t.ok>=t.need,st=S.tests[t.key]||{},first=pass&&!st.pass;
  dailyOf(S).kokugo++; // きょうの もくひょう
@@ -323,6 +323,8 @@ Object.assign(ACT,{
  pick:a=>pick(Number(a)),
 });
 render();
+// まちの じゅうにんの しゅくだい：その テストの れんしゅうを ひらく
+if(HW)ready.then(()=>{if(!(KTYPE)[parseKey(HW.key).tid])return;view='tests';render();testReady(HW.key+'|p')});
 </script>
 </body>
 </html>

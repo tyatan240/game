@@ -3,6 +3,7 @@
 import { CATS, PARTS, PART, SHOP_PARTS, LOOK, FAV, FAV_NAME } from './data/parts.js';
 import { W, H, loadTown, saveTown, groundAt, sizeOf, occupancy, canPlace, canPaint, hasPart, History, inMap, openArea, CUSTOM_SIZES } from './town/town.js';
 import { QUESTS, QUEST } from './data/quests.js';
+import { MOBS, MOB, HW_COOLDOWN, HW_REWARD, newHomework, NOT_YET, mobEquip } from './data/mobs.js';
 import { AREAS, AREA, scoreTown } from './data/areas.js';
 import { drawGround, drawObject, drawIcon } from './render/art.js';
 import { People, charImage } from './town/people.js';
@@ -99,7 +100,7 @@ function draw(time) {
     g.strokeStyle = pv.ok ? '#fff' : '#ff4d4d'; g.lineWidth = 3; g.strokeRect(1, 1, w * t - 2, h * t - 2);
     g.globalAlpha = pv.ok ? .7 : .45; drawObject(g, pv, t, time); g.restore();
   }
-  const asking = new Set(activeQuestsCache.map(a => a.who));
+  const asking = new Set([...activeQuestsCache.map(a => a.who), ...MOBS.filter(m => hwState(m).active).map(m => m.id)]);
   for (const p of people.visible()) { if (p.say) bubble(p, t); else if (asking.has(p.id)) mark(p, t, time); }
 }
 
@@ -127,7 +128,7 @@ function mark(p, t, time) {
   g.fillStyle = '#fff'; g.font = `800 ${r * 1.4}px "M PLUS Rounded 1c",sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('！', sx, sy + bob + 1);
 }
 function drawPerson(p, t) {
-  const img = charImage(lookFor(p.id)); if (!img.complete || !img.naturalWidth) return;
+  const img = charImage(p.mob ? mobEquip(p.id) : lookFor(p.id)); if (!img.complete || !img.naturalWidth) return;
   const [sx, sy] = toScreen(p.x + .5, p.y + .85), h = t * 1.25, w = h * 200 / 240;
   const hop = p.state === 'walk' ? Math.abs(Math.sin(p.bob)) * t * .08 : 0;
   g.fillStyle = 'rgba(40,70,40,.2)'; g.beginPath(); g.ellipse(sx, sy, w * .3, t * .08, 0, 0, Math.PI * 2); g.fill();
@@ -204,10 +205,47 @@ function openQuests() {
   <div class="quests">${list.map(a => `<div class="quest ${a.ok ? 'ok' : ''}"><div class="qwho">${charHTML(a.who)}</div><div class="qbody"><b>${ITEM[a.who].name}</b><div class="qtext">「${a.q.text}」</div>
    <div class="qbar"><i style="width:${a.have / a.need * 100}%"></i></div><div class="qrow"><span>${a.have} / ${a.need}</span><span class="qrew"><img alt="" src="${iconURL(a.q.reward)}">${PART[a.q.reward].name}</span></div>
    ${a.ok ? `<button class="big" data-act="tclaim" data-arg="${a.q.id}">🎁 できた！ うけとる</button>` : ''}</div></div>`).join('') || '<p>ぜんぶの おねがいを かなえたよ！ ありがとう！</p>'}</div>
+  <h3 style="font-size:18px;margin-top:14px">📒 しゅくだいの おてつだい</h3>
+  <div class="quests">${MOBS.map(m => { const h = hwState(m); return `<div class="quest ${h.active ? '' : 'ok'}"><div class="qwho">${charSVG(mobEquip(m.id), 'happy')}</div><div class="qbody"><b>${m.name}</b>（${m.sname}）
+   <div class="qtext">${h.active ? `「しゅくだいを てつだって！」<br><small>${h.active.label}</small>` : h.cool ? `ありがとう！ また あとで たのむね<br><small>あと ${h.cool}ぷん</small>` : `<small>${NOT_YET[m.subj] || ''}</small>`}</div>
+   ${h.active ? `<a class="big" href="${hwLink(m, h.active)}" style="text-decoration:none;text-align:center;display:block">✏️ てつだう</a>` : ''}</div></div>`; }).join('')}</div>
   <p class="muted" style="margin:6px 0 0">かなえた おねがい：${done} / ${QUESTS.length}</p>
   <div class="btns"><button class="big gray" data-act="close">とじる</button></div>`);
   wide();
 }
+/* ---------- モブじゅうにんの しゅくだい ---------- */
+// かなえてから 1じかん たつと、あたらしい しゅくだい（もんだい・レベルは ランダム）
+function hwState(m) {
+  const now = Date.now(); let st = town.mobs[m.id];
+  if (!st || (st.doneAt && now - st.doneAt >= HW_COOLDOWN)) {
+    const h = newHomework(m.subj); if (!h) return {};
+    st = town.mobs[m.id] = { key: h.key, label: h.label, at: now }; saveSoon();
+  }
+  if (st.doneAt) return { cool: Math.max(1, Math.ceil((st.doneAt + HW_COOLDOWN - now) / 60000)) };
+  return { active: st };
+}
+const hwLink = (m, st) => `${m.page}#hw=${m.id}|${st.key}`;
+function openHomework(m) {
+  const h = hwState(m);
+  showPop(`${charSVG(mobEquip(m.id), h.active ? 'normal' : 'happy', 'hop')}<h3>${m.name}</h3>
+  ${h.active ? `<div style="font-weight:800;font-size:17px">「${m.sname}の しゅくだいを てつだって！」</div><div class="muted" style="margin:6px 0">${h.active.label}</div><div>おわったら まちに もどってきてね。おれいに ⭐${HW_REWARD}</div>
+   <div class="btns"><button class="big gray" data-act="close">あとで</button><a class="big" href="${hwLink(m, h.active)}" style="text-decoration:none;text-align:center">✏️ てつだう</a></div>`
+    : h.cool ? `<div>この まえは ありがとう！<br>また あとで たのむね（あと ${h.cool}ぷん）</div><div class="btns"><button class="big" data-act="close">うん！</button></div>`
+      : `<div>${NOT_YET[m.subj] || 'いまは だいじょうぶ！'}</div><div class="btns"><button class="big" data-act="close">うん！</button></div>`}`);
+}
+// しゅくだいが おわっていたら おれい（おうちの データ S.hw に おわった じこくが はいる）
+function hwCheck() {
+  for (const m of MOBS) {
+    const st = town.mobs[m.id];
+    if (!st || st.doneAt || !(S.hw && S.hw[m.id] > st.at)) continue;
+    st.doneAt = Date.now(); S.points += HW_REWARD; save(); saveNow(); updPts();
+    if ($id('ov').classList.contains('hide')) {
+      beep(523); setTimeout(() => beep(659), 90); setTimeout(() => beep(784), 180);
+      showPop(`<div class="srlabel">📒 しゅくだい おわったよ！</div>${charSVG(mobEquip(m.id), 'happy', 'hop')}<h3>${m.name}</h3><div>「てつだって くれて ありがとう！」</div><div class="stars" style="margin:8px 0">⭐＋${HW_REWARD}</div><div class="muted">1じかん たったら また たのむね</div><div class="btns"><button class="big" data-act="close">どういたしまして！</button></div>`);
+    }
+  }
+}
+
 function claimQuest(id) {
   const q = QUEST[id]; if (!q || town.quests.done.includes(id)) return;
   const [have, need] = q.check(town, PART); if (have < need) return openQuests();
@@ -286,6 +324,7 @@ function tapBuild(wx, wy) {
 
 function tapView(wx, wy) {
   const p = people.at(wx, wy);
+  if (p && p.mob) { beep(880, .05); return openHomework(MOB[p.id]); }
   if (p) { const aq = activeQuestsCache.find(a => a.who === p.id); if (aq && Math.random() < .6) { p.say = aq.ok ? 'できたね！ おねがいを みて！' : aq.q.text; p.sayT = 3.5; } else people.talk(p); beep(880, .05); return; }
   const o = objectAt(wx, wy); if (!o) return;
   if (o.type === 'town_shop') return openShop();
@@ -486,7 +525,7 @@ function toggleResident(oid, c) {
     o.residents = [...(o.residents || []), c];
     toast(`${ITEM[c].name} が すむ ことに なったよ！`);
   }
-  people.sync(town, avatar()); saveNow(); beep(here ? 400 : 700, .06); openResidents(o); checkLevel(); questBadge();
+  people.sync(town, avatar(), MOBS.map(m => m.id)); saveNow(); beep(here ? 400 : 700, .06); openResidents(o); checkLevel(); questBadge();
 }
 function openMokoHouse(o) {
   showPop(`${charSVG(S.equip, 'happy', 'hop')}<h3>モコの おうち</h3><div>おへやに もどる？</div>
@@ -577,12 +616,13 @@ async function start() {
   town = await loadTown();
   hist = new History(town);
   Object.assign(cam, town.camera || {});
-  people = new People(); people.sync(town, avatar());
+  people = new People(); people.sync(town, avatar(), MOBS.map(m => m.id));
   resize(); setupInput(); setupButtons();
   $id('tname').textContent = town.townName;
   updPts();
   checkLevel(true);
   questBadge();
+  setTimeout(hwCheck, 400);
   // あたらしい なかま（ガチャ・おみせで ふえた キャラ）
   const mine = myChars();
   if (!Array.isArray(town.knownChars)) town.knownChars = mine;
@@ -590,9 +630,9 @@ async function start() {
   saveTown(town);
   requestAnimationFrame(t => { last = t; frame(t); });
   // テスト・あとの フェーズ よう
-  window.__town = { get town() { return town; }, cam, ui, people, hist, toScreen, toWorld, setMode, chooseTool, tapBuild, tapView, placePending, buy, toggleResident, saveNow, objectAt, levelInfo, checkLevel, openInside, setInside, changed, activeQuests, claimQuest, openLooks };
+  window.__town = { get town() { return town; }, cam, ui, people, hist, toScreen, toWorld, setMode, chooseTool, tapBuild, tapView, placePending, buy, toggleResident, saveNow, objectAt, levelInfo, checkLevel, openInside, setInside, changed, activeQuests, claimQuest, openLooks, hwState, hwCheck, openHomework };
   document.body.dataset.ready = '1';
 }
 // ほかの へやで ⭐ が かわったら（core.js の resync から よばれる）
-window.render = () => updPts();
+window.render = () => { updPts(); if (town) hwCheck(); };
 start();

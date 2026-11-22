@@ -27,6 +27,7 @@
   tests:{'add1-1':{pass,best}, 'k1yomi-2':{…}, …},
   gacha:{day,count,pulls},
   daily:{day,sansu,kokugo,eigo,abc,prog,got:{sansu,kokugo,eigo,prog},all}（きょうの もくひょう。day が変わるとリセット）,
+  hw:{mob_pig:じこく,…}（まちの モブじゅうにんの しゅくだいを おえた じこく。core.js の hwDone()、program/ の houseWrite）,
   looks:{キャラid:{outfit,hat,acc}}（キャラごとに おぼえている きせかえ。core.js の equipItem() で更新。キャラを変えると前のキャラの服を保存し、次のキャラの服に着がえる）
 }
 ```
