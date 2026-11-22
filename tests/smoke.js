@@ -697,7 +697,7 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     await p.goto(B + 'program/build/index.html');
     await p.waitForSelector('body[data-ready="1"]', { timeout: 15000 });
     ok(await p.evaluate(() => __build.world.count()) === 256 && await p.isVisible('#help'), 'ひらく（くさの じめん 16×16・あそびかた）');
-    await p.click('#helpOk');
+    await p.click('#helpOk'); await p.evaluate(() => { __build.ui.quest.done = [1, 2, 3, 4, 5]; }); // おだいの クリア画面が でない ように
     const W = () => p.evaluate(() => __build.world.toJSON().blocks.filter(b => b[1] > 0).map(b => b.join(':')).sort().join(' '));
     // タッチ：1かいめ プレビュー → 2かいめ おく
     const tapTop = async (x, y, z) => { const s = await p.evaluate(a => __build.toScreen(...a), [x + .5, y + 1, z + .5]); await p.touchscreen.tap(s.x, s.y); await p.waitForTimeout(60); };
@@ -771,7 +771,7 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     const ctx = await browser.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true, serviceWorkers: 'block' });
     const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
     await p.goto(B + 'program/build/index.html');
-    await p.waitForSelector('body[data-ready="1"]', { timeout: 15000 }); await p.click('#helpOk');
+    await p.waitForSelector('body[data-ready="1"]', { timeout: 15000 }); await p.click('#helpOk'); await p.evaluate(() => { __build.ui.quest.done = [1, 2, 3, 4, 5]; }); // おだいの クリア画面が でない ように
     const W = () => p.evaluate(() => __build.world.toJSON().blocks.filter(b => b[1] > 0).map(b => b.join(':')).sort().join(' '));
     const add = c => p.evaluate(c => document.querySelector(`#rpal [data-cmd='${JSON.stringify(c)}']`).click(), c);
     const idle = () => p.waitForFunction(() => __build.runner.state === 'idle', null, { timeout: 15000 });
