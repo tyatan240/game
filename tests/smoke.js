@@ -1034,6 +1034,14 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     await p.evaluate(() => { const r = __dg.run, h = r.hero; for (const d of ['left', 'right']) { const dx = d === 'left' ? -1 : 1; if (r.map.tiles[h.y][h.x + dx] !== '#') { __dg.act({ t: 'move', dir: d }); __dg.act({ t: 'move', dir: d === 'left' ? 'right' : 'left' }); break; } } });
     await p.waitForTimeout(500);
     ok(await p.evaluate(c0 => { const c = __dg.cam(); return Math.round(c.ox) === c0[0] && Math.round(c.oy) === c0[1]; }, camB), 'あるいても マップは うごかない（はしに ちかい ときだけ ずれる）');
+    // もちものが いっぱいで たからばこ → あふれた ぶんは となりの ゆかへ（メッセージつき）
+    ok(await p.evaluate(() => { const r = __dg.run, h = r.hero; r.mons = [];
+      const d = Object.entries({ right: [1, 0], left: [-1, 0], down: [0, 1], up: [0, -1] }).find(([, [dx, dy]]) => r.map.tiles[h.y + dy][h.x + dx] !== '#' && !r.boxes.some(b => b.x === h.x + dx && b.y === h.y + dy));
+      const [dir, [dx, dy]] = d; r.boxes.push({ x: h.x + dx, y: h.y + dy, open: false });
+      r.inv = []; r.inv.push({ uid: 9100, id: 'key', peek: false }); for (let i = 0; i < 9; i++) r.inv.push({ uid: 9101 + i, id: 'apple', peek: false });
+      const n0 = r.items.length; __dg.act({ t: 'move', dir });
+      const dropped = r.items.slice(n0);
+      return r.inv.length === 10 && dropped.length === 1 && !(dropped[0].x === h.x && dropped[0].y === h.y) && /もちものが いっぱい/.test(document.getElementById('log').textContent); }), 'もちものが いっぱいの たからばこ → ゆかに おいて おしらせ');
     // せんとうは ゆっくり：メッセージと けいさんしきを 1ぎょうずつ、その あいだは うごけない
     await p.evaluate(() => { __dg.fast = false; const r = __dg.run, h = r.hero; r.mons = [{ uid: 901, id: 'rat', x: h.x + 1, y: h.y, hp: 30, maxhp: 30, atk: 1, exp: 1, tick: 0 }]; h.dir = 'right'; window.__x = { hp: h.hp }; __dg.act({ t: 'attack' }); });
     const slow1 = await p.evaluate(() => ({ busy: __dg.busy, again: __dg.act({ t: 'attack' }), lines: document.querySelectorAll('#log div').length, hpShown: document.getElementById('hp').textContent }));

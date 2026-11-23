@@ -160,18 +160,32 @@ function attackMon(run, m, ev) {
   ev.push({ t: 'bubble', x: run.hero.x, y: run.hero.y, text: 'こうげき！' }); ev.push({ t: 'msg', text: 'モコの こうげき！' });
   hurtMon(run, m, Math.max(1, heroAtk(run) + ri(0, 2)), ev);
 }
+// x,y の ちかくで アイテムを おける ゆか（かべ・はこ・てき・かいだん・ほかの アイテムが ない）。なければ その ばしょ
+function freeNear(run, x, y) {
+  for (let r = 1; r <= 3; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+    if (Math.abs(dx) + Math.abs(dy) !== r) continue;
+    const nx = x + dx, ny = y + dy;
+    if (tileAt(run, nx, ny) === '#' || boxAt(run, nx, ny) || monAt(run, nx, ny) || run.items.some(i => i.x === nx && i.y === ny) || (run.stairs && run.stairs.x === nx && run.stairs.y === ny)) continue;
+    return [nx, ny];
+  }
+  return [x, y];
+}
 function openBox(run, b, ev) {
   if (b.open) { ev.push({ t: 'msg', text: `${en('treasurebox')} は からっぽ` }); return; }
   const k = run.inv.find(i => i.id === 'key');
   if (!k) { ev.push({ t: 'msg', text: `${en('treasurebox')} だ。${en('key')} が あれば あけられる` }); ev.push({ t: 'bump' }); return; }
   run.inv = run.inv.filter(i => i !== k); b.open = true;
   const got = run.tut ? ['bread', 'shield'] : [rollItem(run), rollItem(run)]; // れんしゅうは きまった もの
+  const floor = [];
   for (const id of got) {
-    if (run.inv.length < INV_MAX) run.inv.push({ uid: run.uid++, id, peek: false });
-    else run.items.push({ uid: run.uid++, id, x: run.hero.x, y: run.hero.y });
+    if (run.inv.length < INV_MAX) { run.inv.push({ uid: run.uid++, id, peek: false }); continue; }
+    // もちものが いっぱい → モコの まわりの あいている ゆかに おく（ふんだら ひろえる）
+    const c = freeNear(run, run.hero.x, run.hero.y);
+    run.items.push({ uid: run.uid++, id, x: c[0], y: c[1] }); floor.push(id);
   }
   ev.push({ t: 'open', got }); ev.push({ t: 'used', id: 'key' });
   ev.push({ t: 'msg', text: `${en('key')} で ${en('treasurebox')} を あけた！ ${got.map(en).join(' と ')} が はいっていた！` });
+  if (floor.length) ev.push({ t: 'msg', text: `もちものが いっぱい！ ${floor.map(en).join(' と ')} は ゆかに おいたよ` });
 }
 function useItem(run, uid, ev) {
   const it = run.inv.find(i => i.uid === uid); if (!it) return false;
