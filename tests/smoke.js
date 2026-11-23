@@ -997,36 +997,42 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(await p.isVisible('a.study[href="dungeon/index.html"]'), 'おべんきょうの へやに ダンジョンの いりぐち');
     await p.goto(B + 'dungeon/index.html'); await p.waitForSelector('body[data-ready="1"]', { timeout: 10000 });
     ok(await p.isVisible('#title') && /まだ/.test(await p.textContent('#tbest')), 'タイトル（さいこう とうたつ）');
-    await p.click('#tGo'); await p.waitForTimeout(700);
-    ok(await p.evaluate(() => /うごきかた/.test(document.getElementById('ov').textContent) && !document.getElementById('ov').classList.contains('hide')), 'チュートリアル：だんかいごとに せつめい カード（うごきかた）');
-    await p.click('#ov [data-act=close]'); await p.click('#guide [data-act=dgTutHelp]'); await p.waitForTimeout(100);
-    ok(await p.evaluate(() => /うごきかた/.test(document.getElementById('ov').textContent)), 'ガイドの「？ せつめい」で もういちど みられる');
-    await p.click('#ov [data-act=close]');
-    await p.evaluate(() => { __dg.fast = true; }); // テストでは せつめい カード・せんとうの ひょうじを またない（ゆっくりは あとで たしかめる）
-    ok(await p.evaluate(() => __dg.mode === 'play' && __dg.run.tut && !document.getElementById('guide').hidden), 'はじめては チュートリアルから（とばせない）');
-    const mv = async (dir, n = 1) => { for (let i = 0; i < n; i++) await p.evaluate(d => __dg.act({ t: 'move', dir: d }), dir); };
-    await mv('right', 7);
-    await p.evaluate(() => { const c = __dg.cam(), r = __dg.run.items.find(i => i.id === 'apple'); __dg.tapMap(c.ox + (r.x + 0.5) * c.t, c.oy + (r.y + 0.5) * c.t); });
-    ok(await p.evaluate(() => /apple/.test(document.getElementById('ov').textContent) && /りんご/.test(document.getElementById('ov').textContent)), 'タップで しょうさい カード（えいご・いみ）');
-    await p.click('#ov [data-act=close]'); await p.waitForTimeout(100);
-    ok(await p.evaluate(() => document.getElementById('ov').classList.contains('hide')), 'カードの「とじる」で とじる');
-    const cam0 = await p.evaluate(() => { const c = __dg.cam(); return [Math.round(c.ox), Math.round(c.oy)]; });
-    await mv('down'); await mv('up'); await p.waitForTimeout(400);
-    ok(await p.evaluate(c0 => { const c = __dg.cam(); return Math.round(c.ox) === c0[0] && Math.round(c.oy) === c0[1]; }, cam0), 'あるいても マップは うごかない（はしに ちかい ときだけ ずれる）');
-    await mv('right', 2); await mv('up');
-    await p.click('#bItems'); await p.click('#ov [data-act=dgUse]');
-    await mv('down'); await mv('right', 2); await p.click('#bAttack');
-    ok(/slimeの HP\s+3 − \d ＝ \d/.test(await p.textContent('#log')), 'ダメージの けいさんしき（HP 3 − 3 ＝ 0 など） ' + await p.textContent('#log'));
-    for (let i = 0; i < 2; i++) await p.click('#bAttack');
-    await mv('left'); await mv('down', 3); await mv('left', 2);
-    await p.click('#bItems'); await p.click('#ov [data-act=dgUse]'); await p.waitForTimeout(400); await p.evaluate(() => closePop());
-    await p.click('#bItems'); await p.click('#ov [data-act=dgEquip]');
-    await p.click('#bMagic'); await p.click('#ov [data-act=dgCast]');
-    await p.evaluate(() => { const r = __dg.run; r.hero.x = 15; r.hero.y = 5; __dg.act({ t: 'move', dir: 'down' }); r.hero.x = 16; r.hero.y = 2; __dg.act({ t: 'move', dir: 'up' }); });
-    ok(await p.evaluate(() => ['move', 'look', 'pickup', 'eat', 'attack', 'box', 'book', 'fire', 'sword'].every(k => __dg.tut.done[k]) && __dg.run.boxes[0].open), 'チュートリアル：うごく・しらべる・ひろう・たべる・こうげき・たからばこ・まほうの ほん・fire・そうび ' + await p.evaluate(() => JSON.stringify(__dg.tut.done)));
-    await p.evaluate(() => { const r = __dg.run; r.hero.x = 24; r.hero.y = 3; }); await p.evaluate(() => __dg.goDown()); await p.waitForTimeout(200);
+    await p.click('#tGo'); await p.waitForTimeout(400);
+    ok(await p.evaluate(() => __dg.mode === 'play' && __dg.run.tut && !document.getElementById('guide').hidden && document.getElementById('guide').textContent.length < 40), 'はじめては チュートリアル（せつめいは 1ぎょう）');
+    await p.evaluate(() => { __dg.fast = true; }); // テストでは せんとうの ひょうじを またない（ゆっくりは あとで たしかめる）
+    ok(await p.evaluate(() => { const i = __dg.tutInfo(); return i.id === 'move' && i.dirs.join() === 'right' && document.querySelector('#pad [data-dir=right]').classList.contains('hint') && document.querySelector('#pad [data-dir=up]').classList.contains('off') && document.getElementById('bItems').classList.contains('off'); }), 'つぎに おす ボタンが ひかる（ほかは うすく）');
+    ok(await p.evaluate(() => { const x0 = __dg.run.hero.x; const r1 = __dg.act({ t: 'move', dir: 'up' }), r2 = __dg.act({ t: 'wait' }); document.getElementById('bItems').click(); return r1 === null && r2 === null && __dg.run.hero.x === x0 && document.getElementById('ov').classList.contains('hide'); }), 'やること いがいは できない（ちがう やじるし・まつ・もちもの）');
+    // ひかっている ところを たどって さいごまで
+    const seen = new Set(); let lookCard = false, calcLog = '';
+    for (let k = 0; k < 200; k++) {
+      const i = await p.evaluate(() => __dg.tutInfo()); if (!i) break; seen.add(i.id);
+      if (!(await p.evaluate(() => document.getElementById('ov').classList.contains('hide')))) {
+        await p.evaluate(() => { const b = document.querySelector('#ov .hint') || document.querySelector('#ov [data-act=close]'); if (b) b.click(); }); await p.waitForTimeout(80); continue;
+      }
+      if (i.id === 'look') { await p.evaluate(g => { const c = __dg.cam(); __dg.tapMap(c.ox + (g.x + 0.5) * c.t, c.oy + (g.y + 0.5) * c.t); }, i.goal); lookCard = await p.evaluate(() => /apple/.test(document.getElementById('ov').textContent) && /りんご/.test(document.getElementById('ov').textContent)); await p.click('#ov [data-act=close]'); continue; }
+      if (i.btn) { await p.evaluate(id => document.getElementById(id).click(), i.btn); await p.waitForTimeout(80); if (i.btn === 'bAttack') calcLog = await p.textContent('#log'); continue; }
+      if (i.dirs.length) { await p.evaluate(d => __dg.act({ t: 'move', dir: d }), i.dirs[0]); if (i.id === 'attack' && !calcLog) calcLog = await p.textContent('#log'); continue; }
+      break;
+    }
+    ok(lookCard, 'しるしの apple を タップで しょうさい カード（えいご・いみ）');
+    ok(/slimeの HP\s+3 − \d ＝ \d/.test(calcLog), 'ダメージの けいさんしき（HP 3 − 3 ＝ 0 など） ' + calcLog);
+    ok(['move', 'look', 'pickup', 'eat', 'attack', 'key', 'box', 'bookpick', 'book', 'fire', 'swordpick', 'sword', 'stairs'].every(x => seen.has(x)), 'チュートリアル：ひかりを たどって ぜんぶの だんかい ' + [...seen].join(','));
     await p.click('#ov [data-act=dgStartReal]'); await p.waitForTimeout(300);
     ok(await p.evaluate(() => __dg.D.tutorialDone && __dg.run.floor === 1 && !__dg.run.tut && __dg.D.best === 1 && __dg.D.dex.apple && __dg.D.dex.fire), 'チュートリアル おわり → 1かい（ずかんに とうろく）');
+    ok(await p.evaluate(() => !document.querySelector('#pad .off') && !document.querySelector('.acts .off') && __dg.act({ t: 'wait' }) !== null), 'ほんばんは じゆうに うごける');
+    // カード・カメラ
+    await p.evaluate(() => { const r = __dg.run; r.items.push({ uid: 9000, id: 'bread', x: r.hero.x, y: r.hero.y - 99 }); __dg.showCard('bread', {}); });
+    await p.click('#ov [data-act=close]'); await p.waitForTimeout(100);
+    ok(await p.evaluate(() => document.getElementById('ov').classList.contains('hide')), 'カードの「とじる」で とじる');
+    const cam0 = await p.evaluate(() => { __dg.run.mons = []; const c = __dg.cam(); return [Math.round(c.ox), Math.round(c.oy)]; });
+    const mv = async (dir, n = 1) => { for (let i = 0; i < n; i++) await p.evaluate(d => __dg.act({ t: 'move', dir: d }), dir); };
+    await p.evaluate(() => { const r = __dg.run, R = r.map.rooms[0]; r.hero.x = R.x + (R.w >> 1); r.hero.y = R.y + (R.h >> 1); });
+    const camA = await p.evaluate(() => { __dg.act({ t: 'wait' }); const c = __dg.cam(); return [Math.round(c.ox), Math.round(c.oy)]; });
+    await p.waitForTimeout(500);
+    const camB = await p.evaluate(() => { const c = __dg.cam(); return [Math.round(c.ox), Math.round(c.oy)]; });
+    await p.evaluate(() => { const r = __dg.run, h = r.hero; for (const d of ['left', 'right']) { const dx = d === 'left' ? -1 : 1; if (r.map.tiles[h.y][h.x + dx] !== '#') { __dg.act({ t: 'move', dir: d }); __dg.act({ t: 'move', dir: d === 'left' ? 'right' : 'left' }); break; } } });
+    await p.waitForTimeout(500);
+    ok(await p.evaluate(c0 => { const c = __dg.cam(); return Math.round(c.ox) === c0[0] && Math.round(c.oy) === c0[1]; }, camB), 'あるいても マップは うごかない（はしに ちかい ときだけ ずれる）');
     // せんとうは ゆっくり：メッセージと けいさんしきを 1ぎょうずつ、その あいだは うごけない
     await p.evaluate(() => { __dg.fast = false; const r = __dg.run, h = r.hero; r.mons = [{ uid: 901, id: 'rat', x: h.x + 1, y: h.y, hp: 30, maxhp: 30, atk: 1, exp: 1, tick: 0 }]; h.dir = 'right'; window.__x = { hp: h.hp }; __dg.act({ t: 'attack' }); });
     const slow1 = await p.evaluate(() => ({ busy: __dg.busy, again: __dg.act({ t: 'attack' }), lines: document.querySelectorAll('#log div').length, hpShown: document.getElementById('hp').textContent }));

@@ -5,7 +5,7 @@
 
 ## いま（だい1かい「きほん」）
 - チュートリアル「れんしゅうの へや」（はじめては かならず。2かいめからは「みる／とばす」。タイトルの「あそびかた」からも）
-  - 10だんかい：うごく → しらべる → ひろう → たべる（もちもの）→ こうげき → たからばこ（key）→ まほうの ほん → まほう（MP）→ そうび → かいだん。だんかいごとに「せつめい カード」（ボタンの え つき。`main.js` の `TUT`）、ガイドの「？ せつめい」で もういちど
+  - 13だんかい（うごく・しらべる・ひろう・たべる・こうげき・key・たからばこ・まほうの ほん・よむ・fire・sword・そうび・かいだん）。せつめいは 1ぎょう、つぎに する ことは マップの やじるし と ひかる ボタン。それ いがいの そうさは できない（`main.js` の `TUT`・`tutInfo`・`tutAllows`）
 - 1〜5かい（5かいは ボス king slime。たおすと かいだん）。`data.js` の `MAX_FLOOR`・`BOSS_FLOORS`
 - てき 5（slime・rat・bat・snake・angry pig）、アイテム 9（apple・bread・meat・potion・key・magic book・angel feather・sword・shield）＋ treasure box・stairs、まほう 3（fire・water・heal）
 - HP・MP と メッセージは したの らん（`#dock`。よこがめんは やじるしと ボタンの あいだ、たては ボタンの うえ）。キャラの うえに みじかい ふきだし（こうげき！・fire！）

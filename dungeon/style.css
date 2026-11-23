@@ -118,3 +118,11 @@ html,body{margin:0;height:100%;overflow:hidden;background:#2a2238;touch-action:n
 @media (orientation:landscape) and (max-height:500px){.dock{left:calc(env(safe-area-inset-left) + 174px);right:calc(env(safe-area-inset-right) + 244px);padding:4px 8px 5px}.dock .log{font-size:12px;height:8.6em}}
 /* たてがめん：ボタンの すぐ うえ */
 @media (orientation:portrait){.dock{left:8px;right:8px;bottom:calc(env(safe-area-inset-bottom) + min(36vw,190px) + 22px)}}
+
+/* チュートリアル：ひかる ボタン・つかえない ボタン */
+.hint{animation:tuthint 1s infinite!important;position:relative;z-index:2}
+@keyframes tuthint{0%,100%{box-shadow:0 0 0 3px #ffd34f,0 0 14px 4px rgba(255,211,79,.8)}50%{box-shadow:0 0 0 6px #ffd34f,0 0 24px 10px rgba(255,211,79,.9)}}
+.pad button.off,.acts button.off{opacity:.3;filter:grayscale(.6)}
+.hint.shake{animation:tutshake .35s,tuthint 1s infinite!important}
+@keyframes tutshake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.irow button.hint{background:#ff6b8a}
