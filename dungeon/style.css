@@ -126,3 +126,21 @@ html,body{margin:0;height:100%;overflow:hidden;background:#2a2238;touch-action:n
 .hint.shake{animation:tutshake .35s,tuthint 1s infinite!important}
 @keyframes tutshake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 .irow button.hint{background:#ff6b8a}
+
+/* ===== ふくしゅう テスト（5かい ごと）===== */
+.tquiz{text-align:center}
+.tq-head{font-weight:800;color:#7c6cf0;margin-bottom:4px}
+.tq-en{font-size:40px;font-weight:800;color:#2a6ab8;letter-spacing:.02em}
+.tq-ja{font-size:30px;font-weight:800;color:#4a3a3a}
+.tq-pic{width:110px;margin:0 auto}
+.tquiz p{margin:6px 0}
+.tq-ch{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:6px}
+.tq-c{min-width:7.5em}.tq-c.en{font-size:22px}
+.tq-p{width:92px;height:92px;border-radius:16px;border:3px solid #e0d4d4;background:#fff;padding:6px;cursor:pointer}
+.tq-ch .ok{background:#5ac87a!important;border-color:#2f9a5a!important;color:#fff}
+.tq-ch .ng{background:#e0304a!important;border-color:#a8182e!important;box-shadow:0 4px 0 #a8182e!important;color:#fff}
+.tq-ch button:disabled:not(.ok):not(.ng){opacity:.45}
+.tq-ch .ok{box-shadow:0 4px 0 #2f9a5a!important}
+.tq-fb .tok{color:#2f9a5a;font-weight:800;font-size:22px;margin-top:6px}
+.tq-fb .tng{color:#e0304a;font-weight:800;font-size:22px;margin-top:6px}
+.tq-score{font-size:44px;font-weight:800;color:#e07a1a;text-align:center}

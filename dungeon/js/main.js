@@ -1,6 +1,6 @@
 // モコの イングリッシュダンジョン：がめん・そうさ・チュートリアル・ずかん・⭐
 // core.js（S・save・charSVG・showPop・ACT）を つかう。きまりは game.js、えは art.js、ほぞんは save.js
-import { WORD, WORDS, CATS, MAX_FLOOR, INV_MAX, STARS, BOSS_FLOORS } from './data.js';
+import { WORD, WORDS, CATS, MAX_FLOOR, INV_MAX, STARS, BOSS_FLOORS, TEST_FLOORS, zoneOf } from './data.js';
 import { newRun, act, descend, updateSeen, visible, tileAt, seenAt, onStairs, heroAtk, heroDef, monAt, DIRS } from './game.js';
 import { drawTile, drawArt, wordArt } from './art.js';
 import { load, save as saveDg, flush } from './save.js';
@@ -70,16 +70,18 @@ function draw(now) {
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
   g.fillStyle = '#1e1a2a'; g.fillRect(0, 0, vw, vh);
   if (!run) return;
-  const { t, ox, oy } = cam(), m = run.map;
+  const { t, ox, oy } = cam(), m = run.map, zone = zoneOf(run.floor);
   const x0 = Math.max(0, Math.floor(-ox / t)), y0 = Math.max(0, Math.floor(-oy / t)), x1 = Math.min(m.w - 1, Math.ceil((vw - ox) / t)), y1 = Math.min(m.h - 1, Math.ceil((vh - oy) / t));
-  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) drawTile(g, m.tiles[y][x], ox + x * t, oy + y * t, t, seenAt(run, x, y), vis.has(x + ',' + y));
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) drawTile(g, m.tiles[y][x], ox + x * t, oy + y * t, t, seenAt(run, x, y), vis.has(x + ',' + y), zone);
   const shown = (x, y) => seenAt(run, x, y);
   if (run.stairs && shown(run.stairs.x, run.stairs.y)) drawArt(g, 'dg_stairs', ox + run.stairs.x * t, oy + run.stairs.y * t, t);
   for (const b of run.boxes) if (shown(b.x, b.y)) drawArt(g, b.open ? 'dg_boxopen' : 'dg_box', ox + b.x * t + t * 0.08, oy + b.y * t + t * 0.08, t * 0.84);
   for (const it of run.items) if (shown(it.x, it.y)) drawArt(g, WORD[it.id].art, ox + it.x * t + t * 0.14, oy + it.y * t + t * 0.14, t * 0.72);
   const drawMon = (mo, hp) => {
-    const big = WORD[mo.id].boss ? 1.5 : 1, s = t * 0.92 * big, bob = Math.sin(now / 300 + mo.uid) * t * 0.03;
-    drawArt(g, WORD[mo.id].art, ox + (mo.x + 0.5) * t - s / 2, oy + (mo.y + 1) * t - s * 0.98 + bob, s);
+    const big = WORD[mo.id].boss ? 1.5 : 1, s = t * 0.92 * big, bob = mo.frozen ? 0 : Math.sin(now / 300 + mo.uid) * t * 0.03;
+    if (WORD[mo.id].wall) g.globalAlpha = m.tiles[mo.y][mo.x] === '#' ? 0.55 : 0.85; // おばけは すけて いる
+    drawArt(g, WORD[mo.id].art, ox + (mo.x + 0.5) * t - s / 2, oy + (mo.y + 1) * t - s * 0.98 + bob, s); g.globalAlpha = 1;
+    if (mo.frozen) { g.fillStyle = 'rgba(140,210,255,.38)'; g.fillRect(ox + mo.x * t + 2, oy + mo.y * t + 2, t - 4, t - 4); g.strokeStyle = '#7ac8ff'; g.lineWidth = 2; g.strokeRect(ox + mo.x * t + 2, oy + mo.y * t + 2, t - 4, t - 4); }
     if (hp < mo.maxhp) { const w = t * 0.8; g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(ox + mo.x * t + t * 0.1, oy + mo.y * t - 4, w, 5); g.fillStyle = '#ff6b6b'; g.fillRect(ox + mo.x * t + t * 0.1, oy + mo.y * t - 4, w * Math.max(0, hp / mo.maxhp), 5); }
   };
   for (const mo of run.mons) if (vis.has(mo.x + ',' + mo.y)) drawMon(mo, monHpShown && monHpShown.has(mo.uid) ? monHpShown.get(mo.uid) : mo.hp);
@@ -96,7 +98,7 @@ function draw(now) {
   fx = fx.filter(f => now - f.t0 < (f.dur || 900));
   for (const f of fx) {
     const k = (now - f.t0) / 900;
-    if (f.kind === 'beam') { g.strokeStyle = `rgba(90,170,255,${1 - k})`; g.lineWidth = t * 0.25; g.lineCap = 'round'; g.beginPath(); const p = f.path; if (p.length) { g.moveTo(ox + (h.x + 0.5) * t, oy + (h.y + 0.5) * t); g.lineTo(ox + (p[p.length - 1][0] + 0.5) * t, oy + (p[p.length - 1][1] + 0.5) * t); g.stroke(); } continue; }
+    if (f.kind === 'beam' || f.kind === 'breath') { g.strokeStyle = f.kind === 'beam' ? `rgba(90,170,255,${1 - k})` : `rgba(255,120,40,${1 - k})`; g.lineWidth = t * 0.25; g.lineCap = 'round'; g.beginPath(); const p = f.path; if (p.length) { const s0 = f.kind === 'beam' ? [h.x, h.y] : p[0]; g.moveTo(ox + (s0[0] + 0.5) * t, oy + (s0[1] + 0.5) * t); g.lineTo(ox + (p[p.length - 1][0] + 0.5) * t, oy + (p[p.length - 1][1] + 0.5) * t); g.stroke(); } continue; }
     const X = ox + (f.x + 0.5) * t, Y = oy + (f.y + 0.2) * t - k * t * 0.6;
     if (f.kind === 'bubble') { // キャラの うえの ふきだし
       const a = Math.min(1, (1 - (now - f.t0) / f.dur) * 4), fs = Math.max(13, Math.round(t * 0.32));
@@ -107,7 +109,8 @@ function draw(now) {
       g.fillStyle = f.enemy ? '#c8304a' : '#2a6ab8'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(f.text, bx + w / 2, by + hgt / 2 + 1); g.textBaseline = 'alphabetic'; g.globalAlpha = 1; continue;
     }
     if (f.kind === 'vanish') { const s = t * (1 - k * 0.7); g.globalAlpha = Math.max(0, 1 - k * 1.2); drawArt(g, WORD[f.id].art, ox + (f.x + 0.5) * t - s / 2, oy + (f.y + 0.5) * t - s / 2, s); g.globalAlpha = 1; g.fillStyle = `rgba(255,230,120,${1 - k})`; for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2, d = t * (0.2 + k * 0.6); g.beginPath(); g.arc(ox + (f.x + 0.5) * t + Math.cos(a) * d, oy + (f.y + 0.5) * t + Math.sin(a) * d, t * 0.06, 0, 7); g.fill(); } continue; }
-    if (f.kind === 'fire') { g.globalAlpha = 1 - k; drawArt(g, 'dg_fire', X - t * 0.4, oy + f.y * t, t * 0.8); g.globalAlpha = 1; }
+    const fxArt = { fire: 'dg_fire', ice: 'dg_ice', thunder: 'dg_thunder', wind: 'dg_wind' }[f.kind];
+    if (fxArt) { g.globalAlpha = 1 - k; drawArt(g, fxArt, X - t * 0.4, oy + f.y * t, t * 0.8); g.globalAlpha = 1; }
     if (f.n != null) { g.font = `800 ${Math.round(t * 0.42)}px "M PLUS Rounded 1c",sans-serif`; g.textAlign = 'center'; g.lineWidth = 4; g.strokeStyle = '#fff'; g.fillStyle = f.kind === 'heal' ? '#2f9a5a' : f.kind === 'hurt' ? '#e0304a' : '#e07a1a'; const s = (f.kind === 'heal' ? '+' : '') + f.n; g.strokeText(s, X, Y); g.fillText(s, X, Y); }
   }
   if (fx.some(f => f.kind === 'hurt' && now - f.t0 < 200)) { g.fillStyle = 'rgba(255,60,80,.18)'; g.fillRect(0, 0, vw, vh); }
@@ -149,7 +152,7 @@ function doAction(a) {
   const r = act(run, a);
   vis = visible(run);
   if (r.turn) { tutFlag('turn'); persist(); }
-  const combat = r.ev.some(e => e.t === 'fx' && ['hit', 'fire', 'water', 'hurt'].includes(e.kind));
+  const combat = r.ev.some(e => e.t === 'fx' && ['hit', 'fire', 'water', 'ice', 'thunder', 'hurt'].includes(e.kind));
   if (!combat || fast) { handle(r.ev, false); hud(); return r; }
   busy = true; dispHp = hp0; stopWalk(); stopHold();
   ghosts = before.filter(b => !run.mons.some(m => m.uid === b.uid)); monHpShown = new Map(before.map(b => [b.uid, b.hp]));
@@ -157,7 +160,7 @@ function doAction(a) {
   return r;
 }
 async function handle(ev, slow) {
-  let stairs = false, dead = false;
+  let stairs = false, dead = false, rope = false;
   for (const e of ev) {
     if (e.t === 'msg') { log(e.text); if (e.heroHp != null) dispHp = e.heroHp; if (e.monUid != null && monHpShown) monHpShown.set(e.monUid, e.monHp); if (slow) { hud(); await wait(e.calc ? CALC_MS : MSG_MS); } }
     else if (e.t === 'fx') fx.push({ ...e, t0: performance.now() });
@@ -176,9 +179,12 @@ async function handle(ev, slow) {
     else if (e.t === 'bump') sfx.bump();
     else if (e.t === 'revive') sfx.unlock();
     else if (e.t === 'stairs') stairs = true;
+    else if (e.t === 'rope') rope = true;
+    else if (e.t === 'reveal') sfx.unlock();
     else if (e.t === 'dead') dead = true;
   }
   if (dead) { stopWalk(); setTimeout(gameOver, slow ? 300 : 500); return; }
+  if (rope) { stopWalk(); setTimeout(() => { if (run && mode === 'play') goDown(true); }, slow ? 300 : 500); return; }
   if (stairs) { stopWalk(); setTimeout(askStairs, 150); }
 }
 function bossDown(id) {
@@ -240,7 +246,7 @@ function showCard(id, ctx = {}) {
   tutFlag('look', id);
   let stat = '', btns = '';
   if (ctx.mon) stat = `<div class="dstat">HP ${ctx.mon.hp}/${ctx.mon.maxhp}　つよさ ${ctx.mon.atk}</div>`;
-  if (ctx.dex) { const d = D.dex[id] || {}; stat = `<div class="dstat">であった ${d.seen || 0}かい・つかった ${d.used || 0}かい・よめた ${d.read || 0}かい</div>`; }
+  if (ctx.dex) { const d = D.dex[id] || {}; stat = `<div class="dstat">であった ${d.seen || 0}かい・つかった ${d.used || 0}かい・よめた ${d.read || 0}かい${d.tq ? `<br>テスト ${d.tq}もん ちゅう ${d.tok || 0}もん せいかい` : ''}</div>`; }
   if (ctx.inv) {
     const it = ctx.inv, eqd = run.equip.weapon === it.uid || run.equip.shield === it.uid;
     if (w.slot) btns += `<button class="big" data-act="dgEquip" data-arg="${it.uid}">${eqd ? 'はずす' : 'そうびする'}</button>`;
@@ -286,25 +292,31 @@ function dexPop() {
 function askStairs() {
   if (!run || mode !== 'play' || !onStairs(run)) return;
   meet('stairs');
-  const last = !run.tut && run.floor >= MAX_FLOOR, next = run.floor + 1;
+  const last = !run.tut && run.floor >= MAX_FLOOR, next = run.floor + 1, test = needTest();
   showPop(`<div class="dcard"><div class="dart"></div><div class="dname">stairs</div><div class="dja">「かいだん」</div>
-    <p class="ddesc">${run.tut ? 'れんしゅうは おしまい！ ほんとうの ぼうけんへ いこう！' : last ? `${run.floor}かいの さいごの かいだん！` : `${next}かいへ すすむ？${BOSS_FLOORS.includes(next) ? '<br><b style="color:#e0304a">つぎは ボスの かい！</b>' : ''}`}</p></div>
+    <p class="ddesc">${run.tut ? 'れんしゅうは おしまい！ ほんとうの ぼうけんへ いこう！' : last ? `${run.floor}かいの さいごの かいだん！` : `${next}かいへ すすむ？${BOSS_FLOORS.includes(next) ? '<br><b style="color:#e0304a">つぎは ボスの かい！</b>' : ''}`}${test ? '<br><b style="color:#2a6ab8">すすむ まえに ことばの ふくしゅう テスト（5もん）！</b>' : ''}</p></div>
     <div class="btns">${run.tut ? '' : '<button class="big gray" data-act="close">まだ</button>'}<button class="big ${run.tut ? 'hint' : ''}" data-act="dgDown">すすむ</button></div>`);
   document.querySelector('#ov .dart').appendChild(wordArt('dg_stairs', 90));
 }
-function goDown() {
+const needTest = () => run && !run.tut && TEST_FLOORS.includes(run.floor) && run.tested !== run.floor;
+function goDown(rope = false) {
   closePop();
-  const r = descend(run); if (!r) return;
+  if (!rope && needTest() && onStairs(run)) return startTest(); // ボスの あとは ふくしゅう テスト → おわったら すすむ
+  const r = descend(run, rope); if (!r) return;
   if (r.tutDone) return tutorialDone();
   if (r.clear) return clearRun();
   sfx.unlock(); vis = visible(run);
   for (const id of updateSeen(run)) meet(id);
-  logs = []; logGroup++; log(`${run.floor}かいに ついた！`);
+  const z = zoneOf(run.floor), newZone = run.floor > 1 && zoneOf(run.floor - 1) !== z;
+  logs = []; logGroup++; log(`${run.floor}かいに ついた！${newZone ? `ここは「${z.name}」` : ''}`);
+  if (run.power && TEST_FLOORS.includes(run.floor - 1)) log(`ことばの ちから：つよさ ＋${run.power}（${run.floor + 4}かい まで）`);
   if (run.floor > D.best) D.best = run.floor;
   if (run.floor > (D.rewarded.floor || 1)) { const n = run.floor - Math.max(1, D.rewarded.floor || 1); D.rewarded.floor = run.floor; stars(STARS.floor * n, `${run.floor}かいに はじめて ついた！`); }
   persist(); camTarget(true); hud();
   const boss = BOSS_FLOORS.includes(run.floor) && run.mons.find(m => m.boss);
-  if (boss) setTimeout(() => { if (mode === 'play') showPop(`<h3>ボスの かい！</h3><p>${en(boss.id)}（${WORD[boss.id].ja}）が まっている！<br>たおすと かいだんが あらわれるよ。</p><div class="btns"><button class="big" data-act="close">がんばる！</button></div>`); }, 200);
+  const fl = run.floor;
+  if (boss) setTimeout(() => { if (mode === 'play' && run && run.floor === fl) showPop(`<h3>${run.floor >= MAX_FLOOR ? 'さいごの ボス！' : 'ボスの かい！'}</h3><div class="dart" style="width:110px;margin:0 auto"></div><p>${en(boss.id)}（${WORD[boss.id].ja}）が まっている！<br>たおすと かいだんが あらわれるよ。</p><div class="btns"><button class="big" data-act="close">がんばる！</button></div>`); const a = document.querySelector('#ov .dart'); if (a) a.appendChild(wordArt(WORD[boss.id].art, 110)); speak(WORD[boss.id].en); }, 200);
+  else if (newZone) setTimeout(() => { if (mode === 'play' && run && run.floor === fl) toast(`${run.floor}かい「${z.name}」`); }, 300);
 }
 function gameOver() {
   mode = 'over'; const f = run.floor, met = [...run.met];
@@ -315,12 +327,86 @@ function gameOver() {
   run = null;
 }
 function clearRun() {
-  mode = 'over'; D.clears++; D.best = Math.max(D.best, run.floor); run.over = true; D.run = null; saveDg(D);
-  sfx.unlock();
-  showPop(`<h3>${MAX_FLOOR}かい ぜんぶ クリア！</h3><div style="width:120px;margin:0 auto">${charSVG(S.equip, 'happy', 'hop')}</div>
-    <p>すごい！ ${en('kingslime')} も たおしたね！<br>この さきの かいは いま じゅんびちゅう。たのしみに まっててね！</p>
+  mode = 'over'; D.clears++; D.best = Math.max(D.best, run.floor); run.over = true; D.run = null;
+  const first = !D.rewarded.clear; D.rewarded.clear = true; saveDg(D);
+  sfx.unlock(); const met = [...run.met];
+  showPop(`<h3>ダンジョン クリア！</h3><div style="width:120px;margin:0 auto">${charSVG(S.equip, 'happy', 'hop')}</div>
+    <p>すごい！ ${MAX_FLOOR}かいの ${en('bigdragon')} を たおしたね！</p>
+    <div>こんかい であった ことば（${met.length}こ）</div><div class="wordlist">${met.map(id => `<span><b>${WORD[id].en}</b> ${WORD[id].ja}</span>`).join('')}</div>
     <div class="btns"><button class="big" data-act="dgTitle">タイトルへ</button></div>`);
+  if (first) setTimeout(() => stars(STARS.clear, 'はじめての ダンジョン クリア！'), 600);
   run = null;
+}
+
+/* ---------- ふくしゅう テスト（5かい ごと。ボスの あと）---------- */
+// であった ことばから 5もん。にがてな ことば（テストで まちがえた・まだ よめていない）を さきに だす
+const TQ_TYPES = ['en2ja', 'pic2en', 'snd2pic', 'ja2en', 'en2ja'];
+let TT = null;
+function lhRec(q, pick, ok, stars) {
+  try {
+    if (typeof LH === 'undefined') return;
+    LH.recordAttempt({ questionInstanceId: q.iid, questionKey: `eigo:dungeon:${q.type}:${q.id}`, subject: 'eigo', topic: 'dungeon', skill: 'dungeon-' + q.type, difficulty: Math.ceil(TT.floor / 5), mode: 'test',
+      questionText: q.type === 'en2ja' ? `${WORD[q.id].en} の いみ` : q.type === 'ja2en' ? `「${WORD[q.id].ja}」は えいごで？` : q.type === 'pic2en' ? `え → えいご（${WORD[q.id].ja}）` : `おとを きいて え（${WORD[q.id].en}）`,
+      correctAnswer: WORD[q.id].en, userAnswer: WORD[pick].en, isCorrect: ok, attemptNumber: 1, earnedStars: stars, params: { id: q.id, floor: TT.floor } });
+  } catch (e) { }
+}
+function pickTestWords() {
+  const met = [...new Set(run.met)].filter(id => WORD[id]);
+  const pool = met.length >= 5 ? met : [...new Set([...met, ...Object.keys(D.dex).filter(id => WORD[id])])];
+  const weak = id => { const d = D.dex[id] || {}; return (d.tq ? (d.tok || 0) / d.tq : 0.3) + Math.min(0.5, (d.read || 0) * 0.1) + Math.random() * 0.35; };
+  return pool.sort((a, b) => weak(a) - weak(b)).slice(0, 5);
+}
+function choicesFor(id) {
+  const w = WORD[id], others = WORDS.filter(x => x.id !== id && x.en !== w.en && x.ja !== w.ja && x.art !== w.art);
+  const same = others.filter(x => x.cat === w.cat && D.dex[x.id]), rest = others.filter(x => !same.includes(x));
+  const sh = a => a.map(v => [Math.random(), v]).sort((p, q) => p[0] - q[0]).map(p => p[1]);
+  const wrong = [...sh(same), ...sh(rest)].slice(0, 2).map(x => x.id);
+  return sh([id, ...wrong]);
+}
+function startTest() {
+  if (!run) return;
+  stopWalk();
+  const words = pickTestWords();
+  TT = { floor: run.floor, i: 0, ok: 0, qs: words.map((id, i) => ({ id, type: TQ_TYPES[i % TQ_TYPES.length], ch: choicesFor(id), iid: `dg-${Date.now()}-${i}` })), answered: false };
+  try { if (typeof LH !== 'undefined') LH.startSession({ subject: 'eigo', mode: 'dungeon' }); } catch (e) { }
+  showPop(`<h3>ことばの ふくしゅう テスト</h3><p>${run.floor}かいまでに であった ことばから 5もん！<br>せいかいの かずだけ ⭐ と「ことばの ちから」（つぎの 5かい つよく なる）が もらえるよ。</p><div class="btns"><button class="big" data-act="dgTestQ">はじめる</button></div>`);
+}
+function testQ() {
+  const q = TT.qs[TT.i], w = WORD[q.id]; TT.answered = false;
+  const head = `<div class="tq-head">ふくしゅう テスト ${TT.i + 1}/${TT.qs.length}</div>`;
+  let ask = '', btns = '';
+  if (q.type === 'en2ja') { ask = `<div class="tq-en">${w.en}</div><button class="say" data-act="dgSay" data-arg="${q.id}">🔊 きく</button><p>いみは どれ？</p>`; btns = q.ch.map((id, i) => `<button class="big tq-c" data-act="dgAns" data-arg="${i}">${WORD[id].ja}</button>`).join(''); }
+  if (q.type === 'ja2en') { ask = `<div class="tq-ja">「${w.ja}」</div><p>えいごで どれ？</p>`; btns = q.ch.map((id, i) => `<button class="big tq-c en" data-act="dgAns" data-arg="${i}">${WORD[id].en}</button>`).join(''); }
+  if (q.type === 'pic2en') { ask = `<div class="dart tq-pic"></div><p>この えは えいごで どれ？</p>`; btns = q.ch.map((id, i) => `<button class="big tq-c en" data-act="dgAns" data-arg="${i}">${WORD[id].en}</button>`).join(''); }
+  if (q.type === 'snd2pic') { ask = `<button class="say big" data-act="dgSay" data-arg="${q.id}">🔊 もう いちど きく</button><p>きこえた ことばの えは どれ？</p>`; btns = q.ch.map((id, i) => `<button class="tq-p" data-act="dgAns" data-arg="${i}" data-art="${WORD[id].art}"></button>`).join(''); }
+  showPop(`<div class="tquiz">${head}${ask}<div class="tq-ch">${btns}</div><div class="tq-fb" id="tqfb"></div></div>`);
+  if (q.type === 'pic2en') document.querySelector('#ov .tq-pic').appendChild(wordArt(w.art, 110));
+  document.querySelectorAll('#ov .tq-p').forEach(el => el.appendChild(wordArt(el.dataset.art, 76)));
+  if (q.type === 'en2ja' || q.type === 'snd2pic') setTimeout(() => speak(w.en), 250);
+}
+function testAns(i) {
+  if (!TT || TT.answered) return; TT.answered = true;
+  const q = TT.qs[TT.i], pick = q.ch[i], ok = pick === q.id, d = dexOf(q.id);
+  d.tq = (d.tq || 0) + 1; if (ok) { d.tok = (d.tok || 0) + 1; TT.ok++; }
+  lhRec(q, pick, ok, ok ? 1 : 0);
+  (ok ? sfx.correct : sfx.wrong)();
+  document.querySelectorAll('#ov [data-act=dgAns]').forEach((b, j) => { b.disabled = true; b.classList.toggle('ok', q.ch[j] === q.id); b.classList.toggle('ng', j === +i && !ok); });
+  const w = WORD[q.id];
+  $id('tqfb').innerHTML = `<div class="${ok ? 'tok' : 'tng'}">${ok ? 'せいかい！' : 'ざんねん…'}</div><div><b class="en">${w.en}</b> ＝「${w.ja}」</div><div class="btns"><button class="big" data-act="dgTestNext">${TT.i + 1 < TT.qs.length ? 'つぎへ' : 'けっか'}</button></div>`;
+  speak(w.en); saveDg(D);
+}
+function testNext() {
+  TT.i++;
+  if (TT.i < TT.qs.length) return testQ();
+  const ok = TT.ok, power = ok >= 5 ? 3 : ok >= 3 ? 2 : ok >= 1 ? 1 : 0;
+  run.tested = TT.floor; run.power = power; persist();
+  try { if (typeof LH !== 'undefined') LH.endSession(); } catch (e) { }
+  showPop(`<h3>テストの けっか</h3><div class="tq-score">${ok} / ${TT.qs.length}</div>
+    <p>${ok === TT.qs.length ? 'ぜんもん せいかい！ すごい！' : ok >= 3 ? 'よく できました！' : 'まちがえた ことばは つぎも でるよ。ずかんで みて みよう！'}</p>
+    ${power ? `<p><b>ことばの ちから！</b> つぎの 5かい つよさ ＋${power}</p>` : ''}
+    <div class="wordlist">${TT.qs.map(q => `<span><b>${WORD[q.id].en}</b> ${WORD[q.id].ja}</span>`).join('')}</div>
+    <div class="btns"><button class="big" data-act="dgTestDone">すすむ</button></div>`);
+  if (ok) setTimeout(() => stars(Math.min(STARS.testMax, ok), 'ふくしゅう テスト'), 500);
 }
 
 /* ---------- チュートリアル ---------- */
@@ -470,6 +556,7 @@ Object.assign(ACT, {
   dgDex: () => dexPop(), dgDexTab: t => { dexTab = t; dexPop(); }, dgDexCard: id => showCard(id, { dex: true, back: 'dgDex' }), dgDexNo: () => {},
   dgMenu: () => menu(),
   dgDown: () => goDown(),
+  dgTestQ: () => testQ(), dgAns: i => testAns(+i), dgTestNext: () => testNext(), dgTestDone: () => { TT = null; goDown(); },
   dgTitle: () => toTitle(),
   dgTut: () => start(true), dgSkipTut: () => start(false), dgStartReal: () => start(false),
   dgNew: () => { D.run = null; saveDg(D); closePop(); goPressed(); },
@@ -522,4 +609,4 @@ function setupInput() {
 })();
 
 // じどう テスト よう
-window.__dg = { tutInfo: () => { const i = tutInfo(); return i && { id: i.id, dirs: i.dirs, btn: i.btn, adj: !!i.adj, goal: i.goal && { x: i.goal.x, y: i.goal.y }, pick: i.s.pick, spell: i.s.spell }; }, set fast(v) { fast = v; }, get busy() { return busy; }, get ghosts() { return ghosts; }, get run() { return run; }, get D() { return D; }, get mode() { return mode; }, get tut() { return tut; }, act: doAction, start, resume, toTitle, goDown, showCard, tapMap, toTile, cam: () => cam(), visible: () => vis };
+window.__dg = { tutInfo: () => { const i = tutInfo(); return i && { id: i.id, dirs: i.dirs, btn: i.btn, adj: !!i.adj, goal: i.goal && { x: i.goal.x, y: i.goal.y }, pick: i.s.pick, spell: i.s.spell }; }, set fast(v) { fast = v; }, get busy() { return busy; }, get ghosts() { return ghosts; }, get run() { return run; }, get D() { return D; }, get mode() { return mode; }, get tut() { return tut; }, act: doAction, start, resume, toTitle, goDown, showCard, tapMap, toTile, cam: () => cam(), visible: () => vis, get test() { return TT; }, startTest };

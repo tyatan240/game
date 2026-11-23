@@ -8,6 +8,7 @@
 | `common/learning-history.js` | 記録API（グローバル `LearningHistory`＝`LH`）。core.js に依存しない |
 | `parent/index.html`・`report.js`・`report.css` | 保護者画面（保護者確認 → ダッシュボード・成長・復習提案・まちがえた問題・バックアップ） |
 | `sansu/`・`kokugo/`・`eigo/`・`program/` | 既存の正誤判定のあとに `lhRec()`／`lhRun()` で記録するだけ（判定・⭐・保存は変更なし） |
+| `dungeon/` | 5階ごとの復習テストの回答を `lhRec()` で記録（subject `eigo`、topic `dungeon`、mode `test`、questionKey `eigo:dungeon:形式:単語id`）。レポートでは「イングリッシュダンジョン（復習テスト）」 |
 
 ## 保存（IndexedDB `moko-learning-history`、v1）
 - `attempts`（keyPath `id`。index：`ts`・`subject`・`questionKey`・`topic`・`instance`）

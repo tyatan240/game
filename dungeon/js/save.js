@@ -11,7 +11,7 @@ export function defData() {
     runs: 0,          // ぼうけんに でた かいすう
     tutorialDone: false,
     dex: {},          // ずかん { id: { seen, used, read, looked, first } }
-    rewarded: { floor: 0, boss: [], dex: 0 }, // ⭐を もう もらった もの
+    rewarded: { floor: 0, boss: [], dex: 0, clear: false }, // ⭐を もう もらった もの（clear：20かい クリア）
     settings: { voice: true, se: true },
     run: null,        // ちゅうだん ちゅうの ぼうけん（game.js の run）
   };

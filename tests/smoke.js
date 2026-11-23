@@ -1070,17 +1070,69 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     await p.evaluate(() => { const r = __dg.run, b = r.mons.find(m => m.boss); b.hp = 1; r.mons = r.mons.filter(m => m === b); r.hero.x = b.x - 1; r.hero.y = b.y; r.hero.dir = 'right'; __dg.act({ t: 'attack' }); });
     await p.waitForTimeout(800);
     ok(await p.evaluate(p0 => __dg.run.bossDead && __dg.run.stairs && __dg.D.rewarded.boss.includes(5) && S.points >= p0 + 14, pts0), 'king slime を たおすと かいだん・⭐10');
+    // ボスの あとは ふくしゅう テスト（5もん）→ ⭐・ことばの ちから → 6かい
+    const pts5 = await p.evaluate(() => S.points);
     await p.evaluate(() => { const r = __dg.run; r.hero.x = r.stairs.x; r.hero.y = r.stairs.y; __dg.goDown(); });
-    ok(await p.evaluate(() => __dg.D.clears === 1 && __dg.run === null && /クリア/.test(document.getElementById('ov').textContent)), '5かい クリア（いまは ここまで）');
+    ok(await p.evaluate(() => __dg.run.floor === 5 && __dg.test && __dg.test.qs.length === 5 && /ふくしゅう テスト/.test(document.getElementById('ov').textContent)), '5かいの ボスの あと：ふくしゅう テスト（5もん）');
+    await p.click('#ov [data-act=dgTestQ]');
+    for (let i = 0; i < 5; i++) {
+      const k = await p.evaluate(i => { const q = __dg.test.qs[__dg.test.i]; return i < 3 ? q.ch.indexOf(q.id) : q.ch.findIndex(x => x !== q.id); }, i);
+      await p.click(`#ov [data-act=dgAns][data-arg="${k}"]`); await p.click('#ov [data-act=dgTestNext]'); await p.waitForTimeout(50);
+    }
+    ok(await p.evaluate(() => /3 \/ 5/.test(document.getElementById('ov').textContent) && __dg.run.power === 2 && __dg.run.tested === 5), 'テストの けっか 3/5 → ことばの ちから ＋2');
+    await p.waitForTimeout(700);
+    ok(await p.evaluate(p0 => S.points >= p0 + 3, pts5), 'せいかいの かずだけ ⭐');
+    const lhN = await p.evaluate(async () => { await LH.flushed(); return (await LH.getAttempts({ subject: 'eigo', topic: 'dungeon' })).length; });
+    ok(lhN >= 5, 'テストの こたえは 学習履歴（eigo / dungeon）へ ' + lhN);
+    ok(await p.evaluate(() => Object.values(__dg.D.dex).some(d => d.tq > 0)), 'ずかんに テストの きろく');
+    await p.click('#ov [data-act=dgTestDone]'); await p.waitForTimeout(200);
+    ok(await p.evaluate(() => __dg.run.floor === 6 && __dg.run.power === 2 && /はなの どうくつ/.test(document.getElementById('log').textContent)), '6かいへ（はなの どうくつ・ことばの ちからは つづく）');
+    // あたらしい まほう・アイテム・てき
+    const mech = await p.evaluate(() => {
+      const r = __dg.run, h = r.hero, R = r.map.rooms[0], o = {}; closePop();
+      const reset = () => { r.mons = []; h.x = R.x + 1; h.y = R.y + 1; h.mp = 50; h.hp = h.maxhp; r.stuck = 0; };
+      reset(); r.spells = ['ice', 'thunder', 'wind', 'light'];
+      r.mons = [{ uid: 801, id: 'rat', x: h.x + 1, y: h.y, hp: 99, maxhp: 99, atk: 1, def: 0, exp: 1, tick: 0 }];
+      __dg.act({ t: 'cast', id: 'ice' }); o.ice = r.mons[0].frozen === 2 && r.mons[0].hp < 99; // こおる（この ターンで 1 へる）
+      reset(); r.mons = [{ uid: 802, id: 'rat', x: h.x + 1, y: h.y, hp: 99, maxhp: 99, atk: 1, def: 0, exp: 1, tick: 0 }, { uid: 803, id: 'bat', x: h.x, y: h.y + 1, hp: 99, maxhp: 99, atk: 1, def: 0, exp: 1, tick: 0 }];
+      __dg.act({ t: 'cast', id: 'thunder' }); o.thunder = r.mons.every(m => m.hp < 99);
+      reset(); r.mons = [{ uid: 804, id: 'rat', x: h.x + 1, y: h.y, hp: 9, maxhp: 9, atk: 1, def: 0, exp: 1, tick: 0 }];
+      __dg.act({ t: 'cast', id: 'wind' }); o.wind = Math.abs(r.mons[0].x - h.x) > 1;
+      reset(); r.seen = '0'.repeat(r.seen.length); __dg.act({ t: 'cast', id: 'light' }); o.light = !r.seen.includes('0');
+      reset(); r.inv = [{ uid: 811, id: 'armor', peek: false }]; const d0 = r.hero.def; __dg.act({ t: 'equip', uid: 811 }); o.armor = r.equip.armor === 811;
+      reset(); r.mons = [{ uid: 805, id: 'crab', x: h.x + 1, y: h.y, hp: 99, maxhp: 99, atk: 1, def: 3, exp: 1, tick: 0 }]; h.dir = 'right'; __dg.act({ t: 'attack' }); o.crab = /かたい/.test(document.getElementById('log').textContent);
+      // ghost は かべを とおる
+      reset(); let wx = -1, wy = -1; for (let y = 1; y < r.map.h - 1 && wx < 0; y++) for (let x = 1; x < r.map.w - 1; x++) if (r.map.tiles[y][x] === '#' && Math.abs(x - h.x) + Math.abs(y - h.y) > 2 && Math.abs(x - h.x) + Math.abs(y - h.y) <= 5) { wx = x; wy = y; break; }
+      r.mons = [{ uid: 806, id: 'ghost', x: wx, y: wy, hp: 99, maxhp: 99, atk: 1, def: 0, exp: 1, tick: 0 }]; const g0 = Math.abs(wx - h.x) + Math.abs(wy - h.y);
+      __dg.act({ t: 'wait' }); const gm = r.mons[0]; o.ghost = Math.abs(gm.x - h.x) + Math.abs(gm.y - h.y) < g0;
+      // spider の いと
+      reset(); r.stuck = 1; const x0 = h.x; __dg.act({ t: 'move', dir: 'down' }); o.web = h.x === x0 && h.y === R.y + 1 && r.stuck === 0;
+      return o;
+    });
+    ok(Object.values(mech).every(Boolean), 'ice・thunder・wind・light・armor・crab・ghost・spider ' + JSON.stringify(mech));
+    // rope で つぎの かいへ（ボスの かいでは つかえない）
+    ok(await p.evaluate(async () => { const r = __dg.run; r.mons = []; r.inv = [{ uid: 821, id: 'rope', peek: false }]; __dg.act({ t: 'use', uid: 821 }); await new Promise(ok => setTimeout(ok, 700)); return r.floor === 7; }), 'rope で つぎの かいへ');
+    // 20かいの ボス → テスト → クリア ⭐30
+    const pts20 = await p.evaluate(() => S.points);
+    await p.evaluate(() => { for (let k = 0; k < 20 && __dg.run.floor < 20; k++) { const r = __dg.run; r.tested = r.floor; r.stairs = { x: r.hero.x, y: r.hero.y }; __dg.goDown(); } closePop(); });
+    ok(await p.evaluate(() => __dg.run.floor === 20 && __dg.run.mons.some(m => m.id === 'bigdragon') && __dg.D.best === 20), '20かい：さいごの ボス big dragon');
+    await p.evaluate(() => { const r = __dg.run, b = r.mons.find(m => m.boss); b.hp = 1; r.mons = [b]; r.hero.x = b.x - 1; r.hero.y = b.y; r.hero.dir = 'right'; __dg.act({ t: 'attack' }); });
+    await p.waitForTimeout(300);
+    await p.evaluate(() => { closePop(); const r = __dg.run; r.hero.x = r.stairs.x; r.hero.y = r.stairs.y; __dg.goDown(); });
+    ok(await p.evaluate(() => !!__dg.test), '20かいの あとも テスト');
+    await p.click('#ov [data-act=dgTestQ]');
+    for (let i = 0; i < 5; i++) { await p.click('#ov [data-act=dgAns][data-arg="0"]'); await p.click('#ov [data-act=dgTestNext]'); await p.waitForTimeout(50); }
+    await p.click('#ov [data-act=dgTestDone]'); await p.waitForTimeout(800);
+    ok(await p.evaluate(p0 => __dg.D.clears === 1 && __dg.run === null && __dg.D.rewarded.clear && /ダンジョン クリア/.test(document.getElementById('ov').textContent) && S.points >= p0 + 10 + 30, pts20), '20かい クリア（はじめては ⭐30）');
     // にかいめは せつめいを えらべる・たおれた とき
     await p.evaluate(() => __dg.toTitle()); await p.click('#tGo'); await p.waitForTimeout(200);
     ok(await p.isVisible('#ov [data-act=dgSkipTut]') && await p.isVisible('#ov [data-act=dgTut]'), '2かいめからは せつめいを「みる／とばす」');
     await p.click('#ov [data-act=dgSkipTut]'); await p.waitForTimeout(200);
     await p.evaluate(() => { const r = __dg.run, h = r.hero; h.hp = 1; r.mons = [{ uid: 777, id: 'rat', x: h.x + 1, y: h.y, hp: 6, maxhp: 6, atk: 9, exp: 1, tick: 0 }]; r.inv = []; __dg.act({ t: 'wait' }); });
     await p.waitForTimeout(800);
-    ok(await p.evaluate(() => __dg.mode === 'over' && /たおれて/.test(document.getElementById('ov').textContent) && !__dg.D.run && __dg.D.best === 5 && Object.keys(__dg.D.dex).length > 3), 'たおれたら おしまい（ずかん・さいこう とうたつは のこる）');
+    ok(await p.evaluate(() => __dg.mode === 'over' && /たおれて/.test(document.getElementById('ov').textContent) && !__dg.D.run && __dg.D.best === 20 && Object.keys(__dg.D.dex).length > 3), 'たおれたら おしまい（ずかん・さいこう とうたつは のこる）');
     await p.evaluate(() => { __dg.toTitle(); });
-    ok(/5かい/.test(await p.textContent('#tbest')), 'タイトルに さいこう とうたつ 5かい');
+    ok(/20かい/.test(await p.textContent('#tbest')), 'タイトルに さいこう とうたつ 20かい');
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
   }
 

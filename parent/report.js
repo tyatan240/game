@@ -19,6 +19,7 @@
       if (subject === 'eigo' && typeof ETYPE !== 'undefined' && ETYPE[topic]) return ETYPE[topic].name;
     } catch (e) { }
     if (subject === 'prog') return PROG_TOPIC[topic] || topic;
+    if (subject === 'eigo' && topic === 'dungeon') return 'イングリッシュダンジョン（復習テスト）';
     return topic;
   }
   const pct = (a, b) => b ? Math.round(a / b * 100) : null;
