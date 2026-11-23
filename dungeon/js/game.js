@@ -41,7 +41,8 @@ export function enterFloor(run, floor) {
   if (floor === 0) { // チュートリアル
     run.map = genTutorial();
     run.hero.x = 2; run.hero.y = 3; run.hero.hp = 12;
-    run.items.push({ uid: run.uid++, id: 'apple', x: 11, y: 2 }, { uid: run.uid++, id: 'magicbook', x: 12, y: 6 }, { uid: run.uid++, id: 'sword', x: 10, y: 6 });
+    run.items.push({ uid: run.uid++, id: 'apple', x: 11, y: 2 }, { uid: run.uid++, id: 'magicbook', x: 12, y: 6 }, { uid: run.uid++, id: 'sword', x: 10, y: 6 }, { uid: run.uid++, id: 'key', x: 15, y: 6 });
+    run.boxes.push({ x: 16, y: 1, open: false });
     spawnMon(run, 'slime', 14, 3, { tame: true, hp: 3, maxhp: 3 }); spawnMon(run, 'slime', 16, 5, { tame: true, hp: 3, maxhp: 3 });
     run.mons.forEach(m => { m.hp = 3; m.maxhp = 3; });
     run.stairs = { x: 24, y: 3 };
@@ -163,7 +164,7 @@ function openBox(run, b, ev) {
   const k = run.inv.find(i => i.id === 'key');
   if (!k) { ev.push({ t: 'msg', text: `${en('treasurebox')} だ。${en('key')} が あれば あけられる` }); ev.push({ t: 'bump' }); return; }
   run.inv = run.inv.filter(i => i !== k); b.open = true;
-  const got = [rollItem(run), rollItem(run)];
+  const got = run.tut ? ['bread', 'shield'] : [rollItem(run), rollItem(run)]; // れんしゅうは きまった もの
   for (const id of got) {
     if (run.inv.length < INV_MAX) run.inv.push({ uid: run.uid++, id, peek: false });
     else run.items.push({ uid: run.uid++, id, x: run.hero.x, y: run.hero.y });

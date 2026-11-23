@@ -997,8 +997,12 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(await p.isVisible('a.study[href="dungeon/index.html"]'), 'おべんきょうの へやに ダンジョンの いりぐち');
     await p.goto(B + 'dungeon/index.html'); await p.waitForSelector('body[data-ready="1"]', { timeout: 10000 });
     ok(await p.isVisible('#title') && /まだ/.test(await p.textContent('#tbest')), 'タイトル（さいこう とうたつ）');
-    await p.evaluate(() => { __dg.fast = true; }); // テストでは せんとうの ひょうじを またない（ゆっくり モードは あとで たしかめる）
-    await p.click('#tGo'); await p.waitForTimeout(300);
+    await p.click('#tGo'); await p.waitForTimeout(700);
+    ok(await p.evaluate(() => /うごきかた/.test(document.getElementById('ov').textContent) && !document.getElementById('ov').classList.contains('hide')), 'チュートリアル：だんかいごとに せつめい カード（うごきかた）');
+    await p.click('#ov [data-act=close]'); await p.click('#guide [data-act=dgTutHelp]'); await p.waitForTimeout(100);
+    ok(await p.evaluate(() => /うごきかた/.test(document.getElementById('ov').textContent)), 'ガイドの「？ せつめい」で もういちど みられる');
+    await p.click('#ov [data-act=close]');
+    await p.evaluate(() => { __dg.fast = true; }); // テストでは せつめい カード・せんとうの ひょうじを またない（ゆっくりは あとで たしかめる）
     ok(await p.evaluate(() => __dg.mode === 'play' && __dg.run.tut && !document.getElementById('guide').hidden), 'はじめては チュートリアルから（とばせない）');
     const mv = async (dir, n = 1) => { for (let i = 0; i < n; i++) await p.evaluate(d => __dg.act({ t: 'move', dir: d }), dir); };
     await mv('right', 7);
@@ -1018,7 +1022,8 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     await p.click('#bItems'); await p.click('#ov [data-act=dgUse]'); await p.waitForTimeout(400); await p.evaluate(() => closePop());
     await p.click('#bItems'); await p.click('#ov [data-act=dgEquip]');
     await p.click('#bMagic'); await p.click('#ov [data-act=dgCast]');
-    ok(await p.evaluate(() => ['move', 'look', 'eat', 'attack', 'book', 'fire', 'sword'].every(k => __dg.tut.done[k])), 'チュートリアル：うごく・しらべる・たべる・こうげき・まほうの ほん・fire・そうび');
+    await p.evaluate(() => { const r = __dg.run; r.hero.x = 15; r.hero.y = 5; __dg.act({ t: 'move', dir: 'down' }); r.hero.x = 16; r.hero.y = 2; __dg.act({ t: 'move', dir: 'up' }); });
+    ok(await p.evaluate(() => ['move', 'look', 'pickup', 'eat', 'attack', 'box', 'book', 'fire', 'sword'].every(k => __dg.tut.done[k]) && __dg.run.boxes[0].open), 'チュートリアル：うごく・しらべる・ひろう・たべる・こうげき・たからばこ・まほうの ほん・fire・そうび ' + await p.evaluate(() => JSON.stringify(__dg.tut.done)));
     await p.evaluate(() => { const r = __dg.run; r.hero.x = 24; r.hero.y = 3; }); await p.evaluate(() => __dg.goDown()); await p.waitForTimeout(200);
     await p.click('#ov [data-act=dgStartReal]'); await p.waitForTimeout(300);
     ok(await p.evaluate(() => __dg.D.tutorialDone && __dg.run.floor === 1 && !__dg.run.tut && __dg.D.best === 1 && __dg.D.dex.apple && __dg.D.dex.fire), 'チュートリアル おわり → 1かい（ずかんに とうろく）');

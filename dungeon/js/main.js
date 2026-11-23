@@ -157,7 +157,7 @@ async function handle(ev, slow) {
     else if (e.t === 'boss') bossDown(e.id);
     else if (e.t === 'level') { sfx.unlock(); fx.push({ kind: 'heal', x: run.hero.x, y: run.hero.y, n: 'Lv' + e.lv, t0: performance.now() }); }
     else if (e.t === 'hurt') { sfx.bump(); stopWalk(); }
-    else if (e.t === 'open') { sfx.chest(); e.got.forEach(meet); }
+    else if (e.t === 'open') { sfx.chest(); e.got.forEach(meet); tutFlag('open'); }
     else if (e.t === 'bump') sfx.bump();
     else if (e.t === 'revive') sfx.unlock();
     else if (e.t === 'stairs') stairs = true;
@@ -296,15 +296,51 @@ function clearRun() {
 }
 
 /* ---------- チュートリアル ---------- */
+// チュートリアル：1つずつ。あたらしい だんかいに なると「せつめい カード」を だす（ガイドの「？」で なんかい でも みられる）
+const E = t => `<b class="en">${t}</b>`;
+const K = (cls, t) => `<span class="kbtn ${cls}">${t}</span>`; // ボタンの え
+const PADK = `<span class="kpad"><i>▲</i><i>◀</i><i>▶</i><i>▼</i></span>`;
 const TUT = [
-  { id: 'move', text: 'やじるしの ボタンで うごいて みよう！ みぎの へやへ すすもう', sub: 'いきたい マスを タップしても うごけるよ' },
-  { id: 'look', text: `${'<b class="en">apple</b>'} を タップして しらべて みよう！`, sub: 'なまえは えいご。タップすると いみと おとが わかるよ' },
-  { id: 'eat', text: `${'<b class="en">apple</b>'} の うえに のって ひろったら、「もちもの」で たべよう！`, sub: 'たべると HPが かいふく するよ' },
-  { id: 'attack', text: `${'<b class="en">slime</b>'} の となりで「こうげき」！（ぶつかっても こうげき できるよ）`, sub: 'てきの なまえも えいご。れんしゅうの slime は こうげき して こないよ' },
-  { id: 'book', text: `${'<b class="en">magic book</b>'} を ひろって、「もちもの」で よもう！`, sub: 'まほうを おぼえられるよ' },
-  { id: 'fire', text: `「まほう」から ${'<b class="en">fire</b>'} を つかって、${'<b class="en">slime</b>'} を こうげき！`, sub: 'まほうは MPを つかうよ' },
-  { id: 'sword', text: `${'<b class="en">sword</b>'} を ひろって、「もちもの」で そうび しよう！`, sub: 'つよさが あがるよ' },
-  { id: 'stairs', text: `みぎの へやの ${'<b class="en">stairs</b>'} に のって「かいだん」！`, sub: 'つぎの かいへ すすめるよ' },
+  { id: 'move', text: 'やじるしの ボタンで うごいて みよう！ みぎの へやへ すすもう', sub: 'いきたい マスを タップしても うごけるよ',
+    title: 'うごきかた', body: `<p>${PADK} の やじるしを おすと、その ほうこうに 1マス すすむよ。</p>
+      <p>いきたい マスを <b>タップ</b> すると、そこまで じぶんで あるくよ。</p>
+      <p>モコの あしもとの <b style="color:#e5a91c">▼</b> は、いま <b>むいている ほうこう</b>。こうげきや まほうは この ほうこうに でるよ。</p>
+      <p class="tip">モコが 1かい うごくと、てきも 1かい うごくよ。あわてなくて だいじょうぶ！</p>` },
+  { id: 'look', text: `${E('apple')} を タップして しらべて みよう！`, sub: 'なまえは えいご。タップすると いみと おとが わかるよ', art: 'apple',
+    title: 'しらべかた', body: `<p>ダンジョンの てき・アイテムの なまえは <b>えいご</b> だよ。</p>
+      <p>きになる ものを <b>タップ</b> すると カードが でて、<b>えいご・え・にほんごの いみ・つかいかた</b> が わかるよ。</p>
+      <p>${K('say', '🔊 きく')} で えいごの よみかたが きこえるよ。とじる ときは ${K('gray', 'とじる')}。</p>` },
+  { id: 'pickup', text: `${E('apple')} の うえに のって ひろおう！`, sub: 'アイテムの うえに のると じどうで ひろうよ', art: 'apple',
+    title: 'ひろいかた', body: `<p>アイテムの <b>うえに のる</b> と、じどうで ひろうよ。</p>
+      <p>ひろった ものは ${K('itm', 'もちもの')} に はいるよ（${INV_MAX}こ まで）。</p>` },
+  { id: 'eat', text: `「もちもの」を ひらいて ${E('apple')} を たべよう！`, sub: 'たべると HPが かいふく するよ', art: 'apple',
+    title: 'アイテムの つかいかた', body: `<p>${K('itm', 'もちもの')} を おすと、もっている ものが でるよ。</p>
+      <p>なまえの よこの ${K('pink', 'たべる')}・${K('pink', 'よむ')}・${K('pink', 'そうび')} などの ボタンで つかえるよ。</p>
+      <p>${K('q', '？')} を おすと いみが わかるよ。<b>いみを みないで ただしく つかえたら「よめた」</b>！ ずかんに きろく されるよ。</p>
+      <p class="tip">HPが へったら たべものを たべよう。HPは うえの みどりの バー だよ。</p>` },
+  { id: 'attack', text: `${E('slime')} の となりに いって こうげき！`, sub: 'てきの ほうを むいて「こうげき」。てきに ぶつかっても こうげき できるよ', art: 'dg_slime',
+    title: 'こうげきの しかた', body: `<p>てきの <b>となり</b> に いって、てきの ほうを むいて ${K('atk', 'こうげき')}！</p>
+      <p>てきの いる ほうへ やじるしを おしても こうげき できるよ。</p>
+      <p>ダメージは しきで でるよ。<span class="calc">slimeの HP　3 − 3 ＝ 0</span> HPが 0 に なったら たおせる！</p>
+      <p class="tip">てきを たおすと けいけんちが もらえて、レベルが あがると つよく なるよ。</p>` },
+  { id: 'box', text: `${E('key')} を ひろって、${E('treasure box')} に ぶつかって あけよう！`, sub: 'かぎを もって たからばこに ぶつかると あくよ', art: 'dg_box',
+    title: 'たからばこ', body: `<p>${E('treasure box')}（たからばこ）は ${E('key')}（かぎ）が ないと あかないよ。</p>
+      <p>${E('key')} を ひろってから、たからばこに <b>ぶつかる</b> と あくよ。なかに アイテムが はいっているよ！</p>` },
+  { id: 'book', text: `${E('magic book')} を ひろって、「もちもの」で よもう！`, sub: 'まほうの ほんを よむと まほうを おぼえるよ', art: 'dg_book',
+    title: 'まほうの おぼえかた', body: `<p>${E('magic book')}（まほうの ほん）を ひろったら、${K('itm', 'もちもの')} → ${K('pink', 'よむ')}。</p>
+      <p>あたらしい まほうを 1つ おぼえるよ。まほうの なまえも えいご！（${E('fire')} ほのお・${E('water')} みず・${E('heal')} かいふく）</p>` },
+  { id: 'fire', text: `「まほう」から ${E('fire')} を つかって ${E('slime')} を こうげき！`, sub: 'まほうは MPを つかうよ（あおい バー）', art: 'dg_fire',
+    title: 'まほうの つかいかた', body: `<p>${K('mag', 'まほう')} を おすと、おぼえた まほうが でるよ。${K('pink', 'つかう')} で つかえる！</p>
+      <p>まほうを つかうと <b>MP</b>（あおい バー）が へるよ。MPは あるくと すこしずつ もどるよ。</p>
+      <p>${E('fire')}：いちばん ちかい てきに あたる ／ ${E('water')}：むいている ほうに まっすぐ とぶ ／ ${E('heal')}：HPが かいふく</p>` },
+  { id: 'sword', text: `${E('sword')} を ひろって、「もちもの」で そうび しよう！`, sub: 'そうびすると つよく なるよ', art: 'dg_sword',
+    title: 'そうびの しかた', body: `<p>${E('sword')}（けん）や ${E('shield')}（たて）は ${K('itm', 'もちもの')} → ${K('pink', 'そうび')} で みに つけるよ。</p>
+      <p>${E('sword')} は <b>つよさ</b>、${E('shield')} は <b>まもり</b> が あがるよ。もういちど おすと はずせるよ。</p>
+      <p class="tip">${K('wait', 'まつ')} で 1かい やすむと、HPと MPが すこし もどる ことも あるよ。</p>` },
+  { id: 'stairs', text: `みぎの へやの ${E('stairs')} に のって「かいだん」！`, sub: 'つぎの かいへ すすめるよ', art: 'dg_stairs',
+    title: 'かいだん', body: `<p>${E('stairs')}（かいだん）に のると ${K('stairs', 'かいだん')} の ボタンが でるよ。おすと つぎの かいへ すすむよ。</p>
+      <p>5かいには <b>ボス</b> が いるよ。アイテムや まほうを あつめて すすもう！</p>
+      <p class="tip">たおれると 1かいから やりなおし。でも ずかんは のこるよ。とちゅうで やめる ときは ⏸ → 「ちゅうだんして おうちへ」。</p>` },
 ];
 let tut = null;
 function tutFlag(k, id) {
@@ -312,19 +348,29 @@ function tutFlag(k, id) {
   if (k === 'turn') tut.moves = (tut.moves || 0) + 1;
   if (k === 'turn' && tut.moves >= 3) tut.done.move = true;
   if (k === 'look' && id === 'apple') tut.done.look = true;
-  if (k === 'used' && id === 'apple') tut.done.eat = true;
+  if (k === 'pickup' && id === 'apple') tut.done.pickup = true;
+  if (k === 'used' && id === 'apple') { tut.done.pickup = true; tut.done.eat = true; }
   if (k === 'kill') tut.done.attack = true;
+  if (k === 'open') tut.done.box = true;
   if (k === 'learn') tut.done.book = true;
   if (k === 'cast' && id === 'fire') tut.done.fire = true;
   if (k === 'equip' && id === 'sword') tut.done.sword = true;
   // fire の れんしゅう あいてが いなく なったら もう 1ぴき
   if (!tut.done.fire && tut.done.book && !run.mons.length) { run.mons.push({ uid: run.uid++, id: 'slime', x: 15, y: 4, hp: 3, maxhp: 3, atk: 0, exp: 1, tick: 0, tame: true }); vis = visible(run); }
 }
+const tutStep = () => TUT.find(x => !tut.done[x.id]) || TUT[TUT.length - 1];
+function tutHelp(s = tutStep()) {
+  showPop(`<div class="tuthelp"><div class="srlabel">れんしゅう ${TUT.indexOf(s) + 1}/${TUT.length}</div><h3>${s.title}</h3>${s.art ? '<div class="tart"></div>' : ''}${s.body}
+    <div class="todo">やってみよう：${s.text}</div></div><div class="btns"><button class="big" data-act="close">やってみる！</button></div>`);
+  if (s.art) document.querySelector('#ov .tart').appendChild(wordArt(s.art, 72));
+}
 function guide() {
   const el = $id('guide');
   if (!tut || !run || !run.tut) { el.hidden = true; return; }
-  const s = TUT.find(x => !tut.done[x.id]) || TUT[TUT.length - 1];
-  el.hidden = false; el.innerHTML = `<small>れんしゅう ${TUT.indexOf(s) + 1}/${TUT.length}</small>${s.text}<small style="margin-top:2px">${s.sub}</small>`;
+  const s = tutStep();
+  el.hidden = false; el.innerHTML = `<small>れんしゅう ${TUT.indexOf(s) + 1}/${TUT.length}　<button class="ghelp" data-act="dgTutHelp">？ せつめい</button></small>${s.text}<small style="margin-top:2px">${s.sub}</small>`;
+  // あたらしい だんかい → せつめい カード（ほかの カードが でて いない とき）
+  if (!tut.shown[s.id] && !busy && !fast && $id('ov').classList.contains('hide')) { tut.shown[s.id] = true; setTimeout(() => { if (run && run.tut && $id('ov').classList.contains('hide')) tutHelp(s); }, 350); }
 }
 function tutorialDone() {
   D.tutorialDone = true; tut = null; saveDg(D); sfx.unlock();
@@ -337,13 +383,13 @@ function tutorialDone() {
 function start(tutorial) {
   closePop(); unlockAudio();
   run = newRun(tutorial); mode = 'play'; logs = []; fx = [];
-  tut = tutorial ? { done: {}, moves: 0 } : null;
+  tut = tutorial ? { done: {}, moves: 0, shown: {} } : null;
   if (!tutorial) { D.runs++; if (1 > D.best) D.best = 1; log('1かい から ぼうけん スタート！'); }
   else log('れんしゅうの へや。うえの せつめいを みてね');
   vis = visible(run); for (const id of updateSeen(run)) meet(id);
   $id('title').classList.add('hide'); persist(); measureView(); camTarget(true); hud();
 }
-function resume() { closePop(); unlockAudio(); run = D.run; mode = 'play'; logs = []; logGroup++; log(`${run.tut ? 'れんしゅう' : run.floor + 'かい'} から つづき`); tut = run.tut ? { done: {}, moves: 0 } : null; vis = visible(run); $id('title').classList.add('hide'); measureView(); camTarget(true); hud(); }
+function resume() { closePop(); unlockAudio(); run = D.run; mode = 'play'; logs = []; logGroup++; log(`${run.tut ? 'れんしゅう' : run.floor + 'かい'} から つづき`); tut = run.tut ? { done: {}, moves: 0, shown: {} } : null; vis = visible(run); $id('title').classList.add('hide'); measureView(); camTarget(true); hud(); }
 function toTitle() {
   closePop(); stopWalk(); mode = 'title'; run = null; tut = null;
   $id('title').classList.remove('hide'); $id('guide').hidden = true;
@@ -364,7 +410,8 @@ function menu() {
 }
 
 Object.assign(ACT, {
-  close: () => { sfx.tap(); closePop(); }, // とじる（core.js には ない ので ここで きめる）
+  close: () => { sfx.tap(); closePop(); if (run) hud(); },
+  dgTutHelp: () => tutHelp(), // とじる（core.js には ない ので ここで きめる）
   dgSay: id => speak(WORD[id].en),
   dgUse: uid => { closePop(); doAction({ t: 'use', uid: +uid }); },
   dgEquip: uid => { closePop(); doAction({ t: 'equip', uid: +uid }); },
