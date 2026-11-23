@@ -109,8 +109,9 @@ function hud() {
   if (!run) return;
   const h = run.hero;
   $id('floor').textContent = run.tut ? 'れんしゅう' : `${run.floor}かい`;
-  $id('hp').textContent = `${h.hp}/${h.maxhp}`; $id('hpbar').style.width = Math.max(0, 100 * h.hp / h.maxhp) + '%';
-  $id('hpbar').parentNode.parentNode.classList.toggle('low', h.hp <= h.maxhp * 0.3);
+  const hp = dispHp != null ? dispHp : h.hp; // せんとうちゅうは けいさんしきと いっしょに へる
+  $id('hp').textContent = `${hp}/${h.maxhp}`; $id('hpbar').style.width = Math.max(0, 100 * hp / h.maxhp) + '%';
+  $id('hpbar').parentNode.parentNode.classList.toggle('low', hp <= h.maxhp * 0.3);
   $id('mp').textContent = `${h.mp}/${h.maxmp}`; $id('mpbar').style.width = (100 * h.mp / h.maxmp) + '%';
   $id('lv').textContent = 'Lv' + h.lv; $id('pts').textContent = S.points;
   $id('bStairs').hidden = !onStairs(run);
@@ -123,21 +124,28 @@ let logGroup = 0;
 function log(t) { logs.push({ t, g: logGroup }); if (logs.length > 30) logs.shift(); }
 
 /* ---------- こうどう ---------- */
+// せんとうが あった ターンは、メッセージと けいさんしきを 1ぎょうずつ ゆっくり だす（その あいだは つぎの そうさを うけつけない）
+const MSG_MS = 700, CALC_MS = 1100;
+let dispHp = null, fast = false;
+const wait = ms => new Promise(ok => fast ? ok() : setTimeout(ok, ms));
 function doAction(a) {
   if (mode !== 'play' || busy || !run) return null;
   unlockAudio();
   logGroup++;
+  const hp0 = run.hero.hp;
   const r = act(run, a);
   vis = visible(run);
-  handle(r.ev);
   if (r.turn) { tutFlag('turn'); persist(); }
-  hud();
+  const combat = r.ev.some(e => e.t === 'fx' && ['hit', 'fire', 'water', 'hurt'].includes(e.kind));
+  if (!combat || fast) { handle(r.ev, false); hud(); return r; }
+  busy = true; dispHp = hp0; stopWalk(); stopHold();
+  handle(r.ev, true).then(() => { busy = false; dispHp = null; hud(); });
   return r;
 }
-function handle(ev) {
-  let stairs = false;
+async function handle(ev, slow) {
+  let stairs = false, dead = false;
   for (const e of ev) {
-    if (e.t === 'msg') log(e.text);
+    if (e.t === 'msg') { log(e.text); if (e.heroHp != null) dispHp = e.heroHp; if (slow) { hud(); await wait(e.calc ? CALC_MS : MSG_MS); } }
     else if (e.t === 'fx') fx.push({ ...e, t0: performance.now() });
     else if (e.t === 'meet') meet(e.id);
     else if (e.t === 'pickup') { sfx.tap(); speak(WORD[e.id].en); meet(e.id); tutFlag('pickup', e.id); stopWalk(); }
@@ -153,8 +161,9 @@ function handle(ev) {
     else if (e.t === 'bump') sfx.bump();
     else if (e.t === 'revive') sfx.unlock();
     else if (e.t === 'stairs') stairs = true;
-    else if (e.t === 'dead') { stopWalk(); setTimeout(gameOver, 500); return; }
+    else if (e.t === 'dead') dead = true;
   }
+  if (dead) { stopWalk(); setTimeout(gameOver, slow ? 300 : 500); return; }
   if (stairs) { stopWalk(); setTimeout(askStairs, 150); }
 }
 function bossDown(id) {
@@ -182,7 +191,7 @@ function walkTo(tx, ty) {
     const [dx, dy] = DIRS[d]; if (monAt(run, run.hero.x + dx, run.hero.y + dy)) return stopWalk();
     doAction({ t: 'move', dir: d });
     if (seenMons() > m0) stopWalk();
-  }, 140);
+  }, 220);
 }
 function tapMap(px, py) {
   if (mode !== 'play' || busy) return;
@@ -375,6 +384,8 @@ Object.assign(ACT, {
 });
 
 /* ---------- そうさ ---------- */
+let hold = null;
+function stopHold() { clearInterval(hold); hold = null; }
 function setupInput() {
   const dirOf = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', w: 'up', s: 'down', a: 'left', d: 'right' };
   addEventListener('keydown', e => {
@@ -383,9 +394,10 @@ function setupInput() {
     else if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); if (onStairs(run)) askStairs(); else doAction({ t: 'attack' }); }
     else if (e.key === 'm') magicPop(); else if (e.key === 'i') itemsPop(); else if (e.key === '.') doAction({ t: 'wait' });
   });
-  let hold = null;
-  const press = dir => { stopWalk(); doAction({ t: 'move', dir }); clearInterval(hold); hold = setInterval(() => doAction({ t: 'move', dir }), 230); };
-  const release = () => { clearInterval(hold); hold = null; };
+  // おしっぱなしで あるく のは てきが みえない とき だけ（てきが いたら 1かい おす ごとに 1ぽ）
+  const monsSeen = () => run && run.mons.some(m => vis.has(m.x + ',' + m.y));
+  const press = dir => { stopWalk(); doAction({ t: 'move', dir }); stopHold(); if (!monsSeen()) hold = setInterval(() => { if (monsSeen() || busy) return stopHold(); doAction({ t: 'move', dir }); }, 300); };
+  const release = () => stopHold();
   document.querySelectorAll('#pad [data-dir]').forEach(b => {
     b.addEventListener('pointerdown', e => { e.preventDefault(); press(b.dataset.dir); });
     ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => b.addEventListener(t, release));
@@ -416,4 +428,4 @@ function setupInput() {
 })();
 
 // じどう テスト よう
-window.__dg = { get run() { return run; }, get D() { return D; }, get mode() { return mode; }, get tut() { return tut; }, act: doAction, start, resume, toTitle, goDown, showCard, tapMap, toTile, cam: () => cam(), visible: () => vis };
+window.__dg = { set fast(v) { fast = v; }, get busy() { return busy; }, get run() { return run; }, get D() { return D; }, get mode() { return mode; }, get tut() { return tut; }, act: doAction, start, resume, toTitle, goDown, showCard, tapMap, toTile, cam: () => cam(), visible: () => vis };

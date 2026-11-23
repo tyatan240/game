@@ -997,6 +997,7 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(await p.isVisible('a.study[href="dungeon/index.html"]'), 'おべんきょうの へやに ダンジョンの いりぐち');
     await p.goto(B + 'dungeon/index.html'); await p.waitForSelector('body[data-ready="1"]', { timeout: 10000 });
     ok(await p.isVisible('#title') && /まだ/.test(await p.textContent('#tbest')), 'タイトル（さいこう とうたつ）');
+    await p.evaluate(() => { __dg.fast = true; }); // テストでは せんとうの ひょうじを またない（ゆっくり モードは あとで たしかめる）
     await p.click('#tGo'); await p.waitForTimeout(300);
     ok(await p.evaluate(() => __dg.mode === 'play' && __dg.run.tut && !document.getElementById('guide').hidden), 'はじめては チュートリアルから（とばせない）');
     const mv = async (dir, n = 1) => { for (let i = 0; i < n; i++) await p.evaluate(d => __dg.act({ t: 'move', dir: d }), dir); };
@@ -1021,6 +1022,13 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     await p.evaluate(() => { const r = __dg.run; r.hero.x = 24; r.hero.y = 3; }); await p.evaluate(() => __dg.goDown()); await p.waitForTimeout(200);
     await p.click('#ov [data-act=dgStartReal]'); await p.waitForTimeout(300);
     ok(await p.evaluate(() => __dg.D.tutorialDone && __dg.run.floor === 1 && !__dg.run.tut && __dg.D.best === 1 && __dg.D.dex.apple && __dg.D.dex.fire), 'チュートリアル おわり → 1かい（ずかんに とうろく）');
+    // せんとうは ゆっくり：メッセージと けいさんしきを 1ぎょうずつ、その あいだは うごけない
+    await p.evaluate(() => { __dg.fast = false; const r = __dg.run, h = r.hero; r.mons = [{ uid: 901, id: 'rat', x: h.x + 1, y: h.y, hp: 30, maxhp: 30, atk: 1, exp: 1, tick: 0 }]; h.dir = 'right'; window.__x = { hp: h.hp }; __dg.act({ t: 'attack' }); });
+    const slow1 = await p.evaluate(() => ({ busy: __dg.busy, again: __dg.act({ t: 'attack' }), lines: document.querySelectorAll('#log div').length, hpShown: document.getElementById('hp').textContent }));
+    await p.waitForTimeout(4200);
+    const slow2 = await p.evaluate(() => ({ busy: __dg.busy, log: document.getElementById('log').textContent, hp: __dg.run.hero.hp, hpShown: document.getElementById('hp').textContent }));
+    ok(slow1.busy && slow1.again === null && slow1.lines <= 2 && !slow2.busy && /ratの HP/.test(slow2.log) && /モコの HP/.test(slow2.log) && slow2.hpShown.startsWith(slow2.hp + '/'), 'せんとうは 1ぎょうずつ ゆっくり（その あいだは そうさ できない） ' + JSON.stringify([slow1, slow2.busy, slow2.hpShown]));
+    await p.evaluate(() => { __dg.fast = true; __dg.run.mons = []; });
     // つかった・よめた
     await p.evaluate(() => { const r = __dg.run; r.inv.push({ uid: 999, id: 'apple', peek: false }); __dg.act({ t: 'use', uid: 999 }); });
     ok(await p.evaluate(() => __dg.D.dex.apple.used >= 2 && __dg.D.dex.apple.read >= 2), 'いみを みずに つかうと「よめた」');
@@ -1028,7 +1036,7 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     const pos = await p.evaluate(() => [__dg.run.hero.x, __dg.run.hero.y, __dg.run.floor]);
     await p.goto(B + 'index.html'); await p.goto(B + 'dungeon/index.html'); await p.waitForSelector('body[data-ready="1"]');
     ok(await p.isVisible('#tCont'), 'ちゅうだん → タイトルに「つづきから」');
-    await p.click('#tCont'); await p.waitForTimeout(200);
+    await p.click('#tCont'); await p.waitForTimeout(200); await p.evaluate(() => { __dg.fast = true; });
     ok(await p.evaluate(p0 => __dg.run.hero.x === p0[0] && __dg.run.hero.y === p0[1] && __dg.run.floor === p0[2], pos), 'つづきから（おなじ ばしょ）');
     // ボスの かい・⭐
     const pts0 = await p.evaluate(() => S.points);
