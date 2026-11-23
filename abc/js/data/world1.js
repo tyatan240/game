@@ -77,6 +77,7 @@ export const GOAL = { x: 53, y: 11 };
 export const ITEMS = {
   scarf: { name: 'あかい スカーフ' },
   hat: { name: 'ほしの ぼうし' },
+  cape: { name: 'ことばの マント' }, // ワールド3 クリアの ごほうび
 };
 // クエストで つかう もちもの
 export const INV = {

@@ -855,7 +855,7 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     await talk('w3Clown');
     ok(await p.evaluate(() => __abc.S.quests.w3balloon === 'done' && __abc.S.records['w:ten']), 'ふうせんを かぞえて えいごで こたえる');
     await talk('w3gate2');
-    ok(await p.evaluate(() => __abc.S.world.gate_w3market === 'open' && /じゅんびちゅう/.test(__abc.objective().text)), 'かずの もん → つぎは じゅんびちゅう');
+    ok(await p.evaluate(() => __abc.S.world.gate_w3market === 'open' && /いろと かたちの こうぼう/.test(__abc.objective().text)), 'かずの もん → つぎは いろと かたちの こうぼう');
     await p.goto(B + 'index.html'); await p.waitForTimeout(300);
     ok(await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('abc-adventure-v1')); return d.sentences.im && d.sentences.please && d.words.happy && d.quests.w3pie === 'done'; }), 'ほぞん：おぼえた ことば・ぶん・クエスト');
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
@@ -895,6 +895,64 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     await q.goto(B + 'abc/index.html'); await q.waitForTimeout(500);
     ok(!(await q.isVisible('#start2')) && !(await q.isVisible('#start3')), 'ふだんは クリア まえに ワールド2・3 は えらべない');
     await q.context().close();
+  }
+
+  console.log('20f. ABCぼうけん ワールド3（いろと かたち・がっこう・ことばの とう → クリア）');
+  {
+    const p = await page({ width: 1024, height: 768 });
+    await p.goto(B + 'index.html');
+    await p.evaluate(() => {
+      const L = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''), words = {};
+      for (const id of ['hello', 'goodbye', 'thankyou', 'sorry', 'goodmorning', 'goodnight', 'howareyou', 'happy', 'sleepy', 'hungry', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'apples', 'bananas', 'eggs']) words[id] = { at: 1 };
+      const q = Object.fromEntries(['apple', 'flowers', 'bee', 'honey', 'sun', 'dog', 'pie', 'cat', 'fish', 'bird', 'colors', 'w3hello', 'w3feel', 'w3pie', 'w3balloon'].map(x => [x, 'done']));
+      localStorage.setItem('abc-adventure-v1', JSON.stringify({ v: 1, t: 1, started: true, clears: 1, w2clears: 1, stars: 80, starsSent: 80, learned: L, lower: L.map(x => x.toLowerCase()), words, sentences: { im: { at: 1, made: [] }, please: { at: 1, made: [] } },
+        flags: { intro: true, bossCleared: true, bridgeOpen: true, alphabetClear: true, lowerClear: true }, quests: q,
+        world: { gate: 'open', gate_forest: 'open', gate_village: 'open', gate_lake: 'open', gate_garden: 'open', gate_lower: 'open', gate_w3plaza: 'open', gate_w3market: 'open' },
+        areas: ['meadow', 'hill', 'island', 'forest', 'village', 'lake', 'garden', 'lower', 'w3plaza', 'w3market'], hero: { x: 37.5, y: 10.8, dir: 'right', area: 'w3market' } }));
+    });
+    await p.goto(B + 'abc/index.html'); await p.waitForTimeout(400); await p.click('#cont'); await p.waitForTimeout(800);
+    const kinds = await p.evaluate(async () => { const { WORDS } = await import('./js/data/words.js'); return Object.fromEntries(WORDS.map(w => [w.id, w.kind])); });
+    let wrongMsg = null;
+    const drive = async (opt = {}) => {
+      for (let k = 0; k < 250; k++) {
+        if (await p.$('.dlg')) { await p.keyboard.press('Enter'); await p.waitForTimeout(50); continue; }
+        if (await p.$('.quiz .ch')) { const a = await p.evaluate(() => window.__abcQ.answer); const bt = await p.$(`.quiz .ch[data-v="${a}"]:not(.ok)`); if (bt) await bt.click(); await p.waitForTimeout(1450); continue; }
+        if (await p.$('.w3sent')) {
+          if (opt.wrong) { const ids = opt.wrong; opt.wrong = null; for (const id of ids) await p.click(`.w3sent .w3c[data-id="${id}"]`); await p.click('.w3sent [data-a=say]'); await p.waitForTimeout(300); wrongMsg = await p.textContent('.w3sent .mmsg'); for (const id of ids) await p.click(`.w3sent .w3c[data-id="${id}"]`); }
+          const h = await p.$('.w3sent [data-a=hint]');
+          if (h) { await h.click(); for (const c of await p.$$('.w3sent .w3c.glow')) await c.click(); }
+          else { const seen = new Set(); for (const c of await p.$$('.w3sent .w3c')) { const kd = kinds[await c.getAttribute('data-id')]; if (!seen.has(kd)) { seen.add(kd); await c.click(); } } }
+          await p.click('.w3sent [data-a=say]'); await p.waitForTimeout(1750); continue;
+        }
+        if (await p.$('.w3teach .go')) { await p.click('.w3teach .go'); continue; }
+        if (await p.$('.notice .go')) { await p.click('.notice .go'); continue; }
+        if (await p.$('.modal [data-a=no]')) { await p.click('.modal [data-a=no]'); continue; }
+        if (await p.evaluate(() => __abc.mode === 'play')) return;
+        await p.waitForTimeout(120);
+      }
+    };
+    const talk = async (id, opt) => { await p.evaluate(i => __abc.approach(i), id); await p.keyboard.press('Enter'); await p.waitForTimeout(250); await drive(opt); };
+    const east = async () => { await p.evaluate(() => { __abc.hero.x = 36.5 * 32; __abc.hero.y = 11 * 32 - 4; }); await p.keyboard.down('ArrowRight'); await p.waitForTimeout(1300); await p.keyboard.up('ArrowRight'); await p.waitForTimeout(1100); };
+    await east();
+    ok(await p.evaluate(() => __abc.area()) === 'w3studio', 'かずの いちばの ひがしから「いろと かたちの こうぼう」へ');
+    await talk('w3Painter'); await talk('w3Shaper');
+    ok(await p.evaluate(() => __abc.S.words.cred && __abc.S.words.heart && __abc.S.sentences.a), 'いろ・かたちの ことばと ぶんカード「a ＿ ＿」');
+    await talk('w3SignMaker'); await talk('w3Board', { wrong: ['cblue', 'star'] }); await talk('w3Board'); await talk('w3Board'); await talk('w3SignMaker');
+    ok(/あかい ほし/.test(wrongMsg || '') && await p.evaluate(() => __abc.S.quests.w3sign === 'done' && __abc.S.world.sign3 === 'cyellow:circle'), 'かんばんの ちゅうもん：いろと かたちで ぶん（ちがうと ヒント） ' + wrongMsg);
+    await talk('w3ColorKid'); await talk('w3gate3');
+    ok(await p.evaluate(() => __abc.S.quests.w3color === 'done' && __abc.S.world.gate_w3studio === 'open'), 'いろクイズ → いろの もん');
+    await east();
+    ok(await p.evaluate(() => __abc.area()) === 'w3school', 'すきなものの がっこうへ');
+    await talk('w3Frog'); await talk('w3Elephant');
+    await talk('w3NewKid'); await talk('w3NewKid'); await talk('w3NewKid'); await talk('w3Coach'); await talk('w3gate4');
+    ok(await p.evaluate(() => __abc.S.quests.w3friend === 'done' && __abc.S.quests.w3pe === 'done' && __abc.S.sentences.like.made.length >= 1 && __abc.S.sentences.can.made.length >= 1 && __abc.S.world.gate_w3school === 'open'), 'I like 〜. / I can 〜. で ともだちに・たいいくクイズ → がっこうの もん');
+    await east();
+    ok(await p.evaluate(() => __abc.area()) === 'w3tower', 'ことばの とうへ');
+    await talk('w3Owl3'); await talk('w3Guard1'); await talk('w3Guard2', { wrong: ['dogs'] }); await talk('w3Guard3');
+    ok(await p.evaluate(() => __abc.S.quests.w3tower === 'done' && __abc.S.world.bell === 3 && __abc.S.sentences.this.made.includes('this:apples')), 'This is a dog. / an apple.：3つの かね');
+    await talk('w3gate5');
+    ok(await p.evaluate(() => __abc.S.flags.w3Clear && __abc.S.w3clears === 1 && __abc.S.items.includes('cape') && __abc.S.wear.cape && /クリア/.test(__abc.objective().text)), 'ことばの とうの もん → ワールド3 クリア・ことばの マント');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
   }
 
   console.log('20b. ABCぼうけん：ドラコが うごいた ところに いても うごける');

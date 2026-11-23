@@ -40,5 +40,14 @@ export const WORDS = [
   // かずの いちば
   ...['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'].map((id, i) => ({ id, word: id, ja: String(i + 1), n: i + 1, art: 'n' + (i + 1), speak: id, audio: null, learnAt: i < 5 ? 'w3Bear' : 'w3Deer', place: 'かずの いちば', magic: 'かずを いう ことば', world: 3, kind: 'number' })),
   ...[['apples', 'apple', 'りんご'], ['bananas', 'banana', 'バナナ'], ['eggs', 'egg', 'たまご']].map(([id, one, ja]) => ({ id, word: id, one, ja, art: id, speak: id, audio: null, learnAt: 'w3Grocer', place: 'かずの いちば', magic: 'おみせで たのむ ことば', world: 3, kind: 'thing' })),
+  // いろと かたちの こうぼう（id は ワールド1の RED・BLUE と かぶらない ように c を つける）
+  ...[['cred', 'red', 'あか', 'あかい'], ['cblue', 'blue', 'あお', 'あおい'], ['cyellow', 'yellow', 'きいろ', 'きいろい'], ['cgreen', 'green', 'みどり', 'みどりの'], ['cpink', 'pink', 'ピンク', 'ピンクの'], ['cwhite', 'white', 'しろ', 'しろい']]
+    .map(([id, word, ja, jaAdj]) => ({ id, word, ja, jaAdj, art: id, speak: word, audio: null, learnAt: 'w3Painter', place: 'いろと かたちの こうぼう', magic: 'いろを いう ことば', world: 3, kind: 'color' })),
+  ...[['circle', 'まる'], ['square', 'しかく'], ['triangle', 'さんかく'], ['star', 'ほし'], ['heart', 'ハート']]
+    .map(([id, ja]) => ({ id, word: id, ja, art: 's_' + id, speak: id, audio: null, learnAt: 'w3Shaper', place: 'いろと かたちの こうぼう', magic: 'かたちを いう ことば', world: 3, kind: 'shape' })),
+  // すきなものの がっこう
+  ...[['swim', 'およぐ', 'およげる'], ['run', 'はしる', 'はしれる'], ['jump', 'ジャンプ', 'ジャンプできる'], ['sing', 'うたう', 'うたえる'], ['dance', 'おどる', 'おどれる']]
+    .map(([id, ja, jaCan]) => ({ id, word: id, ja, jaCan, art: 'a_' + id, speak: id, audio: null, learnAt: 'w3Frog', place: 'すきなものの がっこう', magic: 'できる ことを いう ことば', world: 3, kind: 'action' })),
+  ...[['dogs', 'dog', 'いぬ'], ['cats', 'cat', 'ねこ']].map(([id, one, ja]) => ({ id, word: id, one, ja, art: id, speak: id, audio: null, learnAt: 'w3Elephant', place: 'すきなものの がっこう', magic: 'すきな ものを いう ことば', world: 3, kind: 'thing' })),
 ];
 export const WORD = Object.fromEntries(WORDS.map(w => [w.id, w]));

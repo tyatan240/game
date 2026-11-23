@@ -295,3 +295,4 @@ button.frame{border:0;background:#f4f9ff;border-radius:16px;padding:8px 14px;mar
   #title.multi .worlds{margin-top:2px;gap:5px}
   #title.multi .back{padding:4px 14px;font-size:13px!important}
 }
+.spic canvas{display:block;margin:0 auto}

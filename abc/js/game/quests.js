@@ -62,7 +62,7 @@ export function objective(S) {
       }
       if (!gateOpen(S, ch)) return { text: `「${AREAS[ch.area].OBJECTS.find(o => o.id === ch.gate).name}」で おさらいを しよう！`, targets: [ch.gate], area: ch.area };
       if (ch.next && !S.areas.includes(ch.next)) return { text: `つぎの ばしょ「${AREAS[ch.next].name}」へ いこう！`, targets: ['area:' + ch.next], area: ch.area };
-      if (!ch.next) return { text: 'つぎの まちは じゅんびちゅう！ ことばの まちで おさらいも できるよ', targets: [] };
+      if (!ch.next) return { text: ch.final ? 'ことばの まち クリア！ じゆうに たんけん して おさらい しよう' : 'つぎの まちは じゅんびちゅう！', targets: [] };
       continue;
     }
     const left = ch.letters.filter(id => !S.learned.includes(id));

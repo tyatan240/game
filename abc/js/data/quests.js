@@ -190,4 +190,46 @@ export const QUESTS = [
       ['ふうせんやさん', 'Hello! ふうせん いくつ あるかな？'], ['ふうせんやさん', 'かぞえて、えいごで こたえてね！']],
       after: [['ふうせんやさん', 'Great! かずの えいご、ばっちりだね！']], reward: { star: 2 } },
   ] },
+  { id: 'w3sign', title: 'かんばんやさんの ちゅうもん', requires: { w3: 'w3studio' }, steps: [
+    { id: 'ask', on: 'talk', target: 'w3SignMaker', goal: 'かんばんやさんに はなしかけよう！', lines: [
+      ['かんばんやさん', 'Hello! かんばんの ちゅうもんが 3つ きたの。'], ['かんばんやさん', 'いろと かたちを えいごで いうと、かんばんに えが でるよ。'],
+      ['かんばんやさん', 'みなみの かんばんの まえで、ちゅうもんどおりに いってね！']] },
+    { id: 'one', on: 'sentence', target: 'w3Board', goal: 'かんばんに「あかい ほし」を かこう！', frame: 'a', want: ['cred', 'star'], pre: [['', '1つめの ちゅうもんは「あかい ほし」。']],
+      wrong: 'ちゅうもんは「あかい ほし」だよ。', effect: [{ set: ['sign1', 'cred:star'] }], after: [['', 'かんばんに あかい ほしが でた！']] },
+    { id: 'two', on: 'sentence', target: 'w3Board', goal: 'かんばんに「あおい ハート」を かこう！', frame: 'a', want: ['cblue', 'heart'], pre: [['', '2つめの ちゅうもんは「あおい ハート」。']],
+      wrong: 'ちゅうもんは「あおい ハート」だよ。', effect: [{ set: ['sign2', 'cblue:heart'] }], after: [['', 'かんばんに あおい ハートが でた！']] },
+    { id: 'three', on: 'sentence', target: 'w3Board', goal: 'かんばんに「きいろい まる」を かこう！', frame: 'a', want: ['cyellow', 'circle'], pre: [['', '3つめの ちゅうもんは「きいろい まる」。']],
+      wrong: 'ちゅうもんは「きいろい まる」だよ。', effect: [{ set: ['sign3', 'cyellow:circle'] }], after: [['', 'かんばんが できた！']] },
+    { id: 'report', on: 'talk', target: 'w3SignMaker', goal: 'かんばんやさんに ほうこくしよう！', lines: [
+      ['かんばんやさん', 'すてきな かんばん！ Thank you!'], ['かんばんやさん', 'いろと かたちの えいご、ばっちりね！']], reward: { star: 3 } },
+  ] },
+  { id: 'w3color', title: 'なにいろ かな？', requires: { w3: 'w3studio' }, steps: [
+    { id: 'quiz', on: 'quiz', target: 'w3ColorKid', goal: 'ひよこの ピッピの クイズに こたえよう！', pre: [['ひよこの ピッピ', 'Hello! ピッピの いろクイズ！'], ['ひよこの ピッピ', 'えを みて、なにいろか えいごで こたえてね！']],
+      rounds: [{ art: 'apple', ask: 'りんごは なにいろ？', answer: 'cred', choices: ['cred', 'cblue', 'cyellow'] }, { art: 'bananas', ask: 'バナナは なにいろ？', answer: 'cyellow', choices: ['cyellow', 'cgreen', 'cpink'] },
+        { art: 'water', ask: 'おみずは なにいろ？', answer: 'cblue', choices: ['cblue', 'cred', 'cwhite'] }, { art: 'eggs', ask: 'たまごは なにいろ？', answer: 'cwhite', choices: ['cwhite', 'cgreen', 'cpink'] }],
+      after: [['ひよこの ピッピ', 'Great! いろの えいご、よく しってるね！']], reward: { star: 2 } },
+  ] },
+  { id: 'w3friend', title: 'てんこうせいと ともだちに', requires: { w3: 'w3school' }, steps: [
+    { id: 'hello', on: 'convo', target: 'w3NewKid', goal: 'しろくまの ポーラに あいさつ しよう！', pre: [['しろくまの ポーラ', '……。'], ['', 'てんこうせいの ポーラちゃん。はずかしそう。'], ['', 'さいしょの あいさつを しよう！']],
+      ask: '「こんにちは」と いう えいごは どれ？', answer: 'hello', choices: ['hello', 'goodbye', 'goodnight'],
+      after: [['しろくまの ポーラ', 'Hello! わたしは ポーラ。I like cats! ねこが すきなの。']] },
+    { id: 'like', on: 'sentence', target: 'w3NewKid', goal: 'ポーラに すきな ものを いおう！', frame: 'like', task: 'きみの すきな ものを えいごで いおう！（I like 〜.）', pre: [['しろくまの ポーラ', 'きみは なにが すき？']],
+      after: [['しろくまの ポーラ', 'わあ、いいね！ I can swim! わたし およげるの。']] },
+    { id: 'can', on: 'sentence', target: 'w3NewKid', goal: 'ポーラに できる ことを いおう！', frame: 'can', task: 'きみが できる ことを えいごで いおう！（I can 〜.）', pre: [['しろくまの ポーラ', 'きみは なにが できる？']],
+      after: [['しろくまの ポーラ', 'すごい！ ともだちに なろう！ Thank you!']], reward: { star: 3 } },
+  ] },
+  { id: 'w3pe', title: 'たいいくの じかん', requires: { w3: 'w3school' }, steps: [
+    { id: 'quiz', on: 'quiz', target: 'w3Coach', goal: 'しまうまの コーチの クイズに こたえよう！', pre: [['しまうまの コーチ', 'Hello! たいいくの じかんだよ。'], ['しまうまの コーチ', 'みんな なにを している？ えいごで こたえてね！']],
+      rounds: [{ art: 'a_swim', ask: 'なにを している？', answer: 'swim', choices: ['swim', 'run', 'sing'] }, { art: 'a_run', ask: 'なにを している？', answer: 'run', choices: ['run', 'dance', 'jump'] },
+        { art: 'a_jump', ask: 'なにを している？', answer: 'jump', choices: ['jump', 'swim', 'sing'] }, { art: 'a_dance', ask: 'なにを している？', answer: 'dance', choices: ['dance', 'run', 'swim'] }],
+      after: [['しまうまの コーチ', 'Good job! げんきいっぱいだね！']], reward: { star: 2 } },
+  ] },
+  { id: 'w3tower', title: 'ことばの とうの かね', requires: { w3: 'w3tower' }, steps: [
+    { id: 'one', on: 'sentence', target: 'w3Guard1', goal: 'ひつじの もんばんに こたえよう！', frame: 'this', want: ['dogs'], picture: 'dog', pre: [['ひつじの もんばん', 'これは なにかな？ えいごで しょうかい してね。']],
+      effect: [{ set: ['bell', 1] }], after: [['ひつじの もんばん', 'This is a dog! せいかい！ 1つめの かねが なったよ！']] },
+    { id: 'two', on: 'sentence', target: 'w3Guard2', goal: 'やぎの もんばんに こたえよう！', frame: 'this', want: ['apples'], picture: 'apple', pre: [['やぎの もんばん', 'これは なにかな？ えいごで しょうかい してね。']],
+      effect: [{ set: ['bell', 2] }], after: [['やぎの もんばん', 'This is an apple! 2つめの かねが なったよ！']] },
+    { id: 'three', on: 'sentence', target: 'w3Guard3', goal: 'しかの もんばんに こたえよう！', frame: 'this', want: ['cats'], picture: 'cat', pre: [['しかの もんばん', 'これは なにかな？ えいごで しょうかい してね。']],
+      effect: [{ set: ['bell', 3] }], after: [['しかの もんばん', 'This is a cat! 3つめの かねが なった！ とうの もんが ひかっているよ！']], reward: { star: 3 } },
+  ] },
 ];

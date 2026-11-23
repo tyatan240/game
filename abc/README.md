@@ -110,12 +110,14 @@ abc/
 - 学習記録は `S.records['l:A']`（こもじ）。出題は `quiz.js` の `lowerQuestion(target, pool, 'match'|'listen'|'upper', 選択肢の数)`。
 - 保存：`abc-adventure-v1` に `lower:[]` を追加（`state.js` で補う）。
 
-## ワールド3「ことばの まち」（実装中：第1回 = エリア1〜2）
+## ワールド3「ことばの まち」（5エリア・実装済み）
 仕様・決定事項：`docs/abc-world3-spec.md`。こもじの もりの ひがし（`exits` の `needs:{flag:'lowerClear'}`）から入る。
-- **エリア**：`data/areas/w3plaza.js`（あいさつの ひろば）・`w3market.js`（かずの いちば）。チャプターは `areas.js` の `w3:true`（`words`・`frames`・`quests`・`gate`・`gateLabel`）。
+- **エリア**：`data/areas/w3plaza.js`（あいさつの ひろば）・`w3market.js`（かずの いちば）・`w3studio.js`（いろと かたちの こうぼう）・`w3school.js`（すきなものの がっこう）・`w3tower.js`（ことばの とう）。チャプターは `areas.js` の `w3:true`（`words`・`frames`・`quests`・`gate`・`gateLabel`）。
 - **ことば**：`data/words.js` の `world:3`（`word` は ふつうの かきかた、`kind`：greet / feel / number / thing）。せんせい（NPC の `teach`）が まとめて おしえる（`ui.teachWords` → よむ／きく クイズ）→ `S.words` に とうろく。
 - **ぶんカード**：`data/sentences.js`（`FRAMES`：`tpl`・`slots`・`make`）。せんせい（NPC の `frame`）が おしえる（`ui.teachFrame` → `ui.sentence` で つくって みる）→ `S.sentences[id] = {at, made:['please:three+apples']}`。
-- **クエストの あたらしい ステップ**（`data/quests.js`）：`convo`（へんじを えらぶ）・`ask`（How are you? → へんじを よんで あう ものを わたす。`GIFTS` は `world1.js`）・`sentence`（ぶんカード。`want` と ちがうと `wrong` の ヒント）・`count`（ふうせんを かぞえて かずの えいご）。
+- **ぶんカードの かた**：I'm ＿. / ＿ ＿, please. / a ＿ ＿（いろ・かたち）/ I like ＿. / I can ＿. / This is ＿.（`card` で a dog・an apple と ひょうじ）。
+- **さいご**：ことばの とうの 3つの かね → とうの もんで ワールド3 ぜんぶから 6もん → `flags.w3Clear`・`w3clears`・きがえ「ことばの マント」（`items` の `cape`、`drawCritter` の `opts.cape`）。
+- **クエストの あたらしい ステップ**（`data/quests.js`）：`convo`（へんじを えらぶ）・`ask`（How are you? → へんじを よんで あう ものを わたす。`GIFTS` は `world1.js`）・`sentence`（ぶんカード。`want` と ちがうと `wrong` の ヒント）・`count`（ふうせんを かぞえて かずの えいご）・`quiz`（えを みて えいごで こたえる。`rounds:[{art, ask, answer, choices}]`）。`sentence` は `task`（いう ことの せつめい）・`picture` も つかえる。
 - **もん**：`kind:'lettergate'` を つかい、`CHAPTER[area].w3` なら `w3Gate()`（ことばの おさらい 5もん）。
 - 絵は `engine/art3.js`（かお・て・かず・くだもの・ふうせん・やたい）。えいごの部屋（`eigo/`）も art3 を よむ。
 - 保存：`abc-adventure-v1` に `sentences:{}` を追加（`state.js` で補う）。

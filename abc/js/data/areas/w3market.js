@@ -24,7 +24,7 @@ export const MAP = [
 ];
 
 export const entries = { west: { x: 1, y: 10, dir: 'right' }, east: { x: 38, y: 10, dir: 'left' } };
-export const exits = [{ x: 0, y: 10, to: 'w3plaza', entry: 'east' }];
+export const exits = [{ x: 0, y: 10, to: 'w3plaza', entry: 'east' }, { x: 39, y: 10, to: 'w3studio', entry: 'west' }];
 
 export const NPCS = [
   { id: 'w3Bear', kind: 'bear', x: 3, y: 8, name: 'くまの せんせい', teach: ['one', 'two', 'three', 'four', 'five'] },

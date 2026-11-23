@@ -23,6 +23,35 @@ export const FRAMES = [
       { frame: true, text: 'please の まえに「いくつ」と「なにを」の ことばを いれると、おみせで たのむ ぶんに なるよ。' },
       { examples: [['two', 'bananas'], ['three', 'apples']], text: 'れいを タップして きいて みよう！' },
     ] },
+  { id: 'a', ja: w => `${w[0].jaAdj} ${w[1].ja}`, title: 'いろと かたちの ことば', tpl: ['a', '＿', '＿'], slots: ['color', 'shape'], slotJa: ['いろ', 'かたち'],
+    make: w => `a ${w[0].word} ${w[1].word}`, example: ['cred', 'star'], teacher: 'w3Shaper',
+    lesson: [
+      { big: 'a red star', say: 'a red star', text: '「いろ」の ことばを「かたち」の まえに おくと「あかい ほし」の ように なるよ。a（ア）は「ひとつの」という いみ。' },
+      { frame: true, text: 'a の あとに「いろ」→「かたち」の じゅんばんで いれよう。' },
+      { examples: [['cred', 'star'], ['cblue', 'heart'], ['cyellow', 'circle']], text: 'れいを タップして きいて みよう！' },
+    ] },
+  { id: 'like', ja: w => `わたしは ${w[0].ja}が すき`, title: 'すきな ものを いう ぶん', tpl: ['I like', '＿', '.'], slots: ['thing'], slotJa: ['すきな もの'],
+    make: w => `I like ${w[0].word}.`, example: ['dogs'], teacher: 'w3Elephant',
+    lesson: [
+      { big: 'like', say: 'like', text: '「like（ライク）」は「すき」という いみ。「I like 〜.」で「わたしは 〜が すき」に なるよ。' },
+      { frame: true, text: 'I like の あとに、すきな ものの ことばを いれよう。' },
+      { examples: [['dogs'], ['cats'], ['apples']], text: 'れいを タップして きいて みよう！' },
+    ] },
+  { id: 'can', ja: w => `わたしは ${w[0].jaCan}`, title: 'できる ことを いう ぶん', tpl: ['I can', '＿', '.'], slots: ['action'], slotJa: ['できる こと'],
+    make: w => `I can ${w[0].word}.`, example: ['swim'], teacher: 'w3Frog',
+    lesson: [
+      { big: 'can', say: 'can', text: '「can（キャン）」は「できる」という いみ。「I can 〜.」で「わたしは 〜できる」に なるよ。' },
+      { frame: true, text: 'I can の あとに、できる ことの ことばを いれよう。' },
+      { examples: [['swim'], ['run'], ['dance']], text: 'れいを タップして きいて みよう！' },
+    ] },
+  { id: 'this', ja: w => `これは ${w[0].ja}です`, title: 'これは なにかを いう ぶん', tpl: ['This is', '＿', '.'], slots: ['thing'], slotJa: ['もの'],
+    card: w => `${/^[aeiou]/.test(w.one) ? 'an' : 'a'} ${w.one}`, // ひとつの ものを いうので a dog・an apple
+    make: w => `This is ${/^[aeiou]/.test(w[0].one) ? 'an' : 'a'} ${w[0].one}.`, example: ['dogs'], teacher: 'w3Owl3',
+    lesson: [
+      { big: 'This is', say: 'This is', text: '「This is（ディス イズ）」は「これは 〜です」という いみ。ちかくの ものを しょうかい する ときに つかうよ。' },
+      { frame: true, text: 'This is の あとに「a いぬ」の ように もの を いれよう。ひとつ だから a（りんごや たまごは an）が つくよ。' },
+      { examples: [['dogs'], ['apples'], ['cats']], text: 'れいを タップして きいて みよう！' },
+    ] },
 ];
 export const FRAME = Object.fromEntries(FRAMES.map(f => [f.id, f]));
 export const sentenceKey = (frameId, ids) => frameId + ':' + ids.join('+');

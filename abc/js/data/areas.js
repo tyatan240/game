@@ -7,6 +7,9 @@ import * as garden from './areas/garden.js';
 import * as lower from './areas/lower.js';
 import * as w3plaza from './areas/w3plaza.js';
 import * as w3market from './areas/w3market.js';
+import * as w3studio from './areas/w3studio.js';
+import * as w3school from './areas/w3school.js';
+import * as w3tower from './areas/w3tower.js';
 
 const mk = (id, name, m) => ({ id, name, MAP: m.MAP, NPCS: m.NPCS, OBJECTS: m.OBJECTS || [], SIGNS: m.SIGNS || [], CHESTS: m.CHESTS || [], entries: m.entries, exits: m.exits || [] });
 export const AREAS = {
@@ -18,8 +21,11 @@ export const AREAS = {
   lower: mk('lower', 'こもじの もり', lower),
   w3plaza: mk('w3plaza', 'あいさつの ひろば', w3plaza),
   w3market: mk('w3market', 'かずの いちば', w3market),
+  w3studio: mk('w3studio', 'いろと かたちの こうぼう', w3studio),
+  w3school: mk('w3school', 'すきなものの がっこう', w3school),
+  w3tower: mk('w3tower', 'ことばの とう', w3tower),
 };
-export const ORDER = ['island', 'forest', 'village', 'lake', 'garden', 'lower', 'w3plaza', 'w3market'];
+export const ORDER = ['island', 'forest', 'village', 'lake', 'garden', 'lower', 'w3plaza', 'w3market', 'w3studio', 'w3school', 'w3tower'];
 
 // チャプター：もじを おぼえる → クエスト → もじの もん（おさらい）→ つぎの エリア
 export const CHAPTERS = [
@@ -32,7 +38,10 @@ export const CHAPTERS = [
   { area: 'lower', letters: [], lower: 'abcdefghijklmnopqrstuvwxyz'.split(''), quests: [], gate: 'lowerGate', next: 'w3plaza' },
   // ワールド3「ことばの まち」：せんせいに ことば（words）と ぶんの かた（frames）を ならう → クエスト → もん（おさらい）
   { area: 'w3plaza', w3: true, letters: [], words: ['hello', 'goodbye', 'thankyou', 'sorry', 'goodmorning', 'goodnight', 'howareyou', 'happy', 'sleepy', 'hungry'], frames: ['im'], quests: ['w3hello', 'w3feel'], gate: 'w3gate1', gateLabel: ['Hi!'], next: 'w3market' },
-  { area: 'w3market', w3: true, letters: [], words: ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'apples', 'bananas', 'eggs'], frames: ['please'], quests: ['w3pie', 'w3balloon'], gate: 'w3gate2', gateLabel: ['123'] },
+  { area: 'w3market', w3: true, letters: [], words: ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'apples', 'bananas', 'eggs'], frames: ['please'], quests: ['w3pie', 'w3balloon'], gate: 'w3gate2', gateLabel: ['123'], next: 'w3studio' },
+  { area: 'w3studio', w3: true, letters: [], words: ['cred', 'cblue', 'cyellow', 'cgreen', 'cpink', 'cwhite', 'circle', 'square', 'triangle', 'star', 'heart'], frames: ['a'], quests: ['w3sign', 'w3color'], gate: 'w3gate3', gateLabel: ['RGB'], next: 'w3school' },
+  { area: 'w3school', w3: true, letters: [], words: ['swim', 'run', 'jump', 'sing', 'dance', 'dogs', 'cats'], frames: ['like', 'can'], quests: ['w3friend', 'w3pe'], gate: 'w3gate4', gateLabel: ['like'], next: 'w3tower' },
+  { area: 'w3tower', w3: true, letters: [], words: [], frames: ['this'], quests: ['w3tower'], gate: 'w3gate5', gateLabel: ['End'], final: true },
 ];
 export const CHAPTER = Object.fromEntries(CHAPTERS.map(c => [c.area, c]));
 

@@ -13,7 +13,9 @@ export const SPEAKER_KIND = { 'ラビ': 'rabbit', 'ありさん': 'ant', 'くま
   // ワールド3
   'インコの せんせい': 'bird', 'ひつじの せんせい': 'sheep', 'ぶたの せんせい': 'pig', 'くまの せんせい': 'bear', 'しかの せんせい': 'deer', 'はりねずみの せんせい': 'hedgehog',
   'アヒルさん': 'duck', 'うしさん': 'cow', 'ペンギンさん': 'penguin', 'コアラさん': 'koala', 'おさるさん': 'monkey', 'ライオンさん': 'lion',
-  'くだものやさん': 'monkey', 'たまごやさん': 'chick', 'パンやさん': 'cat', 'ふうせんやさん': 'tiger' };
+  'くだものやさん': 'monkey', 'たまごやさん': 'chick', 'パンやさん': 'cat', 'ふうせんやさん': 'tiger',
+  'うさぎの せんせい': 'rabbit', 'ふくろうの せんせい': 'owl', 'かんばんやさん': 'goat', 'ひよこの ピッピ': 'chick', 'かえるの せんせい': 'frog', 'ぞうの せんせい': 'elephant',
+  'しろくまの ポーラ': 'polar', 'しまうまの コーチ': 'zebra', 'とうの ふくろう': 'owl', 'ひつじの もんばん': 'sheep', 'やぎの もんばん': 'goat', 'しかの もんばん': 'deer' };
 const SPEAKER_ICON = `<svg viewBox="0 0 24 24" width="30" height="30"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
 export const STAR_SVG = `<svg viewBox="0 0 24 24"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3 6.1 20.6l1.3-6.6L2.5 9.4l6.6-.8z" fill="#ffd34f" stroke="#e5a91c" stroke-width="1.5" stroke-linejoin="round"/></svg>`;
 
@@ -337,7 +339,7 @@ export function teachWords(ids) {
 const frameHTML = (f, words, labels) => { let k = 0; return f.tpl.map(p => {
   if (p !== '＿') return `<span class="${/^[.,!?]/.test(p) ? 'punct' : ''}">${p}</span>`;
   const n = k++;
-  if (words && words[n]) return `<b class="fw">${words[n].word}</b>`;
+  if (words && words[n]) return `<b class="fw">${f.card ? f.card(words[n]) : words[n].word}</b>`;
   return labels ? `<span class="fslotw"><i class="fslot" data-k="${n}"></i><small>${(f.slotJa || [])[n] || ''}</small></span>` : `<i class="fslot" data-k="${n}"></i>`;
 }).join(' '); };
 // ぶんの かたを おしえる カード（f.lesson を 1まいずつ）
@@ -369,20 +371,22 @@ export function teachFrame(f) {
   });
 }
 // ぶんカードで ぶんを つくる：check(ids) → {ok, msg}。つくった ことばの id を かえす（やめたら null）
-export function sentence(st, { frame: f, title = 'ぶんを つくろう！', task = '', check, hint }) {
+export function sentence(st, { frame: f, title = 'ぶんを つくろう！', task = '', picture = null, check, hint }) {
   return new Promise(resolve => {
+    const wt = w => f.card ? f.card(w) : w.word;
     let sel = f.slots.map(() => null);
     const cards = WORDS.filter(w => w.world === 3 && f.slots.includes(w.kind) && st.words[w.id]);
-    const el = open(h(`<div class="modal"><div class="card magic w3sent"><div class="small">${title}</div>${task ? `<h2 class="task">${task}</h2>` : ''}
+    const el = open(h(`<div class="modal"><div class="card magic w3sent"><div class="small">${title}</div>${task ? `<h2 class="task">${task}</h2>` : ''}<div class="spic"></div>
       <div class="frame big"></div>
       <div class="mmsg">&nbsp;</div>
       <div class="row2"><button class="go gray" data-a="cancel">やめる</button><button class="go cast" data-a="say">いう！</button>${hint ? '<button class="go hintb" data-a="hint">ヒント</button>' : ''}</div>
-      <div class="w3cards">${cards.map(w => `<button class="w3c" data-id="${w.id}"><span class="art"></span><b>${w.word}</b><small>${w.ja}</small></button>`).join('')}</div></div></div>`), null);
+      <div class="w3cards">${cards.map(w => `<button class="w3c" data-id="${w.id}"><span class="art"></span><b>${wt(w)}</b><small>${w.ja}</small></button>`).join('')}</div></div></div>`), null);
+    if (picture) el.querySelector('.spic').appendChild(wordArt(picture, 90));
     const msg = t => { el.querySelector('.mmsg').innerHTML = t; };
     const draw = () => {
       const box = el.querySelector('.frame');
       box.innerHTML = frameHTML(f, null, true);
-      box.querySelectorAll('.fslot').forEach(s => { const k = +s.dataset.k; if (sel[k]) { s.textContent = WORD[sel[k]].word; s.classList.add('on'); s.onclick = () => { sel[k] = null; sfx.tap(); draw(); }; } });
+      box.querySelectorAll('.fslot').forEach(s => { const k = +s.dataset.k; if (sel[k]) { s.textContent = wt(WORD[sel[k]]); s.classList.add('on'); s.onclick = () => { sel[k] = null; sfx.tap(); draw(); }; } });
       el.querySelectorAll('.w3c').forEach(b => b.classList.toggle('sel', sel.includes(b.dataset.id)));
       el.querySelector('[data-a=say]').disabled = sel.some(x => !x);
     };
