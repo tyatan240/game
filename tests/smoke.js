@@ -1011,7 +1011,7 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     await mv('right', 2); await mv('up');
     await p.click('#bItems'); await p.click('#ov [data-act=dgUse]');
     await mv('down'); await mv('right', 2); await p.click('#bAttack');
-    ok(/slime の HP\s+3 − \d ＝ \d/.test(await p.textContent('#log')), 'ダメージの けいさんしき（HP 3 − 3 ＝ 0 など） ' + await p.textContent('#log'));
+    ok(/slimeの HP\s+3 − \d ＝ \d/.test(await p.textContent('#log')), 'ダメージの けいさんしき（HP 3 − 3 ＝ 0 など） ' + await p.textContent('#log'));
     for (let i = 0; i < 2; i++) await p.click('#bAttack');
     await mv('left'); await mv('down', 3); await mv('left', 2);
     await p.click('#bItems'); await p.click('#ov [data-act=dgUse]'); await p.waitForTimeout(400); await p.evaluate(() => closePop());
