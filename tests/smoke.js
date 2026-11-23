@@ -1025,9 +1025,9 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     // せんとうは ゆっくり：メッセージと けいさんしきを 1ぎょうずつ、その あいだは うごけない
     await p.evaluate(() => { __dg.fast = false; const r = __dg.run, h = r.hero; r.mons = [{ uid: 901, id: 'rat', x: h.x + 1, y: h.y, hp: 30, maxhp: 30, atk: 1, exp: 1, tick: 0 }]; h.dir = 'right'; window.__x = { hp: h.hp }; __dg.act({ t: 'attack' }); });
     const slow1 = await p.evaluate(() => ({ busy: __dg.busy, again: __dg.act({ t: 'attack' }), lines: document.querySelectorAll('#log div').length, hpShown: document.getElementById('hp').textContent }));
-    await p.waitForTimeout(4200);
+    await p.waitForTimeout(5400);
     const slow2 = await p.evaluate(() => ({ busy: __dg.busy, log: document.getElementById('log').textContent, hp: __dg.run.hero.hp, hpShown: document.getElementById('hp').textContent }));
-    ok(slow1.busy && slow1.again === null && slow1.lines <= 2 && !slow2.busy && /ratの HP/.test(slow2.log) && /モコの HP/.test(slow2.log) && slow2.hpShown.startsWith(slow2.hp + '/'), 'せんとうは 1ぎょうずつ ゆっくり（その あいだは そうさ できない） ' + JSON.stringify([slow1, slow2.busy, slow2.hpShown]));
+    ok(slow1.busy && slow1.again === null && slow1.lines <= 2 && !slow2.busy && /モコの こうげき/.test(slow2.log) && /ratの HP/.test(slow2.log) && /モコの HP/.test(slow2.log) && slow2.hpShown.startsWith(slow2.hp + '/'), 'せんとうは 1ぎょうずつ ゆっくり（その あいだは そうさ できない） ' + JSON.stringify([slow1, slow2.busy, slow2.hpShown]));
     await p.evaluate(() => { __dg.fast = true; __dg.run.mons = []; });
     // つかった・よめた
     await p.evaluate(() => { const r = __dg.run; r.inv.push({ uid: 999, id: 'apple', peek: false }); __dg.act({ t: 'use', uid: 999 }); });

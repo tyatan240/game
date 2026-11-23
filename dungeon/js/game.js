@@ -155,6 +155,7 @@ function hurtMon(run, m, dmg, ev, how = 'hit') {
 }
 function attackMon(run, m, ev) {
   run.hero.dir = m.x > run.hero.x ? 'right' : m.x < run.hero.x ? 'left' : m.y > run.hero.y ? 'down' : 'up';
+  ev.push({ t: 'msg', text: 'モコの こうげき！' });
   hurtMon(run, m, Math.max(1, heroAtk(run) + ri(0, 2)), ev);
 }
 function openBox(run, b, ev) {
@@ -205,10 +206,10 @@ function castSpell(run, id, ev) {
   if (w.kind === 'near') {
     const v = visible(run), ms = run.mons.filter(m => v.has(m.x + ',' + m.y)).sort((a, b) => (Math.abs(a.x - h.x) + Math.abs(a.y - h.y)) - (Math.abs(b.x - h.x) + Math.abs(b.y - h.y)));
     if (!ms.length) { ev.push({ t: 'msg', text: 'ちかくに てきが いないよ' }); return false; }
-    h.mp -= w.mp; ev.push({ t: 'cast', id }); hurtMon(run, ms[0], w.dmg + Math.floor(h.lv / 2), ev, 'fire'); return true;
+    h.mp -= w.mp; ev.push({ t: 'cast', id }); ev.push({ t: 'msg', text: `モコの まほう ${en(id)}！` }); hurtMon(run, ms[0], w.dmg + Math.floor(h.lv / 2), ev, 'fire'); return true;
   }
   if (w.kind === 'line') {
-    const [dx, dy] = DIRS[h.dir]; h.mp -= w.mp; ev.push({ t: 'cast', id });
+    const [dx, dy] = DIRS[h.dir]; h.mp -= w.mp; ev.push({ t: 'cast', id }); ev.push({ t: 'msg', text: `モコの まほう ${en(id)}！` });
     let x = h.x + dx, y = h.y + dy, hit = 0; const path = [];
     while (tileAt(run, x, y) !== '#' && path.length < 8) { path.push([x, y]); const m = monAt(run, x, y); if (m) { hurtMon(run, m, w.dmg + Math.floor(h.lv / 2), ev, 'water'); hit++; } x += dx; y += dy; }
     ev.push({ t: 'fx', kind: 'beam', path });
