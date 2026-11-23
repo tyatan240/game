@@ -23,16 +23,19 @@
 
   <header class="dtop">
     <div class="chip floor" id="floor">1かい</div>
-    <div class="bars">
-      <div class="bar hp"><span>HP</span><i><b id="hpbar"></b></i><em id="hp">20/20</em></div>
-      <div class="bar mp"><span>MP</span><i><b id="mpbar"></b></i><em id="mp">6/6</em></div>
-    </div>
     <div class="chip lv" id="lv">Lv1</div>
     <div class="chip pts">⭐ <b id="pts">0</b></div>
     <button class="chip menu" id="menuBtn" aria-label="メニュー">⏸</button>
   </header>
   <div class="guide" id="guide" hidden></div>
-  <div class="log" id="log"></div>
+  <!-- したの らん：HP・MP と メッセージ（そうさ ボタンの ちかくで よめる ように） -->
+  <section class="dock" id="dock">
+    <div class="bars">
+      <div class="bar hp"><span>HP</span><i><b id="hpbar"></b></i><em id="hp">20/20</em></div>
+      <div class="bar mp"><span>MP</span><i><b id="mpbar"></b></i><em id="mp">6/6</em></div>
+    </div>
+    <div class="log" id="log"></div>
+  </section>
 
   <div class="pad" id="pad" aria-label="ほうこう">
     <button data-dir="up" aria-label="うえ">▲</button>

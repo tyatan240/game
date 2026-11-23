@@ -997,37 +997,62 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(await p.isVisible('a.study[href="dungeon/index.html"]'), 'おべんきょうの へやに ダンジョンの いりぐち');
     await p.goto(B + 'dungeon/index.html'); await p.waitForSelector('body[data-ready="1"]', { timeout: 10000 });
     ok(await p.isVisible('#title') && /まだ/.test(await p.textContent('#tbest')), 'タイトル（さいこう とうたつ）');
-    await p.evaluate(() => { __dg.fast = true; }); // テストでは せんとうの ひょうじを またない（ゆっくり モードは あとで たしかめる）
-    await p.click('#tGo'); await p.waitForTimeout(300);
-    ok(await p.evaluate(() => __dg.mode === 'play' && __dg.run.tut && !document.getElementById('guide').hidden), 'はじめては チュートリアルから（とばせない）');
-    const mv = async (dir, n = 1) => { for (let i = 0; i < n; i++) await p.evaluate(d => __dg.act({ t: 'move', dir: d }), dir); };
-    await mv('right', 7);
-    await p.evaluate(() => { const c = __dg.cam(), r = __dg.run.items.find(i => i.id === 'apple'); __dg.tapMap(c.ox + (r.x + 0.5) * c.t, c.oy + (r.y + 0.5) * c.t); });
-    ok(await p.evaluate(() => /apple/.test(document.getElementById('ov').textContent) && /りんご/.test(document.getElementById('ov').textContent)), 'タップで しょうさい カード（えいご・いみ）');
-    await p.click('#ov [data-act=close]'); await p.waitForTimeout(100);
-    ok(await p.evaluate(() => document.getElementById('ov').classList.contains('hide')), 'カードの「とじる」で とじる');
-    const cam0 = await p.evaluate(() => { const c = __dg.cam(); return [Math.round(c.ox), Math.round(c.oy)]; });
-    await mv('down'); await mv('up'); await p.waitForTimeout(400);
-    ok(await p.evaluate(c0 => { const c = __dg.cam(); return Math.round(c.ox) === c0[0] && Math.round(c.oy) === c0[1]; }, cam0), 'あるいても マップは うごかない（はしに ちかい ときだけ ずれる）');
-    await mv('right', 2); await mv('up');
-    await p.click('#bItems'); await p.click('#ov [data-act=dgUse]');
-    await mv('down'); await mv('right', 2); await p.click('#bAttack');
-    ok(/slimeの HP\s+3 − \d ＝ \d/.test(await p.textContent('#log')), 'ダメージの けいさんしき（HP 3 − 3 ＝ 0 など） ' + await p.textContent('#log'));
-    for (let i = 0; i < 2; i++) await p.click('#bAttack');
-    await mv('left'); await mv('down', 3); await mv('left', 2);
-    await p.click('#bItems'); await p.click('#ov [data-act=dgUse]'); await p.waitForTimeout(400); await p.evaluate(() => closePop());
-    await p.click('#bItems'); await p.click('#ov [data-act=dgEquip]');
-    await p.click('#bMagic'); await p.click('#ov [data-act=dgCast]');
-    ok(await p.evaluate(() => ['move', 'look', 'eat', 'attack', 'book', 'fire', 'sword'].every(k => __dg.tut.done[k])), 'チュートリアル：うごく・しらべる・たべる・こうげき・まほうの ほん・fire・そうび');
-    await p.evaluate(() => { const r = __dg.run; r.hero.x = 24; r.hero.y = 3; }); await p.evaluate(() => __dg.goDown()); await p.waitForTimeout(200);
+    await p.click('#tGo'); await p.waitForTimeout(400);
+    ok(await p.evaluate(() => __dg.mode === 'play' && __dg.run.tut && !document.getElementById('guide').hidden && document.getElementById('guide').textContent.length < 40), 'はじめては チュートリアル（せつめいは 1ぎょう）');
+    await p.evaluate(() => { __dg.fast = true; }); // テストでは せんとうの ひょうじを またない（ゆっくりは あとで たしかめる）
+    ok(await p.evaluate(() => { const i = __dg.tutInfo(); return i.id === 'move' && i.dirs.join() === 'right' && document.querySelector('#pad [data-dir=right]').classList.contains('hint') && document.querySelector('#pad [data-dir=up]').classList.contains('off') && document.getElementById('bItems').classList.contains('off'); }), 'つぎに おす ボタンが ひかる（ほかは うすく）');
+    ok(await p.evaluate(() => { const x0 = __dg.run.hero.x; const r1 = __dg.act({ t: 'move', dir: 'up' }), r2 = __dg.act({ t: 'wait' }); document.getElementById('bItems').click(); return r1 === null && r2 === null && __dg.run.hero.x === x0 && document.getElementById('ov').classList.contains('hide'); }), 'やること いがいは できない（ちがう やじるし・まつ・もちもの）');
+    // ひかっている ところを たどって さいごまで
+    const seen = new Set(), tutKinds = {}; let lookCard = false, calcLog = '';
+    for (let k = 0; k < 200; k++) {
+      const i = await p.evaluate(() => __dg.tutInfo()); if (!i) break; seen.add(i.id);
+      if (!(await p.evaluate(() => document.getElementById('ov').classList.contains('hide')))) {
+        await p.evaluate(() => { const b = document.querySelector('#ov .hint') || document.querySelector('#ov [data-act=close]'); if (b) b.click(); }); await p.waitForTimeout(80); continue;
+      }
+      if (i.id === 'look') { await p.evaluate(g => { const c = __dg.cam(); __dg.tapMap(c.ox + (g.x + 0.5) * c.t, c.oy + (g.y + 0.5) * c.t); }, i.goal); lookCard = await p.evaluate(() => /apple/.test(document.getElementById('ov').textContent) && /りんご/.test(document.getElementById('ov').textContent)); await p.click('#ov [data-act=close]'); continue; }
+      if (i.btn) { if (i.id === 'attack' || i.id === 'bump') tutKinds[i.id] = 'btn'; await p.evaluate(id => document.getElementById(id).click(), i.btn); await p.waitForTimeout(80); if (i.btn === 'bAttack') calcLog = await p.textContent('#log'); continue; }
+      if (i.dirs.length) { if ((i.id === 'attack' || i.id === 'bump') && i.adj) tutKinds[i.id] = 'dir'; await p.evaluate(d => __dg.act({ t: 'move', dir: d }), i.dirs[0]); if (i.id === 'attack' && !calcLog) calcLog = await p.textContent('#log'); continue; }
+      break;
+    }
+    ok(lookCard, 'しるしの apple を タップで しょうさい カード（えいご・いみ）');
+    ok(tutKinds.attack === 'btn' && tutKinds.bump === 'dir', 'こうげきは ボタン → つぎは やじるしで ぶつかって こうげき ' + JSON.stringify(tutKinds));
+    ok(/slimeの HP\s+3 − \d ＝ \d/.test(calcLog), 'ダメージの けいさんしき（HP 3 − 3 ＝ 0 など） ' + calcLog);
+    ok(['move', 'look', 'pickup', 'eat', 'attack', 'bump', 'key', 'box', 'bookpick', 'book', 'fire', 'swordpick', 'sword', 'stairs'].every(x => seen.has(x)), 'チュートリアル：ひかりを たどって ぜんぶの だんかい ' + [...seen].join(','));
     await p.click('#ov [data-act=dgStartReal]'); await p.waitForTimeout(300);
     ok(await p.evaluate(() => __dg.D.tutorialDone && __dg.run.floor === 1 && !__dg.run.tut && __dg.D.best === 1 && __dg.D.dex.apple && __dg.D.dex.fire), 'チュートリアル おわり → 1かい（ずかんに とうろく）');
+    ok(await p.evaluate(() => !document.querySelector('#pad .off') && !document.querySelector('.acts .off') && __dg.act({ t: 'wait' }) !== null), 'ほんばんは じゆうに うごける');
+    // カード・カメラ
+    await p.evaluate(() => { const r = __dg.run; r.items.push({ uid: 9000, id: 'bread', x: r.hero.x, y: r.hero.y - 99 }); __dg.showCard('bread', {}); });
+    await p.click('#ov [data-act=close]'); await p.waitForTimeout(100);
+    ok(await p.evaluate(() => document.getElementById('ov').classList.contains('hide')), 'カードの「とじる」で とじる');
+    const cam0 = await p.evaluate(() => { __dg.run.mons = []; const c = __dg.cam(); return [Math.round(c.ox), Math.round(c.oy)]; });
+    const mv = async (dir, n = 1) => { for (let i = 0; i < n; i++) await p.evaluate(d => __dg.act({ t: 'move', dir: d }), dir); };
+    await p.evaluate(() => { const r = __dg.run, R = r.map.rooms[0]; r.hero.x = R.x + (R.w >> 1); r.hero.y = R.y + (R.h >> 1); });
+    const camA = await p.evaluate(() => { __dg.act({ t: 'wait' }); const c = __dg.cam(); return [Math.round(c.ox), Math.round(c.oy)]; });
+    await p.waitForTimeout(500);
+    const camB = await p.evaluate(() => { const c = __dg.cam(); return [Math.round(c.ox), Math.round(c.oy)]; });
+    await p.evaluate(() => { const r = __dg.run, h = r.hero; for (const d of ['left', 'right']) { const dx = d === 'left' ? -1 : 1; if (r.map.tiles[h.y][h.x + dx] !== '#') { __dg.act({ t: 'move', dir: d }); __dg.act({ t: 'move', dir: d === 'left' ? 'right' : 'left' }); break; } } });
+    await p.waitForTimeout(500);
+    ok(await p.evaluate(c0 => { const c = __dg.cam(); return Math.round(c.ox) === c0[0] && Math.round(c.oy) === c0[1]; }, camB), 'あるいても マップは うごかない（はしに ちかい ときだけ ずれる）');
+    // もちものが いっぱいで たからばこ → あふれた ぶんは となりの ゆかへ（メッセージつき）
+    ok(await p.evaluate(() => { const r = __dg.run, h = r.hero; r.mons = [];
+      const d = Object.entries({ right: [1, 0], left: [-1, 0], down: [0, 1], up: [0, -1] }).find(([, [dx, dy]]) => r.map.tiles[h.y + dy][h.x + dx] !== '#' && !r.boxes.some(b => b.x === h.x + dx && b.y === h.y + dy));
+      const [dir, [dx, dy]] = d; r.boxes.push({ x: h.x + dx, y: h.y + dy, open: false });
+      r.inv = []; r.inv.push({ uid: 9100, id: 'key', peek: false }); for (let i = 0; i < 9; i++) r.inv.push({ uid: 9101 + i, id: 'apple', peek: false });
+      const n0 = r.items.length; __dg.act({ t: 'move', dir });
+      const dropped = r.items.slice(n0);
+      return r.inv.length === 10 && dropped.length === 1 && !(dropped[0].x === h.x && dropped[0].y === h.y) && /もちものが いっぱい/.test(document.getElementById('log').textContent); }), 'もちものが いっぱいの たからばこ → ゆかに おいて おしらせ');
     // せんとうは ゆっくり：メッセージと けいさんしきを 1ぎょうずつ、その あいだは うごけない
     await p.evaluate(() => { __dg.fast = false; const r = __dg.run, h = r.hero; r.mons = [{ uid: 901, id: 'rat', x: h.x + 1, y: h.y, hp: 30, maxhp: 30, atk: 1, exp: 1, tick: 0 }]; h.dir = 'right'; window.__x = { hp: h.hp }; __dg.act({ t: 'attack' }); });
     const slow1 = await p.evaluate(() => ({ busy: __dg.busy, again: __dg.act({ t: 'attack' }), lines: document.querySelectorAll('#log div').length, hpShown: document.getElementById('hp').textContent }));
     await p.waitForTimeout(5400);
     const slow2 = await p.evaluate(() => ({ busy: __dg.busy, log: document.getElementById('log').textContent, hp: __dg.run.hero.hp, hpShown: document.getElementById('hp').textContent }));
     ok(slow1.busy && slow1.again === null && slow1.lines <= 2 && !slow2.busy && /モコの こうげき/.test(slow2.log) && /ratの HP/.test(slow2.log) && /モコの HP/.test(slow2.log) && slow2.hpShown.startsWith(slow2.hp + '/'), 'せんとうは 1ぎょうずつ ゆっくり（その あいだは そうさ できない） ' + JSON.stringify([slow1, slow2.busy, slow2.hpShown]));
+    await p.evaluate(() => { const r = __dg.run, h = r.hero; r.mons = [{ uid: 902, id: 'bat', x: h.x + 1, y: h.y, hp: 1, maxhp: 5, atk: 1, exp: 1, tick: 0 }]; h.dir = 'right'; __dg.act({ t: 'attack' }); });
+    const g1 = await p.evaluate(() => ({ ghosts: __dg.ghosts.length, alive: __dg.run.mons.length }));
+    await p.waitForTimeout(3600);
+    const g2 = await p.evaluate(() => ({ ghosts: __dg.ghosts.length, log: document.getElementById('log').textContent }));
+    ok(g1.ghosts === 1 && g1.alive === 0 && g2.ghosts === 0 && /たおした/.test(g2.log), 'たおした てきは「たおした！」の ときに きえる（それまでは のこる）');
     await p.evaluate(() => { __dg.fast = true; __dg.run.mons = []; });
     // つかった・よめた
     await p.evaluate(() => { const r = __dg.run; r.inv.push({ uid: 999, id: 'apple', peek: false }); __dg.act({ t: 'use', uid: 999 }); });
