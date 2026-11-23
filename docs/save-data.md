@@ -58,3 +58,5 @@ core.js を読める部屋は `S.points += n; save();`。
 ## ABCぼうけんの ★ → おうちの ⭐
 - ABC の `stars` − `starsSent` の差（まだ届けていない★）× おうちの `settings.abcPts`（既定10）を `points` に加算し、`starsSent` を進める。ABC の保存のたびに実行。
 - 旧版の ABC データ（`starsSent` なし）は、新版を最初に開いたときに それまでの★がまとめて届く（1回だけ）。
+
+- `moko-math-v1` の `daily.eigoRev`（えいごの へやの「きょうの ふくしゅう」を その日 やったか。ボーナスは 1日1かい）。`abc-adventure-v1` の `w3clears`（ワールド3 クリア回数）・`items` に `cape`（ことばの マント）。

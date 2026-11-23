@@ -39,6 +39,9 @@ a.big{text-align:center;text-decoration:none}
 .ch.pic{display:flex;align-items:center;justify-content:center;padding:8px 0}
 .ch.pic canvas{width:84px!important;height:84px!important}
 .ch.letter{font-size:44px}
+.ch.sent{grid-column:1/-1;font-size:20px;color:#3f7fc9}
+.ch.phon{font-size:44px;color:#3f7fc9}
+.ch.word{color:#3f7fc9}
 .ch.ok canvas,.ch.ng canvas{opacity:.85}
 .qart canvas{width:120px!important;height:120px!important;display:block;margin:0 auto}
 .saybtn{border:0;border-radius:999px;background:#6cc3f0;color:#fff;font:inherit;font-weight:800;font-size:16px;padding:6px 16px;box-shadow:0 3px 0 #3f9ac9;margin-top:6px}
@@ -47,6 +50,8 @@ a.big{text-align:center;text-decoration:none}
 .bigchoice{display:flex;align-items:center;gap:14px;border:0;border-radius:24px;padding:14px;font:inherit;text-align:left;text-decoration:none;color:inherit;background:#fff;box-shadow:0 5px 0 #f1d3d3}
 .bigchoice:active{transform:translateY(3px);box-shadow:none}
 .bigchoice .ic{width:96px;height:96px;flex:none;border-radius:20px;display:flex;align-items:center;justify-content:center}
+.bigchoice.rev{background:#fff6d6;box-shadow:0 5px 0 #f0d27a}
+.bigchoice.rev .ic{font-size:44px;display:flex;align-items:center;justify-content:center}
 .bigchoice .ic canvas{width:88px!important;height:88px!important}
 .bigchoice b{display:block;font-size:22px}
 .bigchoice span{font-size:13px;color:#a88f8f;display:block}
@@ -86,13 +91,14 @@ import '../abc/js/engine/art2.js';
 import '../abc/js/engine/art3.js';
 import { sayLetter, unlockAudio, setAudioSettings } from '../abc/js/engine/audio.js';
 import { record, newRecord, levelOf, pickTargets } from '../abc/js/game/learning.js';
+import { FRAMES, FRAME } from '../abc/js/data/sentences.js';
 
 /* ========== ABCぼうけんの データ ========== */
 const ABC_KEY = 'abc-adventure-v1';
 const abcSave = () => { try { return JSON.parse(localStorage.getItem(ABC_KEY) || 'null') || {}; } catch (e) { return {}; } };
 const learnedLetters = () => (abcSave().learned || []).filter(id => LETTER[id]);
 const learnedWords = () => Object.keys(abcSave().words || {}).filter(id => WORD[id] && !WORD[id].future);
-const recKey = (tid, id) => tid.startsWith('ea') ? id : 'w:' + id;
+const recKey = (tid, id) => tid.startsWith('ea') ? id : tid === 'ephon' ? 'ph:' + id : tid === 'e3sent' ? 's:' + id : 'w:' + id;
 // がくしゅう きろくを ABCぼうけんの セーブに かく（records だけ。ほかは さわらない）
 function logAbc(key, ok, first) {
   try {
@@ -102,15 +108,21 @@ function logAbc(key, ok, first) {
     d.t = Date.now(); localStorage.setItem(ABC_KEY, JSON.stringify(d));
   } catch (e) { }
 }
-const avail = t => (t.need === 'letters' ? learnedLetters() : learnedWords()).length;
+// ワールド3・はじめの おと
+const W3 = kinds => learnedWords().filter(id => WORD[id].world === 3 && kinds.includes(WORD[id].kind));
+const learnedFrames = () => Object.keys(abcSave().sentences || {}).filter(id => FRAME[id]);
+const phonWords = () => learnedWords().filter(id => /^[a-z]+$/i.test(WORD[id].word) && WORD[id].kind !== 'number'); // 1ごの ことば（かずは のぞく）
+const POOL = { letters: learnedLetters, words: learnedWords, w3talk: () => W3(['greet', 'feel']), w3count: () => W3(['number', 'color', 'shape']), w3sent: () => learnedFrames().flatMap(f => [f + ':0', f + ':1', f + ':2']), phon: phonWords };
+const avail = t => (POOL[t.need] || learnedWords)().length;
 const MIN = 3;
 
 /* ========== もんだいを つくる ========== */
 const shuf = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = r(0, i); [a[i], a[j]] = [a[j], a[i]]; } return a; };
-function makeQ(tid) {
+function makeQ(tid, forced) {
+  if (tid === 'e3talk' || tid === 'e3count' || tid === 'e3sent' || tid === 'ephon') return makeQ3(tid, forced);
   const isL = tid.startsWith('ea'), pool = isL ? learnedLetters() : learnedWords();
   const recs = abcSave().records || {}, keyed = Object.fromEntries(pool.map(id => [id, recs[recKey(tid, id)]]));
-  const target = pickTargets(pool, keyed, 1)[0];
+  const target = forced || pickTargets(pool, keyed, 1)[0];
   const n = levelOf(keyed[target]) >= 2 ? 4 : 3;
   const all = isL ? LETTERS.map(l => l.id) : WORDS.filter(w => !w.future).map(w => w.id);
   const dist = shuf(pool.filter(x => x !== target)).concat(shuf(all.filter(x => x !== target && !pool.includes(x)))).slice(0, n - 1);
@@ -122,6 +134,53 @@ function makeQ(tid) {
   if (tid === 'ewlisten') return { ...base, label: 'きこえた ことばは どれかな？', main: '', voice: Wd, listen: true, render: 'pic', disp: () => '', name: id => `${WORD[id].word}（${WORD[id].ja}）` };
   return { ...base, label: 'この えは えいごで なに？', main: '', art: Wd.art, voice: Wd, render: 'word', disp: id => WORD[id].word, name: id => `${WORD[id].word}（${WORD[id].ja}）` };
 }
+// ワールド3（あいさつ・かず・いろ・かたち・ぶん）と はじめの おと
+const cap1 = t => t.charAt(0).toUpperCase() + t.slice(1);
+function makeQ3(tid, forced) {
+  const recs = abcSave().records || {}, learned = new Set(learnedWords());
+  if (tid === 'e3sent') { // にほんごの ぶん → えいごの ぶん を えらぶ
+    const fr = FRAME[learnedFrames()[r(0, learnedFrames().length - 1)]];
+    const opts = k => WORDS.filter(w => w.world === 3 && w.kind === fr.slots[k] && learned.has(w.id) && (w.kind !== 'number' || w.n >= 2));
+    const ws = fr.slots.map((_, k) => { const o = opts(k); return o[r(0, o.length - 1)]; });
+    if (ws.some(w => !w)) return makeQ3('e3talk');
+    const ans = fr.make(ws), set = new Set([ans]);
+    for (let g = 0; set.size < 3 && g < 40; g++) { const k = r(0, fr.slots.length - 1), o = opts(k); const alt = ws.map((w, i) => i === k ? o[r(0, o.length - 1)] : w); set.add(fr.make(alt)); }
+    if (set.size < 3) for (const f2 of FRAMES.filter(f => f.id !== fr.id)) { const w2 = f2.slots.map(s => WORDS.find(w => w.world === 3 && w.kind === s && (s !== 'number' || w.n >= 2))); if (w2.every(Boolean)) set.add(f2.make(w2)); if (set.size >= 3) break; }
+    const key = fr.id + ':' + ws.map(w => w.id).join('+');
+    return { tid, key, id: key, rec: 's:' + fr.id, choicesId: shuf([...set]), ans, label: `「${fr.ja(ws)}」は えいごで どれ？`, main: '', voice: { speak: ans }, render: 'text sent', disp: x => x, name: x => x };
+  }
+  if (tid === 'ephon') { // ことばを きいて、はじめの もじを えらぶ
+    const pool = phonWords(), keyed = Object.fromEntries(pool.map(id => [id, recs['ph:' + id]]));
+    const id = forced || pickTargets(pool, keyed, 1)[0], W = WORD[id], first = W.word[0].toLowerCase();
+    const others = shuf('abcdefghijklmnopqrstuvwxyz'.split('').filter(c => c !== first)).slice(0, 2);
+    return { tid, key: id, id, rec: 'ph:' + id, choicesId: shuf([first, ...others]), ans: first, label: `「${W.word.toLowerCase()}」の はじめの おとは どの もじ？`, main: '', art: W.art, voice: W, listen: true, render: 'text phon', disp: x => x, name: x => `${x}（${W.word}）` };
+  }
+  const kinds = tid === 'e3talk' ? ['greet', 'feel'] : ['number', 'color', 'shape'];
+  const pool = W3(kinds), keyed = Object.fromEntries(pool.map(id => [id, recs['w:' + id]]));
+  const id = forced || pickTargets(pool, keyed, 1)[0], W = WORD[id], n = levelOf(keyed[id]) >= 2 ? 4 : 3;
+  const kin = WORDS.filter(w => w.world === 3 && w.kind === W.kind && w.id !== id).map(w => w.id);
+  const dist = shuf(kin.filter(x => learned.has(x))).concat(shuf(kin.filter(x => !learned.has(x)))).slice(0, n - 1);
+  const label = W.kind === 'number' ? 'ふうせんは いくつ？ えいごで えらぼう' : W.kind === 'color' ? 'この いろは えいごで どれ？' : W.kind === 'shape' ? 'この かたちは えいごで どれ？' : `「${W.ja}」は えいごで どれ？`;
+  return { tid, key: id, id, rec: 'w:' + id, choicesId: shuf([id, ...dist]), ans: id, label, main: '', art: W.kind === 'number' ? 'balloon' + W.n : W.art, voice: W, render: 'word', disp: x => WORD[x].word, name: x => `${WORD[x].word}（${WORD[x].ja}）` };
+}
+/* ========== きょうの ふくしゅう：わすれかけた もの（ふくしゅうびが きた もの・にがてな もの）を 3もん ========== */
+const REV_N = 3, REV_BONUS = 5;
+function reviewItems() {
+  const recs = abcSave().records || {}, now = Date.now(), letters = new Set(learnedLetters()), words = new Set(learnedWords()), out = [];
+  for (const [k, rc] of Object.entries(recs)) {
+    if (!rc || !rc.asked) continue;
+    let it = null;
+    if (/^[A-Z]$/.test(k) && letters.has(k)) it = { tid: 'ealisten', id: k };
+    else if (k.startsWith('w:') && words.has(k.slice(2))) { const W = WORD[k.slice(2)]; it = { tid: W.world === 3 ? (['greet', 'feel'].includes(W.kind) ? 'e3talk' : ['number', 'color', 'shape'].includes(W.kind) ? 'e3count' : 'ewpic') : 'ewpic', id: W.id }; }
+    else if (k.startsWith('ph:') && words.has(k.slice(3)) && phonWords().includes(k.slice(3))) it = { tid: 'ephon', id: k.slice(3) };
+    if (!it) continue;
+    const acc = rc.correct / rc.asked;
+    it.score = (rc.due && rc.due <= now ? 2 : 0) + (1 - acc) * 2 + (rc.streak ? 0 : 1) - Math.min(1, (now - (rc.lastAsked || 0)) / 864e5 < 0.2 ? 1 : 0);
+    out.push(it);
+  }
+  return out.sort((a, b) => b.score - a.score).slice(0, REV_N);
+}
+const revDone = () => !!dailyOf(S).eigoRev;
 // クイズの もんだいぶぶん と せんたくし
 const qTop = c => `${c.label ? `<div class="qlabel">${c.label}</div>` : ''}${c.art ? `<div class="qart" data-art="${c.art}"></div>` : ''}${c.main ? `<div class="qmain" style="font-size:64px">${c.main}</div>` : ''}${c.listen ? `<button class="saybtn" data-act="say">🔊 もういちど きく</button>` : ''}`;
 const chBtn = (c, id, i, cls, act) => `<button class="ch ${c.render} ${cls}" data-act="${act}" data-arg="${i}">${c.render === 'pic' ? `<span data-art="${WORD[id].art}"></span>` : c.disp(id)}</button>`;
@@ -137,7 +196,8 @@ function home() {
   return `<h2>えいごの へや</h2><div class="choose">
   <a class="bigchoice adv" href="../abc/index.html"><div class="ic" data-fox></div><div><b>🗺️ ぼうけんに いく</b><span>ABCぼうけん。もじと ことばを おぼえて、まほうで みんなを たすけよう！</span><span class="prog">おぼえた もじ ${L}/26 ・ ことば ${Wn}/${total}</span></div></a>
   <button class="bigchoice study" data-act="go" data-arg="select"><div class="ic" data-art="apple"></div><div><b>✏️ べんきょう する</b><span>ぼうけんで おぼえた もじと ことばで、れんしゅうと 🏆テスト</span><span class="prog">せいかいで おうちの ⭐が もらえるよ</span></div></button>
-  </div>${L < MIN ? '<p class="muted">まずは ぼうけんで もじを 3つ おぼえよう！ おぼえた もじと ことばで べんきょう できるよ</p>' : ''}`;
+  </div>${reviewItems().length >= REV_N ? `<button class="bigchoice rev" data-act="start" data-arg="review"><div class="ic" data-art="goodmorning"></div><div><b>きょうの ふくしゅう（${REV_N}もん）</b><span>わすれかけた もじ・ことばを おさらい しよう</span><span class="prog">${revDone() ? '✔ きょうは できたよ！（なんかい でも できるよ）' : `はじめての ふくしゅうで ⭐＋${REV_BONUS}`}</span></div></button>` : ''}
+  ${L < MIN ? '<p class="muted">まずは ぼうけんで もじを 3つ おぼえよう！ おぼえた もじと ことばで べんきょう できるよ</p>' : ''}`;
 }
 function drawFox() {
   const el = document.querySelector('[data-fox]'); if (!el || el.firstChild) return;
@@ -166,12 +226,13 @@ function select(){
 // 学習履歴（保護者レポート用）。けっかが きまったら きろく だけ する
 const lhRec=(c,pickIdx,ok,n,mode,stars,lv)=>LH.recordAttempt({questionInstanceId:c.iid,questionKey:`eigo:${c.tid}:${c.ans}`,subject:'eigo',topic:c.tid,skill:c.tid,difficulty:lv||0,mode,questionText:[c.label,c.main||(c.listen?'（おとを きいて）':'')].filter(Boolean).join(' '),correctAnswer:c.name(c.ans),userAnswer:c.name(c.choicesId[pickIdx]),isCorrect:ok,attemptNumber:n,earnedStars:stars,params:{id:c.ans}});
 function startQuiz(sel){
- const pool=sel==='mix'?enabled().map(t=>t.id):[sel];
- quiz={pool,sel,i:0,n:S.settings.perRound,ok:0,earned:0,res:[],cur:null,tries:0,ng:[],mood:'normal',msg:'',lock:false,used:new Set()};LH.startSession({subject:'eigo',mode:'practice'});
+ const review=sel==='review'?reviewItems():null,pool=review?review.map(x=>x.tid):sel==='mix'?enabled().map(t=>t.id):[sel];
+ quiz={review,pool,sel,i:0,n:review?review.length:S.settings.perRound,ok:0,earned:0,res:[],cur:null,tries:0,ng:[],mood:'normal',msg:'',lock:false,used:new Set()};LH.startSession({subject:'eigo',mode:'practice'});
  nextQ();view='quiz';render();$('main').scrollTop=0}
 function nextQ(){
  let q,g=0;
- do{q=makeQ(quiz.pool[r(0,quiz.pool.length-1)])}while((quiz.used.has(q.key)||q.key===quiz.lastKey)&&g++<30);
+ if(quiz.review){const rv=quiz.review[quiz.i];q=makeQ(rv.tid,rv.id)}
+ else do{q=makeQ(quiz.pool[r(0,quiz.pool.length-1)])}while((quiz.used.has(q.key)||q.key===quiz.lastKey)&&g++<30);
  quiz.used.add(q.key);quiz.lastKey=q.key;q.iid=LH.newInstance();LH.begin(q.iid);quiz.cur=q;quiz.tries=0;quiz.ng=[];quiz.mood='normal';quiz.msg='';$('main').scrollTop=0;
  if(quiz.used.size>=4)quiz.used.clear();
  if(q.listen)setTimeout(sayQ,350)}
@@ -185,7 +246,7 @@ function quizV(){
 function pick(i){
  const q=quiz;if(!q||q.lock||q.ng.includes(i))return;
  const c=q.cur,tp=S.settings.etypes[c.tid].pts;
- logAbc(recKey(c.tid,c.ans),c.choicesId[i]===c.ans,q.tries===0);
+ logAbc(c.rec||recKey(c.tid,c.ans),c.choicesId[i]===c.ans,q.tries===0);
  {const ok=c.choicesId[i]===c.ans;lhRec(c,i,ok,q.tries+1,'practice',ok?(q.tries===0?tp:Math.ceil(tp/2)):0,0)}
  if(c.choicesId[i]===c.ans){sayLetter(c.voice);
   const pts=q.tries===0?tp:Math.ceil(tp/2);
@@ -202,6 +263,7 @@ function advance(){
  const q=quiz;if(!q||view!=='quiz')return;q.lock=false;q.i++;
  if(q.i>=q.n){
   q.bonus=(q.ok===q.n&&S.settings.perfect>0)?S.settings.perfect:0;
+  if(q.review&&!revDone()){dailyOf(S).eigoRev=true;q.bonus+=REV_BONUS} // きょうの ふくしゅう：1日 1かい ボーナス
   if(q.bonus){S.points+=q.bonus;save()}
   LH.endSession();view='result';if(q.bonus)sBuy();render();return}
  nextQ();render()}
@@ -261,7 +323,7 @@ function testV(){
 function testPick(i){
  const t=test;if(!t||t.phase!=='run'||t.lock)return;
  const c=t.cur,right=c.choicesId[i]===c.ans;t.pick=i;
- logAbc(recKey(c.tid,c.ans),right,true);if(right)sayLetter(c.voice);
+ logAbc(c.rec||recKey(c.tid,c.ans),right,true);if(right)sayLetter(c.voice);
  lhRec(c,i,right,1,t.prac?'testprac':'test',right&&t.prac?pracPts(t.tid):0,t.lv+1);
  S.estats.q++;
  if(right){t.ok++;S.estats.ok++;

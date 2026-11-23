@@ -45,3 +45,6 @@
 
 ## テスト
 `node tests/smoke.js` の「15. 学習レポート」で受け入れテスト17項目を確認。大量データ（約17,000回答）で 開く 0.4秒・期間切替 0.1秒程度（Chromium）。
+
+## 英語の習得状況（ABCぼうけん）
+`report.js` の `english()`。`abc-adventure-v1` を読み、ABC のデータ（words・sentences・learning）は dynamic import。大文字・小文字・単語（ワールド1）・ことば（ワールド3）・文の形の数（いまの進み＋`slots` の合計）、「覚えた」数（`levelOf`）、クリア回数、復習時期が来た件数、苦手な項目（2回以上・正答率70%未満）。

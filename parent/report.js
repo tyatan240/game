@@ -167,6 +167,9 @@
     }
     H.push(`<div class="card"><h2>教科別・単元別</h2>${sh || '<p class="muted">この期間の記録はありません。</p>'}<p class="muted" style="margin:6px 0 0">グラフは単元ごとの初回正答率です。灰色は回答が${MIN_N}問未満で、評価を断定できない単元です。</p></div>`);
 
+    // 英語（ABCぼうけん）の習得状況
+    if (!subjF || subjF === 'eigo') H.push(`<div class="card" id="encard"><h2>🔤 英語の習得状況（ABCぼうけん）</h2>${english()}</div>`);
+
     // 成長レポート・復習提案・継続
     H.push(`<div class="grid two"><div class="card"><h2>🌱 成長レポート</h2>${growth()}</div><div class="card"><h2>📝 復習すると よさそうな単元</h2>${suggestions()}</div></div>`);
     H.push(`<div class="card"><h2>📅 学習の継続</h2>${streak()}</div>`);
@@ -183,6 +186,41 @@
       <p class="muted">記録件数：回答 ${ALL.length}件${LH.errors() ? `・保存の再試行 ${LH.errors()}回` : ''}</p></div>`);
     $('#report').innerHTML = H.join('');
     bind();
+  }
+
+  // ABCぼうけんの データ（文字・単語・文）を あとから 読みこむ（ES Modules なので dynamic import）
+  let ABCD = null;
+  Promise.all([import('../abc/js/data/words.js'), import('../abc/js/data/sentences.js'), import('../abc/js/game/learning.js')])
+    .then(([w, s, l]) => { ABCD = { WORDS: w.WORDS, WORD: w.WORD, FRAMES: s.FRAMES, levelOf: l.levelOf }; const c = $('#encard'); if (c) c.innerHTML = '<h2>🔤 英語の習得状況（ABCぼうけん）</h2>' + english(); })
+    .catch(() => { ABCD = false; });
+  function english() {
+    if (ABCD === null) return '<p class="muted">読みこみ中…</p>';
+    if (!ABCD) return '<p class="muted">ABCぼうけんのデータを読みこめませんでした。</p>';
+    let d = {}; try { d = JSON.parse(localStorage.getItem('abc-adventure-v1') || 'null') || {}; } catch (e) { }
+    if (!d.started && !Object.keys(d.records || {}).length) return '<p class="muted">まだ ABCぼうけん の記録がありません。</p>';
+    const { WORDS, WORD, FRAMES, levelOf } = ABCD, recs = d.records || {}, now = Date.now();
+    // 学習の記録は ワールドを またいで 1つ（slots の 進み具合は 合算しない）。覚えた単語は いまの進み＋しまってある進み の合計
+    const slots = Object.values(d.slots || {}), known = new Set(Object.keys(d.words || {})), lw = new Set(d.learned || []), ll = new Set(d.lower || []), fr = new Set(Object.keys(d.sentences || {}));
+    for (const s of slots) { Object.keys(s.words || {}).forEach(x => known.add(x)); (s.learned || []).forEach(x => lw.add(x)); (s.lower || []).forEach(x => ll.add(x)); Object.keys(s.sentences || {}).forEach(x => fr.add(x)); }
+    const w1 = WORDS.filter(w => (w.world || 1) === 1 && !w.future), w3 = WORDS.filter(w => w.world === 3);
+    const learnedN = ids => ids.filter(id => levelOf(recs[id]) >= 2).length;
+    const kpi = (label, n, total, sub) => `<div class="kpi"><span>${label}</span><b>${n} / ${total}</b><small>${sub || ''}</small></div>`;
+    const weak = Object.entries(recs).filter(([k, r]) => r && r.asked >= 2 && r.correct / r.asked < 0.7)
+      .map(([k, r]) => { const id = k.replace(/^(w:|l:|ph:|s:)/, ''), kind = k.startsWith('w:') ? '単語' : k.startsWith('l:') ? '小文字' : k.startsWith('ph:') ? '最初の音' : k.startsWith('s:') ? '文' : '大文字';
+        const name = k.startsWith('w:') && WORD[id] ? `${WORD[id].word}（${WORD[id].ja}）` : k.startsWith('l:') ? id.toLowerCase() : k.startsWith('ph:') && WORD[id] ? WORD[id].word : k.startsWith('s:') ? (FRAMES.find(f => f.id === id) || {}).title || id : id;
+        return { kind, name, acc: r.correct / r.asked, n: r.asked }; })
+      .sort((a, b) => a.acc - b.acc).slice(0, 10);
+    const due = Object.values(recs).filter(r => r && r.asked && r.due && r.due <= now).length;
+    return `<div class="kpis">
+      ${kpi('大文字（A〜Z）', lw.size, 26, `「覚えた」${learnedN([...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'])}`)}
+      ${kpi('小文字（a〜z）', ll.size, 26, `「覚えた」${learnedN([...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'].map(x => 'l:' + x))}`)}
+      ${kpi('単語（ワールド1）', w1.filter(w => known.has(w.id)).length, w1.length, `「覚えた」${learnedN(w1.map(w => 'w:' + w.id))}`)}
+      ${kpi('ことば（ワールド3）', w3.filter(w => known.has(w.id)).length, w3.length, `「覚えた」${learnedN(w3.map(w => 'w:' + w.id))}`)}
+      ${kpi('文の形', fr.size, FRAMES.length, FRAMES.filter(f => fr.has(f.id)).map(f => f.tpl.join(' ').replace(' .', '.')).join(' / '))}</div>
+      <p class="muted" style="margin:8px 0 0">クリア回数：ワールド1（大文字）${d.clears || 0}回・ワールド2（小文字）${d.w2clears || 0}回・ワールド3（ことばの まち）${d.w3clears || 0}回。
+      「覚えた」は 3回以上正解・2回連続正解・正答率70%以上。復習の時期が来ている項目：${due}件（英語の部屋の「きょうの ふくしゅう」で出ます）。</p>
+      <h3 style="margin:12px 0 4px">苦手な項目（2回以上出題・正答率70%未満）</h3>
+      ${weak.length ? weak.map(x => hbar(`${x.kind}：${x.name}`, Math.round(x.acc * 100), x.n, '正答率')).join('') : '<p class="muted">いまのところ苦手な項目はありません。</p>'}`;
   }
 
   function growth() {

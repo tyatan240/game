@@ -13,7 +13,7 @@ kokugo/         こくご：漢字よみかき・ことば・よみとり・か�
 program/        プログラミング：ブロックでロボットを動かすパズル（独自コード）
 program/build/  ロボモコの ブロックタウン：3Dでブロックを置く町づくり（ES Modules＋Three.js。プログラミングの部屋から入る。program/build/README.md）
 machi/          モコの まち：2Dの まちづくり（ES Modules＋core.js。まちの おみせ は おへやの おみせと別。machi/README.md）
-eigo/           えいご：「ぼうけん（abc/）」か「べんきょう（練習＋🏆テスト）」を選ぶ部屋。core.js ＋ abc のデータ・絵・音声を module で使う
+eigo/           えいご：「ぼうけん（abc/）」か「べんきょう（練習＋🏆テスト・きょうの ふくしゅう）」を選ぶ部屋。ワールド3・はじめの おと の問題も。core.js ＋ abc のデータ・絵・音声を module で使う
 abc/            ABCぼうけん：英語の2Dアドベンチャー（独立モジュール、ES Modules。eigo/ の「ぼうけん」から入る）
 parent/         保護者向け 学習レポート（かけ算の確認 → ダッシュボード。docs/learning-report.md）
 common/learning-history.js 学習履歴の記録API（IndexedDB moko-learning-history）

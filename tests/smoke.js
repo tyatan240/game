@@ -955,6 +955,40 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
   }
 
+  console.log('20g. えいごの へや：ワールド3・はじめの おと の れんしゅう／きょうの ふくしゅう／保護者レポートの 英語');
+  {
+    const p = await page({ width: 820, height: 1180 });
+    await p.goto(B + 'program/index.html'); // おうちの ページで かくと とじる ときに うわがき される
+    await p.evaluate(() => {
+      const words = {}; for (const id of ['apple', 'water', 'flower', 'hello', 'goodbye', 'thankyou', 'sorry', 'goodmorning', 'happy', 'sleepy', 'one', 'two', 'three', 'four', 'cred', 'cblue', 'cyellow', 'circle', 'star', 'apples', 'bananas', 'eggs', 'dogs', 'cats']) words[id] = { at: 1 };
+      localStorage.setItem('moko-math-v1', JSON.stringify({ v: 1, t: Date.now() + 9e9, points: 0, lastDay: new Date().toDateString() }));
+      localStorage.setItem('abc-adventure-v1', JSON.stringify({ v: 1, t: 1, started: true, clears: 1, w2clears: 1, learned: ['A', 'B', 'C', 'D'], lower: ['a'], words, sentences: { im: { at: 1 }, please: { at: 1 }, like: { at: 1 } }, flags: {}, hero: { area: 'w3plaza' },
+        records: { A: { asked: 4, correct: 2, streak: 0, due: 1 }, 'w:sorry': { asked: 3, correct: 1, streak: 0, due: 1 }, 'w:two': { asked: 2, correct: 1, streak: 0, due: 1 }, 'w:apple': { asked: 2, correct: 2, streak: 2, due: 1 } } }));
+    });
+    await p.goto(B + 'eigo/index.html#study'); await p.waitForTimeout(700);
+    ok(await p.evaluate(() => ['e3talk', 'e3count', 'e3sent', 'ephon'].every(t => document.querySelector(`[data-act=start][data-arg=${t}]`))), 'あたらしい もんだい：あいさつ・きもち／かず・いろ・かたち／えいごの ぶん／はじめの おと');
+    const play = async (sel, n) => { await p.evaluate(s => ACT.start(s), sel); await p.waitForTimeout(400);
+      for (let i = 0; i < n + 1; i++) { const a = await p.evaluate(() => { const c = __eigo.quiz && __eigo.view === 'quiz' && __eigo.quiz.cur; return c ? c.choicesId.indexOf(c.ans) : -1; }); if (a < 0) break; await p.evaluate(a => ACT.pick(a), a); await p.waitForTimeout(1300); } };
+    for (const t of ['e3talk', 'e3count', 'e3sent', 'ephon']) await play(t, 5);
+    const rk = await p.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('abc-adventure-v1')).records));
+    ok(rk.some(k => /^w:(hello|goodbye|thankyou|sorry|goodmorning|happy|sleepy)$/.test(k)) && rk.some(k => /^w:(one|two|three|four|cred|cblue|cyellow|circle|star)$/.test(k)) && rk.some(k => /^s:/.test(k)) && rk.some(k => /^ph:/.test(k)), 'こたえると ABCぼうけんの きろくにも のこる ' + rk.join(' '));
+    ok(await p.evaluate(() => { const q = __eigo.makeQ('e3sent'); return q.choicesId.length === 3 && q.choicesId.includes(q.ans) && /えいごで どれ/.test(q.label); }), 'ぶんの もんだい：にほんごの ぶん → えいごの ぶん（3たく）');
+    ok(await p.evaluate(() => { const q = __eigo.makeQ('ephon', 'apple'); return q.ans === 'a' && q.choicesId.includes('a') && q.choicesId.length === 3; }), 'はじめの おと：apple → a');
+    await p.evaluate(() => __eigo.go('home')); await p.waitForTimeout(300);
+    ok(await p.isVisible('[data-act=start][data-arg=review]'), 'きょうの ふくしゅう が でる（わすれかけた もの が ある とき）');
+    const pts0 = await p.evaluate(() => S.points);
+    await play('review', 3);
+    ok(await p.evaluate(p0 => __eigo.view === 'result' && __eigo.quiz.n === 3 && __eigo.quiz.bonus >= 5 && S.daily.eigoRev === true && S.points > p0, pts0), 'ふくしゅう 3もん → 1日1かい ボーナス ⭐');
+    await play('review', 3);
+    ok(await p.evaluate(() => __eigo.quiz.bonus < 5), 'ふくしゅうの ボーナスは 1日 1かい だけ');
+    ok(await p.evaluate(() => ['a_hellobubble', 'h_smilepin', 'o_hellotee', 'a_paintbrush', 'h_shapeband', 'f_shapesrug', 'a_wordcards', 'o_abcdress', 'w_wordsky', 'a_handbell', 'h_headphones', 'w_soundwave'].every(id => ITEM[id] && thumb(ITEM[id]).length > 50) && ['e3talk', 'e3count', 'e3sent', 'ephon'].every(t => [1, 2, 3].every(l => testItem(t + '-' + l)))), 'テストの ごほうび 12こ（え つき）');
+    await p.evaluate(() => sessionStorage.setItem('moko-parent-ok', Date.now()));
+    await p.goto(B + 'parent/index.html'); await p.waitForTimeout(1500);
+    const en = await p.textContent('#encard').catch(() => '');
+    ok(/大文字/.test(en) && /4 \/ 26/.test(en) && /ことば（ワールド3）/.test(en) && /Sorry/.test(en), '保護者レポートに 英語の 習得状況（文字・単語・文・苦手）');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+  }
+
   console.log('20b. ABCぼうけん：ドラコが うごいた ところに いても うごける');
   {
     const p = await page({ width: 844, height: 390 });
