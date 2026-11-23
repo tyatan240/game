@@ -114,15 +114,19 @@ function hud() {
   $id('mp').textContent = `${h.mp}/${h.maxmp}`; $id('mpbar').style.width = (100 * h.mp / h.maxmp) + '%';
   $id('lv').textContent = 'Lv' + h.lv; $id('pts').textContent = S.points;
   $id('bStairs').hidden = !onStairs(run);
-  $id('log').innerHTML = logs.slice(-3).map((t, i, a) => `<div class="${i < a.length - 1 ? 'old' : ''}">${t}</div>`).join('');
+  // いまの こうどうの メッセージ（けいさんしき も）は ぜんぶ、まえの ぶんは うすく 1ぎょう
+  const cur = logs.filter(l => l.g === logGroup), prev = logs.filter(l => l.g !== logGroup).slice(-1);
+  $id('log').innerHTML = [...prev.map(l => `<div class="old">${l.t}</div>`), ...cur.slice(-6).map(l => `<div>${l.t}</div>`)].join('');
   guide(); measureView(); camTarget(false);
 }
-function log(t) { logs.push(t); if (logs.length > 20) logs.shift(); }
+let logGroup = 0;
+function log(t) { logs.push({ t, g: logGroup }); if (logs.length > 30) logs.shift(); }
 
 /* ---------- こうどう ---------- */
 function doAction(a) {
   if (mode !== 'play' || busy || !run) return null;
   unlockAudio();
+  logGroup++;
   const r = act(run, a);
   vis = visible(run);
   handle(r.ev);
@@ -258,7 +262,7 @@ function goDown() {
   if (r.clear) return clearRun();
   sfx.unlock(); vis = visible(run);
   for (const id of updateSeen(run)) meet(id);
-  logs = [`${run.floor}かいに ついた！`];
+  logs = []; logGroup++; log(`${run.floor}かいに ついた！`);
   if (run.floor > D.best) D.best = run.floor;
   if (run.floor > (D.rewarded.floor || 1)) { const n = run.floor - Math.max(1, D.rewarded.floor || 1); D.rewarded.floor = run.floor; stars(STARS.floor * n, `${run.floor}かいに はじめて ついた！`); }
   persist(); camTarget(true); hud();
@@ -330,7 +334,7 @@ function start(tutorial) {
   vis = visible(run); for (const id of updateSeen(run)) meet(id);
   $id('title').classList.add('hide'); persist(); measureView(); camTarget(true); hud();
 }
-function resume() { closePop(); unlockAudio(); run = D.run; mode = 'play'; logs = [`${run.tut ? 'れんしゅう' : run.floor + 'かい'} から つづき`]; tut = run.tut ? { done: {}, moves: 0 } : null; vis = visible(run); $id('title').classList.add('hide'); measureView(); camTarget(true); hud(); }
+function resume() { closePop(); unlockAudio(); run = D.run; mode = 'play'; logs = []; logGroup++; log(`${run.tut ? 'れんしゅう' : run.floor + 'かい'} から つづき`); tut = run.tut ? { done: {}, moves: 0 } : null; vis = visible(run); $id('title').classList.add('hide'); measureView(); camTarget(true); hud(); }
 function toTitle() {
   closePop(); stopWalk(); mode = 'title'; run = null; tut = null;
   $id('title').classList.remove('hide'); $id('guide').hidden = true;

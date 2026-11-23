@@ -87,3 +87,4 @@ html,body{margin:0;height:100%;overflow:hidden;background:#2a2238;touch-action:n
 @media (orientation:landscape) and (max-height:500px){.pad{width:150px;height:150px}.acts{width:220px}.acts button{padding:9px 4px;font-size:15px}}
 @media (max-width:520px){.dtop{gap:5px;padding-left:6px;padding-right:6px}.chip{padding:5px 8px;font-size:13px}.bars{min-width:112px;padding:4px 7px}.bar em{min-width:36px;font-size:11px}.chip.lv{display:none}}
 @media (max-height:500px){.guide{font-size:13px;padding:5px 10px;max-width:min(520px,60vw)}.guide small{font-size:10px}.log div{font-size:12px}}
+.log .calc{color:#9fe8ff;font-size:1.05em;letter-spacing:.02em}

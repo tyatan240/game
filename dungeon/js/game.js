@@ -7,6 +7,8 @@ export const setRand = r => { rand = r; };
 const ri = (a, b) => a + Math.floor(rand() * (b - a + 1));
 const pick = a => a[Math.floor(rand() * a.length)];
 const en = id => `<b class="en">${WORD[id].en}</b>`;
+// HPの けいさんしき（さんすうの れんしゅうにも なる）。ひきざんは マイナスに ならない ように のこりの HPまで
+const calc = (who, a, op, b) => `<span class="calc">${who}の HP　${a} ${op} ${b} ＝ ${op === '−' ? a - b : a + b}</span>`;
 export const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
 
 /* ---------- あたらしい ぼうけん・かい ---------- */
@@ -140,8 +142,10 @@ function gainExp(run, n, ev) {
   }
 }
 function hurtMon(run, m, dmg, ev, how = 'hit') {
+  dmg = Math.min(dmg, m.hp); const hp0 = m.hp;
   m.hp -= dmg; ev.push({ t: 'fx', kind: how, x: m.x, y: m.y, n: dmg });
   ev.push({ t: 'msg', text: `${en(m.id)} に ${dmg} ダメージ！` });
+  ev.push({ t: 'msg', text: calc(WORD[m.id].en, hp0, '−', dmg), calc: true });
   if (m.hp <= 0) {
     run.mons = run.mons.filter(x => x !== m);
     ev.push({ t: 'kill', id: m.id, x: m.x, y: m.y }); ev.push({ t: 'msg', text: `${en(m.id)} を たおした！` });
@@ -170,7 +174,7 @@ function useItem(run, uid, ev) {
   const it = run.inv.find(i => i.uid === uid); if (!it) return false;
   const w = WORD[it.id], h = run.hero;
   const done = () => { run.inv = run.inv.filter(i => i !== it); ev.push({ t: 'used', id: it.id, read: !it.peek }); };
-  if (w.use === 'heal') { const n = Math.min(w.val, h.maxhp - h.hp); h.hp += n; done(); ev.push({ t: 'fx', kind: 'heal', x: h.x, y: h.y, n }); ev.push({ t: 'msg', text: `${en(it.id)} を ${w.verb === 'のむ' ? 'のんだ' : 'たべた'}！ HPが ${n} かいふく` }); return true; }
+  if (w.use === 'heal') { const n = Math.min(w.val, h.maxhp - h.hp), hp0 = h.hp; h.hp += n; done(); ev.push({ t: 'fx', kind: 'heal', x: h.x, y: h.y, n }); ev.push({ t: 'msg', text: `${en(it.id)} を ${w.verb === 'のむ' ? 'のんだ' : 'たべた'}！ ${n ? `HPが ${n} かいふく` : 'HPは もう まんたん'}` }); if (n) ev.push({ t: 'msg', text: calc('モコ', hp0, '＋', n), calc: true }); return true; }
   if (w.use === 'potion') { h.hp = h.maxhp; h.mp = h.maxmp; done(); ev.push({ t: 'fx', kind: 'heal', x: h.x, y: h.y }); ev.push({ t: 'msg', text: `${en(it.id)} を のんだ！ HPと MPが ぜんぶ かいふく！` }); return true; }
   if (w.use === 'book') {
     const left = SPELLS.filter(s => !run.spells.includes(s));
@@ -197,7 +201,7 @@ function castSpell(run, id, ev) {
   const w = WORD[id], h = run.hero;
   if (!run.spells.includes(id)) return false;
   if (h.mp < w.mp) { ev.push({ t: 'msg', text: `MPが たりない（${en(id)} は MP ${w.mp}）` }); return false; }
-  if (w.kind === 'self') { h.mp -= w.mp; const n = Math.min(w.val, h.maxhp - h.hp); h.hp += n; ev.push({ t: 'cast', id }); ev.push({ t: 'fx', kind: 'heal', x: h.x, y: h.y, n }); ev.push({ t: 'msg', text: `${en(id)}！ HPが ${n} かいふく` }); return true; }
+  if (w.kind === 'self') { h.mp -= w.mp; const n = Math.min(w.val, h.maxhp - h.hp), hp0 = h.hp; h.hp += n; ev.push({ t: 'cast', id }); ev.push({ t: 'fx', kind: 'heal', x: h.x, y: h.y, n }); ev.push({ t: 'msg', text: `${en(id)}！ ${n ? `HPが ${n} かいふく` : 'HPは もう まんたん'}` }); if (n) ev.push({ t: 'msg', text: calc('モコ', hp0, '＋', n), calc: true }); return true; }
   if (w.kind === 'near') {
     const v = visible(run), ms = run.mons.filter(m => v.has(m.x + ',' + m.y)).sort((a, b) => (Math.abs(a.x - h.x) + Math.abs(a.y - h.y)) - (Math.abs(b.x - h.x) + Math.abs(b.y - h.y)));
     if (!ms.length) { ev.push({ t: 'msg', text: 'ちかくに てきが いないよ' }); return false; }
@@ -223,8 +227,8 @@ function endTurn(run, ev) {
     if (w.move === 'slow' && (m.tick = (m.tick + 1) % 2)) continue;
     const d = Math.abs(m.x - h.x) + Math.abs(m.y - h.y);
     if (d === 1) { // こうげき
-      const dmg = Math.max(1, m.atk + ri(-1, 1) - heroDef(run));
-      h.hp -= dmg; ev.push({ t: 'fx', kind: 'hurt', x: h.x, y: h.y, n: dmg }); ev.push({ t: 'msg', text: `${en(m.id)} の こうげき！ ${dmg} ダメージ` }); ev.push({ t: 'hurt' });
+      const dmg = Math.min(h.hp, Math.max(1, m.atk + ri(-1, 1) - heroDef(run))), hp0 = h.hp;
+      h.hp -= dmg; ev.push({ t: 'fx', kind: 'hurt', x: h.x, y: h.y, n: dmg }); ev.push({ t: 'msg', text: `${en(m.id)} の こうげき！ ${dmg} ダメージ` }); ev.push({ t: 'msg', text: calc('モコ', hp0, '−', dmg), calc: true }); ev.push({ t: 'hurt' });
       if (h.hp <= 0) break;
       continue;
     }

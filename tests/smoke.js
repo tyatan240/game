@@ -1010,7 +1010,9 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(await p.evaluate(c0 => { const c = __dg.cam(); return Math.round(c.ox) === c0[0] && Math.round(c.oy) === c0[1]; }, cam0), 'あるいても マップは うごかない（はしに ちかい ときだけ ずれる）');
     await mv('right', 2); await mv('up');
     await p.click('#bItems'); await p.click('#ov [data-act=dgUse]');
-    await mv('down'); await mv('right', 2); for (let i = 0; i < 3; i++) await p.click('#bAttack');
+    await mv('down'); await mv('right', 2); await p.click('#bAttack');
+    ok(/slime の HP\s+3 − \d ＝ \d/.test(await p.textContent('#log')), 'ダメージの けいさんしき（HP 3 − 3 ＝ 0 など） ' + await p.textContent('#log'));
+    for (let i = 0; i < 2; i++) await p.click('#bAttack');
     await mv('left'); await mv('down', 3); await mv('left', 2);
     await p.click('#bItems'); await p.click('#ov [data-act=dgUse]'); await p.waitForTimeout(400); await p.evaluate(() => closePop());
     await p.click('#bItems'); await p.click('#ov [data-act=dgEquip]');
