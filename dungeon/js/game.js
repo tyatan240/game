@@ -146,10 +146,10 @@ function hurtMon(run, m, dmg, ev, how = 'hit') {
   dmg = Math.min(dmg, m.hp); const hp0 = m.hp;
   m.hp -= dmg; ev.push({ t: 'fx', kind: how, x: m.x, y: m.y, n: dmg });
   ev.push({ t: 'msg', text: `${en(m.id)} に ${dmg} ダメージ！` });
-  ev.push({ t: 'msg', text: calc(WORD[m.id].en, hp0, '−', dmg), calc: true });
+  ev.push({ t: 'msg', text: calc(WORD[m.id].en, hp0, '−', dmg), calc: true, monUid: m.uid, monHp: m.hp });
   if (m.hp <= 0) {
     run.mons = run.mons.filter(x => x !== m);
-    ev.push({ t: 'kill', id: m.id, x: m.x, y: m.y }); ev.push({ t: 'msg', text: `${en(m.id)} を たおした！` });
+    ev.push({ t: 'kill', id: m.id, x: m.x, y: m.y, uid: m.uid }); ev.push({ t: 'msg', text: `${en(m.id)} を たおした！` });
     gainExp(run, m.exp, ev);
     if (m.boss) { run.bossDead = true; run.stairs = { x: m.x, y: m.y }; ev.push({ t: 'boss', id: m.id }); ev.push({ t: 'msg', text: `${en('stairs')} が あらわれた！` }); }
   }

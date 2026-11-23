@@ -78,12 +78,13 @@ function draw(now) {
   if (run.stairs && shown(run.stairs.x, run.stairs.y)) drawArt(g, 'dg_stairs', ox + run.stairs.x * t, oy + run.stairs.y * t, t);
   for (const b of run.boxes) if (shown(b.x, b.y)) drawArt(g, b.open ? 'dg_boxopen' : 'dg_box', ox + b.x * t + t * 0.08, oy + b.y * t + t * 0.08, t * 0.84);
   for (const it of run.items) if (shown(it.x, it.y)) drawArt(g, WORD[it.id].art, ox + it.x * t + t * 0.14, oy + it.y * t + t * 0.14, t * 0.72);
-  for (const mo of run.mons) {
-    if (!vis.has(mo.x + ',' + mo.y)) continue;
+  const drawMon = (mo, hp) => {
     const big = WORD[mo.id].boss ? 1.5 : 1, s = t * 0.92 * big, bob = Math.sin(now / 300 + mo.uid) * t * 0.03;
     drawArt(g, WORD[mo.id].art, ox + (mo.x + 0.5) * t - s / 2, oy + (mo.y + 1) * t - s * 0.98 + bob, s);
-    if (mo.hp < mo.maxhp) { const w = t * 0.8; g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(ox + mo.x * t + t * 0.1, oy + mo.y * t - 4, w, 5); g.fillStyle = '#ff6b6b'; g.fillRect(ox + mo.x * t + t * 0.1, oy + mo.y * t - 4, w * Math.max(0, mo.hp / mo.maxhp), 5); }
-  }
+    if (hp < mo.maxhp) { const w = t * 0.8; g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(ox + mo.x * t + t * 0.1, oy + mo.y * t - 4, w, 5); g.fillStyle = '#ff6b6b'; g.fillRect(ox + mo.x * t + t * 0.1, oy + mo.y * t - 4, w * Math.max(0, hp / mo.maxhp), 5); }
+  };
+  for (const mo of run.mons) if (vis.has(mo.x + ',' + mo.y)) drawMon(mo, monHpShown && monHpShown.has(mo.uid) ? monHpShown.get(mo.uid) : mo.hp);
+  for (const gh of ghosts) drawMon(gh, monHpShown && monHpShown.has(gh.uid) ? monHpShown.get(gh.uid) : gh.hp); // たおれた てき（「たおした」まで）
   // モコ
   const h = run.hero, hs = t * 1.15;
   if (heroImg && heroImg.complete) { g.save(); g.translate(ox + (h.x + 0.5) * t, oy + (h.y + 1) * t); if (h.dir === 'left') g.scale(-1, 1); g.drawImage(heroImg, -hs * 0.42, -hs * 1.02, hs * 0.84, hs); g.restore(); }
@@ -97,6 +98,7 @@ function draw(now) {
     const k = (now - f.t0) / 900;
     if (f.kind === 'beam') { g.strokeStyle = `rgba(90,170,255,${1 - k})`; g.lineWidth = t * 0.25; g.lineCap = 'round'; g.beginPath(); const p = f.path; if (p.length) { g.moveTo(ox + (h.x + 0.5) * t, oy + (h.y + 0.5) * t); g.lineTo(ox + (p[p.length - 1][0] + 0.5) * t, oy + (p[p.length - 1][1] + 0.5) * t); g.stroke(); } continue; }
     const X = ox + (f.x + 0.5) * t, Y = oy + (f.y + 0.2) * t - k * t * 0.6;
+    if (f.kind === 'vanish') { const s = t * (1 - k * 0.7); g.globalAlpha = Math.max(0, 1 - k * 1.2); drawArt(g, WORD[f.id].art, ox + (f.x + 0.5) * t - s / 2, oy + (f.y + 0.5) * t - s / 2, s); g.globalAlpha = 1; g.fillStyle = `rgba(255,230,120,${1 - k})`; for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2, d = t * (0.2 + k * 0.6); g.beginPath(); g.arc(ox + (f.x + 0.5) * t + Math.cos(a) * d, oy + (f.y + 0.5) * t + Math.sin(a) * d, t * 0.06, 0, 7); g.fill(); } continue; }
     if (f.kind === 'fire') { g.globalAlpha = 1 - k; drawArt(g, 'dg_fire', X - t * 0.4, oy + f.y * t, t * 0.8); g.globalAlpha = 1; }
     if (f.n != null) { g.font = `800 ${Math.round(t * 0.42)}px "M PLUS Rounded 1c",sans-serif`; g.textAlign = 'center'; g.lineWidth = 4; g.strokeStyle = '#fff'; g.fillStyle = f.kind === 'heal' ? '#2f9a5a' : f.kind === 'hurt' ? '#e0304a' : '#e07a1a'; const s = (f.kind === 'heal' ? '+' : '') + f.n; g.strokeText(s, X, Y); g.fillText(s, X, Y); }
   }
@@ -126,26 +128,27 @@ function log(t) { logs.push({ t, g: logGroup }); if (logs.length > 30) logs.shif
 /* ---------- こうどう ---------- */
 // せんとうが あった ターンは、メッセージと けいさんしきを 1ぎょうずつ ゆっくり だす（その あいだは つぎの そうさを うけつけない）
 const MSG_MS = 700, CALC_MS = 1100;
-let dispHp = null, fast = false;
+let dispHp = null, fast = false, ghosts = [], monHpShown = null; // せんとうちゅうの ひょうじ：たおれた てきは「たおした」まで のこす
 const wait = ms => new Promise(ok => fast ? ok() : setTimeout(ok, ms));
 function doAction(a) {
   if (mode !== 'play' || busy || !run) return null;
   unlockAudio();
   logGroup++;
-  const hp0 = run.hero.hp;
+  const hp0 = run.hero.hp, before = run.mons.map(m => ({ uid: m.uid, id: m.id, x: m.x, y: m.y, hp: m.hp, maxhp: m.maxhp }));
   const r = act(run, a);
   vis = visible(run);
   if (r.turn) { tutFlag('turn'); persist(); }
   const combat = r.ev.some(e => e.t === 'fx' && ['hit', 'fire', 'water', 'hurt'].includes(e.kind));
   if (!combat || fast) { handle(r.ev, false); hud(); return r; }
   busy = true; dispHp = hp0; stopWalk(); stopHold();
-  handle(r.ev, true).then(() => { busy = false; dispHp = null; hud(); });
+  ghosts = before.filter(b => !run.mons.some(m => m.uid === b.uid)); monHpShown = new Map(before.map(b => [b.uid, b.hp]));
+  handle(r.ev, true).then(() => { busy = false; dispHp = null; ghosts = []; monHpShown = null; hud(); });
   return r;
 }
 async function handle(ev, slow) {
   let stairs = false, dead = false;
   for (const e of ev) {
-    if (e.t === 'msg') { log(e.text); if (e.heroHp != null) dispHp = e.heroHp; if (slow) { hud(); await wait(e.calc ? CALC_MS : MSG_MS); } }
+    if (e.t === 'msg') { log(e.text); if (e.heroHp != null) dispHp = e.heroHp; if (e.monUid != null && monHpShown) monHpShown.set(e.monUid, e.monHp); if (slow) { hud(); await wait(e.calc ? CALC_MS : MSG_MS); } }
     else if (e.t === 'fx') fx.push({ ...e, t0: performance.now() });
     else if (e.t === 'meet') meet(e.id);
     else if (e.t === 'pickup') { sfx.tap(); speak(WORD[e.id].en); meet(e.id); tutFlag('pickup', e.id); stopWalk(); }
@@ -153,7 +156,7 @@ async function handle(ev, slow) {
     else if (e.t === 'equip') tutFlag('equip', e.id);
     else if (e.t === 'learn') { meet(e.id); sfx.unlock(); speak(WORD[e.id].en); tutFlag('learn', e.id); setTimeout(() => showCard(e.id, { learned: true }), 300); }
     else if (e.t === 'cast') { dexOf(e.id).used++; speak(WORD[e.id].en); tutFlag('cast', e.id); }
-    else if (e.t === 'kill') { sfx.correct(); tutFlag('kill', e.id); }
+    else if (e.t === 'kill') { sfx.correct(); tutFlag('kill', e.id); if (slow) { ghosts = ghosts.filter(gh => gh.uid !== e.uid); fx.push({ kind: 'vanish', id: e.id, x: e.x, y: e.y, t0: performance.now() }); } }
     else if (e.t === 'boss') bossDown(e.id);
     else if (e.t === 'level') { sfx.unlock(); fx.push({ kind: 'heal', x: run.hero.x, y: run.hero.y, n: 'Lv' + e.lv, t0: performance.now() }); }
     else if (e.t === 'hurt') { sfx.bump(); stopWalk(); }
@@ -475,4 +478,4 @@ function setupInput() {
 })();
 
 // じどう テスト よう
-window.__dg = { set fast(v) { fast = v; }, get busy() { return busy; }, get run() { return run; }, get D() { return D; }, get mode() { return mode; }, get tut() { return tut; }, act: doAction, start, resume, toTitle, goDown, showCard, tapMap, toTile, cam: () => cam(), visible: () => vis };
+window.__dg = { set fast(v) { fast = v; }, get busy() { return busy; }, get ghosts() { return ghosts; }, get run() { return run; }, get D() { return D; }, get mode() { return mode; }, get tut() { return tut; }, act: doAction, start, resume, toTitle, goDown, showCard, tapMap, toTile, cam: () => cam(), visible: () => vis };

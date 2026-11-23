@@ -1033,6 +1033,11 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     await p.waitForTimeout(5400);
     const slow2 = await p.evaluate(() => ({ busy: __dg.busy, log: document.getElementById('log').textContent, hp: __dg.run.hero.hp, hpShown: document.getElementById('hp').textContent }));
     ok(slow1.busy && slow1.again === null && slow1.lines <= 2 && !slow2.busy && /モコの こうげき/.test(slow2.log) && /ratの HP/.test(slow2.log) && /モコの HP/.test(slow2.log) && slow2.hpShown.startsWith(slow2.hp + '/'), 'せんとうは 1ぎょうずつ ゆっくり（その あいだは そうさ できない） ' + JSON.stringify([slow1, slow2.busy, slow2.hpShown]));
+    await p.evaluate(() => { const r = __dg.run, h = r.hero; r.mons = [{ uid: 902, id: 'bat', x: h.x + 1, y: h.y, hp: 1, maxhp: 5, atk: 1, exp: 1, tick: 0 }]; h.dir = 'right'; __dg.act({ t: 'attack' }); });
+    const g1 = await p.evaluate(() => ({ ghosts: __dg.ghosts.length, alive: __dg.run.mons.length }));
+    await p.waitForTimeout(3600);
+    const g2 = await p.evaluate(() => ({ ghosts: __dg.ghosts.length, log: document.getElementById('log').textContent }));
+    ok(g1.ghosts === 1 && g1.alive === 0 && g2.ghosts === 0 && /たおした/.test(g2.log), 'たおした てきは「たおした！」の ときに きえる（それまでは のこる）');
     await p.evaluate(() => { __dg.fast = true; __dg.run.mons = []; });
     // つかった・よめた
     await p.evaluate(() => { const r = __dg.run; r.inv.push({ uid: 999, id: 'apple', peek: false }); __dg.act({ t: 'use', uid: 999 }); });
