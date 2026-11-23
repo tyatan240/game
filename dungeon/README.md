@@ -8,6 +8,7 @@
   - 10だんかい：うごく → しらべる → ひろう → たべる（もちもの）→ こうげき → たからばこ（key）→ まほうの ほん → まほう（MP）→ そうび → かいだん。だんかいごとに「せつめい カード」（ボタンの え つき。`main.js` の `TUT`）、ガイドの「？ せつめい」で もういちど
 - 1〜5かい（5かいは ボス king slime。たおすと かいだん）。`data.js` の `MAX_FLOOR`・`BOSS_FLOORS`
 - てき 5（slime・rat・bat・snake・angry pig）、アイテム 9（apple・bread・meat・potion・key・magic book・angel feather・sword・shield）＋ treasure box・stairs、まほう 3（fire・water・heal）
+- HP・MP と メッセージは したの らん（`#dock`。よこがめんは やじるしと ボタンの あいだ、たては ボタンの うえ）。キャラの うえに みじかい ふきだし（こうげき！・fire！）
 - せんとうは 1ぎょうずつ ゆっくり（モコの こうげき → ダメージ → HPの けいさんしき → てきの こうげき …）。その あいだは そうさ しない
 - タップで しょうさい カード（えいご・え・いみ・はつおん・こうか・ボタン）。いみを みずに つかうと「よめた」
 - ずかん（ダンジョン せんよう。Monsters / Items / Magic / Equipment）

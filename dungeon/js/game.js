@@ -156,7 +156,7 @@ function hurtMon(run, m, dmg, ev, how = 'hit') {
 }
 function attackMon(run, m, ev) {
   run.hero.dir = m.x > run.hero.x ? 'right' : m.x < run.hero.x ? 'left' : m.y > run.hero.y ? 'down' : 'up';
-  ev.push({ t: 'msg', text: 'モコの こうげき！' });
+  ev.push({ t: 'bubble', x: run.hero.x, y: run.hero.y, text: 'こうげき！' }); ev.push({ t: 'msg', text: 'モコの こうげき！' });
   hurtMon(run, m, Math.max(1, heroAtk(run) + ri(0, 2)), ev);
 }
 function openBox(run, b, ev) {
@@ -207,10 +207,10 @@ function castSpell(run, id, ev) {
   if (w.kind === 'near') {
     const v = visible(run), ms = run.mons.filter(m => v.has(m.x + ',' + m.y)).sort((a, b) => (Math.abs(a.x - h.x) + Math.abs(a.y - h.y)) - (Math.abs(b.x - h.x) + Math.abs(b.y - h.y)));
     if (!ms.length) { ev.push({ t: 'msg', text: 'ちかくに てきが いないよ' }); return false; }
-    h.mp -= w.mp; ev.push({ t: 'cast', id }); ev.push({ t: 'msg', text: `モコの まほう ${en(id)}！` }); hurtMon(run, ms[0], w.dmg + Math.floor(h.lv / 2), ev, 'fire'); return true;
+    h.mp -= w.mp; ev.push({ t: 'cast', id }); ev.push({ t: 'bubble', x: h.x, y: h.y, text: `${w.en}！` }); ev.push({ t: 'msg', text: `モコの まほう ${en(id)}！` }); hurtMon(run, ms[0], w.dmg + Math.floor(h.lv / 2), ev, 'fire'); return true;
   }
   if (w.kind === 'line') {
-    const [dx, dy] = DIRS[h.dir]; h.mp -= w.mp; ev.push({ t: 'cast', id }); ev.push({ t: 'msg', text: `モコの まほう ${en(id)}！` });
+    const [dx, dy] = DIRS[h.dir]; h.mp -= w.mp; ev.push({ t: 'cast', id }); ev.push({ t: 'bubble', x: h.x, y: h.y, text: `${w.en}！` }); ev.push({ t: 'msg', text: `モコの まほう ${en(id)}！` });
     let x = h.x + dx, y = h.y + dy, hit = 0; const path = [];
     while (tileAt(run, x, y) !== '#' && path.length < 8) { path.push([x, y]); const m = monAt(run, x, y); if (m) { hurtMon(run, m, w.dmg + Math.floor(h.lv / 2), ev, 'water'); hit++; } x += dx; y += dy; }
     ev.push({ t: 'fx', kind: 'beam', path });
@@ -230,6 +230,7 @@ function endTurn(run, ev) {
     const d = Math.abs(m.x - h.x) + Math.abs(m.y - h.y);
     if (d === 1) { // こうげき
       const dmg = Math.min(h.hp, Math.max(1, m.atk + ri(-1, 1) - heroDef(run))), hp0 = h.hp;
+      ev.push({ t: 'bubble', x: m.x, y: m.y, text: 'こうげき！', enemy: true });
       h.hp -= dmg; ev.push({ t: 'fx', kind: 'hurt', x: h.x, y: h.y, n: dmg }); ev.push({ t: 'msg', text: `${en(m.id)} の こうげき！ ${dmg} ダメージ` }); ev.push({ t: 'msg', text: calc('モコ', hp0, '−', dmg), calc: true, heroHp: h.hp }); ev.push({ t: 'hurt' });
       if (h.hp <= 0) break;
       continue;
