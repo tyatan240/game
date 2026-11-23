@@ -1003,20 +1003,21 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(await p.evaluate(() => { const i = __dg.tutInfo(); return i.id === 'move' && i.dirs.join() === 'right' && document.querySelector('#pad [data-dir=right]').classList.contains('hint') && document.querySelector('#pad [data-dir=up]').classList.contains('off') && document.getElementById('bItems').classList.contains('off'); }), 'つぎに おす ボタンが ひかる（ほかは うすく）');
     ok(await p.evaluate(() => { const x0 = __dg.run.hero.x; const r1 = __dg.act({ t: 'move', dir: 'up' }), r2 = __dg.act({ t: 'wait' }); document.getElementById('bItems').click(); return r1 === null && r2 === null && __dg.run.hero.x === x0 && document.getElementById('ov').classList.contains('hide'); }), 'やること いがいは できない（ちがう やじるし・まつ・もちもの）');
     // ひかっている ところを たどって さいごまで
-    const seen = new Set(); let lookCard = false, calcLog = '';
+    const seen = new Set(), tutKinds = {}; let lookCard = false, calcLog = '';
     for (let k = 0; k < 200; k++) {
       const i = await p.evaluate(() => __dg.tutInfo()); if (!i) break; seen.add(i.id);
       if (!(await p.evaluate(() => document.getElementById('ov').classList.contains('hide')))) {
         await p.evaluate(() => { const b = document.querySelector('#ov .hint') || document.querySelector('#ov [data-act=close]'); if (b) b.click(); }); await p.waitForTimeout(80); continue;
       }
       if (i.id === 'look') { await p.evaluate(g => { const c = __dg.cam(); __dg.tapMap(c.ox + (g.x + 0.5) * c.t, c.oy + (g.y + 0.5) * c.t); }, i.goal); lookCard = await p.evaluate(() => /apple/.test(document.getElementById('ov').textContent) && /りんご/.test(document.getElementById('ov').textContent)); await p.click('#ov [data-act=close]'); continue; }
-      if (i.btn) { await p.evaluate(id => document.getElementById(id).click(), i.btn); await p.waitForTimeout(80); if (i.btn === 'bAttack') calcLog = await p.textContent('#log'); continue; }
-      if (i.dirs.length) { await p.evaluate(d => __dg.act({ t: 'move', dir: d }), i.dirs[0]); if (i.id === 'attack' && !calcLog) calcLog = await p.textContent('#log'); continue; }
+      if (i.btn) { if (i.id === 'attack' || i.id === 'bump') tutKinds[i.id] = 'btn'; await p.evaluate(id => document.getElementById(id).click(), i.btn); await p.waitForTimeout(80); if (i.btn === 'bAttack') calcLog = await p.textContent('#log'); continue; }
+      if (i.dirs.length) { if ((i.id === 'attack' || i.id === 'bump') && i.adj) tutKinds[i.id] = 'dir'; await p.evaluate(d => __dg.act({ t: 'move', dir: d }), i.dirs[0]); if (i.id === 'attack' && !calcLog) calcLog = await p.textContent('#log'); continue; }
       break;
     }
     ok(lookCard, 'しるしの apple を タップで しょうさい カード（えいご・いみ）');
+    ok(tutKinds.attack === 'btn' && tutKinds.bump === 'dir', 'こうげきは ボタン → つぎは やじるしで ぶつかって こうげき ' + JSON.stringify(tutKinds));
     ok(/slimeの HP\s+3 − \d ＝ \d/.test(calcLog), 'ダメージの けいさんしき（HP 3 − 3 ＝ 0 など） ' + calcLog);
-    ok(['move', 'look', 'pickup', 'eat', 'attack', 'key', 'box', 'bookpick', 'book', 'fire', 'swordpick', 'sword', 'stairs'].every(x => seen.has(x)), 'チュートリアル：ひかりを たどって ぜんぶの だんかい ' + [...seen].join(','));
+    ok(['move', 'look', 'pickup', 'eat', 'attack', 'bump', 'key', 'box', 'bookpick', 'book', 'fire', 'swordpick', 'sword', 'stairs'].every(x => seen.has(x)), 'チュートリアル：ひかりを たどって ぜんぶの だんかい ' + [...seen].join(','));
     await p.click('#ov [data-act=dgStartReal]'); await p.waitForTimeout(300);
     ok(await p.evaluate(() => __dg.D.tutorialDone && __dg.run.floor === 1 && !__dg.run.tut && __dg.D.best === 1 && __dg.D.dex.apple && __dg.D.dex.fire), 'チュートリアル おわり → 1かい（ずかんに とうろく）');
     ok(await p.evaluate(() => !document.querySelector('#pad .off') && !document.querySelector('.acts .off') && __dg.act({ t: 'wait' }) !== null), 'ほんばんは じゆうに うごける');

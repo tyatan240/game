@@ -120,7 +120,8 @@ export function act(run, a) {
       if (onStairs(run)) ev.push({ t: 'stairs' });
     } else ev.push({ t: 'bump' });
   } else if (a.t === 'attack') {
-    const [dx, dy] = DIRS[h.dir], m = monAt(run, h.x + dx, h.y + dy);
+    // まえに てきが いなくても、となりに いれば そちらを むいて こうげき
+    const [dx, dy] = DIRS[h.dir], m = monAt(run, h.x + dx, h.y + dy) || Object.values(DIRS).map(([ax, ay]) => monAt(run, h.x + ax, h.y + ay)).find(Boolean);
     if (m) { attackMon(run, m, ev); turn = true; } else { say('まえに てきが いないよ'); ev.push({ t: 'swing' }); turn = true; }
   } else if (a.t === 'wait') { turn = true; say('ひとやすみ'); }
   else if (a.t === 'use') turn = useItem(run, a.uid, ev);

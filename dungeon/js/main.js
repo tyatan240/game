@@ -142,6 +142,7 @@ const wait = ms => new Promise(ok => fast ? ok() : setTimeout(ok, ms));
 function doAction(a) {
   if (mode !== 'play' || busy || !run) return null;
   if (!tutAllows(a)) { nudge(); return null; } // チュートリアル：いま する こと いがいは できない
+  if (tut) tut.lastAct = a.t;
   unlockAudio();
   logGroup++;
   const hp0 = run.hero.hp, before = run.mons.map(m => ({ uid: m.uid, id: m.id, x: m.x, y: m.y, hp: m.hp, maxhp: m.maxhp }));
@@ -331,7 +332,8 @@ const TUT = [
   { id: 'look', text: `${E('apple')} を タップ！`, tap: () => itemPos('apple') },
   { id: 'pickup', text: `${E('apple')} の うえに のって ひろおう`, goal: () => itemPos('apple') },
   { id: 'eat', text: `もちもの → ${E('apple')} を たべる`, btn: 'bItems', pick: 'apple' },
-  { id: 'attack', text: `${E('slime')} に こうげき！`, goal: () => run.mons[0] || null, foe: true },
+  { id: 'attack', text: `${E('slime')} の となりで「こうげき」ボタン！`, goal: () => run.mons[0] || null, foe: true },
+  { id: 'bump', text: `やじるしで ${E('slime')} に ぶつかっても こうげき できるよ！`, goal: () => run.mons[0] || null, foe: true },
   { id: 'key', text: `${E('key')} を ひろおう`, goal: () => itemPos('key') },
   { id: 'box', text: `${E('key')} で ${E('treasure box')} を あけよう（ぶつかる）`, goal: () => run.boxes.find(b => !b.open) || null, foe: true },
   { id: 'bookpick', text: `${E('magic book')} を ひろおう`, goal: () => itemPos('magicbook') },
@@ -350,13 +352,13 @@ function tutFlag(k, id) {
   if (k === 'look' && id === 'apple') d.look = true;
   if (k === 'pickup') { if (id === 'apple') d.pickup = true; if (id === 'key') d.key = true; if (id === 'magicbook') d.bookpick = true; if (id === 'sword') d.swordpick = true; }
   if (k === 'used' && id === 'apple') { d.pickup = true; d.eat = true; }
-  if (k === 'kill') d.attack = true;
+  if (k === 'kill') { if (tut.lastAct === 'attack' && !d.attack) d.attack = true; else if (d.attack) d.bump = true; else d.attack = true; }
   if (k === 'open') { d.key = true; d.box = true; }
   if (k === 'learn') { d.bookpick = true; d.book = true; }
   if (k === 'cast' && id === 'fire') d.fire = true;
   if (k === 'equip' && id === 'sword') { d.swordpick = true; d.sword = true; }
   // fire の れんしゅう あいてが いなく なったら もう 1ぴき
-  if (!d.fire && !run.mons.length) { run.mons.push({ uid: run.uid++, id: 'slime', x: 15, y: 4, hp: 3, maxhp: 3, atk: 0, exp: 1, tick: 0, tame: true }); vis = visible(run); }
+  if ((!d.bump || !d.fire) && !run.mons.length) { run.mons.push({ uid: run.uid++, id: 'slime', x: 15, y: 4, hp: 3, maxhp: 3, atk: 0, exp: 1, tick: 0, tame: true }); vis = visible(run); }
 }
 const tutStep = () => TUT.find(x => !tut.done[x.id]) || TUT[TUT.length - 1];
 // いまの だんかいで する こと：{ s, goal, dist（ゴールまでの きょり）, dirs（ちかづく ほうこう）, adj（てき・はこの となり）, btn }
@@ -376,7 +378,7 @@ function tutInfo() {
     if (solidGoal && here === 0 && Math.abs(g.x - h.x) + Math.abs(g.y - h.y) === 1) { info.adj = true; info.dirs = [g.x > h.x ? 'right' : g.x < h.x ? 'left' : g.y > h.y ? 'down' : 'up']; }
     else for (const [d, [dx, dy]] of Object.entries(DIRS)) { const v = dist.get(key(h.x + dx, h.y + dy)); if (v != null && here != null && v < here) info.dirs.push(d); }
     if (s.stairs && onStairs(run)) { info.dirs = []; info.btn = 'bStairs'; }
-    if (s.foe && info.adj && s.id === 'attack') info.btn = 'bAttack';
+    if (s.id === 'attack' && info.adj) { info.btn = 'bAttack'; info.dirs = []; } // ボタンで こうげき（ぶつかるのは つぎの だんかい）
   }
   return info;
 }
@@ -384,7 +386,7 @@ function tutInfo() {
 function tutAllows(a) {
   const i = tutInfo(); if (!i) return true;
   if (a.t === 'move') return i.dirs.includes(a.dir);
-  if (a.t === 'attack') return i.id === 'attack' && i.adj && run.hero.dir === i.dirs[0];
+  if (a.t === 'attack') return i.id === 'attack' && !!i.adj;
   const it = a.uid != null && run.inv.find(x => x.uid === a.uid);
   if (a.t === 'use') return !!it && it.id === i.s.pick && i.s.id !== 'sword';
   if (a.t === 'equip') return !!it && it.id === 'sword' && i.s.id === 'sword';
@@ -399,6 +401,7 @@ function tutUI() {
 }
 function guide() {
   const el = $id('guide');
+  if (busy && tutOn()) return; // せんとうの ひょうじが おわるまで つぎの だんかいに しない
   if (!tutOn()) { el.hidden = true; tutUI(); return; }
   const s = tutStep();
   el.hidden = false; el.innerHTML = `<small>れんしゅう ${TUT.indexOf(s) + 1}/${TUT.length}</small>${s.text}`;
@@ -406,6 +409,7 @@ function guide() {
 }
 // マップの うえの やじるし（つぎに いく ところ・タップする もの）
 function drawTutArrow(now, t, ox, oy) {
+  if (busy) return;
   const i = tutInfo(); if (!i || !i.goal || (i.btn && !i.s.foe && !i.s.stairs) || (i.s.stairs && onStairs(run))) return;
   const g = i.goal, cx = ox + (g.x + 0.5) * t, bob = Math.sin(now / 200) * t * 0.12, top = oy + g.y * t - t * 0.55 + bob;
   g.x != null && (() => {
