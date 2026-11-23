@@ -1003,7 +1003,11 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     await mv('right', 7);
     await p.evaluate(() => { const c = __dg.cam(), r = __dg.run.items.find(i => i.id === 'apple'); __dg.tapMap(c.ox + (r.x + 0.5) * c.t, c.oy + (r.y + 0.5) * c.t); });
     ok(await p.evaluate(() => /apple/.test(document.getElementById('ov').textContent) && /りんご/.test(document.getElementById('ov').textContent)), 'タップで しょうさい カード（えいご・いみ）');
-    await p.evaluate(() => closePop());
+    await p.click('#ov [data-act=close]'); await p.waitForTimeout(100);
+    ok(await p.evaluate(() => document.getElementById('ov').classList.contains('hide')), 'カードの「とじる」で とじる');
+    const cam0 = await p.evaluate(() => { const c = __dg.cam(); return [Math.round(c.ox), Math.round(c.oy)]; });
+    await mv('down'); await mv('up'); await p.waitForTimeout(400);
+    ok(await p.evaluate(c0 => { const c = __dg.cam(); return Math.round(c.ox) === c0[0] && Math.round(c.oy) === c0[1]; }, cam0), 'あるいても マップは うごかない（はしに ちかい ときだけ ずれる）');
     await mv('right', 2); await mv('up');
     await p.click('#bItems'); await p.click('#ov [data-act=dgUse]');
     await mv('down'); await mv('right', 2); for (let i = 0; i < 3; i++) await p.click('#bAttack');

@@ -34,9 +34,9 @@ function meet(id) {
 function resize() {
   dpr = window.devicePixelRatio || 1; vw = innerWidth; vh = innerHeight;
   cv.width = Math.round(vw * dpr); cv.height = Math.round(vh * dpr);
-  measureView();
+  measureView(); camTarget(true);
 }
-const T = () => Math.max(34, Math.min(64, Math.floor(Math.min(vw / 11, vh / 11))));
+const T = () => Math.max(32, Math.min(56, Math.floor(Math.min(vw / 17, vh / 13)))); // ひろく みえる ように すこし ちいさめ
 // マップの まんなか：うえの ひょうじ（ガイド）と したの ボタンの あいだ
 let viewTop = 70, viewBottom = 0;
 function measureView() {
@@ -44,7 +44,22 @@ function measureView() {
   const padTop = $id('pad').getBoundingClientRect().top, actsTop = $id('acts').getBoundingClientRect().top;
   viewTop = top; viewBottom = vw < vh ? Math.min(padTop, actsTop) : vh; // たてがめんは ボタンが した に ある
 }
-function cam() { const t = T(); return { t, ox: vw / 2 - (run.hero.x + 0.5) * t, oy: (viewTop + viewBottom) / 2 - (run.hero.y + 0.5) * t }; }
+// カメラ：マップは うごかさず、モコが はしに ちかづいた ときだけ ずらす（ぜんぶ はいる ときは ずっと とまったまま）
+let camO = null, camT = null;
+function camTarget(force) {
+  if (!run) return;
+  const t = T(), m = run.map, h = run.hero, mapW = m.w * t, mapH = m.h * t, top = viewTop + 4, bot = viewBottom - 4, mg = 3 * t;
+  const axis = (cur, size, lo, hi, p) => {
+    if (size <= hi - lo) return lo + (hi - lo - size) / 2; // ぜんぶ はいる
+    let o = cur;
+    if (force || o == null || o + p < lo + mg || o + p > hi - mg) o = (lo + hi) / 2 - p; // はしに ちかい → モコが まんなかに なるように
+    return Math.max(hi - size - t, Math.min(lo + t, o));
+  };
+  const keep = camT && camT.t === t && !force;
+  camT = { t, ox: axis(keep ? camT.ox : null, mapW, 0, vw, (h.x + 0.5) * t), oy: axis(keep ? camT.oy : null, mapH, top, bot, (h.y + 0.5) * t) };
+  if (force || !camO || camO.t !== t) camO = { ...camT };
+}
+function cam() { if (!camO) camTarget(true); return { t: camO.t, ox: camO.ox, oy: camO.oy }; }
 function toTile(px, py) { const { t, ox, oy } = cam(); return [Math.floor((px - ox) / t), Math.floor((py - oy) / t)]; }
 function makeHero() {
   const svg = charSVG(S.equip, 'normal').replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ');
@@ -52,6 +67,7 @@ function makeHero() {
   $id('thero').innerHTML = charSVG(S.equip, 'happy', 'sway');
 }
 function draw(now) {
+  if (camO && camT) { camO.ox += (camT.ox - camO.ox) * 0.22; camO.oy += (camT.oy - camO.oy) * 0.22; } // ずらす ときは なめらかに
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
   g.fillStyle = '#1e1a2a'; g.fillRect(0, 0, vw, vh);
   if (!run) return;
@@ -99,7 +115,7 @@ function hud() {
   $id('lv').textContent = 'Lv' + h.lv; $id('pts').textContent = S.points;
   $id('bStairs').hidden = !onStairs(run);
   $id('log').innerHTML = logs.slice(-3).map((t, i, a) => `<div class="${i < a.length - 1 ? 'old' : ''}">${t}</div>`).join('');
-  guide(); measureView();
+  guide(); measureView(); camTarget(false);
 }
 function log(t) { logs.push(t); if (logs.length > 20) logs.shift(); }
 
@@ -245,7 +261,7 @@ function goDown() {
   logs = [`${run.floor}かいに ついた！`];
   if (run.floor > D.best) D.best = run.floor;
   if (run.floor > (D.rewarded.floor || 1)) { const n = run.floor - Math.max(1, D.rewarded.floor || 1); D.rewarded.floor = run.floor; stars(STARS.floor * n, `${run.floor}かいに はじめて ついた！`); }
-  persist(); hud();
+  persist(); camTarget(true); hud();
   const boss = BOSS_FLOORS.includes(run.floor) && run.mons.find(m => m.boss);
   if (boss) setTimeout(() => { if (mode === 'play') showPop(`<h3>ボスの かい！</h3><p>${en(boss.id)}（${WORD[boss.id].ja}）が まっている！<br>たおすと かいだんが あらわれるよ。</p><div class="btns"><button class="big" data-act="close">がんばる！</button></div>`); }, 200);
 }
@@ -312,9 +328,9 @@ function start(tutorial) {
   if (!tutorial) { D.runs++; if (1 > D.best) D.best = 1; log('1かい から ぼうけん スタート！'); }
   else log('れんしゅうの へや。うえの せつめいを みてね');
   vis = visible(run); for (const id of updateSeen(run)) meet(id);
-  $id('title').classList.add('hide'); persist(); hud();
+  $id('title').classList.add('hide'); persist(); measureView(); camTarget(true); hud();
 }
-function resume() { closePop(); unlockAudio(); run = D.run; mode = 'play'; logs = [`${run.tut ? 'れんしゅう' : run.floor + 'かい'} から つづき`]; tut = run.tut ? { done: {}, moves: 0 } : null; vis = visible(run); $id('title').classList.add('hide'); hud(); }
+function resume() { closePop(); unlockAudio(); run = D.run; mode = 'play'; logs = [`${run.tut ? 'れんしゅう' : run.floor + 'かい'} から つづき`]; tut = run.tut ? { done: {}, moves: 0 } : null; vis = visible(run); $id('title').classList.add('hide'); measureView(); camTarget(true); hud(); }
 function toTitle() {
   closePop(); stopWalk(); mode = 'title'; run = null; tut = null;
   $id('title').classList.remove('hide'); $id('guide').hidden = true;
@@ -335,6 +351,7 @@ function menu() {
 }
 
 Object.assign(ACT, {
+  close: () => { sfx.tap(); closePop(); }, // とじる（core.js には ない ので ここで きめる）
   dgSay: id => speak(WORD[id].en),
   dgUse: uid => { closePop(); doAction({ t: 'use', uid: +uid }); },
   dgEquip: uid => { closePop(); doAction({ t: 'equip', uid: +uid }); },
