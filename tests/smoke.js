@@ -32,7 +32,7 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
   const pts = p => p.evaluate(() => JSON.parse(localStorage.getItem('moko-math-v1') || '{}').points || 0);
 
   console.log('1. どの ページも エラーなく ひらく');
-  for (const u of ['index.html', 'sansu/index.html', 'kokugo/index.html', 'program/index.html', 'eigo/index.html', 'abc/index.html', 'machi/index.html']) {
+  for (const u of ['index.html', 'sansu/index.html', 'kokugo/index.html', 'program/index.html', 'eigo/index.html', 'abc/index.html', 'machi/index.html', 'dungeon/index.html']) {
     const p = await page(); await p.goto(B + u); await p.waitForTimeout(500);
     ok(p.errs.length === 0, `${u} ${p.errs.join(' / ')}`); await p.context().close();
   }
@@ -986,6 +986,62 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     await p.goto(B + 'parent/index.html'); await p.waitForTimeout(1500);
     const en = await p.textContent('#encard').catch(() => '');
     ok(/大文字/.test(en) && /4 \/ 26/.test(en) && /ことば（ワールド3）/.test(en) && /Sorry/.test(en), '保護者レポートに 英語の 習得状況（文字・単語・文・苦手）');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+  }
+
+  console.log('22. モコの イングリッシュダンジョン（dungeon/）');
+  {
+    const p = await page({ width: 1024, height: 768 });
+    await p.goto(B + 'index.html'); await p.waitForTimeout(300);
+    await p.evaluate(() => { closePop(); go('study'); });
+    ok(await p.isVisible('a.study[href="dungeon/index.html"]'), 'おべんきょうの へやに ダンジョンの いりぐち');
+    await p.goto(B + 'dungeon/index.html'); await p.waitForSelector('body[data-ready="1"]', { timeout: 10000 });
+    ok(await p.isVisible('#title') && /まだ/.test(await p.textContent('#tbest')), 'タイトル（さいこう とうたつ）');
+    await p.click('#tGo'); await p.waitForTimeout(300);
+    ok(await p.evaluate(() => __dg.mode === 'play' && __dg.run.tut && !document.getElementById('guide').hidden), 'はじめては チュートリアルから（とばせない）');
+    const mv = async (dir, n = 1) => { for (let i = 0; i < n; i++) await p.evaluate(d => __dg.act({ t: 'move', dir: d }), dir); };
+    await mv('right', 7);
+    await p.evaluate(() => { const c = __dg.cam(), r = __dg.run.items.find(i => i.id === 'apple'); __dg.tapMap(c.ox + (r.x + 0.5) * c.t, c.oy + (r.y + 0.5) * c.t); });
+    ok(await p.evaluate(() => /apple/.test(document.getElementById('ov').textContent) && /りんご/.test(document.getElementById('ov').textContent)), 'タップで しょうさい カード（えいご・いみ）');
+    await p.evaluate(() => closePop());
+    await mv('right', 2); await mv('up');
+    await p.click('#bItems'); await p.click('#ov [data-act=dgUse]');
+    await mv('down'); await mv('right', 2); for (let i = 0; i < 3; i++) await p.click('#bAttack');
+    await mv('left'); await mv('down', 3); await mv('left', 2);
+    await p.click('#bItems'); await p.click('#ov [data-act=dgUse]'); await p.waitForTimeout(400); await p.evaluate(() => closePop());
+    await p.click('#bItems'); await p.click('#ov [data-act=dgEquip]');
+    await p.click('#bMagic'); await p.click('#ov [data-act=dgCast]');
+    ok(await p.evaluate(() => ['move', 'look', 'eat', 'attack', 'book', 'fire', 'sword'].every(k => __dg.tut.done[k])), 'チュートリアル：うごく・しらべる・たべる・こうげき・まほうの ほん・fire・そうび');
+    await p.evaluate(() => { const r = __dg.run; r.hero.x = 24; r.hero.y = 3; }); await p.evaluate(() => __dg.goDown()); await p.waitForTimeout(200);
+    await p.click('#ov [data-act=dgStartReal]'); await p.waitForTimeout(300);
+    ok(await p.evaluate(() => __dg.D.tutorialDone && __dg.run.floor === 1 && !__dg.run.tut && __dg.D.best === 1 && __dg.D.dex.apple && __dg.D.dex.fire), 'チュートリアル おわり → 1かい（ずかんに とうろく）');
+    // つかった・よめた
+    await p.evaluate(() => { const r = __dg.run; r.inv.push({ uid: 999, id: 'apple', peek: false }); __dg.act({ t: 'use', uid: 999 }); });
+    ok(await p.evaluate(() => __dg.D.dex.apple.used >= 2 && __dg.D.dex.apple.read >= 2), 'いみを みずに つかうと「よめた」');
+    // ちゅうだん → つづきから
+    const pos = await p.evaluate(() => [__dg.run.hero.x, __dg.run.hero.y, __dg.run.floor]);
+    await p.goto(B + 'index.html'); await p.goto(B + 'dungeon/index.html'); await p.waitForSelector('body[data-ready="1"]');
+    ok(await p.isVisible('#tCont'), 'ちゅうだん → タイトルに「つづきから」');
+    await p.click('#tCont'); await p.waitForTimeout(200);
+    ok(await p.evaluate(p0 => __dg.run.hero.x === p0[0] && __dg.run.hero.y === p0[1] && __dg.run.floor === p0[2], pos), 'つづきから（おなじ ばしょ）');
+    // ボスの かい・⭐
+    const pts0 = await p.evaluate(() => S.points);
+    await p.evaluate(() => { for (let f = 1; f < 5; f++) { const r = __dg.run; r.stairs = { x: r.hero.x, y: r.hero.y }; __dg.goDown(); } closePop(); });
+    ok(await p.evaluate(p0 => __dg.run.floor === 5 && __dg.run.mons.some(m => m.boss) && !__dg.run.stairs && __dg.D.best === 5 && S.points >= p0 + 4, pts0), 'かいだんで 5かい（ボス）へ・はじめて ついた かいで ⭐');
+    await p.evaluate(() => { const r = __dg.run, b = r.mons.find(m => m.boss); b.hp = 1; r.mons = r.mons.filter(m => m === b); r.hero.x = b.x - 1; r.hero.y = b.y; r.hero.dir = 'right'; __dg.act({ t: 'attack' }); });
+    await p.waitForTimeout(800);
+    ok(await p.evaluate(p0 => __dg.run.bossDead && __dg.run.stairs && __dg.D.rewarded.boss.includes(5) && S.points >= p0 + 14, pts0), 'king slime を たおすと かいだん・⭐10');
+    await p.evaluate(() => { const r = __dg.run; r.hero.x = r.stairs.x; r.hero.y = r.stairs.y; __dg.goDown(); });
+    ok(await p.evaluate(() => __dg.D.clears === 1 && __dg.run === null && /クリア/.test(document.getElementById('ov').textContent)), '5かい クリア（いまは ここまで）');
+    // にかいめは せつめいを えらべる・たおれた とき
+    await p.evaluate(() => __dg.toTitle()); await p.click('#tGo'); await p.waitForTimeout(200);
+    ok(await p.isVisible('#ov [data-act=dgSkipTut]') && await p.isVisible('#ov [data-act=dgTut]'), '2かいめからは せつめいを「みる／とばす」');
+    await p.click('#ov [data-act=dgSkipTut]'); await p.waitForTimeout(200);
+    await p.evaluate(() => { const r = __dg.run, h = r.hero; h.hp = 1; r.mons = [{ uid: 777, id: 'rat', x: h.x + 1, y: h.y, hp: 6, maxhp: 6, atk: 9, exp: 1, tick: 0 }]; r.inv = []; __dg.act({ t: 'wait' }); });
+    await p.waitForTimeout(800);
+    ok(await p.evaluate(() => __dg.mode === 'over' && /たおれて/.test(document.getElementById('ov').textContent) && !__dg.D.run && __dg.D.best === 5 && Object.keys(__dg.D.dex).length > 3), 'たおれたら おしまい（ずかん・さいこう とうたつは のこる）');
+    await p.evaluate(() => { __dg.toTitle(); });
+    ok(/5かい/.test(await p.textContent('#tbest')), 'タイトルに さいこう とうたつ 5かい');
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
   }
 

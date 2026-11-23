@@ -1,0 +1,89 @@
+/* モコの イングリッシュダンジョン */
+html,body{margin:0;height:100%;overflow:hidden;background:#2a2238;touch-action:none;-webkit-user-select:none;user-select:none}
+#dg{position:fixed;inset:0}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
+.dtop{background:transparent!important;box-shadow:none!important;position:absolute;left:0;right:0;top:0;display:flex;align-items:center;gap:8px;padding:calc(env(safe-area-inset-top) + 8px) 10px 6px;z-index:5;pointer-events:none}
+.dtop>*{pointer-events:auto}
+.chip{background:rgba(255,255,255,.92);border-radius:999px;padding:6px 12px;font-weight:800;color:#5a4646;box-shadow:0 2px 0 rgba(0,0,0,.2);border:0;font:inherit;font-weight:800;white-space:nowrap}
+.chip.floor{background:#ffd34f;color:#6a4a00}
+.chip.pts b{color:#e0719a}
+.chip.menu{margin-left:auto;font-size:18px;padding:5px 12px}
+.bars{display:flex;flex-direction:column;gap:3px;flex:1;max-width:260px;background:rgba(255,255,255,.92);border-radius:14px;padding:5px 10px;box-shadow:0 2px 0 rgba(0,0,0,.2)}
+.bar{display:flex;align-items:center;gap:6px;font-weight:800;font-size:12px;color:#5a4646}
+.bar span{width:22px}
+.bar i{flex:1;height:9px;border-radius:9px;background:#e8dede;overflow:hidden}
+.bar b{display:block;height:100%;border-radius:9px;transition:width .2s}
+.bar.hp b{background:#5cc28a}.bar.hp.low b{background:#ff6b6b}
+.bar.mp b{background:#6ab0ff}
+.bar em{font-style:normal;min-width:44px;text-align:right}
+.log{position:absolute;left:10px;right:10px;top:calc(env(safe-area-inset-top) + 64px);z-index:4;pointer-events:none;display:flex;flex-direction:column;gap:3px;align-items:flex-start}
+.log div{background:rgba(30,24,44,.72);color:#fff;border-radius:10px;padding:3px 10px;font-weight:800;font-size:14px}
+.log div.old{opacity:.6;font-size:12px}
+.log .en,.guide .en,.dcard .en,.dex .en{color:#ffd34f;font-weight:800}
+.guide{position:absolute;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 64px);z-index:6;max-width:min(560px,92vw);background:#fff8e0;border:3px solid #ffd34f;border-radius:16px;padding:8px 14px;font-weight:800;color:#5a4646;font-size:16px;box-shadow:0 4px 0 rgba(0,0,0,.25);text-align:center}
+.guide .en{color:#e0719a}
+.guide small{display:block;color:#9a8a8a;font-size:12px;margin-bottom:2px}
+.guide:not([hidden])~.log{top:calc(env(safe-area-inset-top) + 140px)}
+
+.pad{position:absolute;left:calc(env(safe-area-inset-left) + 12px);bottom:calc(env(safe-area-inset-bottom) + 12px);width:min(36vw,190px);height:min(36vw,190px);display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:1fr 1fr 1fr;z-index:5}
+.pad button{border:0;border-radius:14px;background:rgba(255,255,255,.85);color:#6a5a7a;font-size:min(6vw,26px);box-shadow:0 3px 0 rgba(0,0,0,.25);margin:3px}
+.pad button:active{transform:translateY(2px);box-shadow:none;background:#ffd34f}
+.pad [data-dir=up]{grid-column:2;grid-row:1}.pad [data-dir=left]{grid-column:1;grid-row:2}.pad [data-dir=right]{grid-column:3;grid-row:2}.pad [data-dir=down]{grid-column:2;grid-row:3}
+.acts{position:absolute;right:calc(env(safe-area-inset-right) + 12px);bottom:calc(env(safe-area-inset-bottom) + 12px);display:grid;grid-template-columns:1fr 1fr;gap:8px;width:min(46vw,250px);z-index:5}
+.acts button{border:0;border-radius:16px;padding:min(3vw,14px) 4px;font:inherit;font-weight:800;font-size:min(4.4vw,18px);color:#fff;box-shadow:0 4px 0 rgba(0,0,0,.3)}
+.acts button:active{transform:translateY(3px);box-shadow:none}
+.acts .atk{background:#ff6b8a}.acts .mag{background:#7c6cf0}.acts .itm{background:#f0a830}.acts .wait{background:#8a9ab0}
+.acts .stairs{grid-column:1/-1;background:#ffd34f;color:#6a4a00;animation:pulse 1s infinite}
+@keyframes pulse{50%{transform:scale(1.04)}}
+
+/* タイトル */
+#title{position:fixed;inset:0;z-index:7;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#4a3a6a,#1e1a2a);overflow-y:auto}
+#title.hide{display:none}
+.tbox{text-align:center;color:#fff;padding:20px;max-width:560px}
+.tlogo{font-weight:800;font-size:min(9vw,46px);line-height:1.1;color:#ffd34f;text-shadow:0 4px 0 #6a4a00}
+.tlogo small{display:block;font-size:.45em;color:#fff;text-shadow:none}
+.tlogo em{display:block;font-style:normal;font-size:.42em;color:#ffb3cc;text-shadow:none;margin-top:4px}
+.thero{width:110px;height:132px;margin:8px auto 0}
+.thero svg{width:100%;height:100%}
+.tbest{font-weight:800;background:rgba(255,255,255,.12);border-radius:14px;padding:6px 12px;display:inline-block;margin:4px 0 10px}
+.tbest b{color:#ffd34f;font-size:1.3em}
+.tbtns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.tbtns button{border:0;border-radius:18px;padding:12px 26px;font:inherit;font-weight:800;font-size:20px;color:#fff;background:#ff6b8a;box-shadow:0 5px 0 #c8456a}
+.tbtns #tCont{background:#5cc28a;box-shadow:0 5px 0 #3d9a68}
+.tbtns.sub{margin-top:12px}
+.tbtns.sub button{background:#fff;color:#6a5a7a;font-size:16px;padding:8px 20px;box-shadow:0 4px 0 #b8a8c8}
+.tnote{font-size:13px;color:#d8c8e8;font-weight:800}
+.tback{display:inline-block;margin-top:6px;background:#fff;color:#e0508a;border-radius:999px;padding:6px 16px;font-weight:800;text-decoration:none}
+
+/* カード・もちもの・ずかん（core の #ov の なか） */
+.dcard{text-align:center}
+.dcard .dart canvas{display:block;margin:0 auto}
+.dcard .dname{font-size:34px;font-weight:800;color:#3f7fc9;margin:2px 0}
+.dcard .dja{font-size:20px;font-weight:800;color:#5a4646}
+.dcard .ddesc{font-size:15px;color:#6a5a5a;margin:6px 0;line-height:1.5}
+.dcard .dstat{font-size:13px;color:#9a8a8a}
+.say{border:0;border-radius:999px;background:#6ab0ff;color:#fff;font:inherit;font-weight:800;padding:5px 14px;box-shadow:0 3px 0 #3a80d0}
+.ilist{display:flex;flex-direction:column;gap:6px;max-height:56vh;overflow-y:auto;text-align:left}
+.irow{display:flex;align-items:center;gap:8px;background:#fff7f0;border-radius:14px;padding:6px 8px}
+.irow canvas{flex:none}
+.irow .in{flex:1;font-weight:800;font-size:20px;color:#3f7fc9}
+.irow .in small{display:block;font-size:12px;color:#9a8a8a}
+.irow .eqm{background:#ffd34f;color:#6a4a00;border-radius:999px;padding:1px 8px;font-size:11px;margin-left:4px;vertical-align:middle}
+.irow button{border:0;border-radius:12px;padding:8px 12px;font:inherit;font-weight:800;color:#fff;background:#ff8fb1;box-shadow:0 3px 0 #d9658c}
+.irow button.q{background:#fff;color:#6a5a7a;box-shadow:0 3px 0 #c8b8c8;padding:8px 10px}
+.irow button:disabled{background:#ddd;box-shadow:none}
+.dex .tabs{margin-bottom:6px}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;max-height:56vh;overflow-y:auto}
+.dgrid button{border:0;border-radius:14px;background:#fff7f0;padding:6px 4px;font:inherit;display:flex;flex-direction:column;align-items:center;box-shadow:0 3px 0 #ead8d0}
+.dgrid button b{font-size:15px;color:#3f7fc9}
+.dgrid button small{font-size:11px;color:#9a8a8a}
+.dgrid button.no{color:#c8b8b8}
+.dgrid button.no i{font-size:40px;font-style:normal;line-height:64px;color:#d8c8c8}
+.wordlist{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:8px 0}
+.wordlist span{background:#fff7f0;border-radius:999px;padding:4px 10px;font-weight:800}
+.wordlist span b{color:#3f7fc9}
+.dtoast{position:fixed;left:50%;top:60%;transform:translateX(-50%);z-index:8;background:#fff8e0;border:3px solid #ffd34f;border-radius:999px;padding:6px 18px;font-weight:800;color:#5a4646;box-shadow:0 4px 0 rgba(0,0,0,.25);pointer-events:none;white-space:nowrap}
+.dtoast .en{color:#e0719a}
+@media (orientation:landscape) and (max-height:500px){.pad{width:150px;height:150px}.acts{width:220px}.acts button{padding:9px 4px;font-size:15px}}
+@media (max-width:520px){.dtop{gap:5px;padding-left:6px;padding-right:6px}.chip{padding:5px 8px;font-size:13px}.bars{min-width:112px;padding:4px 7px}.bar em{min-width:36px;font-size:11px}.chip.lv{display:none}}
+@media (max-height:500px){.guide{font-size:13px;padding:5px 10px;max-width:min(520px,60vw)}.guide small{font-size:10px}.log div{font-size:12px}}
