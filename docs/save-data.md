@@ -29,7 +29,7 @@
   gacha:{day,count,pulls},
   daily:{day,sansu,kokugo,eigo,abc,prog,got:{sansu,kokugo,eigo,prog},all}（きょうの もくひょう。day が変わるとリセット）,
   streakGot:[3,7,…]（がんばり カレンダーで もらった れんぞく日数）,
-  settings.admin:true/false（管理者モード）, adminBackup:[id…]|null（管理者モードを オンに した ときの もちもの。オフで owned に もどす）, daily.rec:{s:教科,t:単元}（きょうの おすすめ）,
+  settings.admin:true/false（管理者モード）；`abc-adventure-v1` に slots:{1|2|3: ぼうけんの すすみ}・w2clears（ワールドごとの つづき）・sentences（ワールド3の ぶん）を追加, adminBackup:[id…]|null（管理者モードを オンに した ときの もちもの。オフで owned に もどす）, daily.rec:{s:教科,t:単元}（きょうの おすすめ）,
   hw:{mob_pig:じこく,…}（まちの モブじゅうにんの しゅくだいを おえた じこく。core.js の hwDone()、program/ の houseWrite）,
   looks:{キャラid:{outfit,hat,acc}}（キャラごとに おぼえている きせかえ。core.js の equipItem() で更新。キャラを変えると前のキャラの服を保存し、次のキャラの服に着がえる）
 }
@@ -58,3 +58,8 @@ core.js を読める部屋は `S.points += n; save();`。
 ## ABCぼうけんの ★ → おうちの ⭐
 - ABC の `stars` − `starsSent` の差（まだ届けていない★）× おうちの `settings.abcPts`（既定10）を `points` に加算し、`starsSent` を進める。ABC の保存のたびに実行。
 - 旧版の ABC データ（`starsSent` なし）は、新版を最初に開いたときに それまでの★がまとめて届く（1回だけ）。
+
+- `moko-math-v1` の `daily.eigoRev`（えいごの へやの「きょうの ふくしゅう」を その日 やったか。ボーナスは 1日1かい）。`abc-adventure-v1` の `w3clears`（ワールド3 クリア回数）・`items` に `cape`（ことばの マント）。
+
+## イングリッシュダンジョン（`moko-dungeon-v1`）
+localStorage と IndexedDB（`moko-dungeon`/`kv`）。形は `dungeon/README.md`。⭐ は `moko-math-v1` の `points` に足すだけ。

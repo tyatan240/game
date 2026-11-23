@@ -51,6 +51,11 @@ const ETYPES=[
  {id:'eaname',name:'もじの よみかた',ex:'H → エイチ',pts:1,need:'letters'},
  {id:'ewlisten',name:'ことばを きいて えらぶ',ex:'「apple」→ りんごの え',pts:2,need:'words'},
  {id:'ewpic',name:'えを みて えいご',ex:'りんごの え → APPLE',pts:2,need:'words'},
+ // ワールド3「ことばの まち」・はじめの おと（ABCぼうけんで おぼえた ものから でる）
+ {id:'e3talk',name:'あいさつ・きもち',ex:'「おはよう」→ Good morning',pts:2,need:'w3talk'},
+ {id:'e3count',name:'かず・いろ・かたち',ex:'ふうせん 3こ → three',pts:2,need:'w3count'},
+ {id:'e3sent',name:'えいごの ぶん',ex:'「わたしは ねむい」→ I\'m sleepy.',pts:3,need:'w3sent'},
+ {id:'ephon',name:'はじめの おと',ex:'apple の はじめの おと → a',pts:2,need:'phon'},
 ];
 const ETYPE=Object.fromEntries(ETYPES.map(t=>[t.id,t]));
 
@@ -208,6 +213,19 @@ const ITEMS=[
  {id:'a_cookie',cat:'acc',name:'クッキー',test:'ewpic-1'},
  {id:'o_tartan',cat:'outfit',name:'チェックの ワンピース',test:'ewpic-2'},
  {id:'f_abcrug',cat:'floor',name:'ABCの じゅうたん',test:'ewpic-3'},
+ // ワールド3・はじめの おと の テストの ごほうび
+ {id:'a_hellobubble',cat:'acc',name:'Hi!の ふきだし',test:'e3talk-1'},
+ {id:'h_smilepin',cat:'hat',name:'にこにこ ピン',test:'e3talk-2'},
+ {id:'o_hellotee',cat:'outfit',name:'Hello の Tシャツ',test:'e3talk-3'},
+ {id:'a_paintbrush',cat:'acc',name:'にじいろの ふで',test:'e3count-1'},
+ {id:'h_shapeband',cat:'hat',name:'かたちの カチューシャ',test:'e3count-2'},
+ {id:'f_shapesrug',cat:'floor',name:'かたちの じゅうたん',test:'e3count-3'},
+ {id:'a_wordcards',cat:'acc',name:'ことばカード',test:'e3sent-1'},
+ {id:'o_abcdress',cat:'outfit',name:'ABCの ドレス',test:'e3sent-2'},
+ {id:'w_wordsky',cat:'wall',name:'えいごの そらの かべ',test:'e3sent-3'},
+ {id:'a_handbell',cat:'acc',name:'ハンドベル',test:'ephon-1'},
+ {id:'h_headphones',cat:'hat',name:'ヘッドホン',test:'ephon-2'},
+ {id:'w_soundwave',cat:'wall',name:'おとの かべ',test:'ephon-3'},
 
  /* 🌈 ゆめの ごほうび（⭐1000 いじょう。dream:true。おみせの ✨スペシャルの いちばん うえ） */
  {id:'o_heartdress',cat:'outfit',name:'きらきら ハートの へんしんドレス',price:1000,dream:true},
@@ -929,6 +947,29 @@ Object.assign(WALLX,{
  w_letters:()=>{let s=`<rect width="360" height="200" fill="#fff8ee"/>`;const ch='あいうえおかきくけこさしすせそたちつてとなにぬねの',cs=['#ff8fb1','#8fc8ff','#ffd34f','#8fd46d','#c3a8ff'];let k=0;for(let y=30;y<200;y+=38)for(let x=(y/38|0)%2?150:168;x<360;x+=40){s+=`<text x="${x}" y="${y}" font-size="22" font-weight="800" fill="${cs[k%5]}" opacity=".7">${ch[(k*7)%ch.length]}</text>`;k++}return s}
 });
 FURN.u_easel=()=>`<g stroke="#a06a3e" stroke-width="5" stroke-linecap="round"><line x1="32" y1="262" x2="48" y2="170"/><line x1="72" y1="262" x2="56" y2="170"/><line x1="52" y1="250" x2="52" y2="170"/></g><rect x="20" y="164" width="64" height="54" rx="3" fill="#fff" stroke="#c98f55" stroke-width="3"/><circle cx="40" cy="186" r="9" fill="#ffd34f"/><path d="M24 214 Q44 192 60 206 Q70 196 80 214 Z" fill="#8fd46d"/><path d="M60 180 q6 -6 12 0" stroke="#5a8fe0" stroke-width="2.5" fill="none"/><rect x="22" y="216" width="60" height="6" rx="2" fill="#c98f55"/>`;
+/* ---------- ワールド3・はじめの おと の ごほうび ---------- */
+Object.assign(ACC,{
+ a_hellobubble:`<g transform="translate(160 150)"><path d="M-22 -18 H22 Q30 -18 30 -10 V8 Q30 16 22 16 H-2 L-12 26 L-10 16 H-22 Q-30 16 -30 8 V-10 Q-30 -18 -22 -18 Z" fill="#fff" stroke="#8fc8ff" stroke-width="2.5"/><text x="0" y="5" font-size="15" font-weight="800" text-anchor="middle" fill="#3f7fc9">Hi!</text></g>`,
+ a_paintbrush:`<g transform="translate(150 178) rotate(-30)"><rect x="-3" y="-4" width="6" height="34" rx="3" fill="#c98f55"/><rect x="-5" y="-12" width="10" height="9" fill="#c9c9d6"/><path d="M-5 -12 Q0 -34 5 -12 Z" fill="#ff5a5f"/><path d="M-3 -16 Q0 -28 3 -16 Z" fill="#ffd23f"/></g>`,
+ a_wordcards:`<g transform="translate(152 174) rotate(-10)"><rect x="-18" y="-14" width="36" height="24" rx="3" fill="#ffd6e2" stroke="#e0719a" stroke-width="2"/><rect x="-14" y="-20" width="36" height="24" rx="3" fill="#fff" stroke="#8fc8ff" stroke-width="2"/><text x="4" y="-4" font-size="9" font-weight="800" text-anchor="middle" fill="#3f7fc9">I like</text></g>`,
+ a_handbell:`<g transform="translate(152 168) rotate(-15)"><rect x="-3" y="10" width="6" height="16" rx="3" fill="#c98f55"/><path d="M-14 10 Q-14 -14 0 -14 Q14 -14 14 10 Z" fill="#ffd34f" stroke="#e5a91c" stroke-width="2.5"/><circle cx="0" cy="12" r="3" fill="#e5a91c"/><path d="M18 -10 q6 4 6 12 M22 -16 q10 8 9 20" fill="none" stroke="#8fc8ff" stroke-width="2.5" stroke-linecap="round"/></g>`,
+});
+Object.assign(HAT,{
+ h_smilepin:`<g transform="translate(136 64)"><circle r="11" fill="#ffd34f" stroke="#e5a91c" stroke-width="2.5"/><circle cx="-4" cy="-2" r="1.6" fill="#5a4646"/><circle cx="4" cy="-2" r="1.6" fill="#5a4646"/><path d="M-5 3 Q0 8 5 3" fill="none" stroke="#5a4646" stroke-width="1.8" stroke-linecap="round"/></g>`,
+ h_shapeband:`<path d="M46 86 Q100 56 154 86" fill="none" stroke="#c3a8ff" stroke-width="7" stroke-linecap="round"/><polygon points="${star(78,66,9,4)}" fill="#ffd23f" stroke="#e5a91c" stroke-width="1.5"/><circle cx="100" cy="60" r="7" fill="#4f8fff"/><path d="M116 66 C112 58 120 56 122 62 C124 56 132 58 128 66 L122 72 Z" fill="#ff5a5f"/>`,
+ h_headphones:`<path d="M50 98 Q50 40 100 40 Q150 40 150 98" fill="none" stroke="#5a6bb8" stroke-width="7" stroke-linecap="round"/><rect x="38" y="88" width="20" height="28" rx="9" fill="#ff8fb1" stroke="#e0719a" stroke-width="2.5"/><rect x="142" y="88" width="20" height="28" rx="9" fill="#ff8fb1" stroke="#e0719a" stroke-width="2.5"/>`,
+});
+Object.assign(OUTFIT,{
+ o_hellotee:`<path d="M66 162 Q100 152 134 162 L142 220 Q100 228 58 220 Z" fill="#fff6c8" stroke="#e5c84a" stroke-width="3"/><text x="100" y="198" font-size="17" font-weight="800" text-anchor="middle" fill="#e0719a">Hello</text>`,
+ o_abcdress:`<path d="M72 160 Q100 152 128 160 L148 216 Q100 230 52 216 Z" fill="#8fc8ff" stroke="#5a96d8" stroke-width="3" stroke-linejoin="round"/>${[['A',78,198,'#ff5a5f'],['B',100,210,'#ffd23f'],['C',122,198,'#4fbf5f']].map(([t,x,y,c])=>`<text x="${x}" y="${y}" font-size="15" font-weight="800" text-anchor="middle" fill="${c}" stroke="#fff" stroke-width="1">${t}</text>`).join('')}`,
+});
+Object.assign(WALLX,{
+ w_wordsky:()=>{let s=`<rect width="360" height="200" fill="#dff1ff"/>`;const ws=['Hello','I like','Thank you','one two','I can','a red star'],cs=['#ff8fb1','#4f8fff','#e5a91c','#4fbf5f','#c3a8ff','#ff5a5f'];ws.forEach((w,i)=>{const x=40+(i%3)*120,y=46+Math.floor(i/3)*80;s+=`<ellipse cx="${x+10}" cy="${y-6}" rx="52" ry="22" fill="#fff"/><text x="${x+10}" y="${y}" font-size="16" font-weight="800" text-anchor="middle" fill="${cs[i]}">${w}</text>`});return s},
+ w_soundwave:()=>{let s=`<rect width="360" height="200" fill="#fff4fb"/>`;const cs=['#ff8fb1','#8fc8ff','#ffd34f','#8fd46d'];for(let k=0;k<4;k++){let d=`M0 ${40+k*42}`;for(let x=0;x<=360;x+=30)d+=` Q${x+15} ${40+k*42+(x/30%2?-14:14)} ${x+30} ${40+k*42}`;s+=`<path d="${d}" fill="none" stroke="${cs[k]}" stroke-width="5" stroke-linecap="round" opacity=".7"/>`}'abcdefg'.split('').forEach((c,i)=>{s+=`<text x="${24+i*50}" y="${30+(i%2)*120}" font-size="20" font-weight="800" fill="#c3a8ff">${c}</text>`});return s},
+});
+Object.assign(FLOORX,{
+ f_shapesrug:()=>{let s=`<rect y="200" width="360" height="100" fill="#e9c89d"/><rect x="36" y="212" width="288" height="78" rx="14" fill="#fffaf0" stroke="#c3a8ff" stroke-width="4"/>`;const cs=['#ff5a5f','#4f8fff','#ffd23f','#4fbf5f','#ff8fc8'];for(let i=0;i<5;i++){const x=72+i*54,y=251,c=cs[i];s+=i%3===0?`<polygon points="${star(x,y,14,6)}" fill="${c}"/>`:i%3===1?`<circle cx="${x}" cy="${y}" r="12" fill="${c}"/>`:`<rect x="${x-11}" y="${y-11}" width="22" height="22" fill="${c}"/>`}return s},
+});
 /* ---------- れんぞくの ごほうび ---------- */
 HAT.h_gambaricrown=flowerCrown()+`<polygon points="${star(100,42,13,5.5)}" fill="#ffd34f" stroke="#e5a91c" stroke-width="2.5" stroke-linejoin="round"/><path d="M150 82 q16 4 18 22 M150 82 q10 10 4 26" stroke="#ff8fb1" stroke-width="5" fill="none" stroke-linecap="round"/>`;
 FURN.u_bigtrophy=()=>`<ellipse cx="272" cy="276" rx="30" ry="6" fill="rgba(0,0,0,.1)"/><rect x="250" y="254" width="44" height="20" rx="3" fill="#a06a3e"/><rect x="262" y="236" width="20" height="20" fill="#ffd34f" stroke="#e5a91c" stroke-width="2"/><path d="M248 176 h48 v12 q0 36 -24 46 q-24 -10 -24 -46 z" fill="#ffd34f" stroke="#e5a91c" stroke-width="3"/><path d="M248 186 q-16 0 -14 14 q2 12 18 14 M296 186 q16 0 14 14 q-2 12 -18 14" fill="none" stroke="#e5a91c" stroke-width="4"/><polygon points="${star(272,200,10,4.5)}" fill="#fff6a8"/><text x="272" y="268" font-size="10" font-weight="800" text-anchor="middle" fill="#fff">30にち</text>`;
@@ -940,7 +981,7 @@ function thumb(it){
 const tabs=(list,cur,act)=>`<div class="tabs">${list.map(([k,l])=>`<button class="${k===cur?'on':''}" data-act="${act}" data-arg="${k}">${l}</button>`).join('')}</div>`;
 
 /* ---------- さんすうの テスト（ていぎ）---------- */
-const TBASE={add1:4,add21:7,add22:12,sub1:4.5,sub21:8,sub22:14,mul1:4,mul2:4.5,clock1:7,clock2:10,k1yomi:5,k1kaki:5,k2yomi:6,k2kaki:6,kotoba:8,yomi:15,kata:6,bun:10,ealisten:5,eaname:5,ewlisten:6,ewpic:6}; // 1もん あたりの きほん びょうすう
+const TBASE={add1:4,add21:7,add22:12,sub1:4.5,sub21:8,sub22:14,mul1:4,mul2:4.5,clock1:7,clock2:10,k1yomi:5,k1kaki:5,k2yomi:6,k2kaki:6,kotoba:8,yomi:15,kata:6,bun:10,ealisten:5,eaname:5,ewlisten:6,ewpic:6,e3talk:7,e3count:7,e3sent:12,ephon:7}; // 1もん あたりの きほん びょうすう
 const TLV=[{n:10,need:9,mul:1,medal:'🥉',name:'テスト1'},{n:15,need:14,mul:.8,medal:'🥈',name:'テスト2'},{n:20,need:20,mul:.65,medal:'🥇',name:'テスト3'}];
 const testLimit=(tid,lv)=>Math.round(TLV[lv].n*TBASE[tid]*TLV[lv].mul*S.settings.testScale);
 const testItem=key=>ITEMS.find(i=>i.test===key);

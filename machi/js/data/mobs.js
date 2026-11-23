@@ -55,7 +55,7 @@ export const mobEquip = id => ({ char: id, outfit: 'o_none', hat: 'h_none', acc:
 function abcSave() { try { return JSON.parse(localStorage.getItem('abc-adventure-v1') || 'null') || {}; } catch { return {}; } }
 function eigoTypes() {
   const a = abcSave(), letters = (a.learned || []).filter(id => LETTER[id]).length, words = Object.keys(a.words || {}).filter(id => WORD[id] && !WORD[id].future).length;
-  return ETYPES.filter(t => S.settings.etypes[t.id].on && (t.need === 'letters' ? letters : words) >= 3);
+  return ETYPES.filter(t => S.settings.etypes[t.id].on && (t.need === 'letters' ? letters : t.need === 'words' ? words : 0) >= 3); // ワールド3・はじめの おとは しゅくだいに しない
 }
 function progUnlocked() {
   let best = {}; try { best = (JSON.parse(localStorage.getItem('piko-prog-v1') || 'null') || {}).best || {}; } catch { }

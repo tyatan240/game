@@ -252,3 +252,47 @@ button.frame{border:0;background:#f4f9ff;border-radius:16px;padding:8px 14px;mar
 .ch.opt .otext{color:#3f7fc9;white-space:nowrap}
 .w3teach .lname{font-size:min(4vh,17px);margin:4px 0}
 .frame .punct{margin-left:-6px}
+.ch.pic .pja{display:block;font-size:min(3.6vh,16px);color:#7a6a6a;margin-top:2px}
+.ch.pic{flex-direction:column}
+.w3c small{font-size:13px!important;color:#7a6a6a!important}
+.fslotw{display:inline-flex;flex-direction:column;align-items:center;gap:2px}
+.fslotw small{font-size:min(3.2vh,13px);color:#a08a8a;font-weight:800}
+.w3sent .task{color:#e0508a;font-size:min(5.4vh,24px);margin:2px 0 4px}
+.w3sent .small{font-weight:800;color:#9a8a8a;font-size:13px}
+.lpage{min-height:min(34vh,170px);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.lbig{border:0;background:#f4f9ff;border-radius:18px;padding:6px 26px;box-shadow:0 4px 0 #d6e6f6;font:inherit;font-weight:800;font-size:min(14vh,72px);color:#3f7fc9}
+.lbig.pulse,.ex.pulse{animation:lowpulse .5s}
+.ltext{font-weight:800;font-size:min(4.4vh,19px);line-height:1.6;margin:8px 4px;max-width:560px}
+.exs{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.exs .ex{display:flex;flex-direction:column;align-items:center;border:0;background:#f4f9ff;border-radius:16px;padding:6px 14px;box-shadow:0 3px 0 #d6e6f6;font:inherit}
+.exs .ex .frame{margin:0;font-size:min(5vh,24px);flex-wrap:nowrap}
+.exs .ex small{font-size:min(3.4vh,15px);color:#7a6a6a}
+.dots.lsn{display:flex;gap:6px;justify-content:center;margin-top:6px}
+.dots.lsn i{width:10px;height:10px;border-radius:50%;background:#e6dada}
+.dots.lsn i.ok{background:#5cc28a}.dots.lsn i.now{background:#ffd34f}
+.tbtns button#cont small{display:block;font-size:.6em;opacity:.9}
+.worlds{display:flex;flex-direction:column;gap:min(1.4vh,8px);margin-top:min(1.6vh,10px)}
+.wrow{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.88);border-radius:18px;padding:min(1vh,6px) 12px;box-shadow:0 3px 0 rgba(0,0,0,.08)}
+.wrow b{min-width:min(30vw,150px);font-size:min(4.4vh,19px);color:#4a3a3a;text-align:left}
+.wrow b small{display:block;font-size:12px;color:#9a8a8a}
+.wrow button{border:0;border-radius:14px;padding:min(1.4vh,9px) 16px;font:inherit;font-weight:800;font-size:min(4vh,17px);color:#fff}
+.wrow .wcont{background:#5cc28a;box-shadow:0 4px 0 #3d9a68}
+.wrow .wnew{background:#ff8fb1;box-shadow:0 4px 0 #d9658c}
+.wrow.w2 .wnew{background:#9b7be0;box-shadow:0 4px 0 #7457c0}
+.wrow.w3 .wnew{background:#3fa8d8;box-shadow:0 4px 0 #2a84b0}
+.wrow button:disabled{background:#ddd;box-shadow:0 4px 0 #c8c8c8;color:#fff}
+.wrow button:active:not(:disabled){transform:translateY(3px);box-shadow:none}
+#title{overflow-y:auto;justify-content:safe center}
+#title.multi .tbtns button#cont{padding:8px 28px}
+@media (max-height:600px){
+  #title.multi{gap:5px;padding:6px 0}
+  #title.multi .logo span{font-size:min(12vh,72px)}
+  #title.multi .logo em{font-size:min(7vh,40px)}
+  #title.multi .sub,#title.multi .clears{display:none}
+  #title.multi .house{font-size:12px}
+  #title.multi .tbtns{margin-top:0}
+  #title.multi .tbtns button#cont{padding:5px 22px;font-size:min(5vh,20px)}
+  #title.multi .worlds{margin-top:2px;gap:5px}
+  #title.multi .back{padding:4px 14px;font-size:13px!important}
+}
+.spic canvas{display:block;margin:0 auto}

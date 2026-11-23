@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>モコの イングリッシュダンジョン ― モコの おべんきょうハウス</title>
+<link rel="manifest" href="../manifest.json">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<link rel="icon" href="../icon-192.png">
+<meta name="theme-color" content="#2a2238">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="おべんきょうハウス">
+<meta name="sw" content="../sw.js">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../common/style.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="dg">
+  <canvas id="cv" aria-label="ダンジョンの ちず"></canvas>
+
+  <header class="dtop">
+    <div class="chip floor" id="floor">1かい</div>
+    <div class="bars">
+      <div class="bar hp"><span>HP</span><i><b id="hpbar"></b></i><em id="hp">20/20</em></div>
+      <div class="bar mp"><span>MP</span><i><b id="mpbar"></b></i><em id="mp">6/6</em></div>
+    </div>
+    <div class="chip lv" id="lv">Lv1</div>
+    <div class="chip pts">⭐ <b id="pts">0</b></div>
+    <button class="chip menu" id="menuBtn" aria-label="メニュー">⏸</button>
+  </header>
+  <div class="guide" id="guide" hidden></div>
+  <div class="log" id="log"></div>
+
+  <div class="pad" id="pad" aria-label="ほうこう">
+    <button data-dir="up" aria-label="うえ">▲</button>
+    <button data-dir="left" aria-label="ひだり">◀</button>
+    <button data-dir="right" aria-label="みぎ">▶</button>
+    <button data-dir="down" aria-label="した">▼</button>
+  </div>
+  <div class="acts" id="acts">
+    <button id="bStairs" class="stairs" hidden>かいだん</button>
+    <button id="bAttack" class="atk">こうげき</button>
+    <button id="bMagic" class="mag">まほう</button>
+    <button id="bItems" class="itm">もちもの</button>
+    <button id="bWait" class="wait">まつ</button>
+  </div>
+</div>
+
+<section id="title">
+  <div class="tbox">
+    <div class="tlogo"><small>モコの</small>English Dungeon<em>イングリッシュ ダンジョン</em></div>
+    <div class="thero" id="thero"></div>
+    <div class="tbest" id="tbest"></div>
+    <div class="tbtns">
+      <button id="tCont" hidden>つづきから</button>
+      <button id="tGo">ぼうけんに いく</button>
+    </div>
+    <div class="tbtns sub">
+      <button id="tDex">ずかん</button>
+      <button id="tHow">あそびかた</button>
+    </div>
+    <p class="tnote">てきや アイテムの なまえは えいご。タップすると いみが わかるよ！</p>
+    <a class="tback" href="../index.html">← おうちへ もどる</a>
+  </div>
+</section>
+<div class="dtoast" id="toast" hidden></div>
+<div id="ov" class="hide"></div>
+<script src="../common/core.js"></script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

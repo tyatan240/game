@@ -230,6 +230,8 @@ export function drawCritter(ctx, kind, cx, cy, dir = 'down', step = 0, opts = {}
   if (K.tail === 'squirrel') { ctx.fillStyle = K.body; ctx.save(); ctx.translate(side ? -side * 7 : 7, -10); ctx.rotate(side ? -side * 0.3 : 0.3); ctx.beginPath(); ctx.ellipse(0, -5, 5.5, 10, 0, 0, 7); ctx.fill(); ctx.stroke(); ctx.fillStyle = K.light; ctx.beginPath(); ctx.ellipse(0, -9, 2.5, 4, 0, 0, 7); ctx.fill(); ctx.restore(); }
   if (K.shell) { ctx.fillStyle = K.shell; ctx.beginPath(); ctx.ellipse(side * -1, -8, 11, 9, 0, 0, 7); ctx.fill(); ctx.strokeStyle = '#8a6a34'; ctx.stroke(); ctx.strokeStyle = K.line; }
   if (K.wings) { ctx.fillStyle = '#b9ecb4'; [-1, 1].forEach(s => { ctx.beginPath(); ctx.moveTo(s * 5, -12); ctx.quadraticCurveTo(s * 15, -22, s * 14, -9); ctx.quadraticCurveTo(s * 10, -10, s * 5, -7); ctx.fill(); ctx.stroke(); }); }
+  // マント（ワールド3の ごほうび）：からだの うしろ
+  if (opts.cape) { ctx.fillStyle = '#6a5ad8'; ctx.strokeStyle = '#4a3ab0'; ctx.beginPath(); ctx.moveTo(-7, -14); ctx.lineTo(-12.5, -1); ctx.quadraticCurveTo(0, 1.5, 12.5, -1); ctx.lineTo(7, -14); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.strokeStyle = K.line; }
   // あし
   const lf = Math.sin(step * Math.PI * 2) * 1.6;
   ctx.fillStyle = K.feet || K.body;
@@ -241,6 +243,7 @@ export function drawCritter(ctx, kind, cx, cy, dir = 'down', step = 0, opts = {}
   if (K.spots) { ctx.fillStyle = K.spots; [[-4, -9, 1.8], [3.5, -5, 1.5], [-1, -3.5, 1.2]].forEach(([x, y, r]) => { ctx.beginPath(); ctx.ellipse(x + side, y, r * 1.2, r, 0, 0, 7); ctx.fill(); }); }
   if (K.stripes) { ctx.strokeStyle = K.stripes; ctx.lineWidth = 1.2; [-4, 0, 4].forEach(x => { ctx.beginPath(); ctx.moveTo(x - 1.5 + side, -11.5); ctx.lineTo(x + side, -8.5); ctx.stroke(); }); ctx.lineWidth = 1.3; ctx.strokeStyle = K.line; }
   if (K.smallwing) { ctx.fillStyle = '#5ab0ec'; [-1, 1].forEach(s => { if (side && s === side) return; ctx.beginPath(); ctx.ellipse(s * 6.5, -7, 2.4, 4.2, s * 0.4, 0, 7); ctx.fill(); }); }
+  if (opts.cape && !back) { ctx.fillStyle = '#ffd34f'; ctx.beginPath(); ctx.arc(side, -12.5, 1.9, 0, 7); ctx.fill(); }
   // スカーフ
   if (opts.scarf) { ctx.fillStyle = '#ff5a5a'; ctx.beginPath(); ctx.ellipse(0, -12, 6.5, 2.3, 0, 0, 7); ctx.fill(); if (!back) { ctx.fillRect(side >= 0 ? 1 : -4, -12, 3, 6); } }
   // みみ（うしろの ぶぶん）

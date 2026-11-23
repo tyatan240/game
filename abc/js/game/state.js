@@ -26,6 +26,9 @@ export function defaultState() {
     world: {},            // マップの へんか { gate: 'open', flowerbed: 'bloom', vines: 'open', bees: true }
     sentences: {},        // ワールド3：おぼえた ぶんの かた { im: { at, made:['im:happy'] } }
     areas: ['meadow'],    // いける ばしょ
+    slots: {},            // ワールドごとの つづき { 1: {ぼうけんの すすみ}, 2: …, 3: … }（いま あそんでいる ワールドの ぶんは うえの こうもくに ある）
+    w2clears: 0,          // ワールド2（こもじの もん）を クリアした かいすう（ワールド3を えらべる じょうけん）
+    w3clears: 0,          // ワールド3（ことばの とう）を クリアした かいすう
     settings: { bgm: true, se: true, voice: true },
   };
 }
@@ -40,7 +43,8 @@ export function load() {
       wear: { ...base.wear, ...d.wear }, records: { ...d.records }, settings: { ...base.settings, ...d.settings },
       learned: Array.isArray(d.learned) ? d.learned : [], lower: Array.isArray(d.lower) ? d.lower : [], items: Array.isArray(d.items) ? d.items : [],
       words: { ...d.words }, sentences: { ...d.sentences }, quests: { ...d.quests }, inv: { ...d.inv }, world: { ...d.world },
-      combos: Array.isArray(d.combos) ? d.combos : [], areas: Array.isArray(d.areas) ? d.areas : ['meadow'] };
+      combos: Array.isArray(d.combos) ? d.combos : [], areas: Array.isArray(d.areas) ? d.areas : ['meadow'],
+      slots: d.slots && typeof d.slots === 'object' ? { ...d.slots } : {}, w2clears: d.w2clears || (d.flags && d.flags.lowerClear ? 1 : 0) };
   } catch (e) { return base; }
 }
 
@@ -50,7 +54,18 @@ export function save(st) {
 }
 
 // もういちど さいしょから：ぼうけんの すすみは もどすが、がくしゅう きろく・ほし・きがえ・せってい・クリア かいすうは のこす
-export const KEEP_ON_REPLAY = ['settings', 'records', 'stars', 'starsSent', 'items', 'wear', 'clears'];
+export const KEEP_ON_REPLAY = ['settings', 'records', 'stars', 'starsSent', 'items', 'wear', 'clears', 'slots', 'w2clears', 'w3clears'];
+
+// ワールドごとの つづき：ぼうけんの すすみ（KEEP_ON_REPLAY いがい）を とりだす／もどす
+const PROGRESS = () => Object.keys(defaultState()).filter(k => !KEEP_ON_REPLAY.includes(k) && k !== 'v' && k !== 't');
+export const worldOf = areaId => !areaId ? 1 : areaId === 'lower' ? 2 : areaId.startsWith('w3') ? 3 : 1;
+export function snapshot(st) { const o = {}; for (const k of PROGRESS()) o[k] = JSON.parse(JSON.stringify(st[k] ?? null)); return o; }
+export function restore(st, snap) {
+  const base = defaultState();
+  for (const k of PROGRESS()) st[k] = snap && snap[k] != null ? JSON.parse(JSON.stringify(snap[k])) : base[k];
+  st.hero = { ...base.hero, ...st.hero }; st.flags = st.flags || {}; st.world = st.world || {};
+  return st;
+}
 export function replayState(old) {
   const s = defaultState();
   for (const k of KEEP_ON_REPLAY) if (old[k] !== undefined) s[k] = old[k];

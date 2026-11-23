@@ -13,7 +13,8 @@ kokugo/         こくご：漢字よみかき・ことば・よみとり・か�
 program/        プログラミング：ブロックでロボットを動かすパズル（独自コード）
 program/build/  ロボモコの ブロックタウン：3Dでブロックを置く町づくり（ES Modules＋Three.js。プログラミングの部屋から入る。program/build/README.md）
 machi/          モコの まち：2Dの まちづくり（ES Modules＋core.js。まちの おみせ は おへやの おみせと別。machi/README.md）
-eigo/           えいご：「ぼうけん（abc/）」か「べんきょう（練習＋🏆テスト）」を選ぶ部屋。core.js ＋ abc のデータ・絵・音声を module で使う
+eigo/           えいご：「ぼうけん（abc/）」か「べんきょう（練習＋🏆テスト・きょうの ふくしゅう）」を選ぶ部屋。ワールド3・はじめの おと の問題も。core.js ＋ abc のデータ・絵・音声を module で使う
+dungeon/        モコの イングリッシュダンジョン：英語の名前の ターン制ダンジョン（ES Modules＋core.js。おべんきょうの カードから入る。dungeon/README.md）
 abc/            ABCぼうけん：英語の2Dアドベンチャー（独立モジュール、ES Modules。eigo/ の「ぼうけん」から入る）
 parent/         保護者向け 学習レポート（かけ算の確認 → ダッシュボード。docs/learning-report.md）
 common/learning-history.js 学習履歴の記録API（IndexedDB moko-learning-history）
@@ -33,7 +34,8 @@ docs/           詳細仕様（下記）
 - `machi/README.md` … モコの まち：構成・保存・まちの おみせ・じゅうにん
 - `program/build/README.md` … ブロックタウンの構成・データ・保存・フェーズ2（ロボット）への準備
 - `docs/learning-report.md` … 保護者向け学習レポート：学習履歴の形式・指標の計算・保護者確認・バックアップ
-- `docs/abc-world3-spec.md` … ABCぼうけん ワールド3「ことばの まち」の仕様・決定事項（3回に分けて実装中）
+- `docs/abc-world3-spec.md` … ABCぼうけん ワールド3「ことばの まち」の仕様・決定事項（実装済み）
+- `docs/dungeon-spec.md` … モコのイングリッシュダンジョン（英語ローグライク）の仕様 v0.2（第1回「基本」実装済み）
 - `docs/abc-kotoba-mahou-spec.md` … ABCぼうけん「ことばの まほう」＋「くみあわせ」の仕様・決定事項・実装メモ（実装済み）
 
 ## 実行・テスト
@@ -45,7 +47,7 @@ docs/           詳細仕様（下記）
 `main` にマージすると GitHub Pages（main / root）が数分で反映。作業はブランチ → PR → ユーザーがマージ。
 
 ## ⚠️ 守ること（子どものデータを壊さない）
-1. 保存キーを変えない：`moko-math-v1`（localStorage と IndexedDB `moko-house`/`kv` の両方）、`piko-prog-v1`、`abc-adventure-v1`、`robomoko-build-v1`（localStorage と IndexedDB `robomoko-build`/`kv`）、`moko-town-v1`（localStorage と IndexedDB `moko-town`/`kv`）、IndexedDB `moko-learning-history`（学習履歴）
+1. 保存キーを変えない：`moko-math-v1`（localStorage と IndexedDB `moko-house`/`kv` の両方）、`piko-prog-v1`、`abc-adventure-v1`、`robomoko-build-v1`（localStorage と IndexedDB `robomoko-build`/`kv`）、`moko-town-v1`（localStorage と IndexedDB `moko-town`/`kv`）、`moko-dungeon-v1`（localStorage と IndexedDB `moko-dungeon`/`kv`）、IndexedDB `moko-learning-history`（学習履歴）
 2. データの形は追加のみ。新項目は `defState()` に初期値＋`merge()` で補う。項目名の変更・削除をしない
 3. `ITEMS` の `id` を変えない・消さない（未知の id は持ち物から外れる）
 4. 公開URL・リポジトリ名・Pages 設定を変えない。データを消す処理を足さない（リセットは ⚙️設定のみ）
@@ -61,10 +63,11 @@ docs/           詳細仕様（下記）
 
 ## 未対応・メモ
 - ABCぼうけん：おうちと接続済み（入口・「おうちへ」・★→おうちの ⭐。`abc/js/game/house.js`、⚙️設定の `abcPts`）。manifest の向きは `any`。ABC のファイルを増やしたら `sw.js` の ASSETS にも足す
-- ABCぼうけん：ワールド1 は A〜Z（5エリア・クエスト11・組み合わせ11）、ワールド2「こもじの もり」は a〜z（せんせい5にん・こもじの もん）まで実装済み。ワールド3「ことばの まち」は第1回（あいさつの ひろば・かずの いちば）まで（docs/abc-world3-spec.md）。単語・組み合わせ・クエスト・エリアはデータ追加で増やせる（`abc/README.md`）
+- ABCぼうけん：ワールド1 は A〜Z（5エリア・クエスト11・組み合わせ11）、ワールド2「こもじの もり」は a〜z（せんせい5にん・こもじの もん）まで実装済み。ワールド3「ことばの まち」は5エリア（あいさつ・かず・いろと かたち・すきなもの・ことばの とう）まで実装済み（docs/abc-world3-spec.md）。単語・組み合わせ・クエスト・エリアはデータ追加で増やせる（`abc/README.md`）
 - ブロックタウン（`program/build/`）：フェーズ1〜3（手で作る・ロボットに おねがい・おだい5ステージ）。プログラミングの部屋のカードから入る。おだいの ⭐ は `moko-math-v1` の points に足す
 - モコの まち（`machi/`）：設計書のフェーズ1〜5（まちづくり・まちの おみせ・じゅうにん・まちレベル・とち（⭐で かう）・おねがい・家の みため／じぶんで つくる おうち／おきにいり）と おうちの なか（おへやの かぐ）、1マスずつ つくる（かべ・ゆか・ベッド）まで
 - まちの パーツは `machi/js/data/parts.js`（おへやの `ITEMS` に入れない）
 - 学習レポート：問題を足したら、正誤が決まったところで `LH.recordAttempt()`（各ページの `lhRec`）を呼ぶ。記録の失敗で勉強を止めない
+- イングリッシュダンジョン（`dungeon/`）：第1回（チュートリアル・1〜5階・ボス・図鑑・中断）まで。6〜20階・テストは第2回（dungeon/README.md）
 - 管理者モード（⚙️設定）：オンで ぜんぶ アンロック（`ADMIN()`、元の持ち物は `adminBackup`）。ごほうびを渡すときは `grantItem(id)` を使う（docs/architecture.md）
 - iPad でホーム画面アプリが別スコープになる問題があったため、アイコンは必ずトップ（`/game/`）から追加してもらう

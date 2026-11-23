@@ -13,7 +13,9 @@ export const SPEAKER_KIND = { 'ラビ': 'rabbit', 'ありさん': 'ant', 'くま
   // ワールド3
   'インコの せんせい': 'bird', 'ひつじの せんせい': 'sheep', 'ぶたの せんせい': 'pig', 'くまの せんせい': 'bear', 'しかの せんせい': 'deer', 'はりねずみの せんせい': 'hedgehog',
   'アヒルさん': 'duck', 'うしさん': 'cow', 'ペンギンさん': 'penguin', 'コアラさん': 'koala', 'おさるさん': 'monkey', 'ライオンさん': 'lion',
-  'くだものやさん': 'monkey', 'たまごやさん': 'chick', 'パンやさん': 'cat', 'ふうせんやさん': 'tiger' };
+  'くだものやさん': 'monkey', 'たまごやさん': 'chick', 'パンやさん': 'cat', 'ふうせんやさん': 'tiger',
+  'うさぎの せんせい': 'rabbit', 'ふくろうの せんせい': 'owl', 'かんばんやさん': 'goat', 'ひよこの ピッピ': 'chick', 'かえるの せんせい': 'frog', 'ぞうの せんせい': 'elephant',
+  'しろくまの ポーラ': 'polar', 'しまうまの コーチ': 'zebra', 'とうの ふくろう': 'owl', 'ひつじの もんばん': 'sheep', 'やぎの もんばん': 'goat', 'しかの もんばん': 'deer' };
 const SPEAKER_ICON = `<svg viewBox="0 0 24 24" width="30" height="30"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
 export const STAR_SVG = `<svg viewBox="0 0 24 24"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3 6.1 20.6l1.3-6.6L2.5 9.4l6.6-.8z" fill="#ffd34f" stroke="#e5a91c" stroke-width="1.5" stroke-linejoin="round"/></svg>`;
 
@@ -109,7 +111,7 @@ export function quiz(qs, { title = 'クイズ', onAnswer = () => {} } = {}) {
         const r = q.render || 'letter';
         const o = r === 'opt' ? q.opts[c] : null;
         const b = h(`<button class="ch ${r === 'lower' ? 'letter' : r}" data-v="${c}">${r === 'letter' ? LETTER[c].upper : r === 'lower' ? LETTER[c].lower : r === 'word' ? WORD[c].word : ''}</button>`);
-        if (r === 'pic') b.appendChild(wordArt(WORD[c].art, 92));
+        if (r === 'pic') { b.appendChild(wordArt(WORD[c].art, 92)); if (WORD[c].world === 3) b.appendChild(h(`<span class="pja">${WORD[c].ja}</span>`)); } // ワールド3：えに いみも つける
         if (o) { if (o.art) b.appendChild(wordArt(o.art, 64)); if (o.text) b.appendChild(h(`<span class="otext">${o.text}</span>`)); }
         b.onclick = () => pick(c, b); box.appendChild(b);
       });
@@ -333,38 +335,58 @@ export function teachWords(ids) {
     el.querySelector('.go').onclick = done;
   });
 }
-const frameHTML = (f, words) => { let k = 0; return f.tpl.map(p => p === '＿' ? (words && words[k] ? `<b class="fw">${words[k++].word}</b>` : `<i class="fslot" data-k="${k++}"></i>`) : `<span class="${/^[.,!?]/.test(p) ? 'punct' : ''}">${p}</span>`).join(' '); };
-// ぶんの かたを おしえる カード
-export function teachFrame(f, example) {
+// ぶんの かた。words が あれば はめた ぶん、なければ スロット（labels で スロットの いみを したに だす）
+const frameHTML = (f, words, labels) => { let k = 0; return f.tpl.map(p => {
+  if (p !== '＿') return `<span class="${/^[.,!?]/.test(p) ? 'punct' : ''}">${p}</span>`;
+  const n = k++;
+  if (words && words[n]) return `<b class="fw">${f.card ? f.card(words[n]) : words[n].word}</b>`;
+  return labels ? `<span class="fslotw"><i class="fslot" data-k="${n}"></i><small>${(f.slotJa || [])[n] || ''}</small></span>` : `<i class="fslot" data-k="${n}"></i>`;
+}).join(' '); };
+// ぶんの かたを おしえる カード（f.lesson を 1まいずつ）
+export function teachFrame(f) {
   return new Promise(resolve => {
-    const ex = { speak: f.make(example) };
-    const el = open(h(`<div class="modal"><div class="card teach w3teach">
-      <div class="small">あたらしい ぶんカード（${f.ja}）</div>
-      <div class="frame">${frameHTML(f)}</div>
-      <div class="lname">＿ に ことばカードを はめると ぶんが できるよ。れい：</div>
-      <button class="frame ex">${frameHTML(f, example)}</button>
-      <button class="go">つくって みる！</button></div></div>`), () => done());
-    const play = () => { sfx.tap(); sayLetter(ex); };
-    const done = () => { sfx.tap(); close(); resolve(); };
-    el.querySelector('.ex').onclick = play; el.querySelector('.go').onclick = done;
-    setTimeout(play, 350);
+    let i = 0;
+    const el = open(h(`<div class="modal"><div class="card teach w3teach"><div class="small">あたらしい ぶんカード「${f.title}」</div><div class="lpage"></div>
+      <div class="dots lsn">${f.lesson.map(() => '<i></i>').join('')}</div><button class="go">つぎへ</button></div></div>`), () => next());
+    const page = el.querySelector('.lpage');
+    const show = () => {
+      const L = f.lesson[i];
+      el.querySelectorAll('.lsn i').forEach((d, k) => d.className = k < i ? 'ok' : k === i ? 'now' : '');
+      el.querySelector('.go').textContent = i === f.lesson.length - 1 ? 'つくって みる！' : 'つぎへ';
+      if (L.big) {
+        page.innerHTML = `<button class="bigword lbig">${L.big}</button><p class="ltext">${L.text}</p>`;
+        const play = () => { sfx.tap(); sayLetter({ speak: L.say }); const b = page.querySelector('.lbig'); b.classList.remove('pulse'); void b.offsetWidth; b.classList.add('pulse'); };
+        page.querySelector('.lbig').onclick = play; setTimeout(play, 300);
+      } else if (L.frame) {
+        page.innerHTML = `<div class="frame big">${frameHTML(f, null, true)}</div><p class="ltext">${L.text}</p>`;
+      } else {
+        page.innerHTML = `<p class="ltext">${L.text}</p><div class="exs">${L.examples.map((ids, k) => { const ws = ids.map(id => WORD[id]); return `<button class="ex" data-k="${k}"><span class="frame">${frameHTML(f, ws)}</span><small>＝ ${f.ja(ws)}</small></button>`; }).join('')}</div>`;
+        page.querySelectorAll('.ex').forEach(b => b.onclick = () => { sfx.tap(); sayLetter({ speak: f.make(L.examples[+b.dataset.k].map(id => WORD[id])) }); b.classList.remove('pulse'); void b.offsetWidth; b.classList.add('pulse'); });
+        setTimeout(() => sayLetter({ speak: f.make(L.examples[0].map(id => WORD[id])) }), 300);
+      }
+    };
+    const next = () => { sfx.tap(); i++; if (i >= f.lesson.length) { close(); resolve(); } else show(); };
+    el.querySelector('.go').onclick = next;
+    show();
   });
 }
 // ぶんカードで ぶんを つくる：check(ids) → {ok, msg}。つくった ことばの id を かえす（やめたら null）
-export function sentence(st, { frame: f, title = 'ぶんを つくろう！', check, hint }) {
+export function sentence(st, { frame: f, title = 'ぶんを つくろう！', task = '', picture = null, check, hint }) {
   return new Promise(resolve => {
+    const wt = w => f.card ? f.card(w) : w.word;
     let sel = f.slots.map(() => null);
     const cards = WORDS.filter(w => w.world === 3 && f.slots.includes(w.kind) && st.words[w.id]);
-    const el = open(h(`<div class="modal"><div class="card magic w3sent"><h2>${title}</h2>
+    const el = open(h(`<div class="modal"><div class="card magic w3sent"><div class="small">${title}</div>${task ? `<h2 class="task">${task}</h2>` : ''}<div class="spic"></div>
       <div class="frame big"></div>
       <div class="mmsg">&nbsp;</div>
       <div class="row2"><button class="go gray" data-a="cancel">やめる</button><button class="go cast" data-a="say">いう！</button>${hint ? '<button class="go hintb" data-a="hint">ヒント</button>' : ''}</div>
-      <div class="w3cards">${cards.map(w => `<button class="w3c" data-id="${w.id}"><span class="art"></span><b>${w.word}</b><small>${w.ja}</small></button>`).join('')}</div></div></div>`), null);
+      <div class="w3cards">${cards.map(w => `<button class="w3c" data-id="${w.id}"><span class="art"></span><b>${wt(w)}</b><small>${w.ja}</small></button>`).join('')}</div></div></div>`), null);
+    if (picture) el.querySelector('.spic').appendChild(wordArt(picture, 90));
     const msg = t => { el.querySelector('.mmsg').innerHTML = t; };
     const draw = () => {
       const box = el.querySelector('.frame');
-      box.innerHTML = frameHTML(f, null);
-      box.querySelectorAll('.fslot').forEach(s => { const k = +s.dataset.k; if (sel[k]) { s.textContent = WORD[sel[k]].word; s.classList.add('on'); s.onclick = () => { sel[k] = null; sfx.tap(); draw(); }; } });
+      box.innerHTML = frameHTML(f, null, true);
+      box.querySelectorAll('.fslot').forEach(s => { const k = +s.dataset.k; if (sel[k]) { s.textContent = wt(WORD[sel[k]]); s.classList.add('on'); s.onclick = () => { sel[k] = null; sfx.tap(); draw(); }; } });
       el.querySelectorAll('.w3c').forEach(b => b.classList.toggle('sel', sel.includes(b.dataset.id)));
       el.querySelector('[data-a=say]').disabled = sel.some(x => !x);
     };
@@ -387,7 +409,7 @@ export function sentence(st, { frame: f, title = 'ぶんを つくろう！', ch
       sayLetter({ speak: text });
       const r = check([...sel]);
       if (!r.ok) { sfx.wrong(); msg(`<span class="oops">「${text}」 … ${r.msg}</span>`); const fr = el.querySelector('.frame'); fr.classList.remove('shake'); void fr.offsetWidth; fr.classList.add('shake'); return; }
-      sfx.unlock(); msg(`<span class="good">「${text}」</span>`); el.querySelector('.frame').classList.add('merge');
+      sfx.unlock(); msg(`<span class="good">「${text}」 ＝ ${f.ja(sel.map(id => WORD[id]))}</span>`); el.querySelector('.frame').classList.add('merge');
       setTimeout(() => { close(); resolve([...sel]); }, 1600);
     };
     draw();
