@@ -1,7 +1,7 @@
 // モコの イングリッシュダンジョン：がめん・そうさ・チュートリアル・ずかん・⭐
 // core.js（S・save・charSVG・showPop・ACT）を つかう。きまりは game.js、えは art.js、ほぞんは save.js
-import { WORD, WORDS, CATS, MAX_FLOOR, INV_MAX, STARS, BOSS_FLOORS, TEST_FLOORS, zoneOf } from './data.js';
-import { newRun, act, descend, updateSeen, visible, tileAt, seenAt, onStairs, heroAtk, heroDef, monAt, DIRS } from './game.js';
+import { WORD, WORDS, CATS, MAX_FLOOR, STARS, BOSS_FLOORS, TEST_FLOORS, zoneOf, BAGS, bagOf, FAMS } from './data.js';
+import { newRun, act, descend, updateSeen, visible, tileAt, seenAt, onStairs, heroAtk, heroDef, monAt, DIRS, bagCount } from './game.js';
 import { drawTile, drawArt, wordArt } from './art.js';
 import { load, save as saveDg, flush } from './save.js';
 import { sayLetter, unlockAudio, setAudioSettings, sfx } from '../../abc/js/engine/audio.js';
@@ -88,7 +88,7 @@ function draw(now) {
   for (const gh of ghosts) drawMon(gh, monHpShown && monHpShown.has(gh.uid) ? monHpShown.get(gh.uid) : gh.hp); // たおれた てき（「たおした」まで）
   // モコ
   const h = run.hero, hs = t * 1.15;
-  if (heroImg && heroImg.complete) { g.save(); g.translate(ox + (h.x + 0.5) * t, oy + (h.y + 1) * t); if (h.dir === 'left') g.scale(-1, 1); g.drawImage(heroImg, -hs * 0.42, -hs * 1.02, hs * 0.84, hs); g.restore(); }
+  if (heroImg && heroImg.complete) { g.save(); g.translate(ox + (h.x + 0.5) * t, oy + (h.y + 1) * t); if (h.dir === 'left') g.scale(-1, 1); drawGear(g, hs, 'armor'); g.drawImage(heroImg, -hs * 0.42, -hs * 1.02, hs * 0.84, hs); drawGear(g, hs, 'hand'); g.restore(); }
   else { g.fillStyle = '#ffd34f'; g.beginPath(); g.arc(ox + (h.x + 0.5) * t, oy + (h.y + 0.5) * t, t * 0.35, 0, 7); g.fill(); }
   // むいている ほう（ちいさな やじるし）
   const [dx, dy] = DIRS[h.dir]; g.fillStyle = 'rgba(255,211,79,.9)'; g.beginPath(); const cx = ox + (h.x + 0.5 + dx * 0.55) * t, cy = oy + (h.y + 0.5 + dy * 0.55) * t;
@@ -98,10 +98,10 @@ function draw(now) {
   fx = fx.filter(f => now - f.t0 < (f.dur || 900));
   for (const f of fx) {
     const k = (now - f.t0) / 900;
-    if (f.kind === 'beam' || f.kind === 'breath') { g.strokeStyle = f.kind === 'beam' ? `rgba(90,170,255,${1 - k})` : `rgba(255,120,40,${1 - k})`; g.lineWidth = t * 0.25; g.lineCap = 'round'; g.beginPath(); const p = f.path; if (p.length) { const s0 = f.kind === 'beam' ? [h.x, h.y] : p[0]; g.moveTo(ox + (s0[0] + 0.5) * t, oy + (s0[1] + 0.5) * t); g.lineTo(ox + (p[p.length - 1][0] + 0.5) * t, oy + (p[p.length - 1][1] + 0.5) * t); g.stroke(); } continue; }
+    if (f.kind === 'beam' || f.kind === 'breath') { g.strokeStyle = f.kind === 'beam' ? `rgba(90,170,255,${1 - k})` : `rgba(255,120,40,${1 - k})`; g.lineWidth = t * 0.25 * (f.tier || 1); g.lineCap = 'round'; g.beginPath(); const p = f.path; if (p.length) { const s0 = f.kind === 'beam' ? [h.x, h.y] : p[0]; g.moveTo(ox + (s0[0] + 0.5) * t, oy + (s0[1] + 0.5) * t); g.lineTo(ox + (p[p.length - 1][0] + 0.5) * t, oy + (p[p.length - 1][1] + 0.5) * t); g.stroke(); } continue; }
     const X = ox + (f.x + 0.5) * t, Y = oy + (f.y + 0.2) * t - k * t * 0.6;
-    if (f.kind === 'bubble') { // キャラの うえの ふきだし
-      const a = Math.min(1, (1 - (now - f.t0) / f.dur) * 4), fs = Math.max(13, Math.round(t * 0.32));
+    if (f.kind === 'bubble') { // キャラの うえの ふきだし（つよい まほうは おおきく）
+      const a = Math.min(1, (1 - (now - f.t0) / f.dur) * 4), fs = Math.max(13, Math.round(t * 0.32 * (1 + 0.25 * ((f.tier || 1) - 1))));
       g.font = `800 ${fs}px "M PLUS Rounded 1c",sans-serif`; const w = g.measureText(f.text).width + fs, hgt = fs * 1.6, bx = ox + (f.x + 0.5) * t - w / 2, by = oy + f.y * t - hgt - t * 0.6;
       g.globalAlpha = a; g.fillStyle = f.enemy ? '#ffe3e8' : '#fff'; g.strokeStyle = f.enemy ? '#ff6b8a' : '#6ab0ff'; g.lineWidth = 2.5;
       g.beginPath(); g.roundRect ? g.roundRect(bx, by, w, hgt, hgt / 2) : g.rect(bx, by, w, hgt); g.fill(); g.stroke();
@@ -109,13 +109,39 @@ function draw(now) {
       g.fillStyle = f.enemy ? '#c8304a' : '#2a6ab8'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(f.text, bx + w / 2, by + hgt / 2 + 1); g.textBaseline = 'alphabetic'; g.globalAlpha = 1; continue;
     }
     if (f.kind === 'vanish') { const s = t * (1 - k * 0.7); g.globalAlpha = Math.max(0, 1 - k * 1.2); drawArt(g, WORD[f.id].art, ox + (f.x + 0.5) * t - s / 2, oy + (f.y + 0.5) * t - s / 2, s); g.globalAlpha = 1; g.fillStyle = `rgba(255,230,120,${1 - k})`; for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2, d = t * (0.2 + k * 0.6); g.beginPath(); g.arc(ox + (f.x + 0.5) * t + Math.cos(a) * d, oy + (f.y + 0.5) * t + Math.sin(a) * d, t * 0.06, 0, 7); g.fill(); } continue; }
-    const fxArt = { fire: 'dg_fire', ice: 'dg_ice', thunder: 'dg_thunder', wind: 'dg_wind' }[f.kind];
-    if (fxArt) { g.globalAlpha = 1 - k; drawArt(g, fxArt, X - t * 0.4, oy + f.y * t, t * 0.8); g.globalAlpha = 1; }
+    if (f.kind === 'aura') { // つよい まほう：モコの まわりに ひかりの わ（tier 3 は 2じゅう）
+      const col = FX_COL[f.fam] || '255,220,120', cx2 = ox + (f.x + 0.5) * t, cy2 = oy + (f.y + 0.5) * t;
+      for (let r = 0; r < f.tier - 1; r++) { const kk = Math.min(1, k * 1.3 + r * 0.15); g.strokeStyle = `rgba(${col},${Math.max(0, 1 - kk)})`; g.lineWidth = t * 0.12 * f.tier; g.beginPath(); g.arc(cx2, cy2, t * (0.4 + kk * (0.9 + f.tier * 0.5)), 0, 7); g.stroke(); }
+      for (let i = 0; i < 6 * f.tier; i++) { const a = i / (6 * f.tier) * Math.PI * 2 + k * 3, d = t * (0.5 + k * 1.4); g.fillStyle = `rgba(255,250,210,${1 - k})`; g.beginPath(); g.arc(cx2 + Math.cos(a) * d, cy2 + Math.sin(a) * d, t * 0.05 * f.tier, 0, 7); g.fill(); }
+      continue;
+    }
+    if (f.kind === 'flash') { g.fillStyle = `rgba(${FX_COL[f.fam] || '255,255,255'},${0.35 * (1 - k)})`; g.fillRect(0, 0, vw, vh); continue; }
+    const fxArt = { fire: 'dg_fire', ice: 'dg_ice', thunder: 'dg_thunder', wind: 'dg_wind', water: 'water' }[f.kind];
+    if (fxArt) { const sc = 0.8 * (1 + 0.45 * ((f.tier || 1) - 1)); g.globalAlpha = 1 - k; drawArt(g, fxArt, X - t * sc / 2, oy + (f.y + 0.9) * t - t * sc, t * sc); if ((f.tier || 1) >= 2) { g.strokeStyle = `rgba(${FX_COL[f.kind] || '255,255,255'},${1 - k})`; g.lineWidth = 4; g.beginPath(); g.arc(X, oy + (f.y + 0.5) * t, t * (0.3 + k * 0.9), 0, 7); g.stroke(); } g.globalAlpha = 1; }
     if (f.n != null) { g.font = `800 ${Math.round(t * 0.42)}px "M PLUS Rounded 1c",sans-serif`; g.textAlign = 'center'; g.lineWidth = 4; g.strokeStyle = '#fff'; g.fillStyle = f.kind === 'heal' ? '#2f9a5a' : f.kind === 'hurt' ? '#e0304a' : '#e07a1a'; const s = (f.kind === 'heal' ? '+' : '') + f.n; g.strokeText(s, X, Y); g.fillText(s, X, Y); }
   }
   if (fx.some(f => f.kind === 'hurt' && now - f.t0 < 200)) { g.fillStyle = 'rgba(255,60,80,.18)'; g.fillRect(0, 0, vw, vh); }
 }
 function loop(now) { draw(now); requestAnimationFrame(loop); }
+const FX_COL = { fire: '255,130,50', water: '90,170,255', ice: '140,210,255', thunder: '255,220,60', heal: '120,230,150', wind: '110,210,180', light: '255,240,150' };
+// そうびの みため：モコの え の まえ（hand：けん・たて）と うしろ（armor：よろい）に かさねる。原点は あしもと
+const gearOf = slot => { const it = run && run.inv.find(i => i.uid === run.equip[slot]); return it ? WORD[it.id] : null; };
+function drawGear(c, hs, layer) {
+  if (!run) return;
+  if (layer === 'armor') return;
+  const a = gearOf('armor'), w = gearOf('weapon'), sh = gearOf('shield');
+  if (a) drawArt(c, a.art, -hs * 0.2, -hs * 0.47, hs * 0.4); // よろいは からだの まえ
+  if (sh) drawArt(c, sh.art, -hs * 0.56, -hs * 0.62, hs * 0.44);
+  if (w) drawArt(c, w.art, hs * 0.08, -hs * 0.78, hs * 0.58);
+}
+// そうびがめんの おおきな え（モコ＋そうび）
+function gearView(size) {
+  const cvs = document.createElement('canvas'), r = window.devicePixelRatio || 1;
+  cvs.width = size * r; cvs.height = size * r; cvs.style.width = cvs.style.height = size + 'px';
+  const paint = () => { const c = cvs.getContext('2d'); c.setTransform(r, 0, 0, r, 0, 0); c.clearRect(0, 0, size, size); c.translate(size / 2, size * 0.98); const hs = size * 0.92; drawGear(c, hs, 'armor'); if (heroImg && heroImg.complete) c.drawImage(heroImg, -hs * 0.42, -hs * 1.02, hs * 0.84, hs); drawGear(c, hs, 'hand'); };
+  paint(); if (heroImg && !heroImg.complete) heroImg.addEventListener('load', paint, { once: true });
+  return cvs;
+}
 
 /* ---------- じょうたいの ひょうじ ---------- */
 function hud() {
@@ -127,6 +153,10 @@ function hud() {
   $id('hpbar').parentNode.parentNode.classList.toggle('low', hp <= h.maxhp * 0.3);
   $id('mp').textContent = `${h.mp}/${h.maxmp}`; $id('mpbar').style.width = (100 * h.mp / h.maxmp) + '%';
   $id('lv').textContent = 'Lv' + h.lv; $id('pts').textContent = S.points;
+  // いまの そうび（うえの ちいさな え。タップで そうびがめん）
+  const sig = ['weapon', 'shield', 'armor'].map(sl => (gearOf(sl) || {}).id || '-').join();
+  if ($id('gear').dataset.sig !== sig) { const el = $id('gear'); el.dataset.sig = sig; el.innerHTML = ''; ['weapon', 'shield', 'armor'].forEach(sl => { const w = gearOf(sl), sp = document.createElement('span'); sp.className = w ? 'g' : 'g none'; if (w) sp.appendChild(wordArt(w.art, 24)); el.appendChild(sp); }); }
+  $id('gear').title = `つよさ ${heroAtk(run)}・まもり ${heroDef(run)}`;
   $id('bStairs').hidden = !onStairs(run);
   // いまの こうどうの メッセージ（けいさんしき も）は ぜんぶ、まえの ぶんは うすく 1ぎょう
   const cur = logs.filter(l => l.g === logGroup), prev = logs.filter(l => l.g !== logGroup).slice(-1);
@@ -152,7 +182,7 @@ function doAction(a) {
   const r = act(run, a);
   vis = visible(run);
   if (r.turn) { tutFlag('turn'); persist(); }
-  const combat = r.ev.some(e => e.t === 'fx' && ['hit', 'fire', 'water', 'ice', 'thunder', 'hurt'].includes(e.kind));
+  const combat = r.ev.some(e => e.t === 'fx' && ['hit', 'fire', 'water', 'ice', 'thunder', 'wind', 'hurt'].includes(e.kind) && e.n != null);
   if (!combat || fast) { handle(r.ev, false); hud(); return r; }
   busy = true; dispHp = hp0; stopWalk(); stopHold();
   ghosts = before.filter(b => !run.mons.some(m => m.uid === b.uid)); monHpShown = new Map(before.map(b => [b.uid, b.hp]));
@@ -248,7 +278,7 @@ function showCard(id, ctx = {}) {
   if (ctx.mon) stat = `<div class="dstat">HP ${ctx.mon.hp}/${ctx.mon.maxhp}　つよさ ${ctx.mon.atk}</div>`;
   if (ctx.dex) { const d = D.dex[id] || {}; stat = `<div class="dstat">であった ${d.seen || 0}かい・つかった ${d.used || 0}かい・よめた ${d.read || 0}かい${d.tq ? `<br>テスト ${d.tq}もん ちゅう ${d.tok || 0}もん せいかい` : ''}</div>`; }
   if (ctx.inv) {
-    const it = ctx.inv, eqd = run.equip.weapon === it.uid || run.equip.shield === it.uid;
+    const it = ctx.inv, eqd = Object.values(run.equip).includes(it.uid);
     if (w.slot) btns += `<button class="big" data-act="dgEquip" data-arg="${it.uid}">${eqd ? 'はずす' : 'そうびする'}</button>`;
     else if (w.verb) btns += `<button class="big" data-act="dgUse" data-arg="${it.uid}">${w.verb}</button>`;
     btns += `<button class="big gray" data-act="dgDrop" data-arg="${it.uid}">すてる</button>`;
@@ -260,24 +290,42 @@ function showCard(id, ctx = {}) {
   document.querySelector('#ov .dart').appendChild(wordArt(w.art, 120));
   speak(w.en);
 }
-function itemsPop() {
+let bagTab = 'equip';
+const SLOT_NAME = { weapon: 'ぶき', shield: 'たて', armor: 'よろい' };
+function itemsPop(tab) {
   if (!run) return;
   const ti = tutInfo(), want = ti && ti.s.pick; // チュートリアル：つかう もの だけ ひかる（ほかは おせない）
-  const rows = run.inv.map(it => {
-    const w = WORD[it.id], eqd = run.equip.weapon === it.uid || run.equip.shield === it.uid, ok = !ti || it.id === want, cls = ti && ok ? 'hint' : '';
+  if (want) bagTab = bagOf(want); else if (tab) bagTab = tab;
+  const list = run.inv.filter(it => bagOf(it.id) === bagTab), B = BAGS.find(b => b.id === bagTab);
+  const rows = list.map(it => {
+    const w = WORD[it.id], eqd = Object.values(run.equip).includes(it.uid), ok = !ti || it.id === want, cls = ti && ok ? 'hint' : '';
+    const stat = w.slot ? `<small>${SLOT_NAME[w.slot]}・${w.atk ? `つよさ ＋${w.atk}` : `まもり ＋${w.def}`}</small>` : w.use === 'heal' ? `<small>HP ＋${w.val}</small>` : '';
     const b = w.slot ? `<button class="${cls}" data-act="dgEquip" data-arg="${it.uid}" ${ok ? '' : 'disabled'}>${eqd ? 'はずす' : 'そうび'}</button>` : w.verb ? `<button class="${cls}" data-act="dgUse" data-arg="${it.uid}" ${ok ? '' : 'disabled'}>${w.verb}</button>` : '';
-    return `<div class="irow"><span class="ia" data-art="${w.art}"></span><div class="in">${w.en}${eqd ? '<span class="eqm">そうびちゅう</span>' : ''}</div>${b}${ti ? '' : `<button class="q" data-act="dgLook" data-arg="${it.uid}">？</button>`}</div>`;
+    return `<div class="irow${eqd ? ' on' : ''}"><span class="ia" data-art="${w.art}"></span><div class="in">${w.en}${eqd ? '<span class="eqm">そうびちゅう</span>' : ''}${stat}</div>${b}${ti ? '' : `<button class="q" data-act="dgLook" data-arg="${it.uid}">？</button>`}</div>`;
   }).join('');
-  showPop(`<h3>もちもの（${run.inv.length}/${INV_MAX}）</h3><div class="ilist">${rows || '<p class="muted">まだ なにも もっていないよ</p>'}</div>
+  const tabsH = `<div class="bagtabs">${BAGS.map(b => `<button class="${b.id === bagTab ? 'on' : ''}" data-act="dgBag" data-arg="${b.id}" ${ti && b.id !== bagTab ? 'disabled' : ''}>${b.name}<small>${bagCount(run, b.id)}/${b.max}</small></button>`).join('')}</div>`;
+  // そうびの タブ：モコの みため と いまの そうび
+  const panel = bagTab === 'equip' ? `<div class="gearpanel"><div class="gv"></div><div class="gslots">${['weapon', 'shield', 'armor'].map(sl => { const w = gearOf(sl); return `<div class="gs"><span class="gl">${SLOT_NAME[sl]}</span>${w ? `<span class="ia" data-art="${w.art}"></span><b class="en">${w.en}</b>` : '<span class="gnone">なし</span>'}</div>`; }).join('')}<div class="gstat">つよさ <b>${heroAtk(run)}</b>　まもり <b>${heroDef(run)}</b></div></div></div>` : '';
+  showPop(`<h3>もちもの</h3>${tabsH}${panel}<div class="ilist${panel ? ' short' : ''}">${rows || `<p class="muted">「${B.name}」は まだ ないよ</p>`}</div>
     ${ti ? '' : '<p class="muted" style="margin:6px 0 0">「？」で いみが わかるよ。いみを みないで つかえたら「よめた」！</p>'}<div class="btns"><button class="big gray" data-act="close">とじる</button></div>`);
-  document.querySelectorAll('#ov [data-art]').forEach(el => el.appendChild(wordArt(el.dataset.art, 44)));
+  document.querySelectorAll('#ov [data-art]').forEach(el => el.appendChild(wordArt(el.dataset.art, el.closest('.gs') ? 30 : 44)));
+  const gv = document.querySelector('#ov .gv'); if (gv) gv.appendChild(gearView(120));
 }
 function magicPop() {
   if (!run) return;
   const ti = tutInfo();
-  const rows = run.spells.map(id => { const w = WORD[id], ok = !ti || ti.s.spell === id; return `<div class="irow"><span class="ia" data-art="${w.art}"></span><div class="in">${w.en}<small>MP ${w.mp}</small></div><button class="${ti && ok ? 'hint' : ''}" data-act="dgCast" data-arg="${id}" ${run.hero.mp < w.mp || !ok ? 'disabled' : ''}>つかう</button>${ti ? '' : `<button class="q" data-act="dgSpell" data-arg="${id}">？</button>`}</div>`; }).join('');
+  // おなじ なかま（fire・big fire・wide fire …）を 1ぎょうに ならべる。まだ しらない ものは「？」
+  const rows = FAMS.filter(f => run.spells.some(id => WORD[id].fam === f)).map(f => {
+    const fam = WORDS.filter(w => w.cat === 'magic' && w.fam === f).sort((a, b) => a.tier - b.tier);
+    const cells = fam.map(w => {
+      if (!run.spells.includes(w.id)) return `<div class="mcell no"><i>？</i><small>${'★'.repeat(w.tier)}</small></div>`;
+      const ok = !ti || ti.s.spell === w.id, dis = run.hero.mp < w.mp || !ok;
+      return `<div class="mcell t${w.tier}"><span class="ia" data-art="${w.art}"></span><b class="en">${w.en}</b><small>${'★'.repeat(w.tier)}　MP ${w.mp}</small><div class="mb"><button class="${ti && ok ? 'hint' : ''}" data-act="dgCast" data-arg="${w.id}" ${dis ? 'disabled' : ''}>つかう</button>${ti ? '' : `<button class="q" data-act="dgSpell" data-arg="${w.id}">？</button>`}</div></div>`;
+    }).join('');
+    return `<div class="mrow">${cells}</div>`;
+  }).join('');
   showPop(`<h3>まほう（MP ${run.hero.mp}/${run.hero.maxmp}）</h3><div class="ilist">${rows || `<p class="muted">まだ まほうを しらないよ。<b>magic book</b>（まほうの ほん）を よむと おぼえるよ</p>`}</div><div class="btns"><button class="big gray" data-act="close">とじる</button></div>`);
-  document.querySelectorAll('#ov [data-art]').forEach(el => el.appendChild(wordArt(el.dataset.art, 44)));
+  document.querySelectorAll('#ov [data-art]').forEach(el => el.appendChild(wordArt(el.dataset.art, 52)));
 }
 let dexTab = 'monster';
 function dexPop() {
@@ -549,7 +597,7 @@ Object.assign(ACT, {
   dgEquip: uid => { closePop(); doAction({ t: 'equip', uid: +uid }); },
   dgDrop: uid => { closePop(); doAction({ t: 'drop', uid: +uid }); },
   dgLook: uid => { const it = run.inv.find(i => i.uid === +uid); if (it) showCard(it.id, { inv: it, back: 'dgItems' }); },
-  dgItems: () => itemsPop(),
+  dgItems: () => itemsPop(), dgBag: b => { sfx.tap(); itemsPop(b); }, dgGear: () => { stopWalk(); if (!tutInfo()) itemsPop('equip'); },
   dgCast: id => { closePop(); doAction({ t: 'cast', id }); },
   dgSpell: id => showCard(id, { spell: true, back: 'dgMagic' }),
   dgMagic: () => magicPop(),
@@ -589,6 +637,7 @@ function setupInput() {
   $id('bWait').onclick = () => { stopWalk(); if (tutBtn('bWait')) doAction({ t: 'wait' }); };
   $id('bStairs').onclick = () => { if (tutBtn('bStairs')) askStairs(); };
   $id('menuBtn').onclick = () => menu();
+  $id('gear').onclick = () => ACT.dgGear();
   cv.addEventListener('pointerdown', e => { e.preventDefault(); tapMap(e.clientX, e.clientY); });
   $id('tGo').onclick = () => { unlockAudio(); goPressed(); };
   $id('tCont').onclick = () => resume();

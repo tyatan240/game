@@ -1,5 +1,5 @@
 // ゲームの きまり（ターン・こうげき・てきの うごき・アイテム・まほう）。ひょうじとは べつ
-import { WORD, WORDS, SPELLS, HERO0, LV_EXP, INV_MAX, MAX_FLOOR, BOSS_FLOORS, BOSS_OF, MINION_OF } from './data.js';
+import { WORD, WORDS, SPELLS, HERO0, LV_EXP, MAX_FLOOR, BOSS_FLOORS, BOSS_OF, MINION_OF, BAGS, BAG_MAX, bagOf } from './data.js';
 import { genFloor, genTutorial } from './gen.js';
 
 let rand = Math.random;
@@ -28,7 +28,7 @@ function spawnMon(run, id, x, y, extra = {}) {
   // つよさは その てきが でて くる かい から すこしずつ あがる（ボスは きまった つよさ）
   const w = WORD[id], f = Math.max(1, run.floor), up = w.boss ? 0 : Math.max(0, f - (w.minFloor || 1));
   const hp = Math.round(w.hp * (1 + 0.2 * up));
-  run.mons.push({ uid: run.uid++, id, x, y, hp, maxhp: hp, atk: w.atk + Math.floor(up / 3), def: w.def || 0, exp: w.exp + Math.floor(f / 2), tick: 0, ...extra });
+  run.mons.push({ uid: run.uid++, id, x, y, hp, maxhp: hp, atk: w.atk + Math.floor(up / 2) + Math.floor(f / 4), def: w.def || 0, exp: w.exp + Math.floor(f / 2), tick: 0, ...extra });
 }
 function rollItem(run) {
   const known = new Set(run.spells), f = run.floor;
@@ -37,8 +37,12 @@ function rollItem(run) {
   for (const w of list) { t -= w.w; if (t <= 0) return w.id; }
   return 'apple';
 }
-// その かいで おぼえられる まほう
-const learnable = run => SPELLS.filter(s => !WORD[s].minFloor || WORD[s].minFloor <= Math.max(1, run.floor));
+// その かいで おぼえられる まほう（つよい まほうは おなじ なかまの ひとつ したを しって いたら）
+const learnable = run => SPELLS.filter(s => { const w = WORD[s]; return (!w.minFloor || w.minFloor <= Math.max(1, run.floor)) && (w.tier || 1) <= 1 + Math.max(0, ...run.spells.filter(k => WORD[k].fam === w.fam).map(k => WORD[k].tier || 1)); });
+// ふくろ（そうび・たべもの・ほん/どうぐ）に まだ はいるか
+export const bagCount = (run, bag) => run.inv.filter(i => bagOf(i.id) === bag).length;
+export const bagRoom = (run, id) => bagCount(run, bagOf(id)) < BAG_MAX[bagOf(id)];
+const bagName = id => BAGS.find(b => b.id === bagOf(id)).name;
 export function enterFloor(run, floor) {
   if (run.equip && !('armor' in run.equip)) run.equip.armor = null; // ふるい ほぞんの ぼうけん
   run.stuck = 0;
@@ -125,8 +129,8 @@ export function act(run, a) {
     else if (walkable(run, nx, ny)) {
       h.x = nx; h.y = ny; turn = true; ev.push({ t: 'step' });
       const it = run.items.find(i => i.x === nx && i.y === ny);
-      if (it) { if (run.inv.length < INV_MAX) { run.items = run.items.filter(i => i !== it); run.inv.push({ uid: it.uid, id: it.id, peek: false }); say(`${en(it.id)} を ひろった！`); ev.push({ t: 'pickup', id: it.id }); }
-        else say(`もちものが いっぱい（${INV_MAX}こ）。${en(it.id)} は ひろえない`); }
+      if (it) { if (bagRoom(run, it.id)) { run.items = run.items.filter(i => i !== it); run.inv.push({ uid: it.uid, id: it.id, peek: false }); say(`${en(it.id)} を ひろった！`); ev.push({ t: 'pickup', id: it.id }); }
+        else say(`「${bagName(it.id)}」が いっぱい（${BAG_MAX[bagOf(it.id)]}こ）。${en(it.id)} は ひろえない`); }
       if (onStairs(run)) ev.push({ t: 'stairs' });
     } else ev.push({ t: 'bump' });
   } else if (a.t === 'attack') {
@@ -153,9 +157,9 @@ function gainExp(run, n, ev) {
     ev.push({ t: 'level', lv: h.lv }); ev.push({ t: 'msg', text: `レベル ${h.lv} に なった！ HPと つよさが あがった！` });
   }
 }
-function hurtMon(run, m, dmg, ev, how = 'hit', note = '') {
+function hurtMon(run, m, dmg, ev, how = 'hit', note = '', tier = 1) {
   dmg = Math.min(dmg, m.hp); const hp0 = m.hp;
-  m.hp -= dmg; ev.push({ t: 'fx', kind: how, x: m.x, y: m.y, n: dmg });
+  m.hp -= dmg; ev.push({ t: 'fx', kind: how, x: m.x, y: m.y, n: dmg, tier });
   ev.push({ t: 'msg', text: `${en(m.id)} に ${dmg} ダメージ！${note}` });
   ev.push({ t: 'msg', text: calc(WORD[m.id].en, hp0, '−', dmg), calc: true, monUid: m.uid, monHp: m.hp });
   if (m.hp <= 0) {
@@ -189,14 +193,14 @@ function openBox(run, b, ev) {
   const got = run.tut ? ['bread', 'shield'] : [rollItem(run), rollItem(run)]; // れんしゅうは きまった もの
   const floor = [];
   for (const id of got) {
-    if (run.inv.length < INV_MAX) { run.inv.push({ uid: run.uid++, id, peek: false }); continue; }
+    if (bagRoom(run, id)) { run.inv.push({ uid: run.uid++, id, peek: false }); continue; }
     // もちものが いっぱい → モコの まわりの あいている ゆかに おく（ふんだら ひろえる）
     const c = freeNear(run, run.hero.x, run.hero.y);
     run.items.push({ uid: run.uid++, id, x: c[0], y: c[1] }); floor.push(id);
   }
   ev.push({ t: 'open', got }); ev.push({ t: 'used', id: 'key' });
   ev.push({ t: 'msg', text: `${en('key')} で ${en('treasurebox')} を あけた！ ${got.map(en).join(' と ')} が はいっていた！` });
-  if (floor.length) ev.push({ t: 'msg', text: `もちものが いっぱい！ ${floor.map(en).join(' と ')} は ゆかに おいたよ` });
+  if (floor.length) ev.push({ t: 'msg', text: `もちものが いっぱい！ ${floor.map(en).join(' と ')} は ゆかに おいたよ（「${bagName(floor[0])}」）` });
 }
 function useItem(run, uid, ev) {
   const it = run.inv.find(i => i.uid === uid); if (!it) return false;
@@ -228,47 +232,55 @@ function equipItem(run, uid, ev) {
   const slot = WORD[it.id].slot; if (!slot) return false;
   if (run.equip[slot] === uid) { run.equip[slot] = null; ev.push({ t: 'msg', text: `${en(it.id)} を はずした` }); return true; }
   run.equip[slot] = uid; ev.push({ t: 'equip', id: it.id, read: !it.peek }); ev.push({ t: 'used', id: it.id, read: !it.peek });
-  ev.push({ t: 'msg', text: `${en(it.id)} を そうびした！ ${slot === 'weapon' ? 'つよさ' : 'まもり'}が あがった！` }); return true;
+  const w = WORD[it.id];
+  ev.push({ t: 'msg', text: `${en(it.id)} を そうびした！ ${slot === 'weapon' ? `つよさ ＋${w.atk}` : `まもり ＋${w.def}`}` }); return true;
 }
 function revealAll(run) { run.seen = '1'.repeat(run.map.w * run.map.h); }
 function castSpell(run, id, ev) {
-  const w = WORD[id], h = run.hero;
+  const w = WORD[id], h = run.hero, tier = w.tier || 1, fam = w.fam || id, pow = Math.floor(h.lv / 2);
   if (!run.spells.includes(id)) return false;
   if (h.mp < w.mp) { ev.push({ t: 'msg', text: `MPが たりない（${en(id)} は MP ${w.mp}）` }); return false; }
-  if (w.kind === 'self') { h.mp -= w.mp; const n = Math.min(w.val, h.maxhp - h.hp), hp0 = h.hp; h.hp += n; ev.push({ t: 'cast', id }); ev.push({ t: 'fx', kind: 'heal', x: h.x, y: h.y, n }); ev.push({ t: 'msg', text: `${en(id)}！ ${n ? `HPが ${n} かいふく` : 'HPは もう まんたん'}` }); if (n) ev.push({ t: 'msg', text: calc('モコ', hp0, '＋', n), calc: true, heroHp: h.hp }); return true; }
+  const v = visible(run), seen = run.mons.filter(m => v.has(m.x + ',' + m.y));
+  const start = () => {
+    h.mp -= w.mp; ev.push({ t: 'cast', id });
+    ev.push({ t: 'bubble', x: h.x, y: h.y, text: `${w.en}！`, tier });
+    if (tier >= 2) ev.push({ t: 'fx', kind: 'aura', fam, tier, x: h.x, y: h.y }); // つよい まほうは モコの まわりが ひかる
+    ev.push({ t: 'msg', text: `モコの まほう ${en(id)}！` });
+  };
+  const freeze = m => { if (w.freeze && run.mons.includes(m) && !m.boss) { m.frozen = w.freeze; ev.push({ t: 'msg', text: `${en(m.id)} は こおって うごけない！` }); } else if (w.freeze && m.boss && run.mons.includes(m)) { m.frozen = 1; } };
+  if (w.kind === 'self') { h.mp -= w.mp; const n = Math.min(w.val, h.maxhp - h.hp), hp0 = h.hp; h.hp += n; ev.push({ t: 'cast', id }); if (tier >= 2) ev.push({ t: 'fx', kind: 'aura', fam, tier, x: h.x, y: h.y }); ev.push({ t: 'fx', kind: 'heal', x: h.x, y: h.y, n }); ev.push({ t: 'msg', text: `${en(id)}！ ${n ? `HPが ${n} かいふく` : 'HPは もう まんたん'}` }); if (n) ev.push({ t: 'msg', text: calc('モコ', hp0, '＋', n), calc: true, heroHp: h.hp }); return true; }
   if (w.kind === 'map') { h.mp -= w.mp; revealAll(run); ev.push({ t: 'cast', id }); ev.push({ t: 'reveal' }); ev.push({ t: 'bubble', x: h.x, y: h.y, text: `${w.en}！` }); ev.push({ t: 'msg', text: `モコの まほう ${en(id)}！ ちずと ${en('stairs')} が みえた！` }); return true; }
   if (w.kind === 'all') {
-    const v = visible(run), ms = run.mons.filter(m => v.has(m.x + ',' + m.y));
-    if (!ms.length) { ev.push({ t: 'msg', text: 'ちかくに てきが いないよ' }); return false; }
-    h.mp -= w.mp; ev.push({ t: 'cast', id }); ev.push({ t: 'bubble', x: h.x, y: h.y, text: `${w.en}！` }); ev.push({ t: 'msg', text: `モコの まほう ${en(id)}！` });
-    for (const m of ms) hurtMon(run, m, w.dmg + Math.floor(h.lv / 2), ev, 'thunder');
+    if (!seen.length) { ev.push({ t: 'msg', text: 'ちかくに てきが いないよ' }); return false; }
+    start(); if (tier >= 2) ev.push({ t: 'fx', kind: 'flash', fam, tier });
+    for (const m of seen) { hurtMon(run, m, w.dmg + pow, ev, fam, '', tier); freeze(m); }
     return true;
   }
   if (w.kind === 'push') {
-    const ms = Object.entries(DIRS).map(([d, [dx, dy]]) => [monAt(run, h.x + dx, h.y + dy), dx, dy]).filter(([m]) => m && !m.boss);
-    const bossNear = Object.values(DIRS).some(([dx, dy]) => { const m = monAt(run, h.x + dx, h.y + dy); return m && m.boss; });
-    if (!ms.length) { ev.push({ t: 'msg', text: bossNear ? 'ボスは おもくて ふきとばせない！' : 'となりに てきが いないよ' }); return false; }
-    h.mp -= w.mp; ev.push({ t: 'cast', id }); ev.push({ t: 'bubble', x: h.x, y: h.y, text: `${w.en}！` }); ev.push({ t: 'msg', text: `モコの まほう ${en(id)}！` });
-    for (const [m, dx, dy] of ms) {
-      let n = 0; while (n < 4 && monCan(run, m, m.x + dx, m.y + dy) && !monAt(run, m.x + dx, m.y + dy) && tileAt(run, m.x + dx, m.y + dy) !== '#') { m.x += dx; m.y += dy; n++; }
-      m.frozen = Math.max(m.frozen || 0, 1); ev.push({ t: 'fx', kind: 'wind', x: m.x, y: m.y });
+    const pool = w.wide ? seen : Object.values(DIRS).map(([dx, dy]) => monAt(run, h.x + dx, h.y + dy)).filter(Boolean);
+    const ms = pool.filter(m => !m.boss);
+    if (!ms.length) { ev.push({ t: 'msg', text: pool.length ? 'ボスは おもくて ふきとばせない！' : w.wide ? 'ちかくに てきが いないよ' : 'となりに てきが いないよ' }); return false; }
+    start();
+    for (const m of ms) {
+      const sx = Math.abs(m.x - h.x) >= Math.abs(m.y - h.y) ? Math.sign(m.x - h.x) : 0, sy = sx ? 0 : Math.sign(m.y - h.y);
+      let n = 0; while (n < 4 && monCan(run, m, m.x + sx, m.y + sy) && !monAt(run, m.x + sx, m.y + sy) && tileAt(run, m.x + sx, m.y + sy) !== '#' && !(m.x + sx === h.x && m.y + sy === h.y)) { m.x += sx; m.y += sy; n++; }
+      m.frozen = Math.max(m.frozen || 0, 1); ev.push({ t: 'fx', kind: 'wind', x: m.x, y: m.y, tier });
       ev.push({ t: 'msg', text: `${en(m.id)} を ふきとばした！` });
+      if (w.dmg) hurtMon(run, m, w.dmg + pow, ev, 'wind', '', tier);
     }
     return true;
   }
   if (w.kind === 'near') {
-    const v = visible(run), ms = run.mons.filter(m => v.has(m.x + ',' + m.y)).sort((a, b) => (Math.abs(a.x - h.x) + Math.abs(a.y - h.y)) - (Math.abs(b.x - h.x) + Math.abs(b.y - h.y)));
+    const ms = [...seen].sort((a, b) => (Math.abs(a.x - h.x) + Math.abs(a.y - h.y)) - (Math.abs(b.x - h.x) + Math.abs(b.y - h.y)));
     if (!ms.length) { ev.push({ t: 'msg', text: 'ちかくに てきが いないよ' }); return false; }
-    h.mp -= w.mp; ev.push({ t: 'cast', id }); ev.push({ t: 'bubble', x: h.x, y: h.y, text: `${w.en}！` }); ev.push({ t: 'msg', text: `モコの まほう ${en(id)}！` });
-    const tgt = ms[0]; hurtMon(run, tgt, w.dmg + Math.floor(h.lv / 2), ev, id === 'ice' ? 'ice' : 'fire');
-    if (w.freeze && run.mons.includes(tgt)) { tgt.frozen = w.freeze; ev.push({ t: 'msg', text: `${en(tgt.id)} は こおって うごけない！` }); }
+    start(); const tgt = ms[0]; hurtMon(run, tgt, w.dmg + pow, ev, fam, '', tier); freeze(tgt);
     return true;
   }
   if (w.kind === 'line') {
-    const [dx, dy] = DIRS[h.dir]; h.mp -= w.mp; ev.push({ t: 'cast', id }); ev.push({ t: 'bubble', x: h.x, y: h.y, text: `${w.en}！` }); ev.push({ t: 'msg', text: `モコの まほう ${en(id)}！` });
+    const [dx, dy] = DIRS[h.dir]; start();
     let x = h.x + dx, y = h.y + dy, hit = 0; const path = [];
-    while (tileAt(run, x, y) !== '#' && path.length < 8) { path.push([x, y]); const m = monAt(run, x, y); if (m) { hurtMon(run, m, w.dmg + Math.floor(h.lv / 2), ev, 'water'); hit++; } x += dx; y += dy; }
-    ev.push({ t: 'fx', kind: 'beam', path });
+    while (tileAt(run, x, y) !== '#' && path.length < 8) { path.push([x, y]); const m = monAt(run, x, y); if (m) { hurtMon(run, m, w.dmg + pow, ev, fam, '', tier); hit++; } x += dx; y += dy; }
+    ev.push({ t: 'fx', kind: 'beam', path, tier });
     if (!hit) ev.push({ t: 'msg', text: `${en(id)}！ …でも なにも いなかった` });
     return true;
   }
@@ -323,7 +335,7 @@ function endTurn(run, ev) {
     if (f) { run.inv = run.inv.filter(i => i !== f); h.hp = Math.ceil(h.maxhp / 2); ev.push({ t: 'revive' }); ev.push({ t: 'used', id: 'angelfeather', read: true }); ev.push({ t: 'msg', text: `${en('angelfeather')} が ひかって ふっかつ した！` }); }
     else { ev.push({ t: 'dead' }); return; }
   }
-  if (run.turn % 3 === 0 && h.hp < h.maxhp) h.hp++;
+  // HPは あるいても もどらない（たべもの・まほうで かいふく）。MPだけ すこしずつ もどる
   if (run.turn % 6 === 0 && h.mp < h.maxmp) h.mp++;
   for (const id of updateSeen(run)) ev.push({ t: 'meet', id });
 }

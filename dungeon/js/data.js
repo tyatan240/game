@@ -54,25 +54,53 @@ export const WORDS = [
   { id: 'treasurebox', en: 'treasure box', ja: 'たからばこ', cat: 'item', art: 'dg_box', obj: true, desc: 'key（かぎ）で あけると、なかに アイテムが はいっている。' },
   { id: 'stairs', en: 'stairs', ja: 'かいだん', cat: 'item', art: 'dg_stairs', obj: true, desc: 'のぼると つぎの かいへ すすめる。' },
   // ===== そうび（slot：weapon／shield）=====
-  { id: 'sword', en: 'sword', ja: 'けん', cat: 'equip', art: 'dg_sword', slot: 'weapon', atk: 3, w: 6, desc: 'そうびすると つよさが 3 あがる。' },
-  { id: 'shield', en: 'shield', ja: 'たて', cat: 'equip', art: 'dg_shield', slot: 'shield', def: 2, w: 6, desc: 'そうびすると まもりが 2 あがる。' },
-  { id: 'armor', en: 'armor', ja: 'よろい', cat: 'equip', art: 'dg_armor', slot: 'armor', def: 3, w: 4, minFloor: 6, desc: 'そうびすると まもりが 3 あがる。' },
-  // ===== まほう（kind：near いちばん ちかい てき／line むいている ほうこうに まっすぐ／self じぶん）=====
-  { id: 'fire', en: 'fire', ja: 'ほのお', cat: 'magic', art: 'dg_fire', mp: 3, dmg: 9, kind: 'near', desc: 'いちばん ちかくの てきに ほのおで こうげき（MP 3）。' },
-  { id: 'water', en: 'water', ja: 'みず', cat: 'magic', art: 'water', mp: 2, dmg: 6, kind: 'line', desc: 'むいている ほうこうに みずを とばす。まっすぐ とおくの てきにも あたる（MP 2）。' },
-  { id: 'heal', en: 'heal', ja: 'かいふく', cat: 'magic', art: 'dg_heal', mp: 4, val: 20, kind: 'self', desc: 'じぶんの HPを 20 かいふく する（MP 4）。' },
-  { id: 'ice', en: 'ice', ja: 'こおり', cat: 'magic', art: 'dg_ice', mp: 3, dmg: 6, kind: 'near', freeze: 3, minFloor: 6, desc: 'いちばん ちかくの てきを こおらせる。3ターン うごけない（MP 3）。' },
-  { id: 'thunder', en: 'thunder', ja: 'かみなり', cat: 'magic', art: 'dg_thunder', mp: 5, dmg: 8, kind: 'all', minFloor: 8, desc: 'みえる てき ぜんぶに かみなりを おとす（MP 5）。' },
-  { id: 'wind', en: 'wind', ja: 'かぜ', cat: 'magic', art: 'dg_wind', mp: 2, kind: 'push', minFloor: 6, desc: 'となりの てきを かぜで とおくへ ふきとばす（MP 2）。' },
-  { id: 'light', en: 'light', ja: 'ひかり', cat: 'magic', art: 'dg_light', mp: 3, kind: 'map', minFloor: 6, desc: 'この かいの ちずと かいだんが ぜんぶ みえる（MP 3）。' },
+  //   ふかい かいほど つよい そうびが でる（big・strong・silver・gold は かんたんな えいごの ことば）
+  { id: 'sword', en: 'sword', ja: 'けん', cat: 'equip', art: 'dg_sword', slot: 'weapon', atk: 3, w: 6, maxFloor: 10, desc: 'そうびすると つよさが 3 あがる。' },
+  { id: 'bigsword', en: 'big sword', ja: 'おおきな けん', cat: 'equip', art: 'dg_bigsword', slot: 'weapon', atk: 5, w: 4, minFloor: 3, maxFloor: 14, desc: 'big ＝ おおきい。つよさが 5 あがる。' },
+  { id: 'strongsword', en: 'strong sword', ja: 'つよい けん', cat: 'equip', art: 'dg_strongsword', slot: 'weapon', atk: 7, w: 3, minFloor: 7, desc: 'strong ＝ つよい。つよさが 7 あがる。' },
+  { id: 'silversword', en: 'silver sword', ja: 'ぎんの けん', cat: 'equip', art: 'dg_silversword', slot: 'weapon', atk: 10, w: 2, minFloor: 11, desc: 'silver ＝ ぎん。つよさが 10 あがる。' },
+  { id: 'goldsword', en: 'gold sword', ja: 'きんの けん', cat: 'equip', art: 'dg_goldsword', slot: 'weapon', atk: 13, w: 1, minFloor: 15, desc: 'gold ＝ きん。つよさが 13 あがる。いちばん つよい けん！' },
+  { id: 'shield', en: 'shield', ja: 'たて', cat: 'equip', art: 'dg_shield', slot: 'shield', def: 2, w: 6, maxFloor: 10, desc: 'そうびすると まもりが 2 あがる。' },
+  { id: 'bigshield', en: 'big shield', ja: 'おおきな たて', cat: 'equip', art: 'dg_bigshield', slot: 'shield', def: 3, w: 4, minFloor: 4, maxFloor: 14, desc: 'big ＝ おおきい。まもりが 3 あがる。' },
+  { id: 'strongshield', en: 'strong shield', ja: 'つよい たて', cat: 'equip', art: 'dg_strongshield', slot: 'shield', def: 5, w: 3, minFloor: 9, desc: 'strong ＝ つよい。まもりが 5 あがる。' },
+  { id: 'silvershield', en: 'silver shield', ja: 'ぎんの たて', cat: 'equip', art: 'dg_silvershield', slot: 'shield', def: 7, w: 2, minFloor: 14, desc: 'silver ＝ ぎん。まもりが 7 あがる。' },
+  { id: 'armor', en: 'armor', ja: 'よろい', cat: 'equip', art: 'dg_armor', slot: 'armor', def: 3, w: 4, minFloor: 6, maxFloor: 14, desc: 'そうびすると まもりが 3 あがる。' },
+  { id: 'strongarmor', en: 'strong armor', ja: 'つよい よろい', cat: 'equip', art: 'dg_strongarmor', slot: 'armor', def: 5, w: 3, minFloor: 10, desc: 'strong ＝ つよい。まもりが 5 あがる。' },
+  { id: 'silverarmor', en: 'silver armor', ja: 'ぎんの よろい', cat: 'equip', art: 'dg_silverarmor', slot: 'armor', def: 7, w: 2, minFloor: 15, desc: 'silver ＝ ぎん。まもりが 7 あがる。' },
+  // ===== まほう（kind：near いちばん ちかい てき／line むいている ほうこうに まっすぐ／self じぶん／all みえる てき ぜんぶ／push ふきとばす／map ちず）
+  //   fam … なかま（おなじ fam を ならべて ひょうじ）  tier … 1〜3（たかいほど つよくて はでな えんしゅつ）=====
+  { id: 'fire', en: 'fire', ja: 'ほのお', cat: 'magic', art: 'dg_fire', fam: 'fire', tier: 1, mp: 3, dmg: 9, kind: 'near', desc: 'いちばん ちかくの てきに ほのおで こうげき（MP 3）。' },
+  { id: 'water', en: 'water', ja: 'みず', cat: 'magic', art: 'water', fam: 'water', tier: 1, mp: 2, dmg: 6, kind: 'line', desc: 'むいている ほうこうに みずを とばす。まっすぐ とおくの てきにも あたる（MP 2）。' },
+  { id: 'heal', en: 'heal', ja: 'かいふく', cat: 'magic', art: 'dg_heal', fam: 'heal', tier: 1, mp: 4, val: 20, kind: 'self', desc: 'じぶんの HPを 20 かいふく する（MP 4）。' },
+  { id: 'ice', en: 'ice', ja: 'こおり', cat: 'magic', art: 'dg_ice', fam: 'ice', tier: 1, mp: 3, dmg: 6, kind: 'near', freeze: 3, minFloor: 6, desc: 'いちばん ちかくの てきを こおらせる。3ターン うごけない（MP 3）。' },
+  { id: 'thunder', en: 'thunder', ja: 'かみなり', cat: 'magic', art: 'dg_thunder', fam: 'thunder', tier: 1, mp: 5, dmg: 8, kind: 'all', minFloor: 8, desc: 'みえる てき ぜんぶに かみなりを おとす（MP 5）。' },
+  { id: 'wind', en: 'wind', ja: 'かぜ', cat: 'magic', art: 'dg_wind', fam: 'wind', tier: 1, mp: 2, kind: 'push', minFloor: 6, desc: 'となりの てきを かぜで とおくへ ふきとばす（MP 2）。' },
+  { id: 'light', en: 'light', ja: 'ひかり', cat: 'magic', art: 'dg_light', fam: 'light', tier: 1, mp: 3, kind: 'map', minFloor: 6, desc: 'この かいの ちずと かいだんが ぜんぶ みえる（MP 3）。' },
+  { id: 'bigfire', en: 'big fire', ja: 'おおきな ほのお', cat: 'magic', art: 'dg_bigfire', fam: 'fire', tier: 2, mp: 5, dmg: 18, kind: 'near', minFloor: 5, desc: 'big ＝ おおきい。おおきな ほのおで いちばん ちかくの てきを こうげき（MP 5）。' },
+  { id: 'widefire', en: 'wide fire', ja: 'ひろがる ほのお', cat: 'magic', art: 'dg_widefire', fam: 'fire', tier: 3, mp: 8, dmg: 16, kind: 'all', minFloor: 10, desc: 'wide ＝ ひろい。みえる てき ぜんぶを ほのおで つつむ（MP 8）。' },
+  { id: 'bigwater', en: 'big water', ja: 'おおきな みず', cat: 'magic', art: 'dg_bigwater', fam: 'water', tier: 2, mp: 4, dmg: 13, kind: 'line', minFloor: 7, desc: 'big ＝ おおきい。ふとい みずで まっすぐ こうげき（MP 4）。' },
+  { id: 'bigice', en: 'big ice', ja: 'おおきな こおり', cat: 'magic', art: 'dg_bigice', fam: 'ice', tier: 2, mp: 5, dmg: 14, kind: 'near', freeze: 4, minFloor: 10, desc: 'big ＝ おおきい。てきを こおらせて 4ターン うごけなく する（MP 5）。' },
+  { id: 'wideice', en: 'wide ice', ja: 'ひろがる こおり', cat: 'magic', art: 'dg_wideice', fam: 'ice', tier: 3, mp: 8, dmg: 10, kind: 'all', freeze: 2, minFloor: 14, desc: 'wide ＝ ひろい。みえる てき ぜんぶを こおらせる（MP 8）。' },
+  { id: 'bigthunder', en: 'big thunder', ja: 'おおきな かみなり', cat: 'magic', art: 'dg_bigthunder', fam: 'thunder', tier: 2, mp: 8, dmg: 17, kind: 'all', minFloor: 13, desc: 'big ＝ おおきい。みえる てき ぜんぶに おおきな かみなり（MP 8）。' },
+  { id: 'bigheal', en: 'big heal', ja: 'おおきな かいふく', cat: 'magic', art: 'dg_bigheal', fam: 'heal', tier: 2, mp: 7, val: 50, kind: 'self', minFloor: 9, desc: 'big ＝ おおきい。HPを 50 かいふく する（MP 7）。' },
+  { id: 'bigwind', en: 'big wind', ja: 'おおきな かぜ', cat: 'magic', art: 'dg_bigwind', fam: 'wind', tier: 2, mp: 4, dmg: 6, kind: 'push', wide: true, minFloor: 9, desc: 'big ＝ おおきい。みえる てき ぜんぶを ふきとばして ダメージ（MP 4）。' },
 ];
 export const WORD = Object.fromEntries(WORDS.map(w => [w.id, w]));
 export const SPELLS = WORDS.filter(w => w.cat === 'magic').map(w => w.id);
+export const FAMS = [...new Set(WORDS.filter(w => w.cat === 'magic').map(w => w.fam))]; // まほうの なかま（ならべる じゅん）
+// もちものの ふくろ：そうび／たべもの／まほうの ほん・どうぐ（ふくろ ごとに いれられる かず）
+export const BAGS = [
+  { id: 'equip', name: 'そうび', max: 8 },
+  { id: 'food', name: 'たべもの', max: 8 },
+  { id: 'tool', name: 'ほん・どうぐ', max: 8 },
+];
+export const bagOf = id => { const w = WORD[id]; return w.cat === 'equip' ? 'equip' : (w.use === 'heal' || w.use === 'potion') ? 'food' : 'tool'; };
+export const BAG_MAX = Object.fromEntries(BAGS.map(b => [b.id, b.max]));
 
 // モコ（しゅじんこう）
 export const HERO0 = { hp: 24, mp: 6, atk: 3, def: 0 };
 export const LV_EXP = [0, 0, 5, 14, 28, 46, 70, 100, 140, 190, 250, 320, 400, 490, 590, 700, 820, 950, 1090, 1240, 1400]; // その レベルに なる ための けいけんち（ごうけい）
-export const INV_MAX = 10;
+export const INV_MAX = 24; // ぜんぶの ふくろの ごうけい（ふくろ ごとの かずは BAGS）
 
 // ⭐（moko-math-v1 の points に たす）
 export const STARS = { floor: 1, boss: 10, dex10: 5, testMax: 5, clear: 30 };

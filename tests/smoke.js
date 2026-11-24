@@ -1038,10 +1038,10 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(await p.evaluate(() => { const r = __dg.run, h = r.hero; r.mons = [];
       const d = Object.entries({ right: [1, 0], left: [-1, 0], down: [0, 1], up: [0, -1] }).find(([, [dx, dy]]) => r.map.tiles[h.y + dy][h.x + dx] !== '#' && !r.boxes.some(b => b.x === h.x + dx && b.y === h.y + dy));
       const [dir, [dx, dy]] = d; r.boxes.push({ x: h.x + dx, y: h.y + dy, open: false });
-      r.inv = []; r.inv.push({ uid: 9100, id: 'key', peek: false }); for (let i = 0; i < 9; i++) r.inv.push({ uid: 9101 + i, id: 'apple', peek: false });
+      r.inv = []; r.inv.push({ uid: 9100, id: 'key', peek: false }); for (let i = 0; i < 7; i++) r.inv.push({ uid: 9101 + i, id: 'rope', peek: false }, { uid: 9111 + i, id: 'apple', peek: false }, { uid: 9121 + i, id: 'sword', peek: false }); r.inv.push({ uid: 9131, id: 'apple', peek: false }, { uid: 9132, id: 'sword', peek: false }); // ふくろ 3つとも いっぱい
       const n0 = r.items.length; __dg.act({ t: 'move', dir });
       const dropped = r.items.slice(n0);
-      return r.inv.length === 10 && dropped.length === 1 && !(dropped[0].x === h.x && dropped[0].y === h.y) && /もちものが いっぱい/.test(document.getElementById('log').textContent); }), 'もちものが いっぱいの たからばこ → ゆかに おいて おしらせ');
+      return dropped.length >= 1 && !(dropped[0].x === h.x && dropped[0].y === h.y) && /もちものが いっぱい/.test(document.getElementById('log').textContent); }), 'もちものが いっぱいの たからばこ → ゆかに おいて おしらせ');
     // せんとうは ゆっくり：メッセージと けいさんしきを 1ぎょうずつ、その あいだは うごけない
     await p.evaluate(() => { __dg.fast = false; const r = __dg.run, h = r.hero; r.mons = [{ uid: 901, id: 'rat', x: h.x + 1, y: h.y, hp: 30, maxhp: 30, atk: 1, exp: 1, tick: 0 }]; h.dir = 'right'; window.__x = { hp: h.hp }; __dg.act({ t: 'attack' }); });
     const slow1 = await p.evaluate(() => ({ busy: __dg.busy, again: __dg.act({ t: 'attack' }), lines: document.querySelectorAll('#log div').length, hpShown: document.getElementById('hp').textContent }));
@@ -1112,6 +1112,30 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(Object.values(mech).every(Boolean), 'ice・thunder・wind・light・armor・crab・ghost・spider ' + JSON.stringify(mech));
     // rope で つぎの かいへ（ボスの かいでは つかえない）
     ok(await p.evaluate(async () => { const r = __dg.run; r.mons = []; r.inv = [{ uid: 821, id: 'rope', peek: false }]; __dg.act({ t: 'use', uid: 821 }); await new Promise(ok => setTimeout(ok, 700)); return r.floor === 7; }), 'rope で つぎの かいへ');
+    // あるいても HPは もどらない・ふくろは べつべつ・つよい まほう・そうびの みため
+    const v3 = await p.evaluate(() => {
+      const r = __dg.run, h = r.hero, o = {}; closePop(); r.mons = [];
+      h.hp = 5; for (let i = 0; i < 12; i++) __dg.act({ t: 'wait' }); o.noRegen = h.hp === 5;
+      r.inv = []; for (let i = 0; i < 8; i++) r.inv.push({ uid: 7000 + i, id: 'apple', peek: false });
+      const x = h.x, y = h.y; r.items = r.items.filter(i => !(i.x === x + 1 && i.y === y)); r.boxes = r.boxes.filter(b => !(b.x === x + 1 && b.y === y)); r.stairs = null;
+      r.items.push({ uid: 7100, id: 'sword', x: x + 1, y });
+      r.map.tiles[y] = r.map.tiles[y].slice(0, x + 1) + '.' + r.map.tiles[y].slice(x + 2);
+      __dg.act({ t: 'move', dir: 'right' }); o.bags = r.inv.some(i => i.id === 'sword') && r.inv.filter(i => i.id === 'apple').length === 8;
+      h.x = x; h.y = y; r.items.push({ uid: 7102, id: 'bread', x: x + 1, y }); __dg.act({ t: 'move', dir: 'right' }); o.foodFull = !r.inv.some(i => i.id === 'bread') && /たべもの」が いっぱい/.test(document.getElementById('log').textContent);
+      r.inv.push({ uid: 7200, id: 'goldsword', peek: false }, { uid: 7201, id: 'silverarmor', peek: false }); const a0 = __dg.run.hero.atk;
+      __dg.act({ t: 'equip', uid: 7200 }); __dg.act({ t: 'equip', uid: 7201 });
+      o.equip = r.equip.weapon === 7200 && r.equip.armor === 7201 && document.getElementById('gear').querySelectorAll('canvas').length === 2;
+      h.mp = 50; r.spells = ['fire', 'bigfire', 'widefire']; r.mons = [{ uid: 7301, id: 'rat', x: h.x + 1, y: h.y, hp: 99, maxhp: 99, atk: 1, def: 0, exp: 1, tick: 0 }, { uid: 7302, id: 'bat', x: h.x, y: h.y + 1, hp: 99, maxhp: 99, atk: 1, def: 0, exp: 1, tick: 0 }];
+      const res = __dg.act({ t: 'cast', id: 'widefire' }); o.wide = r.mons.every(m => m.hp < 99) && res.ev.some(e => e.t === 'fx' && e.kind === 'aura' && e.tier === 3);
+      r.mons = [];
+      return o;
+    });
+    ok(Object.values(v3).every(Boolean), 'HPは あるいても もどらない・ふくろ べつべつ・gold sword/silver armor・wide fire ' + JSON.stringify(v3));
+    await p.click('#bItems'); await p.waitForTimeout(150);
+    ok(await p.evaluate(() => !!document.querySelector('#ov .gearpanel canvas') && document.querySelectorAll('#ov .bagtabs button').length === 3 && /gold sword/.test(document.querySelector('#ov .gslots').textContent)), 'もちもの：3つの ふくろ・そうびがめんに モコの みためと いまの そうび');
+    await p.click('#ov [data-act=close]'); await p.click('#bMagic'); await p.waitForTimeout(150);
+    ok(await p.evaluate(() => { const row = document.querySelector('#ov .mrow'); return row && /fire/.test(row.textContent) && /big fire/.test(row.textContent) && /wide fire/.test(row.textContent); }), 'まほう：おなじ なかまを ならべて ひょうじ');
+    await p.click('#ov [data-act=close]');
     // 20かいの ボス → テスト → クリア ⭐30
     const pts20 = await p.evaluate(() => S.points);
     await p.evaluate(() => { for (let k = 0; k < 20 && __dg.run.floor < 20; k++) { const r = __dg.run; r.tested = r.floor; r.stairs = { x: r.hero.x, y: r.hero.y }; __dg.goDown(); } closePop(); });

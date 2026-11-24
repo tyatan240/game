@@ -88,17 +88,8 @@ Object.assign(WORD_ART, {
     c.strokeStyle = '#b0c4e8'; c.lineWidth = 2; c.beginPath(); c.moveTo(30, 86); c.quadraticCurveTo(48, 50, 70, 14); c.stroke();
     c.fillStyle = 'rgba(255,230,120,.6)'; circle(c, 70, 22, 10); c.fill();
   },
-  dg_sword: c => {
-    c.save(); c.translate(50, 50); c.rotate(-0.8);
-    c.fillStyle = '#dfe6f0'; c.strokeStyle = '#8f9ab0'; c.lineWidth = 2.5; c.beginPath(); c.moveTo(-6, 10); c.lineTo(-6, -36); c.lineTo(0, -46); c.lineTo(6, -36); c.lineTo(6, 10); c.closePath(); c.fill(); c.stroke();
-    c.fillStyle = '#ffd34f'; rr(c, -18, 10, 36, 7, 3); c.fill(); c.fillStyle = '#c98f55'; rr(c, -4, 17, 8, 20, 3); c.fill(); c.fillStyle = '#ffd34f'; circle(c, 0, 40, 5); c.fill();
-    c.restore();
-  },
-  dg_shield: c => {
-    c.fillStyle = '#5a8fe0'; c.strokeStyle = '#3a6ab8'; c.lineWidth = 3;
-    c.beginPath(); c.moveTo(50, 14); c.lineTo(82, 24); c.quadraticCurveTo(82, 70, 50, 88); c.quadraticCurveTo(18, 70, 18, 24); c.closePath(); c.fill(); c.stroke();
-    c.fillStyle = '#ffd34f'; c.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? 7 : 15; i ? c.lineTo(50 + q * Math.cos(a), 46 + q * Math.sin(a)) : c.moveTo(50 + q * Math.cos(a), 46 + q * Math.sin(a)); } c.fill();
-  },
+  dg_sword: c => sword(c, {}),
+  dg_shield: c => shield(c, {}),
   dg_fire: c => {
     c.fillStyle = '#ff7a3a'; c.beginPath(); c.moveTo(50, 10); c.bezierCurveTo(72, 34, 86, 50, 78, 70); c.quadraticCurveTo(70, 90, 50, 90); c.quadraticCurveTo(28, 90, 22, 70); c.bezierCurveTo(16, 50, 34, 40, 40, 24); c.bezierCurveTo(44, 36, 48, 30, 50, 10); c.fill();
     c.fillStyle = '#ffd34f'; c.beginPath(); c.moveTo(50, 44); c.bezierCurveTo(62, 58, 66, 70, 60, 80); c.quadraticCurveTo(50, 88, 40, 80); c.bezierCurveTo(34, 70, 40, 60, 50, 44); c.fill();
@@ -205,12 +196,7 @@ Object.assign(WORD_ART, {
     c.beginPath(); c.moveTo(78, 60); c.quadraticCurveTo(92, 76, 80, 92); c.stroke();
     c.strokeStyle = '#a8763a'; c.lineWidth = 1.5; c.setLineDash([3, 5]); for (let i = 0; i < 3; i++) { c.beginPath(); c.ellipse(50, 56, 32 - i * 9, 22 - i * 6, 0, 0, Math.PI * 2); c.stroke(); } c.setLineDash([]);
   },
-  dg_armor: c => {
-    c.fillStyle = '#b8c4d8'; c.strokeStyle = '#6a7a96'; c.lineWidth = 3;
-    c.beginPath(); c.moveTo(30, 20); c.lineTo(42, 16); c.quadraticCurveTo(50, 26, 58, 16); c.lineTo(70, 20); c.lineTo(88, 36); c.lineTo(78, 50); c.lineTo(72, 44); c.lineTo(72, 86); c.lineTo(28, 86); c.lineTo(28, 44); c.lineTo(22, 50); c.lineTo(12, 36); c.closePath(); c.fill(); c.stroke();
-    c.fillStyle = '#dfe6f2'; c.beginPath(); c.moveTo(38, 34); c.lineTo(62, 34); c.lineTo(60, 60); c.quadraticCurveTo(50, 70, 40, 60); c.closePath(); c.fill(); c.stroke();
-    c.fillStyle = '#ffd34f'; circle(c, 50, 47, 5); c.fill(); c.strokeStyle = '#6a7a96'; c.beginPath(); c.moveTo(28, 74); c.lineTo(72, 74); c.stroke();
-  },
+  dg_armor: c => armor(c, {}),
   dg_ice: c => {
     c.strokeStyle = '#5ab0f0'; c.lineWidth = 6; c.lineCap = 'round';
     for (let i = 0; i < 3; i++) { const a = i * Math.PI / 3; c.beginPath(); c.moveTo(50 - Math.cos(a) * 38, 50 - Math.sin(a) * 38); c.lineTo(50 + Math.cos(a) * 38, 50 + Math.sin(a) * 38); c.stroke(); }
@@ -232,6 +218,75 @@ Object.assign(WORD_ART, {
     for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; c.beginPath(); c.moveTo(50 + Math.cos(a) * 28, 50 + Math.sin(a) * 28); c.lineTo(50 + Math.cos(a) * 42, 50 + Math.sin(a) * 42); c.stroke(); }
     c.fillStyle = '#fff3a8'; circle(c, 50, 50, 22); c.fill(); c.fillStyle = '#ffe066'; circle(c, 50, 50, 14); c.fill();
   },
+});
+
+// ===== そうび：おなじ かたちで いろ・おおきさを かえる（big・strong・silver・gold）=====
+function sparkle(c, x, y, r, col = '#fff') { c.fillStyle = col; c.beginPath(); c.moveTo(x, y - r); c.quadraticCurveTo(x, y, x + r, y); c.quadraticCurveTo(x, y, x, y + r); c.quadraticCurveTo(x, y, x - r, y); c.quadraticCurveTo(x, y, x, y - r); c.fill(); }
+function sword(c, o) {
+  const bw = o.w || 6, len = o.len || 46, blade = o.blade || '#dfe6f0', edge = o.edge || '#8f9ab0', guard = o.guard || '#ffd34f', grip = o.grip || '#c98f55';
+  c.save(); c.translate(50, 50 + (o.len ? (o.len - 46) * 0.25 : 0)); c.rotate(-0.8);
+  if (o.glow) { c.shadowColor = o.glow; c.shadowBlur = 14; }
+  c.fillStyle = blade; c.strokeStyle = edge; c.lineWidth = 2.5; c.beginPath(); c.moveTo(-bw, 10); c.lineTo(-bw, -len + 10); c.lineTo(0, -len); c.lineTo(bw, -len + 10); c.lineTo(bw, 10); c.closePath(); c.fill(); c.stroke();
+  c.shadowBlur = 0;
+  c.strokeStyle = 'rgba(255,255,255,.7)'; c.lineWidth = 2; c.beginPath(); c.moveTo(-bw * 0.35, 6); c.lineTo(-bw * 0.35, -len + 14); c.stroke();
+  c.fillStyle = guard; rr(c, -12 - bw, 10, 24 + bw * 2, 7, 3); c.fill(); c.fillStyle = grip; rr(c, -4, 17, 8, 20, 3); c.fill(); c.fillStyle = guard; circle(c, 0, 40, 5); c.fill();
+  if (o.gem) { c.fillStyle = o.gem; circle(c, 0, 13.5, 3.5); c.fill(); }
+  c.restore();
+  (o.spark || []).forEach(([x, y, r]) => sparkle(c, x, y, r, o.sparkCol));
+}
+function shield(c, o) {
+  const k = o.k || 1, fill = o.fill || '#5a8fe0', line = o.line || '#3a6ab8', mark = o.mark || '#ffd34f';
+  c.save(); c.translate(50, 50); c.scale(k, k); c.translate(-50, -50);
+  if (o.glow) { c.shadowColor = o.glow; c.shadowBlur = 12; }
+  c.fillStyle = fill; c.strokeStyle = line; c.lineWidth = 3;
+  c.beginPath(); c.moveTo(50, 14); c.lineTo(82, 24); c.quadraticCurveTo(82, 70, 50, 88); c.quadraticCurveTo(18, 70, 18, 24); c.closePath(); c.fill(); c.stroke(); c.shadowBlur = 0;
+  if (o.rim) { c.strokeStyle = o.rim; c.lineWidth = 4; c.beginPath(); c.moveTo(50, 20); c.lineTo(76, 28); c.quadraticCurveTo(76, 66, 50, 82); c.quadraticCurveTo(24, 66, 24, 28); c.closePath(); c.stroke(); }
+  if (o.rivets) { c.fillStyle = o.rim || '#ddd'; [[30, 30], [70, 30], [32, 62], [68, 62], [50, 78]].forEach(([x, y]) => { circle(c, x, y, 3); c.fill(); }); }
+  c.fillStyle = mark; c.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? 7 : 15; i ? c.lineTo(50 + q * Math.cos(a), 46 + q * Math.sin(a)) : c.moveTo(50 + q * Math.cos(a), 46 + q * Math.sin(a)); } c.fill();
+  c.restore();
+  (o.spark || []).forEach(([x, y, r]) => sparkle(c, x, y, r, o.sparkCol));
+}
+function armor(c, o) {
+  const fill = o.fill || '#b8c4d8', line = o.line || '#6a7a96', chest = o.chest || '#dfe6f2', gem = o.gem || '#ffd34f';
+  if (o.glow) { c.shadowColor = o.glow; c.shadowBlur = 12; }
+  c.fillStyle = fill; c.strokeStyle = line; c.lineWidth = 3;
+  c.beginPath(); c.moveTo(30, 20); c.lineTo(42, 16); c.quadraticCurveTo(50, 26, 58, 16); c.lineTo(70, 20); c.lineTo(88, 36); c.lineTo(78, 50); c.lineTo(72, 44); c.lineTo(72, 86); c.lineTo(28, 86); c.lineTo(28, 44); c.lineTo(22, 50); c.lineTo(12, 36); c.closePath(); c.fill(); c.stroke(); c.shadowBlur = 0;
+  c.fillStyle = chest; c.beginPath(); c.moveTo(38, 34); c.lineTo(62, 34); c.lineTo(60, 60); c.quadraticCurveTo(50, 70, 40, 60); c.closePath(); c.fill(); c.stroke();
+  c.fillStyle = gem; circle(c, 50, 47, 5); c.fill(); c.strokeStyle = line; c.beginPath(); c.moveTo(28, 74); c.lineTo(72, 74); c.stroke();
+  if (o.shoulder) { c.fillStyle = o.shoulder; [[20, 38], [80, 38]].forEach(([x, y]) => { c.beginPath(); c.ellipse(x, y, 10, 7, x < 50 ? -0.6 : 0.6, 0, Math.PI * 2); c.fill(); c.stroke(); }); }
+  (o.spark || []).forEach(([x, y, r]) => sparkle(c, x, y, r, o.sparkCol));
+}
+// ===== まほう：tier 2（big）は ひかりの わ と きらきら、tier 3（wide）は 3つ ならんで ひろがる =====
+function bigMagic(c, base, glow) {
+  const g = c.createRadialGradient(50, 52, 6, 50, 52, 50); g.addColorStop(0, glow); g.addColorStop(1, 'rgba(255,255,255,0)');
+  c.fillStyle = g; circle(c, 50, 52, 50); c.fill();
+  c.save(); c.translate(50, 54); c.scale(1.08, 1.08); c.translate(-50, -54); base(c); c.restore();
+  [[16, 22, 7], [84, 26, 6], [82, 80, 5], [18, 76, 5]].forEach(([x, y, r]) => sparkle(c, x, y, r, '#fff8c8'));
+}
+function wideMagic(c, base, glow) {
+  const g = c.createRadialGradient(50, 60, 8, 50, 60, 56); g.addColorStop(0, glow); g.addColorStop(1, 'rgba(255,255,255,0)');
+  c.fillStyle = g; c.fillRect(0, 0, 100, 100);
+  [[-26, 14, 0.58], [26, 14, 0.58], [0, 0, 0.8]].forEach(([dx, dy, k]) => { c.save(); c.translate(50 + dx, 54 + dy); c.scale(k, k); c.translate(-50, -54); base(c); c.restore(); });
+  [[10, 18, 6], [90, 20, 6], [50, 8, 5]].forEach(([x, y, r]) => sparkle(c, x, y, r, '#fff8c8'));
+}
+Object.assign(WORD_ART, {
+  dg_bigsword: c => sword(c, { w: 8, len: 54, guard: '#ffb347' }),
+  dg_strongsword: c => sword(c, { w: 9, len: 50, blade: '#9aa6b8', edge: '#4a5468', guard: '#c8304a', grip: '#4a3a3a', gem: '#ffd34f' }),
+  dg_silversword: c => sword(c, { w: 7, len: 52, blade: '#f4f8ff', edge: '#a8b8d0', guard: '#c8d4e8', grip: '#6a7a96', gem: '#7ac8ff', glow: '#bfe4ff', spark: [[78, 18, 7], [24, 70, 5]], sparkCol: '#ffffff' }),
+  dg_goldsword: c => sword(c, { w: 8, len: 56, blade: '#ffe38a', edge: '#d8a020', guard: '#ff6b8a', grip: '#8a5a2a', gem: '#ff4a6a', glow: '#ffd34f', spark: [[80, 16, 8], [20, 66, 6], [70, 78, 4]], sparkCol: '#fff3a8' }),
+  dg_bigshield: c => shield(c, { k: 1.12, fill: '#4fb0a0', line: '#2a7a6e' }),
+  dg_strongshield: c => shield(c, { k: 1.1, fill: '#7a8498', line: '#3a4458', rim: '#c8d0dc', rivets: true, mark: '#ff6b6b' }),
+  dg_silvershield: c => shield(c, { k: 1.12, fill: '#e8eef8', line: '#98a8c4', rim: '#b8c8e0', mark: '#7ac8ff', glow: '#bfe4ff', spark: [[82, 18, 7], [18, 72, 5]] }),
+  dg_strongarmor: c => armor(c, { fill: '#7a8498', line: '#3a4458', chest: '#a8b2c4', gem: '#ff6b6b', shoulder: '#5a6478' }),
+  dg_silverarmor: c => armor(c, { fill: '#e8eef8', line: '#98a8c4', chest: '#ffffff', gem: '#7ac8ff', shoulder: '#c8d4e8', glow: '#bfe4ff', spark: [[86, 16, 7], [14, 80, 5]] }),
+  dg_bigfire: c => bigMagic(c, WORD_ART.dg_fire, 'rgba(255,150,60,.55)'),
+  dg_widefire: c => wideMagic(c, WORD_ART.dg_fire, 'rgba(255,120,40,.5)'),
+  dg_bigwater: c => bigMagic(c, WORD_ART.water, 'rgba(90,170,255,.5)'),
+  dg_bigice: c => bigMagic(c, WORD_ART.dg_ice, 'rgba(140,210,255,.6)'),
+  dg_wideice: c => wideMagic(c, WORD_ART.dg_ice, 'rgba(140,210,255,.55)'),
+  dg_bigthunder: c => bigMagic(c, WORD_ART.dg_thunder, 'rgba(255,220,80,.6)'),
+  dg_bigheal: c => bigMagic(c, WORD_ART.dg_heal, 'rgba(120,230,150,.55)'),
+  dg_bigwind: c => bigMagic(c, WORD_ART.dg_wind, 'rgba(110,210,180,.5)'),
 });
 
 // マップの タイル（キャンバスに じかに かく。T … タイルの おおきさ）
