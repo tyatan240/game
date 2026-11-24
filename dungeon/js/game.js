@@ -56,7 +56,7 @@ function rollItem(run) {
 const learnable = run => SPELLS.filter(s => { const w = WORD[s]; return (!w.minFloor || w.minFloor <= Math.max(1, ef(run))) && (w.tier || 1) <= 1 + Math.max(0, ...run.spells.filter(k => WORD[k].fam === w.fam).map(k => WORD[k].tier || 1)); });
 // ふくろ（そうび・たべもの・ほん/どうぐ）に まだ はいるか
 export const bagCount = (run, bag) => run.inv.filter(i => bagOf(i.id) === bag).length;
-export const bagRoom = (run, id) => bagCount(run, bagOf(id)) < BAG_MAX[bagOf(id)];
+export const bagRoom = (run, id) => id === 'key' || bagCount(run, bagOf(id)) < BAG_MAX[bagOf(id)]; // かぎは ふくろが いっぱいでも ひろえる
 const bagName = id => BAGS.find(b => b.id === bagOf(id)).name;
 export function enterFloor(run, floor) {
   if (run.equip && !('armor' in run.equip)) run.equip.armor = null; // ふるい ほぞんの ぼうけん
@@ -271,7 +271,7 @@ function freeNear(run, x, y) {
 function openBox(run, b, ev) {
   if (b.open) { ev.push({ t: 'msg', text: `${en('treasurebox')} は からっぽ` }); return; }
   const k = run.inv.find(i => i.id === 'key');
-  if (!k) { ev.push({ t: 'msg', text: `${en('treasurebox')} だ。${en('key')} が あれば あけられる` }); ev.push({ t: 'bump' }); return; }
+  if (!k) { const left = run.items.filter(i => i.id === 'key').length; ev.push({ t: 'msg', text: `${en('treasurebox')} だ。${en('key')} が あれば あけられる${left ? `（この かいに ${en('key')} が あと ${left}こ あるよ）` : ''}` }); ev.push({ t: 'bump' }); return; }
   run.inv = run.inv.filter(i => i !== k); b.open = true;
   const got = run.tut ? ['bread', 'shield'] : []; // れんしゅうは きまった もの
   const cr = rand(), cardN = isTreasure(run) ? (cr < 0.1 ? 2 : cr < 0.55 ? 1 : 0) : 0; // たからさがし：はんぶんくらいは カード（ときどき 2まい）＋ アイテム

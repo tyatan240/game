@@ -1241,6 +1241,8 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(box && await p.evaluate(() => !!document.querySelector('#ov .flip') && Object.keys(__dg.D.treasure.cards).length >= 1), 'たからばこから カード（うらむきで でる）');
     await p.click('#ov .flip'); await p.waitForTimeout(800);
     ok(await p.evaluate(() => /NEW!/.test(document.getElementById('ov').textContent) && document.querySelector('#ov .flip.open .tcard')), 'タップで めくる → NEW!');
+    ok(await p.evaluate(() => { const b = document.querySelector('#ov [data-act=dgRevealSay]'); if (!b) return false; b.click(); b.click(); return !!document.querySelector('#ov [data-act=dgRevealSay]'); }), 'カードの「🔊 きく」で なんかいでも きける');
+    ok(await p.evaluate(async () => { const G = await import('./js/game.js'), r = __dg.run, inv0 = r.inv; r.inv = Array.from({ length: 8 }, (_, i) => ({ uid: 7700 + i, id: 'rope', peek: false })); const ok = G.bagRoom(r, 'key') && !G.bagRoom(r, 'torch'); r.inv = inv0; return ok; }), 'かぎは ふくろが いっぱいでも ひろえる');
     for (let k = 0; k < 4 && await p.$('#ov [data-act=dgRevealNext]'); k++) { await p.click('#ov [data-act=dgRevealNext]'); await p.waitForTimeout(500); if (await p.$('#ov .flip:not(.open)')) { await p.click('#ov .flip'); await p.waitForTimeout(700); } }
     // ダブり → かけら、3まい そろうと もじバッジ
     const v = await p.evaluate(async () => {

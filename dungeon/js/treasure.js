@@ -46,16 +46,16 @@ export function giveCard(rare, run) {
 /* ---------- カードの みため ---------- */
 // カード 1まいの HTML（あとで data-art に え を いれる）。size：'s'（アルバム）・'m'（めくる）・'l'（おおきく）
 // レアカードの きらきら（ばしょと はやさを ずらした ほし）
-const SPARKS = [[14, 18, 0], [82, 12, .6], [70, 46, 1.2], [20, 58, .3], [88, 70, 1.6], [46, 8, 2.1], [10, 84, .9], [60, 86, 1.9]].map(([x, y, d]) => `<i style="left:${x}%;top:${y}%;animation-delay:${d}s"></i>`).join('');
+const SPARKS = [[14, 18, 0], [82, 12, .6], [70, 46, 1.2], [20, 58, .3], [88, 70, 1.6], [46, 8, 2.1], [10, 84, .9], [60, 86, 1.9], [32, 30, 1.4], [92, 40, .2], [6, 40, 1.7], [38, 72, .5], [78, 90, 1.1], [52, 54, 2.4]].map(([x, y, d], i) => `<i style="left:${x}%;top:${y}%;animation-delay:${d}s;--s:${[1, .7, 1.3, .8][i % 4]}"></i>`).join('');
 export function cardHTML(card, size = 'm') {
   const w = card.en, first = w[0], rest = w.slice(1);
   return `<div class="tcard r${card.rare} ${size}" data-card="${card.id}">
-    <div class="tc-in">${card.rare > 1 ? `<div class="bgfx"></div><div class="glitter"></div><div class="sparks">${SPARKS}</div>` : ''}
+    <div class="tc-in">${card.rare > 1 ? `<div class="bgfx"></div>${card.rare === 3 ? '<div class="bgfx2"></div><div class="bokeh"></div>' : ''}<div class="glitter"></div><div class="sparks">${SPARKS}</div>` : ''}
       <div class="tc-top"><span class="tc-no">No.${String(card.no).padStart(3, '0')}</span><span class="tc-rare">${stars(card.rare)}</span></div>
       <div class="tc-big">${card.letter}</div>
       <div class="tc-art" data-art="${card.art}"></div>
       <div class="tc-name"><b>${first}</b>${rest}</div>
-      <div class="tc-ja">${card.ja}</div>
+      <div class="tc-ja">${card.ja}</div>${card.rare === 3 ? '<div class="tc-rib">★ キラカード ★</div>' : card.rare === 2 ? '<div class="tc-rib">レア</div>' : ''}
     </div>${card.rare === 3 ? '<div class="holo"></div><div class="glint"></div>' : card.rare === 2 ? '<div class="sheen"></div>' : ''}
   </div>`;
 }
@@ -83,7 +83,7 @@ export function showReveals() {
     <div class="rv-head">たからの カード！</div>
     <div class="flip r${c.rare}" data-act="dgFlip"><div class="flip-in"><div class="back"><div class="back-mark">？</div></div><div class="front">${cardHTML(c, 'm')}</div></div></div>
     <div class="rv-msg">タップして めくろう</div>
-    <div class="btns rv-btns" hidden><button class="big" data-act="dgRevealNext">${queue.length ? 'つぎの カード' : 'やったね！'}</button></div>
+    <div class="btns rv-btns" hidden><button class="big sub" data-act="dgRevealSay">🔊 きく</button><button class="big" data-act="dgRevealNext">${queue.length ? 'つぎの カード' : 'やったね！'}</button></div>
   </div>`);
   fillArt(document.getElementById('ov'), 110);
   current = r;
@@ -103,6 +103,7 @@ export function flipCard() {
     const b = document.querySelector('#ov .rv-btns'); if (b) b.hidden = false;
   }, 550);
 }
+export const revealSay = () => { if (current) X.speak(`${current.card.letter}, ${current.card.en}!`); }; // なんかいでも きける
 export function revealNext() { showing = false; current = null; closePop(); if (queue.length) setTimeout(showReveals, 150); else X.onRevealDone(); }
 
 /* ---------- アルバム（カードずかん）---------- */
