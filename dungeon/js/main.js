@@ -1,7 +1,7 @@
 // モコの イングリッシュダンジョン：がめん・そうさ・チュートリアル・ずかん・⭐
 // core.js（S・save・charSVG・showPop・ACT）を つかう。きまりは game.js、えは art.js、ほぞんは save.js
-import { WORD, WORDS, CATS, MAX_FLOOR, STARS, BOSS_FLOORS, TEST_FLOORS, zoneOf, BAGS, bagOf, FAMS } from './data.js';
-import { newRun, act, descend, updateSeen, visible, tileAt, seenAt, onStairs, heroAtk, heroDef, monAt, DIRS, bagCount } from './game.js';
+import { WORD, WORDS, CATS, MAX_FLOOR, STARS, BOSS_FLOORS, TEST_FLOORS, zoneOf, BAGS, GROUPS, bagOf, FAMS } from './data.js';
+import { newRun, act, descend, updateSeen, visible, tileAt, seenAt, onStairs, heroAtk, heroDef, monAt, DIRS, bagCount, spellTargets } from './game.js';
 import { drawTile, drawArt, wordArt } from './art.js';
 import { load, save as saveDg, flush } from './save.js';
 import { sayLetter, unlockAudio, setAudioSettings, sfx } from '../../abc/js/engine/audio.js';
@@ -17,7 +17,7 @@ const speak = text => { if (D.settings.voice) sayLetter({ speak: text }); };
 function persist() { D.run = run && !run.over ? run : null; saveDg(D); }
 function stars(n, why) { if (!n) return; S.points += n; save(); toast(`⭐＋${n} ${why}`); sfx.star(); }
 let toastT = null;
-function toast(html) { const t = $id('toast'); t.innerHTML = html; t.hidden = false; t.style.top = Math.max(70, $id('dock').getBoundingClientRect().top - 52) + 'px'; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 2200); }
+function toast(html) { const t = $id('toast'); t.innerHTML = html; t.hidden = false; t.style.top = Math.max(70, (!$id('aim').hidden ? $id('aim') : $id('dock')).getBoundingClientRect().top - 52) + 'px'; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 2200); }
 
 /* ---------- ずかん ---------- */
 const dexOf = id => (D.dex[id] = D.dex[id] || { seen: 0, used: 0, read: 0, looked: 0, first: Date.now() });
@@ -93,7 +93,7 @@ function draw(now) {
   // むいている ほう（ちいさな やじるし）
   const [dx, dy] = DIRS[h.dir]; g.fillStyle = 'rgba(255,211,79,.9)'; g.beginPath(); const cx = ox + (h.x + 0.5 + dx * 0.55) * t, cy = oy + (h.y + 0.5 + dy * 0.55) * t;
   g.moveTo(cx + dx * t * 0.12, cy + dy * t * 0.12); g.lineTo(cx - dy * t * 0.1 - dx * 0.04 * t, cy + dx * t * 0.1 - dy * 0.04 * t); g.lineTo(cx + dy * t * 0.1 - dx * 0.04 * t, cy - dx * t * 0.1 - dy * 0.04 * t); g.fill();
-  drawTutArrow(now, t, ox, oy);
+  drawTutArrow(now, t, ox, oy); drawAim(now, t, ox, oy);
   // えんしゅつ
   fx = fx.filter(f => now - f.t0 < (f.dur || 900));
   for (const f of fx) {
@@ -109,6 +109,7 @@ function draw(now) {
       g.fillStyle = f.enemy ? '#c8304a' : '#2a6ab8'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(f.text, bx + w / 2, by + hgt / 2 + 1); g.textBaseline = 'alphabetic'; g.globalAlpha = 1; continue;
     }
     if (f.kind === 'vanish') { const s = t * (1 - k * 0.7); g.globalAlpha = Math.max(0, 1 - k * 1.2); drawArt(g, WORD[f.id].art, ox + (f.x + 0.5) * t - s / 2, oy + (f.y + 0.5) * t - s / 2, s); g.globalAlpha = 1; g.fillStyle = `rgba(255,230,120,${1 - k})`; for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2, d = t * (0.2 + k * 0.6); g.beginPath(); g.arc(ox + (f.x + 0.5) * t + Math.cos(a) * d, oy + (f.y + 0.5) * t + Math.sin(a) * d, t * 0.06, 0, 7); g.fill(); } continue; }
+    if (f.kind === 'spell') { drawSpell(f, now, t, ox, oy); continue; }
     if (f.kind === 'aura') { // つよい まほう：モコの まわりに ひかりの わ（tier 3 は 2じゅう）
       const col = FX_COL[f.fam] || '255,220,120', cx2 = ox + (f.x + 0.5) * t, cy2 = oy + (f.y + 0.5) * t;
       for (let r = 0; r < f.tier - 1; r++) { const kk = Math.min(1, k * 1.3 + r * 0.15); g.strokeStyle = `rgba(${col},${Math.max(0, 1 - kk)})`; g.lineWidth = t * 0.12 * f.tier; g.beginPath(); g.arc(cx2, cy2, t * (0.4 + kk * (0.9 + f.tier * 0.5)), 0, 7); g.stroke(); }
@@ -118,11 +119,42 @@ function draw(now) {
     if (f.kind === 'flash') { g.fillStyle = `rgba(${FX_COL[f.fam] || '255,255,255'},${0.35 * (1 - k)})`; g.fillRect(0, 0, vw, vh); continue; }
     const fxArt = { fire: 'dg_fire', ice: 'dg_ice', thunder: 'dg_thunder', wind: 'dg_wind', water: 'water' }[f.kind];
     if (fxArt) { const sc = 0.8 * (1 + 0.45 * ((f.tier || 1) - 1)); g.globalAlpha = 1 - k; drawArt(g, fxArt, X - t * sc / 2, oy + (f.y + 0.9) * t - t * sc, t * sc); if ((f.tier || 1) >= 2) { g.strokeStyle = `rgba(${FX_COL[f.kind] || '255,255,255'},${1 - k})`; g.lineWidth = 4; g.beginPath(); g.arc(X, oy + (f.y + 0.5) * t, t * (0.3 + k * 0.9), 0, 7); g.stroke(); } g.globalAlpha = 1; }
-    if (f.n != null) { g.font = `800 ${Math.round(t * 0.42)}px "M PLUS Rounded 1c",sans-serif`; g.textAlign = 'center'; g.lineWidth = 4; g.strokeStyle = '#fff'; g.fillStyle = f.kind === 'heal' ? '#2f9a5a' : f.kind === 'hurt' ? '#e0304a' : '#e07a1a'; const s = (f.kind === 'heal' ? '+' : '') + f.n; g.strokeText(s, X, Y); g.fillText(s, X, Y); }
+    if (f.n != null) { g.font = `800 ${Math.round(t * 0.42)}px "M PLUS Rounded 1c",sans-serif`; g.textAlign = 'center'; g.lineWidth = 4; g.strokeStyle = '#fff'; g.fillStyle = f.kind === 'heal' ? '#2f9a5a' : f.kind === 'mp' ? '#2a6ad8' : f.kind === 'hurt' ? '#e0304a' : '#e07a1a'; const s = (f.kind === 'heal' || f.kind === 'mp' ? '+' : '') + f.n + (f.kind === 'mp' ? ' MP' : ''); g.strokeText(s, X, Y); g.fillText(s, X, Y); }
   }
   if (fx.some(f => f.kind === 'hurt' && now - f.t0 < 200)) { g.fillStyle = 'rgba(255,60,80,.18)'; g.fillRect(0, 0, vw, vh); }
 }
 function loop(now) { draw(now); requestAnimationFrame(loop); }
+// まほうの えんしゅつ（さきに みせる）：まえはん モコから とんでいく、うしろはん あたった ところで はじける
+const SPELL_MS = 950, FX_ART = { fire: 'dg_fire', ice: 'dg_ice', thunder: 'dg_thunder', wind: 'dg_wind', water: 'water', heal: 'dg_heal', light: 'dg_light' };
+function drawSpell(f, now, t, ox, oy) {
+  const k = Math.min(1, (now - f.t0) / f.dur), col = FX_COL[f.fam] || '255,255,255', tier = f.tier || 1, art = FX_ART[f.fam];
+  const C = ([x, y]) => [ox + (x + 0.5) * t, oy + (y + 0.5) * t], [hx, hy] = C(f.from);
+  const glow = (x, y, r, a) => { const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(${col},${a})`); gr.addColorStop(1, `rgba(${col},0)`); g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); };
+  if (f.kind2 === 'self' || f.kind2 === 'map') { // じぶんに：ひかりが たちのぼる
+    glow(hx, hy, t * (0.8 + k * tier), 0.6 * (1 - k * 0.6));
+    for (let i = 0; i < 8 * tier; i++) { const a = i * 2.4, r = t * (0.3 + (i % 4) * 0.15); g.fillStyle = `rgba(255,255,230,${1 - k})`; g.beginPath(); g.arc(hx + Math.cos(a) * r, hy - k * t * (1 + (i % 3) * 0.4), t * 0.05 * tier, 0, 7); g.fill(); }
+    if (art) { const s = t * (0.7 + 0.25 * tier) * (0.6 + k * 0.5); g.globalAlpha = 1 - k * 0.7; drawArt(g, art, hx - s / 2, hy - t * 0.4 - k * t * 0.6 - s / 2, s); g.globalAlpha = 1; }
+    return;
+  }
+  if (f.kind2 === 'all' || (f.kind2 === 'push' && f.cells.length > 4)) { // ひろがる：なみが へやに ひろがる
+    const R = t * (0.5 + k * 7);
+    g.strokeStyle = `rgba(${col},${0.8 * (1 - k)})`; g.lineWidth = t * 0.25 * tier; g.beginPath(); g.arc(hx, hy, R, 0, 7); g.stroke();
+    for (const c of f.cells) { const [x, y] = C(c), d = Math.hypot(x - hx, y - hy); if (d < R) { g.fillStyle = `rgba(${col},${0.22 * (1 - k)})`; g.fillRect(x - t / 2, y - t / 2, t, t); } }
+  }
+  if (f.kind2 === 'line') { // まっすぐ のびる
+    const n = Math.max(1, Math.ceil(f.cells.length * Math.min(1, k * 1.8))), last = f.cells[n - 1] || f.from, [ex, ey] = C(last);
+    g.strokeStyle = `rgba(${col},${1 - k * 0.6})`; g.lineCap = 'round'; g.lineWidth = t * 0.22 * tier; g.beginPath(); g.moveTo(hx, hy); g.lineTo(ex, ey); g.stroke();
+    g.strokeStyle = `rgba(255,255,255,${0.8 - k * 0.6})`; g.lineWidth = t * 0.07 * tier; g.beginPath(); g.moveTo(hx, hy); g.lineTo(ex, ey); g.stroke();
+    if (art) { const s = t * (0.5 + 0.2 * tier); drawArt(g, art, ex - s / 2, ey - s / 2, s); }
+    return;
+  }
+  // とんでいく → はじける
+  for (const to of f.to) {
+    const [tx, ty] = C(to);
+    if (k < 0.5 && f.kind2 !== 'all') { const p = k / 0.5, x = hx + (tx - hx) * p, y = hy + (ty - hy) * p - Math.sin(p * Math.PI) * t * 0.6; glow(x, y, t * 0.5 * tier, 0.7); if (art) { const s = t * (0.45 + 0.15 * tier); drawArt(g, art, x - s / 2, y - s / 2, s); } }
+    else { const p = f.kind2 === 'all' ? k : (k - 0.5) / 0.5, s = t * (0.8 + 0.45 * tier) * (0.7 + p * 0.5); glow(tx, ty, t * (0.6 + p * tier * 0.6), 0.75 * (1 - p)); if (art) { g.globalAlpha = Math.max(0, 1 - p * 0.8); drawArt(g, art, tx - s / 2, ty - s / 2 - t * 0.1, s); g.globalAlpha = 1; } for (let i = 0; i < 6 + 4 * tier; i++) { const a = i / (6 + 4 * tier) * Math.PI * 2, d = t * (0.2 + p * (0.6 + 0.3 * tier)); g.fillStyle = `rgba(255,250,200,${1 - p})`; g.beginPath(); g.arc(tx + Math.cos(a) * d, ty + Math.sin(a) * d, t * 0.05 * tier, 0, 7); g.fill(); } }
+  }
+}
 const FX_COL = { fire: '255,130,50', water: '90,170,255', ice: '140,210,255', thunder: '255,220,60', heal: '120,230,150', wind: '110,210,180', light: '255,240,150' };
 // そうびの みため：モコの え の まえ（hand：けん・たて）と うしろ（armor：よろい）に かさねる。原点は あしもと
 const gearOf = slot => { const it = run && run.inv.find(i => i.uid === run.equip[slot]); return it ? WORD[it.id] : null; };
@@ -132,7 +164,7 @@ function drawGear(c, hs, layer) {
   const a = gearOf('armor'), w = gearOf('weapon'), sh = gearOf('shield');
   if (a) drawArt(c, a.art, -hs * 0.2, -hs * 0.47, hs * 0.4); // よろいは からだの まえ
   if (sh) drawArt(c, sh.art, -hs * 0.56, -hs * 0.62, hs * 0.44);
-  if (w) drawArt(c, w.art, hs * 0.08, -hs * 0.78, hs * 0.58);
+  if (w) { const k = hs * 0.58; c.save(); c.translate(hs * 0.38, -hs * 0.5); c.scale(-1, 1); drawArt(c, w.art, -k * 0.5, -k * 0.5, k); c.restore(); } // けんさきは モコの そとがわ（みぎうえ）
 }
 // そうびがめんの おおきな え（モコ＋そうび）
 function gearView(size) {
@@ -174,6 +206,7 @@ let dispHp = null, fast = false, ghosts = [], monHpShown = null; // せんとう
 const wait = ms => new Promise(ok => fast ? ok() : setTimeout(ok, ms));
 function doAction(a) {
   if (mode !== 'play' || busy || !run) return null;
+  if (aim && a.t !== 'cast') endAim();
   if (!tutAllows(a)) { nudge(); return null; } // チュートリアル：いま する こと いがいは できない
   if (tut) tut.lastAct = a.t;
   unlockAudio();
@@ -182,7 +215,7 @@ function doAction(a) {
   const r = act(run, a);
   vis = visible(run);
   if (r.turn) { tutFlag('turn'); persist(); }
-  const combat = r.ev.some(e => e.t === 'fx' && ['hit', 'fire', 'water', 'ice', 'thunder', 'wind', 'hurt'].includes(e.kind) && e.n != null);
+  const combat = r.ev.some(e => (e.t === 'fx' && ['hit', 'fire', 'water', 'ice', 'thunder', 'wind', 'hurt'].includes(e.kind) && e.n != null) || e.t === 'spell');
   if (!combat || fast) { handle(r.ev, false); hud(); return r; }
   busy = true; dispHp = hp0; stopWalk(); stopHold();
   ghosts = before.filter(b => !run.mons.some(m => m.uid === b.uid)); monHpShown = new Map(before.map(b => [b.uid, b.hp]));
@@ -195,6 +228,7 @@ async function handle(ev, slow) {
     if (e.t === 'msg') { log(e.text); if (e.heroHp != null) dispHp = e.heroHp; if (e.monUid != null && monHpShown) monHpShown.set(e.monUid, e.monHp); if (slow) { hud(); await wait(e.calc ? CALC_MS : MSG_MS); } }
     else if (e.t === 'fx') fx.push({ ...e, t0: performance.now() });
     else if (e.t === 'bubble') fx.push({ kind: 'bubble', ...e, t0: performance.now(), dur: 1300 });
+    else if (e.t === 'spell') { fx.push({ ...e, kind: 'spell', kind2: e.kind, t0: performance.now(), dur: SPELL_MS }); if (slow) await wait(SPELL_MS); } // まほうの えんしゅつを みせてから ダメージ
     else if (e.t === 'meet') meet(e.id);
     else if (e.t === 'pickup') { sfx.tap(); speak(WORD[e.id].en); meet(e.id); tutFlag('pickup', e.id); stopWalk(); }
     else if (e.t === 'used') { const d = dexOf(e.id); d.used++; if (e.read) { d.read++; } tutFlag('used', e.id); }
@@ -248,7 +282,7 @@ function walkTo(tx, ty) {
   }, 220);
 }
 function tapMap(px, py) {
-  if (mode !== 'play' || busy) return;
+  if (mode !== 'play' || busy || aim) return;
   const [x, y] = toTile(px, py), h = run.hero, dist = Math.abs(x - h.x) + Math.abs(y - h.y);
   const ti = tutInfo();
   if (ti) { // チュートリアル：しるしの ところ だけ
@@ -290,22 +324,52 @@ function showCard(id, ctx = {}) {
   document.querySelector('#ov .dart').appendChild(wordArt(w.art, 120));
   speak(w.en);
 }
-let bagTab = 'equip';
+/* ---------- まほうの ねらい（あたる ところを さきに みせる）---------- */
+let aim = null;
+function startAim(id) {
+  closePop(); if (!run || mode !== 'play') return;
+  const w = WORD[id]; if (run.hero.mp < w.mp) return;
+  stopWalk(); aim = { id }; sfx.tap(); speak(w.en); aimUI();
+}
+function endAim() { aim = null; aimUI(); }
+function aimUI() {
+  const el = $id('aim');
+  if (!aim || !run) { el.hidden = true; el.innerHTML = ''; tutUI(); return; }
+  const w = WORD[aim.id], tg = spellTargets(run, aim.id), can = !(tg.none && !tg.mons.length && w.kind !== 'line');
+  el.hidden = false;
+  el.innerHTML = `<div class="at"><span class="ia"></span><div class="atx"><b class="en">${w.en}</b> <small>${'★'.repeat(w.tier || 1)}　MP ${w.mp}</small><div class="ad">${can ? tg.text : tg.none}${can && tg.mons.length ? `（てき ${tg.mons.length}ひき）` : ''}</div></div></div>
+    <div class="ab"><button id="aimNo" data-act="dgAimNo">やめる</button><button id="aimGo" data-act="dgAimGo" ${can ? '' : 'disabled'}>つかう</button></div>`;
+  el.querySelector('.ia').appendChild(wordArt(w.art, 40));
+  el.style.top = Math.max(64, $id('dock').getBoundingClientRect().top - el.offsetHeight - 8) + 'px';
+  tutUI();
+}
+// マップに あたる ところを ひからせる
+function drawAim(now, t, ox, oy) {
+  if (!aim || !run) return;
+  const w = WORD[aim.id], tg = spellTargets(run, aim.id), col = FX_COL[w.fam] || '255,220,120', a = 0.28 + Math.sin(now / 160) * 0.12;
+  for (const [x, y] of tg.cells) { if (!seenAt(run, x, y)) continue; g.fillStyle = `rgba(${col},${a})`; g.fillRect(ox + x * t + 1, oy + y * t + 1, t - 2, t - 2); g.strokeStyle = `rgba(${col},.9)`; g.lineWidth = 2; g.strokeRect(ox + x * t + 2, oy + y * t + 2, t - 4, t - 4); }
+  for (const m of tg.mons) { const cx = ox + (m.x + 0.5) * t, cy = oy + (m.y + 0.5) * t, r = t * (0.55 + Math.sin(now / 140) * 0.06); g.strokeStyle = '#ff3a5a'; g.lineWidth = 3.5; g.beginPath(); g.arc(cx, cy, r, 0, 7); g.stroke(); g.beginPath(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { g.moveTo(cx + dx * r * 0.7, cy + dy * r * 0.7); g.lineTo(cx + dx * r * 1.25, cy + dy * r * 1.25); } g.stroke(); }
+}
+
+let bagTab = 'weapon';
 const SLOT_NAME = { weapon: 'ぶき', shield: 'たて', armor: 'よろい' };
 function itemsPop(tab) {
   if (!run) return;
   const ti = tutInfo(), want = ti && ti.s.pick; // チュートリアル：つかう もの だけ ひかる（ほかは おせない）
-  if (want) bagTab = bagOf(want); else if (tab) bagTab = tab;
-  const list = run.inv.filter(it => bagOf(it.id) === bagTab), B = BAGS.find(b => b.id === bagTab);
+  if (want) bagTab = bagOf(want); else if (tab === 'equip') bagTab = BAGS.find(b => b.id === bagTab).group === 'equip' ? bagTab : 'weapon'; else if (tab) bagTab = tab;
+  const list = run.inv.filter(it => bagOf(it.id) === bagTab), B = BAGS.find(b => b.id === bagTab), grp = B.group;
   const rows = list.map(it => {
     const w = WORD[it.id], eqd = Object.values(run.equip).includes(it.uid), ok = !ti || it.id === want, cls = ti && ok ? 'hint' : '';
     const stat = w.slot ? `<small>${SLOT_NAME[w.slot]}・${w.atk ? `つよさ ＋${w.atk}` : `まもり ＋${w.def}`}</small>` : w.use === 'heal' ? `<small>HP ＋${w.val}</small>` : '';
     const b = w.slot ? `<button class="${cls}" data-act="dgEquip" data-arg="${it.uid}" ${ok ? '' : 'disabled'}>${eqd ? 'はずす' : 'そうび'}</button>` : w.verb ? `<button class="${cls}" data-act="dgUse" data-arg="${it.uid}" ${ok ? '' : 'disabled'}>${w.verb}</button>` : '';
     return `<div class="irow${eqd ? ' on' : ''}"><span class="ia" data-art="${w.art}"></span><div class="in">${w.en}${eqd ? '<span class="eqm">そうびちゅう</span>' : ''}${stat}</div>${b}${ti ? '' : `<button class="q" data-act="dgLook" data-arg="${it.uid}">？</button>`}</div>`;
   }).join('');
-  const tabsH = `<div class="bagtabs">${BAGS.map(b => `<button class="${b.id === bagTab ? 'on' : ''}" data-act="dgBag" data-arg="${b.id}" ${ti && b.id !== bagTab ? 'disabled' : ''}>${b.name}<small>${bagCount(run, b.id)}/${b.max}</small></button>`).join('')}</div>`;
+  // うえの タブ：そうび・たべもの・ほん/どうぐ。そうびは その したに ぶき・たて・よろい（べつべつの ふくろ）
+  const gCount = gid => BAGS.filter(b => b.group === gid).reduce((n, b) => n + bagCount(run, b.id), 0), gMax = gid => BAGS.filter(b => b.group === gid).reduce((n, b) => n + b.max, 0);
+  const tabsH = `<div class="bagtabs">${GROUPS.map(gr => `<button class="${gr.id === grp ? 'on' : ''}" data-act="dgBag" data-arg="${gr.id}" ${ti && gr.id !== grp ? 'disabled' : ''}>${gr.name}<small>${gCount(gr.id)}/${gMax(gr.id)}</small></button>`).join('')}</div>`
+    + (grp === 'equip' ? `<div class="bagtabs sub">${BAGS.filter(b => b.group === 'equip').map(b => `<button class="${b.id === bagTab ? 'on' : ''}" data-act="dgBag" data-arg="${b.id}" ${ti && b.id !== bagTab ? 'disabled' : ''}>${b.name}<small>${bagCount(run, b.id)}/${b.max}</small></button>`).join('')}</div>` : '');
   // そうびの タブ：モコの みため と いまの そうび
-  const panel = bagTab === 'equip' ? `<div class="gearpanel"><div class="gv"></div><div class="gslots">${['weapon', 'shield', 'armor'].map(sl => { const w = gearOf(sl); return `<div class="gs"><span class="gl">${SLOT_NAME[sl]}</span>${w ? `<span class="ia" data-art="${w.art}"></span><b class="en">${w.en}</b>` : '<span class="gnone">なし</span>'}</div>`; }).join('')}<div class="gstat">つよさ <b>${heroAtk(run)}</b>　まもり <b>${heroDef(run)}</b></div></div></div>` : '';
+  const panel = grp === 'equip' ? `<div class="gearpanel"><div class="gv"></div><div class="gslots">${['weapon', 'shield', 'armor'].map(sl => { const w = gearOf(sl); return `<div class="gs"><span class="gl">${SLOT_NAME[sl]}</span>${w ? `<span class="ia" data-art="${w.art}"></span><b class="en">${w.en}</b>` : '<span class="gnone">なし</span>'}</div>`; }).join('')}<div class="gstat">つよさ <b>${heroAtk(run)}</b>　まもり <b>${heroDef(run)}</b></div></div></div>` : '';
   showPop(`<h3>もちもの</h3>${tabsH}${panel}<div class="ilist${panel ? ' short' : ''}">${rows || `<p class="muted">「${B.name}」は まだ ないよ</p>`}</div>
     ${ti ? '' : '<p class="muted" style="margin:6px 0 0">「？」で いみが わかるよ。いみを みないで つかえたら「よめた」！</p>'}<div class="btns"><button class="big gray" data-act="close">とじる</button></div>`);
   document.querySelectorAll('#ov [data-art]').forEach(el => el.appendChild(wordArt(el.dataset.art, el.closest('.gs') ? 30 : 44)));
@@ -348,7 +412,7 @@ function askStairs() {
 }
 const needTest = () => run && !run.tut && TEST_FLOORS.includes(run.floor) && run.tested !== run.floor;
 function goDown(rope = false) {
-  closePop();
+  closePop(); if (aim) endAim();
   if (!rope && needTest() && onStairs(run)) return startTest(); // ボスの あとは ふくしゅう テスト → おわったら すすむ
   const r = descend(run, rope); if (!r) return;
   if (r.tutDone) return tutorialDone();
@@ -499,6 +563,7 @@ const tutStep = () => TUT.find(x => !tut.done[x.id]) || TUT[TUT.length - 1];
 function tutInfo() {
   if (!tutOn()) return null;
   const s = tutStep(), h = run.hero, info = { s, id: s.id, dirs: [], btn: s.btn || null };
+  if (aim && s.spell === aim.id) { info.btn = 'aimGo'; return info; } // まほうの ねらい：「つかう」を おす
   const g = s.goal ? s.goal() : s.tap ? s.tap() : null;
   info.goal = g;
   if (s.goal && g) {
@@ -531,7 +596,7 @@ function tutAllows(a) {
 function tutUI() {
   const i = tutInfo(), on = !!i;
   document.querySelectorAll('#pad [data-dir]').forEach(b => { b.classList.toggle('hint', on && i.dirs.includes(b.dataset.dir)); b.classList.toggle('off', on && !i.dirs.includes(b.dataset.dir)); });
-  for (const id of ['bAttack', 'bMagic', 'bItems', 'bWait', 'bStairs']) { const b = $id(id); b.classList.toggle('hint', on && i.btn === id); b.classList.toggle('off', on && i.btn !== id); }
+  for (const id of ['bAttack', 'bMagic', 'bItems', 'bWait', 'bStairs', 'aimGo', 'aimNo']) { const b = $id(id); if (!b) continue; b.classList.toggle('hint', on && i.btn === id); b.classList.toggle('off', on && i.btn !== id); }
 }
 function guide() {
   const el = $id('guide');
@@ -562,7 +627,7 @@ function tutorialDone() {
 
 /* ---------- はじめる・タイトル ---------- */
 function start(tutorial) {
-  closePop(); unlockAudio();
+  closePop(); unlockAudio(); aim = null;
   run = newRun(tutorial); mode = 'play'; logs = []; fx = [];
   tut = tutorial ? { done: {} } : null;
   if (!tutorial) { D.runs++; if (1 > D.best) D.best = 1; log('1かい から ぼうけん スタート！'); }
@@ -572,7 +637,7 @@ function start(tutorial) {
 }
 function resume() { closePop(); unlockAudio(); run = D.run; mode = 'play'; logs = []; logGroup++; log(`${run.tut ? 'れんしゅう' : run.floor + 'かい'} から つづき`); tut = run.tut ? { done: {} } : null; vis = visible(run); $id('title').classList.add('hide'); measureView(); camTarget(true); hud(); }
 function toTitle() {
-  closePop(); stopWalk(); mode = 'title'; run = null; tut = null;
+  closePop(); stopWalk(); aim = null; aimUI(); mode = 'title'; run = null; tut = null;
   $id('title').classList.remove('hide'); $id('guide').hidden = true;
   $id('tCont').hidden = !D.run;
   $id('tbest').innerHTML = D.best ? `さいこう とうたつ <b>${D.best}かい</b>${D.clears ? `　クリア ${D.clears}かい` : ''}` : 'まだ ぼうけんして いないよ';
@@ -594,11 +659,13 @@ Object.assign(ACT, {
   close: () => { sfx.tap(); closePop(); if (run) hud(); }, // とじる（core.js には ない ので ここで きめる）
   dgSay: id => speak(WORD[id].en),
   dgUse: uid => { closePop(); doAction({ t: 'use', uid: +uid }); },
-  dgEquip: uid => { closePop(); doAction({ t: 'equip', uid: +uid }); },
+  dgEquip: uid => { closePop(); doAction({ t: 'equip', uid: +uid }); if (mode === 'play' && run) itemsPop(); }, // そうびしても とじない（つづけて えらべる）
   dgDrop: uid => { closePop(); doAction({ t: 'drop', uid: +uid }); },
   dgLook: uid => { const it = run.inv.find(i => i.uid === +uid); if (it) showCard(it.id, { inv: it, back: 'dgItems' }); },
   dgItems: () => itemsPop(), dgBag: b => { sfx.tap(); itemsPop(b); }, dgGear: () => { stopWalk(); if (!tutInfo()) itemsPop('equip'); },
-  dgCast: id => { closePop(); doAction({ t: 'cast', id }); },
+  dgCast: id => startAim(id), // まず あたる ところを みせる →「つかう」で ほんとうに つかう
+  dgAimGo: () => { if (!aim) return; const id = aim.id; endAim(); doAction({ t: 'cast', id }); },
+  dgAimNo: () => { sfx.tap(); endAim(); },
   dgSpell: id => showCard(id, { spell: true, back: 'dgMagic' }),
   dgMagic: () => magicPop(),
   dgDex: () => dexPop(), dgDexTab: t => { dexTab = t; dexPop(); }, dgDexCard: id => showCard(id, { dex: true, back: 'dgDex' }), dgDexNo: () => {},
@@ -618,22 +685,24 @@ function setupInput() {
   const dirOf = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', w: 'up', s: 'down', a: 'left', d: 'right' };
   addEventListener('keydown', e => {
     if (mode !== 'play' || !$id('ov').classList.contains('hide')) return;
-    if (dirOf[e.key]) { e.preventDefault(); stopWalk(); doAction({ t: 'move', dir: dirOf[e.key] }); }
+    if (dirOf[e.key]) { e.preventDefault(); stopWalk(); if (aim) { run.hero.dir = dirOf[e.key]; aimUI(); } else doAction({ t: 'move', dir: dirOf[e.key] }); }
+    else if (aim && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); ACT.dgAimGo(); }
+    else if (aim && e.key === 'Escape') ACT.dgAimNo();
     else if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); if (onStairs(run)) askStairs(); else doAction({ t: 'attack' }); }
     else if (e.key === 'm') magicPop(); else if (e.key === 'i') itemsPop(); else if (e.key === '.') doAction({ t: 'wait' });
   });
   // おしっぱなしで あるく のは てきが みえない とき だけ（てきが いたら 1かい おす ごとに 1ぽ）
   const monsSeen = () => run && run.mons.some(m => vis.has(m.x + ',' + m.y));
-  const press = dir => { stopWalk(); doAction({ t: 'move', dir }); stopHold(); if (!monsSeen()) hold = setInterval(() => { if (monsSeen() || busy) return stopHold(); doAction({ t: 'move', dir }); }, 300); };
+  const press = dir => { stopWalk(); if (aim) { if (!busy) { run.hero.dir = dir; aimUI(); } return; } doAction({ t: 'move', dir }); stopHold(); if (!monsSeen()) hold = setInterval(() => { if (monsSeen() || busy) return stopHold(); doAction({ t: 'move', dir }); }, 300); };
   const release = () => stopHold();
   document.querySelectorAll('#pad [data-dir]').forEach(b => {
     b.addEventListener('pointerdown', e => { e.preventDefault(); press(b.dataset.dir); });
     ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => b.addEventListener(t, release));
   });
   const tutBtn = id => { const i = tutInfo(); if (i && i.btn !== id) { nudge(); return false; } return true; };
-  $id('bAttack').onclick = () => { stopWalk(); if (tutBtn('bAttack')) doAction({ t: 'attack' }); };
-  $id('bMagic').onclick = () => { stopWalk(); if (tutBtn('bMagic')) magicPop(); };
-  $id('bItems').onclick = () => { stopWalk(); if (tutBtn('bItems')) itemsPop(); };
+  $id('bAttack').onclick = () => { stopWalk(); if (aim) endAim(); if (tutBtn('bAttack')) doAction({ t: 'attack' }); };
+  $id('bMagic').onclick = () => { stopWalk(); if (aim) endAim(); if (tutBtn('bMagic')) magicPop(); };
+  $id('bItems').onclick = () => { stopWalk(); if (aim) endAim(); if (tutBtn('bItems')) itemsPop(); };
   $id('bWait').onclick = () => { stopWalk(); if (tutBtn('bWait')) doAction({ t: 'wait' }); };
   $id('bStairs').onclick = () => { if (tutBtn('bStairs')) askStairs(); };
   $id('menuBtn').onclick = () => menu();
@@ -658,4 +727,4 @@ function setupInput() {
 })();
 
 // じどう テスト よう
-window.__dg = { tutInfo: () => { const i = tutInfo(); return i && { id: i.id, dirs: i.dirs, btn: i.btn, adj: !!i.adj, goal: i.goal && { x: i.goal.x, y: i.goal.y }, pick: i.s.pick, spell: i.s.spell }; }, set fast(v) { fast = v; }, get busy() { return busy; }, get ghosts() { return ghosts; }, get run() { return run; }, get D() { return D; }, get mode() { return mode; }, get tut() { return tut; }, act: doAction, start, resume, toTitle, goDown, showCard, tapMap, toTile, cam: () => cam(), visible: () => vis, get test() { return TT; }, startTest };
+window.__dg = { tutInfo: () => { const i = tutInfo(); return i && { id: i.id, dirs: i.dirs, btn: i.btn, adj: !!i.adj, goal: i.goal && { x: i.goal.x, y: i.goal.y }, pick: i.s.pick, spell: i.s.spell }; }, set fast(v) { fast = v; }, get busy() { return busy; }, get ghosts() { return ghosts; }, get run() { return run; }, get D() { return D; }, get mode() { return mode; }, get tut() { return tut; }, act: doAction, start, resume, toTitle, goDown, showCard, tapMap, toTile, cam: () => cam(), visible: () => vis, get test() { return TT; }, startTest, get aim() { return aim; } };

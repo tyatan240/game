@@ -289,6 +289,32 @@ Object.assign(WORD_ART, {
   dg_bigwind: c => bigMagic(c, WORD_ART.dg_wind, 'rgba(110,210,180,.5)'),
 });
 
+// ===== MPを かいふく する もの =====
+Object.assign(WORD_ART, {
+  dg_candy: c => {
+    c.fillStyle = '#ffb0d0'; c.strokeStyle = '#e07aa8'; c.lineWidth = 2.5;
+    [[-1, 22], [1, 78]].forEach(([s, x]) => { c.beginPath(); c.moveTo(50 + s * 18, 50); c.lineTo(x, 34); c.lineTo(x, 66); c.closePath(); c.fill(); c.stroke(); });
+    c.fillStyle = '#7ac8ff'; c.strokeStyle = '#4a98d8'; circle(c, 50, 50, 20); c.fill(); c.stroke();
+    c.strokeStyle = '#fff'; c.lineWidth = 4; c.beginPath(); c.arc(50, 50, 11, 0.3, 2.6); c.stroke();
+    c.fillStyle = 'rgba(255,255,255,.7)'; circle(c, 43, 42, 4); c.fill();
+  },
+  dg_juice: c => {
+    c.fillStyle = 'rgba(220,240,255,.8)'; c.strokeStyle = '#8ab0d0'; c.lineWidth = 3;
+    c.beginPath(); c.moveTo(28, 26); c.lineTo(72, 26); c.lineTo(66, 90); c.lineTo(34, 90); c.closePath(); c.fill(); c.stroke();
+    c.fillStyle = '#ffa83a'; c.beginPath(); c.moveTo(31, 44); c.lineTo(69, 44); c.lineTo(66, 87); c.lineTo(34, 87); c.closePath(); c.fill();
+    c.strokeStyle = '#ff6b8a'; c.lineWidth = 5; c.lineCap = 'round'; c.beginPath(); c.moveTo(56, 70); c.lineTo(62, 22); c.lineTo(74, 10); c.stroke();
+    c.fillStyle = '#ffe066'; circle(c, 30, 30, 10); c.fill(); c.strokeStyle = '#e0b020'; c.lineWidth = 2; c.stroke();
+    c.fillStyle = 'rgba(255,255,255,.6)'; c.fillRect(37, 50, 4, 28);
+  },
+  dg_bluepotion: c => {
+    c.fillStyle = '#7ab0ff'; c.strokeStyle = '#3a70d0'; c.lineWidth = 3;
+    c.beginPath(); c.moveTo(42, 34); c.lineTo(42, 44); c.quadraticCurveTo(20, 54, 24, 74); c.quadraticCurveTo(30, 92, 50, 92); c.quadraticCurveTo(70, 92, 76, 74); c.quadraticCurveTo(80, 54, 58, 44); c.lineTo(58, 34); c.closePath(); c.fill(); c.stroke();
+    c.fillStyle = '#c98f55'; rr(c, 40, 20, 20, 14, 3); c.fill();
+    c.fillStyle = 'rgba(255,255,255,.6)'; c.beginPath(); c.ellipse(36, 66, 4, 9, 0.3, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#fff'; c.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? 5 : 11; i ? c.lineTo(50 + q * Math.cos(a), 70 + q * Math.sin(a)) : c.moveTo(50 + q * Math.cos(a), 70 + q * Math.sin(a)); } c.fill();
+  },
+});
+
 // マップの タイル（キャンバスに じかに かく。T … タイルの おおきさ）
 export function drawTile(c, ch, x, y, T, seen, lit, zone) {
   if (!seen) { c.fillStyle = '#1e1a2a'; c.fillRect(x, y, T, T); return; }

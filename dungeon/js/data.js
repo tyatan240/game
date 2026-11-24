@@ -45,6 +45,9 @@ export const WORDS = [
   { id: 'bread', en: 'bread', ja: 'パン', cat: 'item', art: 'dg_bread', use: 'heal', val: 20, verb: 'たべる', w: 14, desc: 'たべると HPが 20 かいふく する。' },
   { id: 'banana', en: 'banana', ja: 'バナナ', cat: 'item', art: 'dg_banana', use: 'heal', val: 15, verb: 'たべる', w: 12, minFloor: 2, desc: 'たべると HPが 15 かいふく する。' },
   { id: 'meat', en: 'meat', ja: 'おにく', cat: 'item', art: 'dg_meat', use: 'heal', val: 30, verb: 'たべる', w: 8, minFloor: 2, desc: 'たべると HPが 30 かいふく する。' },
+  { id: 'candy', en: 'candy', ja: 'あめ', cat: 'item', art: 'dg_candy', use: 'mp', val: 5, verb: 'たべる', w: 14, desc: 'たべると MPが 5 かいふく する。' },
+  { id: 'juice', en: 'juice', ja: 'ジュース', cat: 'item', art: 'dg_juice', use: 'mp', val: 12, verb: 'のむ', w: 9, minFloor: 3, desc: 'のむと MPが 12 かいふく する。' },
+  { id: 'bluepotion', en: 'blue potion', ja: 'あおい くすり', cat: 'item', art: 'dg_bluepotion', use: 'mp', val: 99, verb: 'のむ', w: 4, minFloor: 7, desc: 'blue ＝ あお。のむと MPが ぜんぶ かいふく する。' },
   { id: 'potion', en: 'potion', ja: 'くすり', cat: 'item', art: 'dg_potion', use: 'potion', verb: 'のむ', w: 5, desc: 'のむと HPと MPが ぜんぶ かいふく する。' },
   { id: 'key', en: 'key', ja: 'かぎ', cat: 'item', art: 'key', use: 'key', verb: 'つかう', w: 0, desc: 'treasure box（たからばこ）の まえで つかうと あけられる。' },
   { id: 'magicbook', en: 'magic book', ja: 'まほうの ほん', cat: 'item', art: 'dg_book', use: 'book', verb: 'よむ', w: 9, desc: 'よむと あたらしい まほうを おぼえる。' },
@@ -89,12 +92,16 @@ export const WORD = Object.fromEntries(WORDS.map(w => [w.id, w]));
 export const SPELLS = WORDS.filter(w => w.cat === 'magic').map(w => w.id);
 export const FAMS = [...new Set(WORDS.filter(w => w.cat === 'magic').map(w => w.fam))]; // まほうの なかま（ならべる じゅん）
 // もちものの ふくろ：そうび／たべもの／まほうの ほん・どうぐ（ふくろ ごとに いれられる かず）
+//   そうびは ぶき・たて・よろい で べつの ふくろ（group：もちもの がめんの うえの タブ）
 export const BAGS = [
-  { id: 'equip', name: 'そうび', max: 8 },
-  { id: 'food', name: 'たべもの', max: 8 },
-  { id: 'tool', name: 'ほん・どうぐ', max: 8 },
+  { id: 'weapon', name: 'ぶき', max: 5, group: 'equip' },
+  { id: 'shield', name: 'たて', max: 5, group: 'equip' },
+  { id: 'armor', name: 'よろい', max: 5, group: 'equip' },
+  { id: 'food', name: 'たべもの', max: 10, group: 'food' },
+  { id: 'tool', name: 'ほん・どうぐ', max: 8, group: 'tool' },
 ];
-export const bagOf = id => { const w = WORD[id]; return w.cat === 'equip' ? 'equip' : (w.use === 'heal' || w.use === 'potion') ? 'food' : 'tool'; };
+export const GROUPS = [{ id: 'equip', name: 'そうび' }, { id: 'food', name: 'たべもの' }, { id: 'tool', name: 'ほん・どうぐ' }];
+export const bagOf = id => { const w = WORD[id]; return w.cat === 'equip' ? w.slot : (w.use === 'heal' || w.use === 'potion' || w.use === 'mp') ? 'food' : 'tool'; };
 export const BAG_MAX = Object.fromEntries(BAGS.map(b => [b.id, b.max]));
 
 // モコ（しゅじんこう）

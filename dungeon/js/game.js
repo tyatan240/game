@@ -207,6 +207,7 @@ function useItem(run, uid, ev) {
   const w = WORD[it.id], h = run.hero;
   const done = () => { run.inv = run.inv.filter(i => i !== it); ev.push({ t: 'used', id: it.id, read: !it.peek }); };
   if (w.use === 'heal') { const n = Math.min(w.val, h.maxhp - h.hp), hp0 = h.hp; h.hp += n; done(); ev.push({ t: 'fx', kind: 'heal', x: h.x, y: h.y, n }); ev.push({ t: 'msg', text: `${en(it.id)} を ${w.verb === 'のむ' ? 'のんだ' : 'たべた'}！ ${n ? `HPが ${n} かいふく` : 'HPは もう まんたん'}` }); if (n) ev.push({ t: 'msg', text: calc('モコ', hp0, '＋', n), calc: true, heroHp: h.hp }); return true; }
+  if (w.use === 'mp') { const n = Math.min(w.val, h.maxmp - h.mp), mp0 = h.mp; h.mp += n; done(); ev.push({ t: 'fx', kind: 'mp', x: h.x, y: h.y, n }); ev.push({ t: 'msg', text: `${en(it.id)} を ${w.verb === 'のむ' ? 'のんだ' : 'たべた'}！ ${n ? `MPが ${n} かいふく` : 'MPは もう まんたん'}` }); if (n) ev.push({ t: 'msg', text: `<span class="calc mp">モコの MP　${mp0} ＋ ${n} ＝ ${h.mp}</span>` }); return true; }
   if (w.use === 'potion') { h.hp = h.maxhp; h.mp = h.maxmp; done(); ev.push({ t: 'fx', kind: 'heal', x: h.x, y: h.y }); ev.push({ t: 'msg', text: `${en(it.id)} を のんだ！ HPと MPが ぜんぶ かいふく！` }); return true; }
   if (w.use === 'book') {
     const left = learnable(run).filter(s => !run.spells.includes(s));
@@ -236,32 +237,48 @@ function equipItem(run, uid, ev) {
   ev.push({ t: 'msg', text: `${en(it.id)} を そうびした！ ${slot === 'weapon' ? `つよさ ＋${w.atk}` : `まもり ＋${w.def}`}` }); return true;
 }
 function revealAll(run) { run.seen = '1'.repeat(run.map.w * run.map.h); }
+// まほうの あたる ところ（えらんだ ときに みせる・つかう ときも おなじ けいさん）
+//   → { cells:[[x,y]], mons:[てき], text:せつめい, none:あたる てきが いない ときの ことば }
+export function spellTargets(run, id) {
+  const w = WORD[id], h = run.hero, v = visible(run);
+  const seen = run.mons.filter(m => v.has(m.x + ',' + m.y));
+  const dist = m => Math.abs(m.x - h.x) + Math.abs(m.y - h.y);
+  const floorCells = () => [...v].map(k => k.split(',').map(Number)).filter(([x, y]) => tileAt(run, x, y) !== '#');
+  if (w.kind === 'self') return { cells: [[h.x, h.y]], mons: [], text: `じぶんの HPを ${w.val} かいふく` };
+  if (w.kind === 'map') return { cells: [[h.x, h.y]], mons: [], text: 'この かいの ちずと かいだんが みえる' };
+  if (w.kind === 'all') return { cells: floorCells(), mons: seen, text: 'みえる てき ぜんぶ に あたる', none: 'ちかくに てきが いないよ' };
+  if (w.kind === 'near') { const m = [...seen].sort((a, b) => dist(a) - dist(b))[0]; return { cells: m ? [[m.x, m.y]] : [], mons: m ? [m] : [], text: 'いちばん ちかい てき に あたる', none: 'ちかくに てきが いないよ' }; }
+  if (w.kind === 'line') {
+    const [dx, dy] = DIRS[h.dir], cells = [], mons = []; let x = h.x + dx, y = h.y + dy;
+    while (tileAt(run, x, y) !== '#' && cells.length < 8) { cells.push([x, y]); const m = monAt(run, x, y); if (m) mons.push(m); x += dx; y += dy; }
+    return { cells, mons, text: 'むいている ほうへ まっすぐ（やじるしで むきを かえられる）', line: true };
+  }
+  if (w.kind === 'push') {
+    const pool = w.wide ? seen : Object.values(DIRS).map(([dx, dy]) => monAt(run, h.x + dx, h.y + dy)).filter(Boolean);
+    const cells = w.wide ? floorCells() : Object.values(DIRS).map(([dx, dy]) => [h.x + dx, h.y + dy]).filter(([x, y]) => tileAt(run, x, y) !== '#');
+    const mons = pool.filter(m => !m.boss);
+    return { cells, mons, text: w.wide ? 'みえる てき ぜんぶを ふきとばす' : 'となりの てきを ふきとばす', none: pool.length ? 'ボスは おもくて ふきとばせない！' : w.wide ? 'ちかくに てきが いないよ' : 'となりに てきが いないよ' };
+  }
+  return { cells: [], mons: [], text: '' };
+}
 function castSpell(run, id, ev) {
   const w = WORD[id], h = run.hero, tier = w.tier || 1, fam = w.fam || id, pow = Math.floor(h.lv / 2);
   if (!run.spells.includes(id)) return false;
   if (h.mp < w.mp) { ev.push({ t: 'msg', text: `MPが たりない（${en(id)} は MP ${w.mp}）` }); return false; }
-  const v = visible(run), seen = run.mons.filter(m => v.has(m.x + ',' + m.y));
-  const start = () => {
-    h.mp -= w.mp; ev.push({ t: 'cast', id });
-    ev.push({ t: 'bubble', x: h.x, y: h.y, text: `${w.en}！`, tier });
-    if (tier >= 2) ev.push({ t: 'fx', kind: 'aura', fam, tier, x: h.x, y: h.y }); // つよい まほうは モコの まわりが ひかる
-    ev.push({ t: 'msg', text: `モコの まほう ${en(id)}！` });
-  };
-  const freeze = m => { if (w.freeze && run.mons.includes(m) && !m.boss) { m.frozen = w.freeze; ev.push({ t: 'msg', text: `${en(m.id)} は こおって うごけない！` }); } else if (w.freeze && m.boss && run.mons.includes(m)) { m.frozen = 1; } };
-  if (w.kind === 'self') { h.mp -= w.mp; const n = Math.min(w.val, h.maxhp - h.hp), hp0 = h.hp; h.hp += n; ev.push({ t: 'cast', id }); if (tier >= 2) ev.push({ t: 'fx', kind: 'aura', fam, tier, x: h.x, y: h.y }); ev.push({ t: 'fx', kind: 'heal', x: h.x, y: h.y, n }); ev.push({ t: 'msg', text: `${en(id)}！ ${n ? `HPが ${n} かいふく` : 'HPは もう まんたん'}` }); if (n) ev.push({ t: 'msg', text: calc('モコ', hp0, '＋', n), calc: true, heroHp: h.hp }); return true; }
-  if (w.kind === 'map') { h.mp -= w.mp; revealAll(run); ev.push({ t: 'cast', id }); ev.push({ t: 'reveal' }); ev.push({ t: 'bubble', x: h.x, y: h.y, text: `${w.en}！` }); ev.push({ t: 'msg', text: `モコの まほう ${en(id)}！ ちずと ${en('stairs')} が みえた！` }); return true; }
-  if (w.kind === 'all') {
-    if (!seen.length) { ev.push({ t: 'msg', text: 'ちかくに てきが いないよ' }); return false; }
-    start(); if (tier >= 2) ev.push({ t: 'fx', kind: 'flash', fam, tier });
-    for (const m of seen) { hurtMon(run, m, w.dmg + pow, ev, fam, '', tier); freeze(m); }
-    return true;
-  }
+  const tg = spellTargets(run, id);
+  if (tg.none && !tg.mons.length && w.kind !== 'line') { ev.push({ t: 'msg', text: tg.none }); return false; }
+  // まず まほうの えんしゅつ（spell）→ そのあと ダメージ
+  h.mp -= w.mp; ev.push({ t: 'cast', id });
+  ev.push({ t: 'bubble', x: h.x, y: h.y, text: `${w.en}！`, tier });
+  if (tier >= 2) ev.push({ t: 'fx', kind: 'aura', fam, tier, x: h.x, y: h.y });
+  ev.push({ t: 'msg', text: `モコの まほう ${en(id)}！` });
+  ev.push({ t: 'spell', id, fam, tier, kind: w.kind, from: [h.x, h.y], cells: tg.cells, to: tg.mons.map(m => [m.x, m.y]) });
+  if (tier >= 2 && (w.kind === 'all' || w.wide)) ev.push({ t: 'fx', kind: 'flash', fam, tier });
+  const freeze = m => { if (!w.freeze || !run.mons.includes(m)) return; if (m.boss) { m.frozen = 1; return; } m.frozen = w.freeze; ev.push({ t: 'msg', text: `${en(m.id)} は こおって うごけない！` }); };
+  if (w.kind === 'self') { const n = Math.min(w.val, h.maxhp - h.hp), hp0 = h.hp; h.hp += n; ev.push({ t: 'fx', kind: 'heal', x: h.x, y: h.y, n }); ev.push({ t: 'msg', text: `${n ? `HPが ${n} かいふく` : 'HPは もう まんたん'}` }); if (n) ev.push({ t: 'msg', text: calc('モコ', hp0, '＋', n), calc: true, heroHp: h.hp }); return true; }
+  if (w.kind === 'map') { revealAll(run); ev.push({ t: 'reveal' }); ev.push({ t: 'msg', text: `ちずと ${en('stairs')} が みえた！` }); return true; }
   if (w.kind === 'push') {
-    const pool = w.wide ? seen : Object.values(DIRS).map(([dx, dy]) => monAt(run, h.x + dx, h.y + dy)).filter(Boolean);
-    const ms = pool.filter(m => !m.boss);
-    if (!ms.length) { ev.push({ t: 'msg', text: pool.length ? 'ボスは おもくて ふきとばせない！' : w.wide ? 'ちかくに てきが いないよ' : 'となりに てきが いないよ' }); return false; }
-    start();
-    for (const m of ms) {
+    for (const m of tg.mons) {
       const sx = Math.abs(m.x - h.x) >= Math.abs(m.y - h.y) ? Math.sign(m.x - h.x) : 0, sy = sx ? 0 : Math.sign(m.y - h.y);
       let n = 0; while (n < 4 && monCan(run, m, m.x + sx, m.y + sy) && !monAt(run, m.x + sx, m.y + sy) && tileAt(run, m.x + sx, m.y + sy) !== '#' && !(m.x + sx === h.x && m.y + sy === h.y)) { m.x += sx; m.y += sy; n++; }
       m.frozen = Math.max(m.frozen || 0, 1); ev.push({ t: 'fx', kind: 'wind', x: m.x, y: m.y, tier });
@@ -270,21 +287,9 @@ function castSpell(run, id, ev) {
     }
     return true;
   }
-  if (w.kind === 'near') {
-    const ms = [...seen].sort((a, b) => (Math.abs(a.x - h.x) + Math.abs(a.y - h.y)) - (Math.abs(b.x - h.x) + Math.abs(b.y - h.y)));
-    if (!ms.length) { ev.push({ t: 'msg', text: 'ちかくに てきが いないよ' }); return false; }
-    start(); const tgt = ms[0]; hurtMon(run, tgt, w.dmg + pow, ev, fam, '', tier); freeze(tgt);
-    return true;
-  }
-  if (w.kind === 'line') {
-    const [dx, dy] = DIRS[h.dir]; start();
-    let x = h.x + dx, y = h.y + dy, hit = 0; const path = [];
-    while (tileAt(run, x, y) !== '#' && path.length < 8) { path.push([x, y]); const m = monAt(run, x, y); if (m) { hurtMon(run, m, w.dmg + pow, ev, fam, '', tier); hit++; } x += dx; y += dy; }
-    ev.push({ t: 'fx', kind: 'beam', path, tier });
-    if (!hit) ev.push({ t: 'msg', text: `${en(id)}！ …でも なにも いなかった` });
-    return true;
-  }
-  return false;
+  if (!tg.mons.length) { ev.push({ t: 'msg', text: '…でも なにも いなかった' }); return true; }
+  for (const m of tg.mons) { if (!run.mons.includes(m)) continue; hurtMon(run, m, w.dmg + pow, ev, fam, '', tier); freeze(m); }
+  return true;
 }
 
 /* ---------- てきの ばん ---------- */

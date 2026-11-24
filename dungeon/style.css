@@ -184,3 +184,19 @@ html,body{margin:0;height:100%;overflow:hidden;background:#2a2238;touch-action:n
 .mcell button{padding:5px 7px;font-size:13px;white-space:nowrap}.mcell button.q{padding:5px 6px}
 .mcell canvas{width:46px!important;height:46px!important}
 @media (max-width:520px){.gearpanel .gv{width:96px;height:96px}.gearpanel .gv canvas{width:96px!important;height:96px!important}.bagtabs button{font-size:13px}.mcell b.en{font-size:13px}}
+
+/* まほうの ねらい（あたる ところを みせて「つかう」） */
+.aim{position:absolute;left:50%;transform:translateX(-50%);z-index:6;width:min(560px,calc(100vw - 20px));background:#fff;border-radius:18px;padding:8px 10px;box-shadow:0 4px 0 rgba(0,0,0,.25),0 0 0 3px #7c6cf0;display:flex;align-items:center;gap:10px}
+.aim .at{flex:1;display:flex;align-items:center;gap:8px;min-width:0}
+.aim .ia{flex:none;width:40px;height:40px}
+.aim .en{color:#3f7fc9;font-size:20px}.aim small{color:#9a8a8a;font-size:12px}
+.aim .ad{font-size:14px;color:#5a4646;line-height:1.3}
+.aim .ab{display:flex;gap:6px;flex:none}
+.aim button{border:0;border-radius:14px;padding:10px 14px;font:inherit;font-weight:800;font-size:17px;color:#fff;background:#7c6cf0;box-shadow:0 3px 0 #5a4ac8}
+.aim #aimNo{background:#c9bcbc;box-shadow:0 3px 0 #a99a9a}
+.aim button:disabled{background:#ddd;box-shadow:none}
+.aim button.off{opacity:.35}
+.bagtabs.sub{margin-top:-2px}.bagtabs.sub button{padding:5px 4px;font-size:14px;background:#f6f2ff;box-shadow:0 3px 0 #ddd4f0}.bagtabs.sub button.on{background:#7c6cf0;color:#fff;box-shadow:0 3px 0 #5a4ac8}
+.dock .log .calc.mp{color:#7ab0ff}
+@media (max-width:520px){.aim{flex-direction:column;align-items:stretch;gap:6px}.aim .ab button{flex:1}}
+.aim[hidden]{display:none}
