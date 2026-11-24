@@ -1138,6 +1138,20 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     await p.click('#ov [data-act=dgBag][data-arg=weapon]'); await p.click('#ov [data-act=dgEquip][data-arg="7210"]'); await p.waitForTimeout(150);
     ok(await p.evaluate(() => !document.getElementById('ov').classList.contains('hide') && __dg.run.equip.weapon === 7210 && /そうびちゅう/.test(document.getElementById('ov').textContent)), 'そうびしても もちものは とじない');
     await p.click('#ov [data-act=close]');
+    // とおくの てきに まほう：えんしゅつと ダメージの あいだは てきを うごく まえの ばしょに かく
+    const farR = await p.evaluate(async () => {
+      while (__dg.busy) await new Promise(ok => setTimeout(ok, 100));
+      const r = __dg.run, h = r.hero; __dg.fast = false; h.mp = 50; r.spells = ['fire']; closePop();
+      const R = r.map.rooms.find(R => R.w >= 5) || r.map.rooms[0]; h.x = R.x; h.y = R.y + (R.h >> 1);
+      r.map.tiles = r.map.tiles.map((row, y) => y === h.y ? row.split('').map((c, x) => Math.abs(x - h.x) <= 4 ? '.' : c).join('') : row);
+      r.mons = [{ uid: 7601, id: 'rat', x: h.x + 3, y: h.y, hp: 99, maxhp: 99, atk: 1, def: 0, exp: 1, tick: 0 }];
+      const res = __dg.act({ t: 'cast', id: 'fire' });
+      const o = { cast: !!res, moved: r.mons[0].x !== h.x + 3, shown: (__dg.shownPos(7601) || {}).x === h.x + 3 };
+      await new Promise(ok => setTimeout(ok, 1200)); o.during = (__dg.shownPos(7601) || {}).x === h.x + 3;
+      while (__dg.busy) await new Promise(ok => setTimeout(ok, 100));
+      o.after = !__dg.shownPos(7601); r.mons = []; __dg.fast = true; return o;
+    });
+    ok(Object.values(farR).every(Boolean), 'とおくの てきに まほう：えんしゅつ・ダメージの あいだは てきが うごかない ' + JSON.stringify(farR));
     // MPを かいふく する たべもの
     ok(await p.evaluate(() => { const r = __dg.run, h = r.hero; h.mp = 1; r.inv.push({ uid: 7220, id: 'juice', peek: false }); __dg.act({ t: 'use', uid: 7220 }); return h.mp === Math.min(h.maxmp, 13) && /MPが/.test(document.getElementById('log').textContent); }), 'juice で MPが かいふく');
     // まほうは まず あたる ところを みせる →「つかう」で つかう。えんしゅつ（spell）が ダメージより さき

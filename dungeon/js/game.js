@@ -289,7 +289,7 @@ function castSpell(run, id, ev) {
     for (const m of tg.mons) {
       const sx = Math.abs(m.x - h.x) >= Math.abs(m.y - h.y) ? Math.sign(m.x - h.x) : 0, sy = sx ? 0 : Math.sign(m.y - h.y);
       let n = 0; while (n < 4 && monCan(run, m, m.x + sx, m.y + sy) && !monAt(run, m.x + sx, m.y + sy) && tileAt(run, m.x + sx, m.y + sy) !== '#' && !(m.x + sx === h.x && m.y + sy === h.y)) { m.x += sx; m.y += sy; n++; }
-      m.frozen = Math.max(m.frozen || 0, 1); ev.push({ t: 'fx', kind: 'wind', x: m.x, y: m.y, tier });
+      m.frozen = Math.max(m.frozen || 0, 1); ev.push({ t: 'fx', kind: 'wind', x: m.x, y: m.y, tier, uid: m.uid });
       ev.push({ t: 'msg', text: `${en(m.id)} を ふきとばした！` });
       if (w.dmg) hurtMon(run, m, w.dmg + pow, ev, 'wind', '', tier);
     }
@@ -305,6 +305,7 @@ function linePath(a, b) { const p = [], dx = Math.sign(b.x - a.x), dy = Math.sig
 function lineClear(run, a, b) { return linePath(a, b).slice(0, -1).every(([x, y]) => tileAt(run, x, y) !== '#' && !monAt(run, x, y) && !boxAt(run, x, y)); }
 function endTurn(run, ev) {
   const h = run.hero; run.turn++;
+  ev.push({ t: 'enemyTurn' }); // ここから てきの ばん（ひょうじは ここまで てきを うごく まえの ばしょに かく）
   for (const m of [...run.mons]) {
     if (!run.mons.includes(m) || m.tame) continue;
     const w = WORD[m.id];

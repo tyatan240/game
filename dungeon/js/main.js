@@ -84,7 +84,7 @@ function draw(now) {
     if (mo.frozen) { g.fillStyle = 'rgba(140,210,255,.38)'; g.fillRect(ox + mo.x * t + 2, oy + mo.y * t + 2, t - 4, t - 4); g.strokeStyle = '#7ac8ff'; g.lineWidth = 2; g.strokeRect(ox + mo.x * t + 2, oy + mo.y * t + 2, t - 4, t - 4); }
     if (hp < mo.maxhp) { const w = t * 0.8; g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(ox + mo.x * t + t * 0.1, oy + mo.y * t - 4, w, 5); g.fillStyle = '#ff6b6b'; g.fillRect(ox + mo.x * t + t * 0.1, oy + mo.y * t - 4, w * Math.max(0, hp / mo.maxhp), 5); }
   };
-  for (const mo of run.mons) if (vis.has(mo.x + ',' + mo.y)) drawMon(mo, monHpShown && monHpShown.has(mo.uid) ? monHpShown.get(mo.uid) : mo.hp);
+  for (const m0 of run.mons) { const ps = posShown && posShown.get(m0.uid), mo = ps ? { ...m0, x: ps.x, y: ps.y } : m0; if (vis.has(mo.x + ',' + mo.y)) drawMon(mo, monHpShown && monHpShown.has(mo.uid) ? monHpShown.get(mo.uid) : mo.hp); }
   for (const gh of ghosts) drawMon(gh, monHpShown && monHpShown.has(gh.uid) ? monHpShown.get(gh.uid) : gh.hp); // たおれた てき（「たおした」まで）
   // モコ
   const h = run.hero, hs = t * 1.15;
@@ -202,7 +202,7 @@ function log(t) { logs.push({ t, g: logGroup }); if (logs.length > 30) logs.shif
 /* ---------- こうどう ---------- */
 // せんとうが あった ターンは、メッセージと けいさんしきを 1ぎょうずつ ゆっくり だす（その あいだは つぎの そうさを うけつけない）
 const MSG_MS = 700, CALC_MS = 1100;
-let dispHp = null, fast = false, ghosts = [], monHpShown = null; // せんとうちゅうの ひょうじ：たおれた てきは「たおした」まで のこす
+let dispHp = null, fast = false, ghosts = [], monHpShown = null, posShown = null; // posShown：モコの こうどうを みせている あいだは てきを うごく まえの ばしょに かく // せんとうちゅうの ひょうじ：たおれた てきは「たおした」まで のこす
 const wait = ms => new Promise(ok => fast ? ok() : setTimeout(ok, ms));
 function doAction(a) {
   if (mode !== 'play' || busy || !run) return null;
@@ -219,14 +219,16 @@ function doAction(a) {
   if (!combat || fast) { handle(r.ev, false); hud(); return r; }
   busy = true; dispHp = hp0; stopWalk(); stopHold();
   ghosts = before.filter(b => !run.mons.some(m => m.uid === b.uid)); monHpShown = new Map(before.map(b => [b.uid, b.hp]));
-  handle(r.ev, true).then(() => { busy = false; dispHp = null; ghosts = []; monHpShown = null; hud(); });
+  posShown = new Map(before.map(b => [b.uid, { x: b.x, y: b.y }]));
+  handle(r.ev, true).then(() => { busy = false; dispHp = null; ghosts = []; monHpShown = null; posShown = null; hud(); });
   return r;
 }
 async function handle(ev, slow) {
   let stairs = false, dead = false, rope = false;
   for (const e of ev) {
     if (e.t === 'msg') { log(e.text); if (e.heroHp != null) dispHp = e.heroHp; if (e.monUid != null && monHpShown) monHpShown.set(e.monUid, e.monHp); if (slow) { hud(); await wait(e.calc ? CALC_MS : MSG_MS); } }
-    else if (e.t === 'fx') fx.push({ ...e, t0: performance.now() });
+    else if (e.t === 'fx') { fx.push({ ...e, t0: performance.now() }); if (e.kind === 'wind' && posShown && e.uid != null) posShown.set(e.uid, { x: e.x, y: e.y }); }
+    else if (e.t === 'enemyTurn') posShown = null; // てきの ばん：ここで うごいた ばしょに
     else if (e.t === 'bubble') fx.push({ kind: 'bubble', ...e, t0: performance.now(), dur: 1300 });
     else if (e.t === 'spell') { fx.push({ ...e, kind: 'spell', kind2: e.kind, t0: performance.now(), dur: SPELL_MS }); if (slow) await wait(SPELL_MS); } // まほうの えんしゅつを みせてから ダメージ
     else if (e.t === 'meet') meet(e.id);
@@ -727,4 +729,4 @@ function setupInput() {
 })();
 
 // じどう テスト よう
-window.__dg = { tutInfo: () => { const i = tutInfo(); return i && { id: i.id, dirs: i.dirs, btn: i.btn, adj: !!i.adj, goal: i.goal && { x: i.goal.x, y: i.goal.y }, pick: i.s.pick, spell: i.s.spell }; }, set fast(v) { fast = v; }, get busy() { return busy; }, get ghosts() { return ghosts; }, get run() { return run; }, get D() { return D; }, get mode() { return mode; }, get tut() { return tut; }, act: doAction, start, resume, toTitle, goDown, showCard, tapMap, toTile, cam: () => cam(), visible: () => vis, get test() { return TT; }, startTest, get aim() { return aim; } };
+window.__dg = { tutInfo: () => { const i = tutInfo(); return i && { id: i.id, dirs: i.dirs, btn: i.btn, adj: !!i.adj, goal: i.goal && { x: i.goal.x, y: i.goal.y }, pick: i.s.pick, spell: i.s.spell }; }, set fast(v) { fast = v; }, get busy() { return busy; }, get ghosts() { return ghosts; }, get run() { return run; }, get D() { return D; }, get mode() { return mode; }, get tut() { return tut; }, act: doAction, start, resume, toTitle, goDown, showCard, tapMap, toTile, cam: () => cam(), visible: () => vis, shownPos: uid => posShown && posShown.get(uid), get test() { return TT; }, startTest, get aim() { return aim; } };
