@@ -58,6 +58,7 @@ export const WORDS = [
   { id: 'torch', en: 'torch', ja: 'たいまつ', cat: 'item', art: 'dg_torch', use: 'torch', verb: 'つかう', w: 5, minFloor: 4, desc: 'つかうと この かいの ちずが ぜんぶ みえる。' },
   { id: 'rope', en: 'rope', ja: 'ロープ', cat: 'item', art: 'dg_rope', use: 'rope', verb: 'つかう', w: 3, minFloor: 6, desc: 'つかうと つぎの かいへ のぼれる（ボスの かいでは つかえない）。' },
   { id: 'treasurebox', en: 'treasure box', ja: 'たからばこ', cat: 'item', art: 'dg_box', obj: true, desc: 'key（かぎ）で あけると、なかに アイテムが はいっている。' },
+  { id: 'tcard', en: 'card', ja: 'カード', cat: 'item', art: 'dg_tcard', obj: true, desc: 'たからさがしの カード。ふむと ひろえる。' },
   { id: 'stairs', en: 'stairs', ja: 'かいだん', cat: 'item', art: 'dg_stairs', obj: true, desc: 'のぼると つぎの かいへ すすめる。' },
   // ===== そうび（slot：weapon／shield）=====
   //   ふかい かいほど つよい そうびが でる（big・strong・silver・gold は かんたんな えいごの ことば）

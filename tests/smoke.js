@@ -1217,6 +1217,74 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
   }
 
+  console.log('22b. たからさがしダンジョン（dungeon/ の たからさがし）');
+  {
+    const p = await page({ width: 1024, height: 768 });
+    await p.goto(B + 'dungeon/index.html'); await p.waitForSelector('body[data-ready="1"]', { timeout: 10000 });
+    ok(await p.evaluate(() => /20かいを クリア/.test(document.getElementById('tTreasure').textContent)), 'たからさがしは 20かい クリアまで かぎ');
+    await p.click('#tTreasure'); await p.waitForTimeout(150);
+    ok(await p.evaluate(() => /20かいまで クリア/.test(document.getElementById('ov').textContent) && !document.querySelector('#ov [data-act=dgTGo]')), 'まだ はいれない（せつめいだけ）');
+    // えいごの ダンジョンを とちゅうに して おく（たからさがしと べつに のこる）
+    await p.evaluate(() => { closePop(); __dg.D.tutorialDone = true; __dg.D.rewarded.clear = true; __dg.start(false); __dg.fast = true; __dg.toTitle(); });
+    const enRun = await p.evaluate(() => !!__dg.D.run && __dg.D.run.mode !== 'treasure');
+    await p.click('#tTreasure'); await p.waitForTimeout(150); await p.click('#ov [data-act=dgTGo]'); await p.waitForTimeout(300);
+    ok(enRun && await p.evaluate(() => { const r = __dg.run, eq = r.inv.find(i => i.uid === r.equip.weapon); return r.mode === 'treasure' && eq && eq.id === 'sword' && r.inv.filter(i => i.id === 'apple').length === 2 && r.inv.some(i => i.id === 'magicbook') && __dg.D.run && __dg.D.run.mode !== 'treasure' && __dg.D.treasure.run === __dg.run; }), 'たからさがし スタート（sword・apple 2こ・magic book）、えいごの ちゅうだんは のこる');
+    await p.evaluate(() => { __dg.fast = true; });
+    // たからばこから カード → めくる → NEW!
+    const box = await p.evaluate(async () => {
+      const r = __dg.run, h = r.hero; r.mons = [];
+      r.map.tiles[h.y] = r.map.tiles[h.y].slice(0, h.x + 1) + '.' + r.map.tiles[h.y].slice(h.x + 2);
+      for (let k = 0; k < 30; k++) { r.items = r.items.filter(i => !(i.x === h.x + 1 && i.y === h.y)); r.boxes = [{ x: h.x + 1, y: h.y, open: false }]; r.inv.push({ uid: 8000 + k, id: 'key', peek: false }); const res = __dg.act({ t: 'move', dir: 'right' }); if (res.ev.some(e => e.t === 'treasure')) return true; }
+      return false;
+    });
+    await p.waitForTimeout(700);
+    ok(box && await p.evaluate(() => !!document.querySelector('#ov .flip') && Object.keys(__dg.D.treasure.cards).length >= 1), 'たからばこから カード（うらむきで でる）');
+    await p.click('#ov .flip'); await p.waitForTimeout(800);
+    ok(await p.evaluate(() => /NEW!/.test(document.getElementById('ov').textContent) && document.querySelector('#ov .flip.open .tcard')), 'タップで めくる → NEW!');
+    for (let k = 0; k < 4 && await p.$('#ov [data-act=dgRevealNext]'); k++) { await p.click('#ov [data-act=dgRevealNext]'); await p.waitForTimeout(500); if (await p.$('#ov .flip:not(.open)')) { await p.click('#ov .flip'); await p.waitForTimeout(700); } }
+    // ダブり → かけら、3まい そろうと もじバッジ
+    const v = await p.evaluate(async () => {
+      const T = await import('./js/treasure.js'), { CARDS } = await import('./js/cards.js'), TD = __dg.D.treasure, o = {};
+      CARDS.filter(c => c.rare === 1).forEach(c => { TD.cards[c.id] = TD.cards[c.id] || { n: 1, first: 1 }; }); // ★ を ぜんぶ もっている → つぎの ★ は かならず ダブり
+      const sh0 = TD.shards, res = T.giveCard(1, __dg.run);
+      o.shards = !res.isNew && TD.shards === sh0 + 1 && TD.cards[res.card.id].n >= 2;
+      TD.cards.Z1 = { n: 1, first: 1 }; TD.cards.Z2 = { n: 1, first: 1 };
+      CARDS.filter(c => c.rare === 3 && c.id !== 'Z3').forEach(c => { TD.cards[c.id] = TD.cards[c.id] || { n: 1, first: 1 }; });
+      for (let k = 0; k < 40 && !TD.cards.Z3; k++) T.giveCard(3, __dg.run); o.badge = !!TD.cards.Z3 && TD.badges.includes('Z');
+      closePop(); return o;
+    });
+    ok(v.shards && v.badge, 'ダブりは きらきらの かけら・3まい そろうと もじバッジ ' + JSON.stringify(v));
+    await p.waitForTimeout(400); await p.evaluate(() => closePop());
+    // ボスは ★★いじょう、テストは ない
+    const boss = await p.evaluate(() => {
+      const T = __dg.run; for (let f = 1; f < 5; f++) { T.stairs = { x: T.hero.x, y: T.hero.y }; __dg.goDown(); } closePop();
+      const r = __dg.run, b = r.mons.find(m => m.boss); b.hp = 1; r.mons = [b]; r.hero.x = b.x - 1; r.hero.y = b.y; r.hero.dir = 'right';
+      const res = __dg.act({ t: 'attack' }), tr = res.ev.find(e => e.t === 'treasure');
+      return { floor: r.floor, rare: tr && tr.rare, hp: b.maxhp };
+    });
+    ok(boss.floor === 5 && boss.rare >= 2, 'たからさがしの ボスは ★★いじょうの カード ' + JSON.stringify(boss));
+    for (let k = 0; k < 6; k++) { await p.waitForTimeout(450); if (await p.$('#ov .flip:not(.open)')) { await p.click('#ov .flip'); await p.waitForTimeout(700); } if (await p.$('#ov [data-act=dgRevealNext]')) await p.click('#ov [data-act=dgRevealNext]'); }
+    await p.evaluate(() => { closePop(); const r = __dg.run; r.hero.x = r.stairs.x; r.hero.y = r.stairs.y; __dg.goDown(); });
+    ok(await p.evaluate(() => __dg.run.floor === 6 && !__dg.test), 'たからさがしは ふくしゅう テストなしで 6かいへ');
+    // ちゅうだん → つづきから（たからさがしと えいごは べつべつ）
+    const n0 = await p.evaluate(() => Object.keys(__dg.D.treasure.cards).length);
+    await p.goto(B + 'index.html'); await p.goto(B + 'dungeon/index.html'); await p.waitForSelector('body[data-ready="1"]');
+    await p.click('#tTreasure'); await p.waitForTimeout(150);
+    ok(await p.evaluate(() => !!document.querySelector('#ov [data-act=dgTCont]') && !document.getElementById('tCont').hidden), 'たからさがしの つづきから と えいごの つづきから が べつべつ');
+    await p.click('#ov [data-act=dgTCont]'); await p.waitForTimeout(200); await p.evaluate(() => { __dg.fast = true; });
+    ok(await p.evaluate(n => __dg.run.mode === 'treasure' && __dg.run.floor === 6 && Object.keys(__dg.D.treasure.cards).length === n, n0), 'たからさがしを つづきから（6かい・カードも のこる）');
+    // たおれても カードは のこる
+    await p.evaluate(() => { const r = __dg.run, h = r.hero; h.hp = 1; r.inv = []; r.mons = [{ uid: 9901, id: 'rat', x: h.x + 1, y: h.y, hp: 6, maxhp: 6, atk: 99, exp: 1, tick: 0 }]; __dg.act({ t: 'wait' }); });
+    await p.waitForTimeout(900);
+    ok(await p.evaluate(n => __dg.mode === 'over' && /みつけた カードは なくならない/.test(document.getElementById('ov').textContent) && !__dg.D.treasure.run && Object.keys(__dg.D.treasure.cards).length === n && !!__dg.D.run, n0), 'たおれても カードは のこる（えいごの ちゅうだんも そのまま）');
+    // アルバム
+    await p.click('#ov [data-act=dgAlbumT]'); await p.waitForTimeout(200);
+    ok(await p.evaluate(() => document.querySelectorAll('#ov .al-l').length === 26 && document.querySelectorAll('#ov .al-slot').length === 3), 'カードずかん（A〜Z・1ページ 3まい）');
+    await p.click('#ov [data-act=dgAlbum][data-arg=Z]'); await p.waitForTimeout(150); await p.click('#ov [data-act=dgCardBig][data-arg=Z3]'); await p.waitForTimeout(200);
+    ok(await p.evaluate(() => /zebra/.test(document.getElementById('ov').textContent) && /This is a zebra\./.test(document.getElementById('ov').textContent) && !!document.querySelector('#ov .tcard.r3 .holo')), 'カードを おおきく（れいぶん・キラ）');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+  }
+
   console.log('20b. ABCぼうけん：ドラコが うごいた ところに いても うごける');
   {
     const p = await page({ width: 844, height: 390 });

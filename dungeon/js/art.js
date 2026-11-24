@@ -3,6 +3,7 @@
 import { WORD_ART, wordArt } from '../../abc/js/engine/art.js';
 import '../../abc/js/engine/art2.js';
 import '../../abc/js/engine/art3.js';
+import './cardart.js'; // たからさがしの カードの え
 export { wordArt };
 
 const INK = '#4a3a3a';

@@ -14,6 +14,18 @@ export function defData() {
     rewarded: { floor: 0, boss: [], dex: 0, clear: false }, // ⭐を もう もらった もの（clear：20かい クリア）
     settings: { voice: true, se: true },
     run: null,        // ちゅうだん ちゅうの ぼうけん（game.js の run）
+    treasure: defTreasure(), // たからさがしダンジョン（20かい クリアで あそべる）
+  };
+}
+export function defTreasure() {
+  return {
+    runs: 0, best: 0, clears: 0,  // ぼうけんの かず・さいこう とうたつ かい・クリア かいすう
+    cards: {},                    // もっている カード { 'A1': { n:まいすう, first:はじめて もらった とき } }
+    shards: 0,                    // きらきらの かけら（ダブり。カードガチャ せんよう）
+    badges: [],                   // もじバッジ（3まい そろった もじ）
+    gacha: { pulls: 0, pity: 0 }, // カードガチャ（だい3だんかい で つかう）
+    rewarded: { clear: false, complete: false },
+    run: null,                    // ちゅうだん ちゅうの たからさがし（えいごの run とは べつ）
   };
 }
 export function merge(d) {
@@ -24,6 +36,15 @@ export function merge(d) {
   if (d.rewarded && typeof d.rewarded === 'object') s.rewarded = { ...s.rewarded, ...d.rewarded, boss: Array.isArray(d.rewarded.boss) ? d.rewarded.boss : [] };
   if (d.settings && typeof d.settings === 'object') s.settings = { ...s.settings, ...d.settings };
   if (d.run && typeof d.run === 'object' && d.run.map && d.run.hero) s.run = d.run;
+  if (d.treasure && typeof d.treasure === 'object') {
+    const t = d.treasure, T = s.treasure;
+    for (const k of ['runs', 'best', 'clears', 'shards']) if (typeof t[k] === 'number') T[k] = t[k];
+    if (t.cards && typeof t.cards === 'object') T.cards = t.cards;
+    if (Array.isArray(t.badges)) T.badges = t.badges;
+    if (t.gacha && typeof t.gacha === 'object') T.gacha = { ...T.gacha, ...t.gacha };
+    if (t.rewarded && typeof t.rewarded === 'object') T.rewarded = { ...T.rewarded, ...t.rewarded };
+    if (t.run && typeof t.run === 'object' && t.run.map && t.run.hero) T.run = t.run;
+  }
   return s;
 }
 

@@ -1,5 +1,6 @@
 // ゲームの きまり（ターン・こうげき・てきの うごき・アイテム・まほう）。ひょうじとは べつ
 import { WORD, WORDS, SPELLS, HERO0, LV_EXP, MAX_FLOOR, BOSS_FLOORS, BOSS_OF, MINION_OF, BAGS, BAG_MAX, bagOf } from './data.js';
+import { RARE_BY_DEPTH } from './cards.js';
 import { genFloor, genTutorial } from './gen.js';
 
 let rand = Math.random;
@@ -12,11 +13,23 @@ const calc = (who, a, op, b) => `<span class="calc">${who}の HP　${a} ${op} ${
 export const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
 
 /* ---------- あたらしい ぼうけん・かい ---------- */
-export function newRun(tutorial = false) {
-  const run = { v: 1, tut: tutorial, floor: 0, turn: 0, uid: 1, met: [], spells: [], inv: [], equip: { weapon: null, shield: null, armor: null }, power: 0, stuck: 0,
+// mode：'english'（イングリッシュダンジョン）／'treasure'（たからさがし：てきが つよく、カードを あつめる）
+export function newRun(tutorial = false, mode = 'english') {
+  const run = { v: 1, tut: tutorial, mode, floor: 0, turn: 0, uid: 1, met: [], spells: [], inv: [], equip: { weapon: null, shield: null, armor: null }, power: 0, stuck: 0, cards: [],
     hero: { x: 0, y: 0, dir: 'down', hp: HERO0.hp, maxhp: HERO0.hp, mp: HERO0.mp, maxmp: HERO0.mp, lv: 1, exp: 0, atk: HERO0.atk, def: HERO0.def } };
+  if (mode === 'treasure') { // スタートの もちもの：sword（そうび）・apple 2こ・magic book
+    const sw = run.uid++; run.inv.push({ uid: sw, id: 'sword', peek: true }, { uid: run.uid++, id: 'apple', peek: true }, { uid: run.uid++, id: 'apple', peek: true }, { uid: run.uid++, id: 'magicbook', peek: true }); run.equip.weapon = sw;
+  }
   enterFloor(run, tutorial ? 0 : 1);
   return run;
+}
+export const isTreasure = run => run && run.mode === 'treasure';
+// てき・アイテムの つよさに つかう かい（たからさがしは 1かい ＋1 → 5かいから ＋5かいぶん つよい）
+const ef = run => isTreasure(run) ? Math.min(MAX_FLOOR, run.floor + Math.min(5, run.floor)) : run.floor;
+// カードの レア（ふかいほど たかい）。shift：かくし部屋などで 1だん ふかい わりあい
+export function rollRare(run, shift = 0) {
+  const f = Math.min(MAX_FLOOR, Math.max(1, run.floor + shift * 5)), p = (RARE_BY_DEPTH.find(b => f <= b.to) || RARE_BY_DEPTH[RARE_BY_DEPTH.length - 1]).p;
+  let t = rand() * 100; for (let i = 0; i < 3; i++) { t -= p[i]; if (t < 0) return i + 1; } return 1;
 }
 const cellsOf = r => { const c = []; for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) c.push([x, y]); return c; };
 function freeCell(run, room, avoid = []) {
@@ -26,12 +39,12 @@ function freeCell(run, room, avoid = []) {
 }
 function spawnMon(run, id, x, y, extra = {}) {
   // つよさは その てきが でて くる かい から すこしずつ あがる（ボスは きまった つよさ）
-  const w = WORD[id], f = Math.max(1, run.floor), up = w.boss ? 0 : Math.max(0, f - (w.minFloor || 1));
-  const hp = Math.round(w.hp * (1 + 0.2 * up));
-  run.mons.push({ uid: run.uid++, id, x, y, hp, maxhp: hp, atk: w.atk + Math.floor(up / 2) + Math.floor(f / 4), def: w.def || 0, exp: w.exp + Math.floor(f / 2), tick: 0, ...extra });
+  const w = WORD[id], f = Math.max(1, ef(run)), up = w.boss ? 0 : Math.max(0, f - (w.minFloor || 1)), tb = w.boss && isTreasure(run); // たからさがしの ボスは つよめ
+  const hp = Math.round(w.hp * (1 + 0.2 * up) * (tb ? 1.3 : 1));
+  run.mons.push({ uid: run.uid++, id, x, y, hp, maxhp: hp, atk: w.atk + Math.floor(up / 2) + Math.floor(f / 4) + (tb ? 2 : 0), def: w.def || 0, exp: w.exp + Math.floor(f / 2), tick: 0, ...extra });
 }
 function rollItem(run) {
-  const known = new Set(run.spells), f = run.floor;
+  const known = new Set(run.spells), f = ef(run);
   const owned = new Set(run.inv.map(i => i.id).concat(run.items.map(i => i.id))); // おなじ そうびは なんこも でない
   const list = WORDS.filter(w => (w.cat === 'item' || w.cat === 'equip') && w.w && (!w.minFloor || w.minFloor <= f) && (!w.maxFloor || w.maxFloor >= f || w.cat !== 'equip') && !(w.cat === 'equip' && owned.has(w.id)) && !(w.id === 'magicbook' && learnable(run).every(s => known.has(s))));
   let t = rand() * list.reduce((n, w) => n + w.w, 0);
@@ -39,7 +52,7 @@ function rollItem(run) {
   return 'apple';
 }
 // その かいで おぼえられる まほう（つよい まほうは おなじ なかまの ひとつ したを しって いたら）
-const learnable = run => SPELLS.filter(s => { const w = WORD[s]; return (!w.minFloor || w.minFloor <= Math.max(1, run.floor)) && (w.tier || 1) <= 1 + Math.max(0, ...run.spells.filter(k => WORD[k].fam === w.fam).map(k => WORD[k].tier || 1)); });
+const learnable = run => SPELLS.filter(s => { const w = WORD[s]; return (!w.minFloor || w.minFloor <= Math.max(1, ef(run))) && (w.tier || 1) <= 1 + Math.max(0, ...run.spells.filter(k => WORD[k].fam === w.fam).map(k => WORD[k].tier || 1)); });
 // ふくろ（そうび・たべもの・ほん/どうぐ）に まだ はいるか
 export const bagCount = (run, bag) => run.inv.filter(i => bagOf(i.id) === bag).length;
 export const bagRoom = (run, id) => bagCount(run, bagOf(id)) < BAG_MAX[bagOf(id)];
@@ -69,15 +82,19 @@ export function enterFloor(run, floor) {
     } else {
       const last = rooms[rooms.length - 1], sc = freeCell(run, last); run.stairs = { x: sc[0], y: sc[1] };
       const canMagic = run.spells.some(s => WORD[s].dmg); // まほうで しか たおせない てきは、こうげきの まほうを おぼえてから
-      const mtypes = WORDS.filter(w => w.cat === 'monster' && !w.boss && w.minFloor <= floor && (!w.maxFloor || w.maxFloor >= floor) && (!w.hard || canMagic)).map(w => w.id);
+      const fl = ef(run), mtypes = WORDS.filter(w => w.cat === 'monster' && !w.boss && w.minFloor <= fl && (!w.maxFloor || w.maxFloor >= fl) && (!w.hard || canMagic)).map(w => w.id);
       for (let i = 0; i < Math.min(8, 3 + floor); i++) { const c = freeCell(run, pick(rooms.slice(1))); if (c) spawnMon(run, pick(mtypes), c[0], c[1]); }
       for (let i = 0; i < 4 + (floor > 2 ? 1 : 0) + (floor > 10 ? 1 : 0); i++) { const c = freeCell(run, pick(rooms)); if (c) run.items.push({ uid: run.uid++, id: rollItem(run), x: c[0], y: c[1] }); }
-      if (rand() < 0.45) { // たからばこ と かぎ
+      // たからばこ と かぎ（たからさがしは 1かいに 0〜2こ）
+      const nBox = isTreasure(run) ? (rand() < 0.6 ? 1 : 0) + (rand() < 0.2 ? 1 : 0) : (rand() < 0.45 ? 1 : 0);
+      for (let i = 0; i < nBox; i++) {
         // たからばこは みちの でいりぐちを ふさがない ところ（となりに つうろが ない マス）
         const nearDoor = ([x, y]) => Object.values(DIRS).some(([dx, dy]) => tileAt(run, x + dx, y + dy) === ',');
         const R = pick(rooms.slice(1)), c = freeCell(run, R, cellsOf(R).filter(nearDoor)), k = freeCell(run, pick(rooms));
         if (c && k) { run.boxes.push({ x: c[0], y: c[1], open: false }); run.items.push({ uid: run.uid++, id: 'key', x: k[0], y: k[1] }); }
       }
+      // たからさがし：ゆかに カードが おちている ことも ある（★ が おおい）
+      if (isTreasure(run) && rand() < 0.2) { const c = freeCell(run, pick(rooms.slice(1))); if (c) run.items.push({ uid: run.uid++, id: 'tcard', x: c[0], y: c[1], rare: rollRare(run, -1) }); }
     }
   }
   run.seen = '0'.repeat(run.map.w * run.map.h); // みえる ところは よびだしがわで updateSeen()
@@ -133,7 +150,8 @@ export function act(run, a) {
     else if (walkable(run, nx, ny)) {
       h.x = nx; h.y = ny; turn = true; ev.push({ t: 'step' });
       const it = run.items.find(i => i.x === nx && i.y === ny);
-      if (it && WORD[it.id].cat === 'equip' && run.inv.some(i => i.id === it.id)) say(`${en(it.id)} は もう もっているよ`);
+      if (it && it.id === 'tcard') { run.items = run.items.filter(i => i !== it); ev.push({ t: 'msg', text: 'たからの カードを みつけた！' }); ev.push({ t: 'treasure', rare: it.rare || 1, src: 'floor' }); }
+      else if (it && WORD[it.id].cat === 'equip' && run.inv.some(i => i.id === it.id)) say(`${en(it.id)} は もう もっているよ`);
       else if (it) { if (bagRoom(run, it.id)) { run.items = run.items.filter(i => i !== it); run.inv.push({ uid: it.uid, id: it.id, peek: false }); say(`${en(it.id)} を ひろった！`); ev.push({ t: 'pickup', id: it.id }); }
         else say(`「${bagName(it.id)}」が いっぱい（${BAG_MAX[bagOf(it.id)]}こ）。${en(it.id)} は ひろえない`); }
       if (onStairs(run)) ev.push({ t: 'stairs' });
@@ -171,6 +189,7 @@ function hurtMon(run, m, dmg, ev, how = 'hit', note = '', tier = 1) {
     run.mons = run.mons.filter(x => x !== m);
     ev.push({ t: 'kill', id: m.id, x: m.x, y: m.y, uid: m.uid }); ev.push({ t: 'msg', text: `${en(m.id)} を たおした！` });
     gainExp(run, m.exp, ev);
+    if (m.boss && isTreasure(run)) { const r3 = run.floor >= MAX_FLOOR ? 0.5 : run.floor >= 10 ? 0.25 : 0.1; ev.push({ t: 'treasure', rare: rand() < r3 ? 3 : 2, src: 'boss' }); } // ボスは ★★いじょう
     if (m.boss) { run.bossDead = true; run.stairs = { x: m.x, y: m.y }; ev.push({ t: 'boss', id: m.id }); ev.push({ t: 'msg', text: `${en('stairs')} が あらわれた！ のると ${run.floor >= MAX_FLOOR ? 'ゴール！' : 'つぎへ すすめるよ'}` }); }
   }
 }
@@ -197,7 +216,8 @@ function openBox(run, b, ev) {
   if (!k) { ev.push({ t: 'msg', text: `${en('treasurebox')} だ。${en('key')} が あれば あけられる` }); ev.push({ t: 'bump' }); return; }
   run.inv = run.inv.filter(i => i !== k); b.open = true;
   const got = run.tut ? ['bread', 'shield'] : []; // れんしゅうは きまった もの
-  while (!run.tut && got.length < 2) { let id = rollItem(run); for (let k = 0; k < 6 && WORD[id].cat === 'equip' && got.includes(id); k++) id = rollItem(run); got.push(id); }
+  const cr = rand(), cardN = isTreasure(run) ? (cr < 0.1 ? 2 : cr < 0.55 ? 1 : 0) : 0; // たからさがし：はんぶんくらいは カード（ときどき 2まい）＋ アイテム
+  while (!run.tut && got.length < (cardN ? 1 : 2)) { let id = rollItem(run); for (let k = 0; k < 6 && WORD[id].cat === 'equip' && got.includes(id); k++) id = rollItem(run); got.push(id); }
   const floor = [];
   for (const id of got) {
     if (WORD[id].cat === 'equip' && run.inv.some(i => i.id === id)) continue; // もう もっている そうびは ふえない
@@ -208,6 +228,8 @@ function openBox(run, b, ev) {
   }
   ev.push({ t: 'bubble', x: run.hero.x, y: run.hero.y, text: 'Open, treasure box!' }); ev.push({ t: 'open', got }); ev.push({ t: 'used', id: 'key' });
   ev.push({ t: 'msg', text: `${en('key')} で ${en('treasurebox')} を あけた！ ${got.map(en).join(' と ')} が はいっていた！` });
+  if (cardN) ev.push({ t: 'msg', text: `たからの カードも ${cardN}まい はいっていた！` });
+  for (let i = 0; i < cardN; i++) ev.push({ t: 'treasure', rare: rollRare(run), src: 'box' });
   if (floor.length) ev.push({ t: 'msg', text: `もちものが いっぱい！ ${floor.map(en).join(' と ')} は ゆかに おいたよ（「${bagName(floor[0])}」）` });
 }
 function useItem(run, uid, ev) {

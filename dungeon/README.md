@@ -22,6 +22,11 @@
 - ちゅうだん・つづきから（1ターン ごとに ほぞん）、さいこう とうたつ かい、たおれたら 1かいから（ずかんは のこる）
 - ⭐（おうちの points）：はじめて ついた かい ⭐1・ボス はじめて ⭐10・ずかん 10ごと ⭐5・テスト せいかいの かず（まいかい）・20かい はじめて クリア ⭐30
 
+## たからさがし（20かい クリアで あそべる）
+- タイトルの「たからさがし」から。A〜Z の カード 78まい（`js/cards.js`、え は `js/cardart.js`）を あつめる。カードの がめん・アルバムは `js/treasure.js`
+- `run.mode === 'treasure'`：てきが つよい（`game.js` の `ef()`）・たからばこ／ゆかの カード（`tcard`）／ボスから カード（`treasure` イベント）・ふくしゅう テストなし
+- ちゅうだんは `D.treasure.run`（えいごの `D.run` と べつ）。仕様：`docs/treasure-dungeon-spec.md`
+
 ## こうせい
 ```
 index.html / style.css
@@ -36,7 +41,7 @@ js/main.js   がめん・そうさ・カード・もちもの・まほう・ず�
 - しゅじんこうは おうちの キャラ（いまの きせかえ）を charSVG から えに して かく。
 
 ## ほぞん（`moko-dungeon-v1`）
-`{ v, t, best, clears, runs, tutorialDone, dex:{id:{seen,used,read,looked,first,tq,tok}}, rewarded:{floor,boss:[],dex,clear}, settings, run }`（tq・tok：テストの もんだい かず・せいかい）
+`{ v, t, best, clears, runs, tutorialDone, dex:{id:{seen,used,read,looked,first,tq,tok}}, rewarded:{floor,boss:[],dex,clear}, settings, run, treasure:{runs,best,clears,cards:{A1:{n,first}},shards,badges:[],gacha:{pulls,pity},rewarded:{clear,complete},run} }`（tq・tok：テストの もんだい かず・せいかい）
 `run` は ちゅうだん ちゅうの ぼうけん（`game.js` の じょうたい そのまま）。こうもくは ついかのみ。
 
 ## つぎ（だい3かい「しあげ」）

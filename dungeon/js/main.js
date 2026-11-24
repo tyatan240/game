@@ -1,6 +1,9 @@
 // モコの イングリッシュダンジョン：がめん・そうさ・チュートリアル・ずかん・⭐
 // core.js（S・save・charSVG・showPop・ACT）を つかう。きまりは game.js、えは art.js、ほぞんは save.js
 import { WORD, WORDS, CATS, MAX_FLOOR, STARS, BOSS_FLOORS, TEST_FLOORS, zoneOf, BAGS, GROUPS, bagOf, FAMS } from './data.js';
+import { isTreasure } from './game.js';
+import { initTreasure, treasureUnlocked, cardCount, giveCard, showReveals, flipCard, revealNext, albumPop, cardBig, cardSay, revealPending } from './treasure.js';
+import { CARD, CARD_TOTAL, CARD_STARS } from './cards.js';
 import { newRun, act, descend, updateSeen, visible, tileAt, seenAt, onStairs, heroAtk, heroDef, monAt, DIRS, bagCount, spellTargets } from './game.js';
 import { drawTile, drawArt, wordArt } from './art.js';
 import { load, save as saveDg, flush } from './save.js';
@@ -14,7 +17,10 @@ const en = id => `<b class="en">${WORD[id].en}</b>`;
 const speak = text => { if (D.settings.voice) sayLetter({ speak: text }); };
 
 /* ---------- ほぞん・⭐ ---------- */
-function persist() { D.run = run && !run.over ? run : null; saveDg(D); }
+// ちゅうだんの ほぞん：えいごの ダンジョンは D.run、たからさがしは D.treasure.run（べつべつ）
+let curMode = 'english';
+function setSlot(v) { if (curMode === 'treasure') D.treasure.run = v; else D.run = v; }
+function persist() { setSlot(run && !run.over ? run : null); saveDg(D); }
 function stars(n, why) { if (!n) return; S.points += n; save(); toast(`⭐＋${n} ${why}`); sfx.star(); }
 let toastT = null;
 function toast(html) { const t = $id('toast'); t.innerHTML = html; t.hidden = false; t.style.top = Math.max(70, (!$id('aim').hidden ? $id('aim') : $id('dock')).getBoundingClientRect().top - 52) + 'px'; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 2200); }
@@ -179,7 +185,8 @@ function gearView(size) {
 function hud() {
   if (!run) return;
   const h = run.hero;
-  $id('floor').textContent = run.tut ? 'れんしゅう' : `${run.floor}かい`;
+  $id('floor').textContent = run.tut ? 'れんしゅう' : isTreasure(run) ? `${run.floor}かい・カード${(run.cards || []).length}` : `${run.floor}かい`;
+  $id('floor').classList.toggle('tre', isTreasure(run));
   const hp = dispHp != null ? dispHp : h.hp; // せんとうちゅうは けいさんしきと いっしょに へる
   $id('hp').textContent = `${hp}/${h.maxhp}`; $id('hpbar').style.width = Math.max(0, 100 * hp / h.maxhp) + '%';
   $id('hpbar').parentNode.parentNode.classList.toggle('low', hp <= h.maxhp * 0.3);
@@ -224,11 +231,12 @@ function doAction(a) {
   return r;
 }
 async function handle(ev, slow) {
-  let stairs = false, dead = false, rope = false;
+  let stairs = false, dead = false, rope = false, gotCard = false;
   for (const e of ev) {
     if (e.t === 'msg') { log(e.text); if (e.heroHp != null) dispHp = e.heroHp; if (e.monUid != null && monHpShown) monHpShown.set(e.monUid, e.monHp); if (slow) { hud(); await wait(e.calc ? CALC_MS : MSG_MS); } }
     else if (e.t === 'fx') { fx.push({ ...e, t0: performance.now() }); if (e.kind === 'wind' && posShown && e.uid != null) posShown.set(e.uid, { x: e.x, y: e.y }); }
-    else if (e.t === 'enemyTurn') posShown = null; // てきの ばん：ここで うごいた ばしょに
+    else if (e.t === 'enemyTurn') posShown = null;
+    else if (e.t === 'treasure') { giveCard(e.rare, run); gotCard = true; } // てきの ばん：ここで うごいた ばしょに
     else if (e.t === 'bubble') fx.push({ kind: 'bubble', ...e, t0: performance.now(), dur: 1300 });
     else if (e.t === 'spell') { fx.push({ ...e, kind: 'spell', kind2: e.kind, t0: performance.now(), dur: SPELL_MS }); if (slow) await wait(SPELL_MS); } // まほうの えんしゅつを みせてから ダメージ
     else if (e.t === 'meet') meet(e.id);
@@ -249,6 +257,7 @@ async function handle(ev, slow) {
     else if (e.t === 'reveal') sfx.unlock();
     else if (e.t === 'dead') dead = true;
   }
+  if (gotCard) { stopWalk(); setTimeout(showReveals, slow ? 200 : 350); } // カードを めくる えんしゅつ（たおれても カードは のこる）
   if (dead) { stopWalk(); setTimeout(gameOver, slow ? 300 : 500); return; }
   if (rope) { stopWalk(); setTimeout(() => { if (run && mode === 'play') goDown(true); }, slow ? 300 : 500); return; }
   if (stairs) { stopWalk(); setTimeout(askStairs, 150); }
@@ -413,7 +422,7 @@ function askStairs() {
     <div class="btns">${run.tut ? '' : '<button class="big gray" data-act="close">まだ</button>'}<button class="big ${run.tut ? 'hint' : ''}" data-act="dgDown">すすむ</button></div>`);
   document.querySelector('#ov .dart').appendChild(wordArt('dg_stairs', 90));
 }
-const needTest = () => run && !run.tut && TEST_FLOORS.includes(run.floor) && run.tested !== run.floor;
+const needTest = () => run && !run.tut && !isTreasure(run) && TEST_FLOORS.includes(run.floor) && run.tested !== run.floor; // たからさがしは テストなし
 function goDown(rope = false) {
   closePop(); if (aim) endAim();
   if (!rope && needTest() && onStairs(run)) return startTest(); // ボスの あとは ふくしゅう テスト → おわったら すすむ
@@ -425,8 +434,9 @@ function goDown(rope = false) {
   const z = zoneOf(run.floor), newZone = run.floor > 1 && zoneOf(run.floor - 1) !== z;
   logs = []; logGroup++; log(`${run.floor}かいに ついた！${newZone ? `ここは「${z.name}」` : ''}`);
   if (run.power && TEST_FLOORS.includes(run.floor - 1)) log(`ことばの ちから：つよさ ＋${run.power}（${run.floor + 4}かい まで）`);
-  if (run.floor > D.best) D.best = run.floor;
-  if (run.floor > (D.rewarded.floor || 1)) { const n = run.floor - Math.max(1, D.rewarded.floor || 1); D.rewarded.floor = run.floor; stars(STARS.floor * n, `${run.floor}かいに はじめて ついた！`); }
+  if (isTreasure(run)) { if (run.floor > D.treasure.best) D.treasure.best = run.floor; }
+  else if (run.floor > D.best) D.best = run.floor;
+  if (!isTreasure(run) && run.floor > (D.rewarded.floor || 1)) { const n = run.floor - Math.max(1, D.rewarded.floor || 1); D.rewarded.floor = run.floor; stars(STARS.floor * n, `${run.floor}かいに はじめて ついた！`); }
   persist(); camTarget(true); hud();
   const boss = BOSS_FLOORS.includes(run.floor) && run.mons.find(m => m.boss);
   const fl = run.floor;
@@ -435,14 +445,33 @@ function goDown(rope = false) {
 }
 function gameOver() {
   mode = 'over'; const f = run.floor, met = [...run.met];
-  run.over = true; D.run = null; if (f > D.best) D.best = f; saveDg(D);
+  run.over = true; setSlot(null);
+  if (isTreasure(run)) { // たからさがし：みつけた カードは のこる
+    const T = D.treasure; if (f > T.best) T.best = f; saveDg(D);
+    showPop(`<h3>たおれて しまった……</h3><p><b style="font-size:22px">${f}かい</b> まで いけたよ（さいこう ${T.best}かい）</p>
+      <div>こんかい みつけた カード（${(run.cards || []).length}まい）</div><div class="wordlist">${cardList(run.cards)}</div>
+      <p class="muted">みつけた カードは なくならないよ。また たからを さがしに いこう！</p><div class="btns"><button class="big sub" data-act="dgAlbumT">カードずかん</button><button class="big" data-act="dgTitle">タイトルへ</button></div>`);
+    run = null; return;
+  }
+  if (f > D.best) D.best = f; saveDg(D);
   showPop(`<h3>たおれて しまった……</h3><p><b style="font-size:22px">${f}かい</b> まで いけたよ（さいこう ${D.best}かい）</p>
     <div>こんかい であった ことば</div><div class="wordlist">${met.map(id => `<span><b>${WORD[id].en}</b> ${WORD[id].ja}</span>`).join('')}</div>
     <p class="muted">ずかんと ことばの きろくは のこるよ。また ちょうせん しよう！</p><div class="btns"><button class="big" data-act="dgTitle">タイトルへ</button></div>`);
   run = null;
 }
+const cardList = ids => (ids || []).map(id => { const c = CARD[id]; return `<span class="r${c.rare}"><b>${c.en}</b> ${'★'.repeat(c.rare)}</span>`; }).join('') || '<span>なし</span>';
 function clearRun() {
-  mode = 'over'; D.clears++; D.best = Math.max(D.best, run.floor); run.over = true; D.run = null;
+  if (isTreasure(run)) { // たからさがしの クリア
+    mode = 'over'; const T = D.treasure; T.clears++; T.best = Math.max(T.best, run.floor); run.over = true; setSlot(null);
+    const first = !T.rewarded.clear; T.rewarded.clear = true; saveDg(D); sfx.unlock();
+    showPop(`<h3>たからさがし クリア！</h3><div style="width:120px;margin:0 auto">${charSVG(S.equip, 'happy', 'hop')}</div>
+      <p>${MAX_FLOOR}かいの ボスを たおしたね！</p>
+      <div>こんかい みつけた カード（${(run.cards || []).length}まい）</div><div class="wordlist">${cardList(run.cards)}</div>
+      <div class="btns"><button class="big sub" data-act="dgAlbumT">カードずかん</button><button class="big" data-act="dgTitle">タイトルへ</button></div>`);
+    setTimeout(() => stars(first ? CARD_STARS.firstClear : CARD_STARS.clear, first ? 'はじめての たからさがし クリア！' : 'たからさがし クリア！'), 600);
+    run = null; return;
+  }
+  mode = 'over'; D.clears++; D.best = Math.max(D.best, run.floor); run.over = true; setSlot(null);
   const first = !D.rewarded.clear; D.rewarded.clear = true; saveDg(D);
   sfx.unlock(); const met = [...run.met];
   showPop(`<h3>ダンジョン クリア！</h3><div style="width:120px;margin:0 auto">${charSVG(S.equip, 'happy', 'hop')}</div>
@@ -635,21 +664,38 @@ function tutorialDone() {
 }
 
 /* ---------- はじめる・タイトル ---------- */
-function start(tutorial) {
-  closePop(); unlockAudio(); aim = null;
-  run = newRun(tutorial); mode = 'play'; logs = []; fx = [];
+function start(tutorial, md = 'english') {
+  closePop(); unlockAudio(); aim = null; curMode = tutorial ? 'english' : md;
+  run = newRun(tutorial, curMode); mode = 'play'; logs = []; fx = [];
   tut = tutorial ? { done: {} } : null;
-  if (!tutorial) { D.runs++; if (1 > D.best) D.best = 1; log('1かい から ぼうけん スタート！'); }
+  if (curMode === 'treasure') { D.treasure.runs++; if (1 > D.treasure.best) D.treasure.best = 1; log('たからさがし スタート！ たからばこ と カードを さがそう'); }
+  else if (!tutorial) { D.runs++; if (1 > D.best) D.best = 1; log('1かい から ぼうけん スタート！'); }
   else log('れんしゅうの へや。ひかっている ところを みてね');
   vis = visible(run); for (const id of updateSeen(run)) meet(id);
   $id('title').classList.add('hide'); persist(); measureView(); camTarget(true); hud();
 }
-function resume() { closePop(); unlockAudio(); run = D.run; mode = 'play'; logs = []; logGroup++; log(`${run.tut ? 'れんしゅう' : run.floor + 'かい'} から つづき`); tut = run.tut ? { done: {} } : null; vis = visible(run); $id('title').classList.add('hide'); measureView(); camTarget(true); hud(); }
+function resume(md = 'english') { closePop(); unlockAudio(); curMode = md; run = md === 'treasure' ? D.treasure.run : D.run; if (!run) return; mode = 'play'; logs = []; logGroup++; log(`${run.tut ? 'れんしゅう' : run.floor + 'かい'} から つづき`); tut = run.tut ? { done: {} } : null; vis = visible(run); $id('title').classList.add('hide'); measureView(); camTarget(true); hud(); }
 function toTitle() {
   closePop(); stopWalk(); aim = null; aimUI(); mode = 'title'; run = null; tut = null;
   $id('title').classList.remove('hide'); $id('guide').hidden = true;
   $id('tCont').hidden = !D.run;
   $id('tbest').innerHTML = D.best ? `さいこう とうたつ <b>${D.best}かい</b>${D.clears ? `　クリア ${D.clears}かい` : ''}` : 'まだ ぼうけんして いないよ';
+  // たからさがし：20かい クリアで あそべる
+  const tb = $id('tTreasure'), un = treasureUnlocked();
+  tb.classList.toggle('locked', !un); tb.innerHTML = un ? `たからさがし<small>カード ${cardCount()} / ${CARD_TOTAL}</small>` : `たからさがし<small>20かいを クリアすると あそべるよ</small>`;
+}
+/* ---------- たからさがしの メニュー ---------- */
+function treasureMenu() {
+  if (!treasureUnlocked()) { sfx.bump(); return showPop(`<h3>たからさがし ダンジョン</h3><p>イングリッシュダンジョンを <b>20かいまで クリア</b> すると あそべるよ。</p><div class="btns"><button class="big gray" data-act="close">とじる</button></div>`); }
+  const T = D.treasure;
+  showPop(`<h3>たからさがし ダンジョン</h3>
+    <p>A〜Z の たからの カードを あつめよう！<br>たからばこ・ボス から カードが でるよ。ふかい かいほど レアが でやすい！</p>
+    <div class="tmenu-stat">カード <b>${cardCount()} / ${CARD_TOTAL}</b>　もじバッジ <b>${T.badges.length}</b>　かけら <b>${T.shards}</b><br>さいこう ${T.best}かい・クリア ${T.clears}かい</div>
+    <div class="btns" style="flex-direction:column;gap:8px">
+      ${T.run ? `<button class="big" data-act="dgTCont">つづきから（${T.run.floor}かい）</button>` : ''}
+      <button class="big ${T.run ? 'sub' : ''}" data-act="dgTGo">${T.run ? 'あたらしく ぼうけん' : 'ぼうけんに いく！'}</button>
+      <button class="big sub" data-act="dgAlbumT">カードずかん</button>
+      <button class="big gray" data-act="close">もどる</button></div>`);
 }
 function goPressed() {
   const go = () => { if (!D.tutorialDone) return start(true); showPop(`<h3>あそびかたの せつめいを みる？</h3><p>はじめに「れんしゅうの へや」で うごきかたを れんしゅう できるよ。</p><div class="btns"><button class="big gray" data-act="dgSkipTut">とばす</button><button class="big" data-act="dgTut">みる</button></div>`); };
@@ -659,7 +705,7 @@ function goPressed() {
 function menu() {
   stopWalk();
   showPop(`<h3>メニュー</h3><div class="btns" style="flex-direction:column;gap:8px">
-    <button class="big" data-act="close">つづける</button><button class="big sub" data-act="dgDex">ずかん</button>
+    <button class="big" data-act="close">つづける</button>${isTreasure(run) ? '<button class="big sub" data-act="dgAlbumM">カードずかん</button>' : ''}<button class="big sub" data-act="dgDex">ずかん</button>
     <button class="big gray" data-act="dgHome">${run && run.tut ? 'やめて おうちへ' : 'ちゅうだんして おうちへ'}</button></div>
     <p class="muted">ちゅうだん すると、つぎは「つづきから」 あそべるよ</p>`);
 }
@@ -684,6 +730,15 @@ Object.assign(ACT, {
   dgTitle: () => toTitle(),
   dgTut: () => start(true), dgSkipTut: () => start(false), dgStartReal: () => start(false),
   dgNew: () => { D.run = null; saveDg(D); closePop(); goPressed(); },
+  dgTreasure: () => treasureMenu(),
+  dgTGo: () => { if (D.treasure.run) return showPop(`<h3>あたらしく ぼうけん する？</h3><p>ちゅうだん している たからさがし（${D.treasure.run.floor}かい）は なくなるよ。<br>カードは なくならないよ。</p><div class="btns"><button class="big gray" data-act="dgTreasure">やめる</button><button class="big" data-act="dgTNew">あたらしく</button></div>`); start(false, 'treasure'); },
+  dgTNew: () => { D.treasure.run = null; saveDg(D); start(false, 'treasure'); },
+  dgTCont: () => resume('treasure'),
+  dgAlbumT: () => albumPop(null, mode === 'title' || mode === 'over' ? (mode === 'title' ? 'dgTreasure' : 'dgTitle') : 'close'),
+  dgAlbumM: () => albumPop(null, 'dgMenu'),
+  dgAlbum: L => { sfx.tap(); albumPop(L); },
+  dgCardBig: id => cardBig(id), dgCardSay: id => cardSay(id),
+  dgFlip: () => flipCard(), dgRevealNext: () => revealNext(),
   dgHome: () => { if (run && run.tut) { run = null; D.run = null; } persist(); flush(D); location.href = '../index.html'; },
 });
 
@@ -721,8 +776,9 @@ function setupInput() {
   $id('tCont').onclick = () => resume();
   $id('tDex').onclick = () => dexPop();
   $id('tHow').onclick = () => start(true);
+  $id('tTreasure').onclick = () => { unlockAudio(); treasureMenu(); };
   addEventListener('resize', resize);
-  addEventListener('pagehide', () => { if (D) { if (run && !run.over) D.run = run; flush(D); } });
+  addEventListener('pagehide', () => { if (D) { if (run && !run.over) setSlot(run); flush(D); } });
 }
 
 /* ---------- きどう ---------- */
@@ -730,10 +786,11 @@ function setupInput() {
   resize(); setupInput();
   [, D] = await Promise.all([ready, load()]);
   setAudioSettings({ bgm: false, se: D.settings.se, voice: D.settings.voice && S.settings.sound !== false });
+  initTreasure({ D: () => D, speak, stars, toast, sfx, save: () => saveDg(D), onRevealDone: () => { if (run) hud(); } });
   makeHero(); toTitle();
   requestAnimationFrame(loop);
   document.body.dataset.ready = '1';
 })();
 
 // じどう テスト よう
-window.__dg = { tutInfo: () => { const i = tutInfo(); return i && { id: i.id, dirs: i.dirs, btn: i.btn, adj: !!i.adj, goal: i.goal && { x: i.goal.x, y: i.goal.y }, pick: i.s.pick, spell: i.s.spell }; }, set fast(v) { fast = v; }, get busy() { return busy; }, get ghosts() { return ghosts; }, get run() { return run; }, get D() { return D; }, get mode() { return mode; }, get tut() { return tut; }, act: doAction, start, resume, toTitle, goDown, showCard, tapMap, toTile, cam: () => cam(), visible: () => vis, shownPos: uid => posShown && posShown.get(uid), get test() { return TT; }, startTest, get aim() { return aim; } };
+window.__dg = { tutInfo: () => { const i = tutInfo(); return i && { id: i.id, dirs: i.dirs, btn: i.btn, adj: !!i.adj, goal: i.goal && { x: i.goal.x, y: i.goal.y }, pick: i.s.pick, spell: i.s.spell }; }, set fast(v) { fast = v; }, get busy() { return busy; }, get ghosts() { return ghosts; }, get run() { return run; }, get D() { return D; }, get mode() { return mode; }, get tut() { return tut; }, act: doAction, start, resume, toTitle, goDown, showCard, tapMap, toTile, cam: () => cam(), visible: () => vis, shownPos: uid => posShown && posShown.get(uid), treasureMenu, get revealing() { return revealPending(); }, get test() { return TT; }, startTest, get aim() { return aim; } };
