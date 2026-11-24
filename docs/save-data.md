@@ -62,4 +62,4 @@ core.js を読める部屋は `S.points += n; save();`。
 - `moko-math-v1` の `daily.eigoRev`（えいごの へやの「きょうの ふくしゅう」を その日 やったか。ボーナスは 1日1かい）。`abc-adventure-v1` の `w3clears`（ワールド3 クリア回数）・`items` に `cape`（ことばの マント）。
 
 ## イングリッシュダンジョン（`moko-dungeon-v1`）
-localStorage と IndexedDB（`moko-dungeon`/`kv`）。形は `dungeon/README.md`。⭐ は `moko-math-v1` の `points` に足すだけ。
+localStorage と IndexedDB（`moko-dungeon`/`kv`）。形は `dungeon/README.md`。 たからさがしの カード・かけら・中断は 同じキーの `treasure` に入れる（追加のみ。`save.js` の `defTreasure`/`merge`）。⭐ は `moko-math-v1` の `points` に足すだけ。

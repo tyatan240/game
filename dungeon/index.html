@@ -24,10 +24,12 @@
   <header class="dtop">
     <div class="chip floor" id="floor">1かい</div>
     <div class="chip lv" id="lv">Lv1</div>
+    <button class="chip gear" id="gear" aria-label="そうび"></button>
     <div class="chip pts">⭐ <b id="pts">0</b></div>
     <button class="chip menu" id="menuBtn" aria-label="メニュー">⏸</button>
   </header>
   <div class="guide" id="guide" hidden></div>
+  <div class="aim" id="aim" hidden></div>
   <!-- したの らん：HP・MP と メッセージ（そうさ ボタンの ちかくで よめる ように） -->
   <section class="dock" id="dock">
     <div class="bars">
@@ -65,6 +67,7 @@
       <button id="tDex">ずかん</button>
       <button id="tHow">あそびかた</button>
     </div>
+    <div class="tbtns tre"><button id="tTreasure">たからさがし</button></div>
     <p class="tnote">てきや アイテムの なまえは えいご。タップすると いみが わかるよ！</p>
     <a class="tback" href="../index.html">← おうちへ もどる</a>
   </div>
@@ -72,6 +75,7 @@
 <div class="dtoast" id="toast" hidden></div>
 <div id="ov" class="hide"></div>
 <script src="../common/core.js"></script>
+<script src="../common/learning-history.js"></script>
 <script type="module" src="js/main.js"></script>
 </body>
 </html>

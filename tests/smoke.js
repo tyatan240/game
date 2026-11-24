@@ -1038,10 +1038,11 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(await p.evaluate(() => { const r = __dg.run, h = r.hero; r.mons = [];
       const d = Object.entries({ right: [1, 0], left: [-1, 0], down: [0, 1], up: [0, -1] }).find(([, [dx, dy]]) => r.map.tiles[h.y + dy][h.x + dx] !== '#' && !r.boxes.some(b => b.x === h.x + dx && b.y === h.y + dy));
       const [dir, [dx, dy]] = d; r.boxes.push({ x: h.x + dx, y: h.y + dy, open: false });
-      r.inv = []; r.inv.push({ uid: 9100, id: 'key', peek: false }); for (let i = 0; i < 9; i++) r.inv.push({ uid: 9101 + i, id: 'apple', peek: false });
+      r.inv = [{ uid: 9100, id: 'key', peek: false }]; let u = 9101; const fill = (id, n) => { for (let i = 0; i < n; i++) r.inv.push({ uid: u++, id, peek: false }); };
+      fill('rope', 7); fill('apple', 10); fill('sword', 5); fill('shield', 5); fill('armor', 5); // ふくろが ぜんぶ いっぱい
       const n0 = r.items.length; __dg.act({ t: 'move', dir });
       const dropped = r.items.slice(n0);
-      return r.inv.length === 10 && dropped.length === 1 && !(dropped[0].x === h.x && dropped[0].y === h.y) && /もちものが いっぱい/.test(document.getElementById('log').textContent); }), 'もちものが いっぱいの たからばこ → ゆかに おいて おしらせ');
+      return dropped.length >= 1 && !(dropped[0].x === h.x && dropped[0].y === h.y) && /もちものが いっぱい/.test(document.getElementById('log').textContent); }), 'もちものが いっぱいの たからばこ → ゆかに おいて おしらせ');
     // せんとうは ゆっくり：メッセージと けいさんしきを 1ぎょうずつ、その あいだは うごけない
     await p.evaluate(() => { __dg.fast = false; const r = __dg.run, h = r.hero; r.mons = [{ uid: 901, id: 'rat', x: h.x + 1, y: h.y, hp: 30, maxhp: 30, atk: 1, exp: 1, tick: 0 }]; h.dir = 'right'; window.__x = { hp: h.hp }; __dg.act({ t: 'attack' }); });
     const slow1 = await p.evaluate(() => ({ busy: __dg.busy, again: __dg.act({ t: 'attack' }), lines: document.querySelectorAll('#log div').length, hpShown: document.getElementById('hp').textContent }));
@@ -1070,17 +1071,245 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     await p.evaluate(() => { const r = __dg.run, b = r.mons.find(m => m.boss); b.hp = 1; r.mons = r.mons.filter(m => m === b); r.hero.x = b.x - 1; r.hero.y = b.y; r.hero.dir = 'right'; __dg.act({ t: 'attack' }); });
     await p.waitForTimeout(800);
     ok(await p.evaluate(p0 => __dg.run.bossDead && __dg.run.stairs && __dg.D.rewarded.boss.includes(5) && S.points >= p0 + 14, pts0), 'king slime を たおすと かいだん・⭐10');
+    // ボスの あとは ふくしゅう テスト（5もん）→ ⭐・ことばの ちから → 6かい
+    const pts5 = await p.evaluate(() => S.points);
     await p.evaluate(() => { const r = __dg.run; r.hero.x = r.stairs.x; r.hero.y = r.stairs.y; __dg.goDown(); });
-    ok(await p.evaluate(() => __dg.D.clears === 1 && __dg.run === null && /クリア/.test(document.getElementById('ov').textContent)), '5かい クリア（いまは ここまで）');
+    ok(await p.evaluate(() => __dg.run.floor === 5 && __dg.test && __dg.test.qs.length === 5 && /ふくしゅう テスト/.test(document.getElementById('ov').textContent)), '5かいの ボスの あと：ふくしゅう テスト（5もん）');
+    await p.click('#ov [data-act=dgTestQ]');
+    for (let i = 0; i < 5; i++) {
+      const k = await p.evaluate(i => { const q = __dg.test.qs[__dg.test.i]; return i < 3 ? q.ch.indexOf(q.id) : q.ch.findIndex(x => x !== q.id); }, i);
+      await p.click(`#ov [data-act=dgAns][data-arg="${k}"]`); await p.click('#ov [data-act=dgTestNext]'); await p.waitForTimeout(50);
+    }
+    ok(await p.evaluate(() => /3 \/ 5/.test(document.getElementById('ov').textContent) && __dg.run.power === 2 && __dg.run.tested === 5), 'テストの けっか 3/5 → ことばの ちから ＋2');
+    await p.waitForTimeout(700);
+    ok(await p.evaluate(p0 => S.points >= p0 + 3, pts5), 'せいかいの かずだけ ⭐');
+    const lhN = await p.evaluate(async () => { await LH.flushed(); return (await LH.getAttempts({ subject: 'eigo', topic: 'dungeon' })).length; });
+    ok(lhN >= 5, 'テストの こたえは 学習履歴（eigo / dungeon）へ ' + lhN);
+    ok(await p.evaluate(() => Object.values(__dg.D.dex).some(d => d.tq > 0)), 'ずかんに テストの きろく');
+    await p.click('#ov [data-act=dgTestDone]'); await p.waitForTimeout(200);
+    ok(await p.evaluate(() => __dg.run.floor === 6 && __dg.run.power === 2 && /はなの どうくつ/.test(document.getElementById('log').textContent)), '6かいへ（はなの どうくつ・ことばの ちからは つづく）');
+    // あたらしい まほう・アイテム・てき
+    const mech = await p.evaluate(() => {
+      const r = __dg.run, h = r.hero, R = r.map.rooms[0], o = {}; closePop();
+      const reset = () => { r.mons = []; h.x = R.x + 1; h.y = R.y + 1; h.mp = 50; h.hp = h.maxhp; r.stuck = 0; };
+      reset(); r.spells = ['ice', 'thunder', 'wind', 'light'];
+      r.mons = [{ uid: 801, id: 'rat', x: h.x + 1, y: h.y, hp: 99, maxhp: 99, atk: 1, def: 0, exp: 1, tick: 0 }];
+      __dg.act({ t: 'cast', id: 'ice' }); o.ice = r.mons[0].frozen === 2 && r.mons[0].hp < 99; // こおる（この ターンで 1 へる）
+      reset(); r.mons = [{ uid: 802, id: 'rat', x: h.x + 1, y: h.y, hp: 99, maxhp: 99, atk: 1, def: 0, exp: 1, tick: 0 }, { uid: 803, id: 'bat', x: h.x, y: h.y + 1, hp: 99, maxhp: 99, atk: 1, def: 0, exp: 1, tick: 0 }];
+      __dg.act({ t: 'cast', id: 'thunder' }); o.thunder = r.mons.every(m => m.hp < 99);
+      reset(); r.mons = [{ uid: 804, id: 'rat', x: h.x + 1, y: h.y, hp: 9, maxhp: 9, atk: 1, def: 0, exp: 1, tick: 0 }];
+      __dg.act({ t: 'cast', id: 'wind' }); o.wind = Math.abs(r.mons[0].x - h.x) > 1;
+      reset(); r.seen = '0'.repeat(r.seen.length); __dg.act({ t: 'cast', id: 'light' }); o.light = !r.seen.includes('0');
+      reset(); r.inv = [{ uid: 811, id: 'armor', peek: false }]; const d0 = r.hero.def; __dg.act({ t: 'equip', uid: 811 }); o.armor = r.equip.armor === 811;
+      reset(); r.mons = [{ uid: 805, id: 'crab', x: h.x + 1, y: h.y, hp: 99, maxhp: 99, atk: 1, def: 3, exp: 1, tick: 0 }]; h.dir = 'right'; __dg.act({ t: 'attack' }); o.crab = /かたい/.test(document.getElementById('log').textContent);
+      // ghost は かべを とおる
+      reset(); let wx = -1, wy = -1; for (let y = 1; y < r.map.h - 1 && wx < 0; y++) for (let x = 1; x < r.map.w - 1; x++) if (r.map.tiles[y][x] === '#' && Math.abs(x - h.x) + Math.abs(y - h.y) > 2 && Math.abs(x - h.x) + Math.abs(y - h.y) <= 5) { wx = x; wy = y; break; }
+      r.mons = [{ uid: 806, id: 'ghost', x: wx, y: wy, hp: 99, maxhp: 99, atk: 1, def: 0, exp: 1, tick: 0 }]; const g0 = Math.abs(wx - h.x) + Math.abs(wy - h.y);
+      __dg.act({ t: 'wait' }); const gm = r.mons[0]; o.ghost = Math.abs(gm.x - h.x) + Math.abs(gm.y - h.y) < g0;
+      // spider の いと
+      reset(); r.stuck = 1; const x0 = h.x; __dg.act({ t: 'move', dir: 'down' }); o.web = h.x === x0 && h.y === R.y + 1 && r.stuck === 0;
+      return o;
+    });
+    ok(Object.values(mech).every(Boolean), 'ice・thunder・wind・light・armor・crab・ghost・spider ' + JSON.stringify(mech));
+    // rope で つぎの かいへ（ボスの かいでは つかえない）
+    ok(await p.evaluate(async () => { const r = __dg.run; r.mons = []; r.inv = [{ uid: 821, id: 'rope', peek: false }]; __dg.act({ t: 'use', uid: 821 }); await new Promise(ok => setTimeout(ok, 700)); return r.floor === 7; }), 'rope で つぎの かいへ');
+    // あるいても HPは もどらない・ふくろは べつべつ・つよい まほう・そうびの みため
+    const v3 = await p.evaluate(() => {
+      const r = __dg.run, h = r.hero, o = {}; closePop(); r.mons = [];
+      h.hp = 5; for (let i = 0; i < 12; i++) __dg.act({ t: 'wait' }); o.noRegen = h.hp === 5;
+      r.inv = []; for (let i = 0; i < 10; i++) r.inv.push({ uid: 7000 + i, id: 'apple', peek: false });
+      const x = h.x, y = h.y; r.items = r.items.filter(i => !(i.x === x + 1 && i.y === y)); r.boxes = r.boxes.filter(b => !(b.x === x + 1 && b.y === y)); r.stairs = null;
+      r.items.push({ uid: 7100, id: 'sword', x: x + 1, y });
+      r.map.tiles[y] = r.map.tiles[y].slice(0, x + 1) + '.' + r.map.tiles[y].slice(x + 2);
+      __dg.act({ t: 'move', dir: 'right' }); o.bags = r.inv.some(i => i.id === 'sword') && r.inv.filter(i => i.id === 'apple').length === 10;
+      h.x = x; h.y = y; r.items.push({ uid: 7102, id: 'bread', x: x + 1, y }); __dg.act({ t: 'move', dir: 'right' }); o.foodFull = !r.inv.some(i => i.id === 'bread') && /たべもの」が いっぱい/.test(document.getElementById('log').textContent);
+      r.inv.push({ uid: 7200, id: 'goldsword', peek: false }, { uid: 7201, id: 'silverarmor', peek: false }); const a0 = __dg.run.hero.atk;
+      __dg.act({ t: 'equip', uid: 7200 }); __dg.act({ t: 'equip', uid: 7201 });
+      o.equip = r.equip.weapon === 7200 && r.equip.armor === 7201 && document.getElementById('gear').querySelectorAll('canvas').length === 2;
+      h.mp = 50; r.spells = ['fire', 'bigfire', 'widefire']; r.mons = [{ uid: 7301, id: 'rat', x: h.x + 1, y: h.y, hp: 99, maxhp: 99, atk: 1, def: 0, exp: 1, tick: 0 }, { uid: 7302, id: 'bat', x: h.x, y: h.y + 1, hp: 99, maxhp: 99, atk: 1, def: 0, exp: 1, tick: 0 }];
+      const res = __dg.act({ t: 'cast', id: 'widefire' }); o.wide = r.mons.every(m => m.hp < 99) && res.ev.some(e => e.t === 'fx' && e.kind === 'aura' && e.tier === 3);
+      r.mons = [];
+      return o;
+    });
+    ok(Object.values(v3).every(Boolean), 'HPは あるいても もどらない・ふくろ べつべつ・gold sword/silver armor・wide fire ' + JSON.stringify(v3));
+    await p.click('#bItems'); await p.waitForTimeout(150);
+    ok(await p.evaluate(() => !!document.querySelector('#ov .gearpanel canvas') && document.querySelectorAll('#ov .bagtabs:not(.sub) button').length === 3 && document.querySelectorAll('#ov .bagtabs.sub button').length === 3 && /gold sword/.test(document.querySelector('#ov .gslots').textContent)), 'もちもの：そうび（ぶき・たて・よろい）・たべもの・ほん/どうぐ、そうびがめんに モコの みため');
+    await p.evaluate(() => { const r = __dg.run; r.inv.push({ uid: 7210, id: 'bigsword', peek: false }); });
+    await p.click('#ov [data-act=dgBag][data-arg=weapon]'); await p.click('#ov [data-act=dgEquip][data-arg="7210"]'); await p.waitForTimeout(150);
+    ok(await p.evaluate(() => !document.getElementById('ov').classList.contains('hide') && __dg.run.equip.weapon === 7210 && /そうびちゅう/.test(document.getElementById('ov').textContent)), 'そうびしても もちものは とじない');
+    await p.click('#ov [data-act=close]');
+    // とおくの てきに まほう：えんしゅつと ダメージの あいだは てきを うごく まえの ばしょに かく
+    const farR = await p.evaluate(async () => {
+      while (__dg.busy) await new Promise(ok => setTimeout(ok, 100));
+      const r = __dg.run, h = r.hero; __dg.fast = false; h.mp = 50; r.spells = ['fire']; closePop();
+      const R = r.map.rooms.find(R => R.w >= 5) || r.map.rooms[0]; h.x = R.x; h.y = R.y + (R.h >> 1);
+      r.map.tiles = r.map.tiles.map((row, y) => y === h.y ? row.split('').map((c, x) => Math.abs(x - h.x) <= 4 ? '.' : c).join('') : row);
+      r.mons = [{ uid: 7601, id: 'rat', x: h.x + 3, y: h.y, hp: 99, maxhp: 99, atk: 1, def: 0, exp: 1, tick: 0 }];
+      const res = __dg.act({ t: 'cast', id: 'fire' });
+      const o = { cast: !!res, moved: r.mons[0].x !== h.x + 3, shown: (__dg.shownPos(7601) || {}).x === h.x + 3 };
+      await new Promise(ok => setTimeout(ok, 1200)); o.during = (__dg.shownPos(7601) || {}).x === h.x + 3;
+      while (__dg.busy) await new Promise(ok => setTimeout(ok, 100));
+      o.after = !__dg.shownPos(7601); r.mons = []; __dg.fast = true; return o;
+    });
+    ok(Object.values(farR).every(Boolean), 'とおくの てきに まほう：えんしゅつ・ダメージの あいだは てきが うごかない ' + JSON.stringify(farR));
+    // MPを かいふく する たべもの
+    ok(await p.evaluate(() => { const r = __dg.run, h = r.hero; h.mp = 1; r.inv.push({ uid: 7220, id: 'juice', peek: false }); __dg.act({ t: 'use', uid: 7220 }); return h.mp === Math.min(h.maxmp, 13) && /MPが/.test(document.getElementById('log').textContent); }), 'juice で MPが かいふく');
+    // まほうは まず あたる ところを みせる →「つかう」で つかう。えんしゅつ（spell）が ダメージより さき
+    const aimR = await p.evaluate(async () => {
+      const r = __dg.run, h = r.hero; h.mp = 50; r.spells = ['fire']; r.mons = [{ uid: 7401, id: 'rat', x: h.x + 1, y: h.y, hp: 99, maxhp: 99, atk: 0, def: 0, exp: 1, tick: 0 }];
+      ACT.dgCast('fire'); const o = { aim: !!__dg.aim && !document.getElementById('aim').hidden && r.mons[0].hp === 99 && /ちかい てき/.test(document.getElementById('aim').textContent) };
+      const res = __dg.act({ t: 'cast', id: 'fire' }); ACT.dgAimNo();
+      const si = res.ev.findIndex(e => e.t === 'spell'), hi = res.ev.findIndex(e => e.t === 'fx' && e.kind === 'fire'); o.order = si >= 0 && hi > si;
+      r.mons = []; r.spells = ['fire', 'bigfire', 'widefire']; return o;
+    });
+    ok(aimR.aim && aimR.order, 'まほう：さきに あたる ところ →「つかう」、えんしゅつ → ダメージ の じゅん ' + JSON.stringify(aimR));
+    await p.waitForTimeout(3500); await p.click('#bMagic'); await p.waitForTimeout(150);
+    ok(await p.evaluate(() => { const row = document.querySelector('#ov .mrow'); return row && /fire/.test(row.textContent) && /big fire/.test(row.textContent) && /wide fire/.test(row.textContent); }), 'まほう：おなじ なかまを ならべて ひょうじ');
+    await p.click('#ov [data-act=close]');
+    // かたい てき・たからばこの ばしょ・おなじ そうび・Open, treasure box!
+    const v4 = await p.evaluate(async () => {
+      const G = await import('./js/game.js'), o = {};
+      const r = __dg.run, h = r.hero; r.mons = [{ uid: 7501, id: 'turtle', x: h.x + 1, y: h.y, hp: 10, maxhp: 10, atk: 0, def: 0, exp: 1, tick: 0 }]; h.dir = 'right';
+      const res = __dg.act({ t: 'attack' }); o.hard = r.mons[0] && r.mons[0].hp === 9 && /まほうで たおそう/.test(document.getElementById('log').textContent); r.mons = [];
+      const hardIds = ['turtle', 'crab', 'snowman']; let noMagic = 0, withMagic = 0, boxBad = 0, boxes = 0;
+      for (let i = 0; i < 60; i++) {
+        const t = G.newRun(false); t.spells = []; G.enterFloor(t, 12); noMagic += t.mons.filter(m => hardIds.includes(m.id)).length;
+        t.spells = ['fire']; G.enterFloor(t, 12); withMagic += t.mons.filter(m => hardIds.includes(m.id)).length;
+        for (const b of t.boxes) { boxes++; if ([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => G.tileAt(t, b.x + dx, b.y + dy) === ',')) boxBad++; }
+      }
+      o.hardAfterMagic = noMagic === 0 && withMagic > 0; o.box = boxes > 5 && boxBad === 0;
+      r.inv = [{ uid: 7510, id: 'sword', peek: false }]; const x = h.x, y = h.y;
+      r.items = r.items.filter(i => !(i.x === x + 1 && i.y === y)); r.boxes = r.boxes.filter(b => !(b.x === x + 1 && b.y === y)); r.stairs = null; r.mons = [];
+      r.map.tiles[y] = r.map.tiles[y].slice(0, x + 1) + '.' + r.map.tiles[y].slice(x + 2);
+      r.items.push({ uid: 7511, id: 'sword', x: x + 1, y }); __dg.act({ t: 'move', dir: 'right' });
+      o.dup = r.inv.filter(i => i.id === 'sword').length === 1 && /もう もっている/.test(document.getElementById('log').textContent);
+      h.x = x; h.y = y; r.boxes.push({ x: x + 1, y, open: false }); r.items = r.items.filter(i => i.uid !== 7511); r.inv.push({ uid: 7512, id: 'key', peek: false });
+      const ob = __dg.act({ t: 'move', dir: 'right' }); o.open = ob.ev.some(e => e.t === 'bubble' && e.text === 'Open, treasure box!');
+      return o;
+    });
+    ok(Object.values(v4).every(Boolean), 'かたい てきは 1だけ（まほうを おぼえてから でる）・たからばこは みちを ふさがない・おなじ そうびは ふえない・Open, treasure box! ' + JSON.stringify(v4));
+    // 20かいの ボス → テスト → クリア ⭐30
+    const pts20 = await p.evaluate(() => S.points);
+    await p.evaluate(() => { for (let k = 0; k < 20 && __dg.run.floor < 20; k++) { const r = __dg.run; r.tested = r.floor; r.stairs = { x: r.hero.x, y: r.hero.y }; __dg.goDown(); } closePop(); });
+    ok(await p.evaluate(() => __dg.run.floor === 20 && __dg.run.mons.some(m => m.id === 'bigdragon') && __dg.D.best === 20), '20かい：さいごの ボス big dragon');
+    await p.evaluate(() => { const r = __dg.run, b = r.mons.find(m => m.boss); b.hp = 1; r.mons = [b]; r.hero.x = b.x - 1; r.hero.y = b.y; r.hero.dir = 'right'; __dg.act({ t: 'attack' }); });
+    await p.waitForTimeout(300);
+    // かいだんを とおくから タップ → あるいて いって「すすむ？」
+    await p.evaluate(() => { closePop(); const r = __dg.run; r.hero.x = r.stairs.x - 3; r.hero.y = r.stairs.y; r.mons = []; const c = __dg.cam(); __dg.tapMap(c.ox + (r.stairs.x + 0.5) * c.t, c.oy + (r.stairs.y + 0.5) * c.t); });
+    await p.waitForTimeout(1300);
+    ok(await p.evaluate(() => { const r = __dg.run; return r.hero.x === r.stairs.x && r.hero.y === r.stairs.y && /すすむ/.test(document.getElementById('ov').textContent); }), 'ボスの あと：かいだんを タップすると あるいて いって「すすむ？」');
+    await p.evaluate(async () => { const { WORDS } = await import('./js/data.js'); closePop(); const r = __dg.run; r.met = WORDS.map(w => w.id); r.hero.x = r.stairs.x; r.hero.y = r.stairs.y; __dg.goDown(); }); // ことばを ぜんぶ であった ことに（クリアがめんが ながく なる）
+    ok(await p.evaluate(() => !!__dg.test), '20かいの あとも テスト');
+    await p.click('#ov [data-act=dgTestQ]');
+    for (let i = 0; i < 5; i++) { await p.click('#ov [data-act=dgAns][data-arg="0"]'); await p.click('#ov [data-act=dgTestNext]'); await p.waitForTimeout(50); }
+    await p.click('#ov [data-act=dgTestDone]'); await p.waitForTimeout(800);
+    ok(await p.evaluate(p0 => __dg.D.clears === 1 && __dg.run === null && __dg.D.rewarded.clear && /ダンジョン クリア/.test(document.getElementById('ov').textContent) && S.points >= p0 + 10 + 30, pts20), '20かい クリア（はじめては ⭐30）');
+    ok(await p.evaluate(() => { const b = document.querySelector('#ov [data-act=dgTitle]').getBoundingClientRect(); return b.top >= 0 && b.bottom <= innerHeight; }), 'ことばが たくさんでも「タイトルへ」が がめんの なかに ある');
     // にかいめは せつめいを えらべる・たおれた とき
     await p.evaluate(() => __dg.toTitle()); await p.click('#tGo'); await p.waitForTimeout(200);
     ok(await p.isVisible('#ov [data-act=dgSkipTut]') && await p.isVisible('#ov [data-act=dgTut]'), '2かいめからは せつめいを「みる／とばす」');
     await p.click('#ov [data-act=dgSkipTut]'); await p.waitForTimeout(200);
     await p.evaluate(() => { const r = __dg.run, h = r.hero; h.hp = 1; r.mons = [{ uid: 777, id: 'rat', x: h.x + 1, y: h.y, hp: 6, maxhp: 6, atk: 9, exp: 1, tick: 0 }]; r.inv = []; __dg.act({ t: 'wait' }); });
     await p.waitForTimeout(800);
-    ok(await p.evaluate(() => __dg.mode === 'over' && /たおれて/.test(document.getElementById('ov').textContent) && !__dg.D.run && __dg.D.best === 5 && Object.keys(__dg.D.dex).length > 3), 'たおれたら おしまい（ずかん・さいこう とうたつは のこる）');
+    ok(await p.evaluate(() => __dg.mode === 'over' && /たおれて/.test(document.getElementById('ov').textContent) && !__dg.D.run && __dg.D.best === 20 && Object.keys(__dg.D.dex).length > 3), 'たおれたら おしまい（ずかん・さいこう とうたつは のこる）');
     await p.evaluate(() => { __dg.toTitle(); });
-    ok(/5かい/.test(await p.textContent('#tbest')), 'タイトルに さいこう とうたつ 5かい');
+    ok(/20かい/.test(await p.textContent('#tbest')), 'タイトルに さいこう とうたつ 20かい');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+  }
+
+  console.log('22b. たからさがしダンジョン（dungeon/ の たからさがし）');
+  {
+    const p = await page({ width: 1024, height: 768 });
+    await p.goto(B + 'dungeon/index.html'); await p.waitForSelector('body[data-ready="1"]', { timeout: 10000 });
+    ok(await p.evaluate(() => /20かいを クリア/.test(document.getElementById('tTreasure').textContent)), 'たからさがしは 20かい クリアまで かぎ');
+    await p.click('#tTreasure'); await p.waitForTimeout(150);
+    ok(await p.evaluate(() => /20かいまで クリア/.test(document.getElementById('ov').textContent) && !document.querySelector('#ov [data-act=dgTGo]')), 'まだ はいれない（せつめいだけ）');
+    // えいごの ダンジョンを とちゅうに して おく（たからさがしと べつに のこる）
+    await p.evaluate(() => { closePop(); __dg.D.tutorialDone = true; __dg.D.rewarded.clear = true; __dg.start(false); __dg.fast = true; __dg.toTitle(); });
+    const enRun = await p.evaluate(() => !!__dg.D.run && __dg.D.run.mode !== 'treasure');
+    await p.click('#tTreasure'); await p.waitForTimeout(150); await p.click('#ov [data-act=dgTGo]'); await p.waitForTimeout(300);
+    ok(enRun && await p.evaluate(() => { const r = __dg.run, eq = r.inv.find(i => i.uid === r.equip.weapon); return r.mode === 'treasure' && eq && eq.id === 'sword' && r.inv.filter(i => i.id === 'apple').length === 2 && r.inv.some(i => i.id === 'magicbook') && __dg.D.run && __dg.D.run.mode !== 'treasure' && __dg.D.treasure.run === __dg.run; }), 'たからさがし スタート（sword・apple 2こ・magic book）、えいごの ちゅうだんは のこる');
+    await p.evaluate(() => { __dg.fast = true; });
+    // たからばこから カード → めくる → NEW!
+    const box = await p.evaluate(async () => {
+      const r = __dg.run, h = r.hero; r.mons = [];
+      r.map.tiles[h.y] = r.map.tiles[h.y].slice(0, h.x + 1) + '.' + r.map.tiles[h.y].slice(h.x + 2);
+      for (let k = 0; k < 30; k++) { r.items = r.items.filter(i => !(i.x === h.x + 1 && i.y === h.y)); r.boxes = [{ x: h.x + 1, y: h.y, open: false }]; r.inv.push({ uid: 8000 + k, id: 'key', peek: false }); const res = __dg.act({ t: 'move', dir: 'right' }); if (res.ev.some(e => e.t === 'treasure')) return true; }
+      return false;
+    });
+    await p.waitForTimeout(700);
+    ok(box && await p.evaluate(() => !!document.querySelector('#ov .flip') && Object.keys(__dg.D.treasure.cards).length >= 1), 'たからばこから カード（うらむきで でる）');
+    await p.click('#ov .flip'); await p.waitForTimeout(800);
+    ok(await p.evaluate(() => /NEW!/.test(document.getElementById('ov').textContent) && document.querySelector('#ov .flip.open .tcard')), 'タップで めくる → NEW!');
+    for (let k = 0; k < 4 && await p.$('#ov [data-act=dgRevealNext]'); k++) { await p.click('#ov [data-act=dgRevealNext]'); await p.waitForTimeout(500); if (await p.$('#ov .flip:not(.open)')) { await p.click('#ov .flip'); await p.waitForTimeout(700); } }
+    // ダブり → かけら、3まい そろうと もじバッジ
+    const v = await p.evaluate(async () => {
+      const T = await import('./js/treasure.js'), { CARDS } = await import('./js/cards.js'), TD = __dg.D.treasure, o = {};
+      CARDS.filter(c => c.rare === 1).forEach(c => { TD.cards[c.id] = TD.cards[c.id] || { n: 1, first: 1 }; }); // ★ を ぜんぶ もっている → つぎの ★ は かならず ダブり
+      const sh0 = TD.shards, res = T.giveCard(1, __dg.run);
+      o.shards = !res.isNew && TD.shards === sh0 + 1 && TD.cards[res.card.id].n >= 2;
+      TD.cards.Z1 = { n: 1, first: 1 }; TD.cards.Z2 = { n: 1, first: 1 };
+      CARDS.filter(c => c.rare === 3 && c.id !== 'Z3').forEach(c => { TD.cards[c.id] = TD.cards[c.id] || { n: 1, first: 1 }; });
+      for (let k = 0; k < 40 && !TD.cards.Z3; k++) T.giveCard(3, __dg.run); o.badge = !!TD.cards.Z3 && TD.badges.includes('Z');
+      closePop(); return o;
+    });
+    ok(v.shards && v.badge, 'ダブりは きらきらの かけら・3まい そろうと もじバッジ ' + JSON.stringify(v));
+    await p.waitForTimeout(400); await p.evaluate(() => closePop());
+    // ボスは ★★いじょう、テストは ない
+    const boss = await p.evaluate(() => {
+      const T = __dg.run; for (let f = 1; f < 5; f++) { T.stairs = { x: T.hero.x, y: T.hero.y }; __dg.goDown(); } closePop();
+      const r = __dg.run, b = r.mons.find(m => m.boss); b.hp = 1; r.mons = [b]; r.hero.x = b.x - 1; r.hero.y = b.y; r.hero.dir = 'right';
+      const res = __dg.act({ t: 'attack' }), tr = res.ev.find(e => e.t === 'treasure');
+      return { floor: r.floor, rare: tr && tr.rare, hp: b.maxhp };
+    });
+    ok(boss.floor === 5 && boss.rare >= 2, 'たからさがしの ボスは ★★いじょうの カード ' + JSON.stringify(boss));
+    for (let k = 0; k < 6; k++) { await p.waitForTimeout(450); if (await p.$('#ov .flip:not(.open)')) { await p.click('#ov .flip'); await p.waitForTimeout(700); } if (await p.$('#ov [data-act=dgRevealNext]')) await p.click('#ov [data-act=dgRevealNext]'); }
+    await p.evaluate(() => { closePop(); const r = __dg.run; r.hero.x = r.stairs.x; r.hero.y = r.stairs.y; __dg.goDown(); });
+    ok(await p.evaluate(() => __dg.run.floor === 6 && !__dg.test), 'たからさがしは ふくしゅう テストなしで 6かいへ');
+    // かくし部屋：あやしい かべを「しらべる」→ とびらの クイズ → せいかいで ひらく／まちがいは 5ターン しまる
+    const prep = await p.evaluate(() => {
+      let r = __dg.run; for (let k = 0; k < 40 && r.secrets.length < 1; k++) { r.stairs = { x: r.hero.x, y: r.hero.y }; r.tested = r.floor; __dg.goDown(); r = __dg.run; } closePop();
+      const s = r.secrets[0], d = s.door, o = [[0, -1, 'down'], [0, 1, 'up'], [-1, 0, 'right'], [1, 0, 'left']].map(([dx, dy, dir]) => [d.x + dx, d.y + dy, dir]).find(([x, y]) => r.map.tiles[y][x] !== '#');
+      r.mons = []; r.hero.x = o[0]; r.hero.y = o[1]; r.hero.dir = o[2]; s.kind = 'word'; return { n: r.secrets.length, wall: r.map.tiles[s.y][s.x] === '#' };
+    });
+    ok(prep.n >= 1 && prep.wall, 'たからさがしの かいに かくし部屋（まだ かべ）');
+    ok(await p.evaluate(() => document.getElementById('bWait').textContent === 'しらべる'), 'たからさがしでは「まつ」が「しらべる」');
+    await p.waitForTimeout(500); await p.evaluate(() => closePop()); // かいを うつった ときの ボスの おしらせ など
+    await p.click('#bWait'); await p.waitForTimeout(500);
+    ok(await p.evaluate(() => /ことばの とびら/.test(document.getElementById('ov').textContent) && document.querySelectorAll('#ov [data-act=dgQzAns]').length === 3), '「しらべる」→ とびらの クイズ');
+    // まちがえる → 5ターン しまる
+    const wrong = await p.evaluate(async () => { const T = await import('./js/treasure.js'), q = T.quizState(); return (q.answer + 1) % 3; });
+    await p.click(`#ov [data-act=dgQzAns][data-arg="${wrong}"]`); await p.waitForTimeout(100); await p.click('#ov [data-act=dgQzDone]'); await p.waitForTimeout(150);
+    const lk = await p.evaluate(() => { const r = __dg.run, s = r.secrets[0], o = { locked: s.lock === r.turn + 5 && !s.open }; const res = __dg.act({ t: 'search' }); o.msg = /しまっている/.test(document.getElementById('log').textContent) && !res.ev.some(e => e.t === 'quiz'); s.lock = 0; return o; });
+    ok(lk.locked && lk.msg, 'まちがいは とびらが 5ターン しまる ' + JSON.stringify(lk));
+    // せいかい → かくし部屋が ひらいて カード
+    const pts0 = await p.evaluate(() => S.points);
+    await p.click('#bWait'); await p.waitForTimeout(500);
+    const right = await p.evaluate(async () => { const T = await import('./js/treasure.js'); return T.quizState().answer; });
+    await p.click(`#ov [data-act=dgQzAns][data-arg="${right}"]`); await p.waitForTimeout(100); await p.click('#ov [data-act=dgQzDone]'); await p.waitForTimeout(200);
+    ok(await p.evaluate(p0 => { const r = __dg.run, s = r.secrets[0]; return s.open && r.map.tiles[s.y][s.x] !== '#' && r.map.tiles[s.door.y][s.door.x] !== '#' && r.items.some(it => it.id === 'tcard' && it.x >= s.x && it.x < s.x + s.w && it.y >= s.y && it.y < s.y + s.h) && S.points >= p0 + 1; }, pts0), 'せいかいで かくし部屋が ひらく（なかに カード・⭐）');
+    // とびらの クイズの こたえは 学習履歴へ（eigo / treasure）
+    await p.evaluate(async () => { const r = __dg.run; r.secrets.push({ x: 1, y: 1, w: 3, h: 3, door: { x: 0, y: 0 }, open: true, lock: 0, kind: 'letter' }); r.secrets[r.secrets.length - 1].open = false; __dg.startQuiz(r.secrets.length - 1); });
+    await p.waitForTimeout(150); await p.click('#ov [data-act=dgQzAns] >> nth=0'); await p.waitForTimeout(100); await p.click('#ov [data-act=dgQzDone]');
+    const lhT = await p.evaluate(async () => { await LH.flushed(); return (await LH.getAttempts({ subject: 'eigo', topic: 'treasure' })).length; });
+    ok(lhT >= 1, 'とびらの クイズは 学習履歴（eigo / treasure）へ ' + lhT);
+    await p.evaluate(() => { const r = __dg.run; r.secrets.pop(); r.mons = []; closePop(); });
+    // ちゅうだん → つづきから（たからさがしと えいごは べつべつ）
+    const n0 = await p.evaluate(() => Object.keys(__dg.D.treasure.cards).length), fl0 = await p.evaluate(() => __dg.run.floor);
+    await p.goto(B + 'index.html'); await p.goto(B + 'dungeon/index.html'); await p.waitForSelector('body[data-ready="1"]');
+    await p.click('#tTreasure'); await p.waitForTimeout(150);
+    ok(await p.evaluate(() => !!document.querySelector('#ov [data-act=dgTCont]') && !document.getElementById('tCont').hidden), 'たからさがしの つづきから と えいごの つづきから が べつべつ');
+    await p.click('#ov [data-act=dgTCont]'); await p.waitForTimeout(200); await p.evaluate(() => { __dg.fast = true; });
+    ok(await p.evaluate(([n, f]) => __dg.run.mode === 'treasure' && __dg.run.floor === f && Object.keys(__dg.D.treasure.cards).length === n, [n0, fl0]), 'たからさがしを つづきから（おなじ かい・カードも のこる）');
+    // たおれても カードは のこる
+    await p.evaluate(() => { const r = __dg.run, h = r.hero; h.hp = 1; r.inv = []; r.mons = [{ uid: 9901, id: 'rat', x: h.x + 1, y: h.y, hp: 6, maxhp: 6, atk: 99, exp: 1, tick: 0 }]; __dg.act({ t: 'wait' }); });
+    await p.waitForTimeout(900);
+    ok(await p.evaluate(n => __dg.mode === 'over' && /みつけた カードは なくならない/.test(document.getElementById('ov').textContent) && !__dg.D.treasure.run && Object.keys(__dg.D.treasure.cards).length === n && !!__dg.D.run, n0), 'たおれても カードは のこる（えいごの ちゅうだんも そのまま）');
+    // アルバム
+    await p.click('#ov [data-act=dgAlbumT]'); await p.waitForTimeout(200);
+    ok(await p.evaluate(() => document.querySelectorAll('#ov .al-l').length === 26 && document.querySelectorAll('#ov .al-slot').length === 3), 'カードずかん（A〜Z・1ページ 3まい）');
+    await p.click('#ov [data-act=dgAlbum][data-arg=Z]'); await p.waitForTimeout(150); await p.click('#ov [data-act=dgCardBig][data-arg=Z3]'); await p.waitForTimeout(200);
+    ok(await p.evaluate(() => /zebra/.test(document.getElementById('ov').textContent) && /This is a zebra\./.test(document.getElementById('ov').textContent) && !!document.querySelector('#ov .tcard.r3 .holo')), 'カードを おおきく（れいぶん・キラ）');
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
   }
 

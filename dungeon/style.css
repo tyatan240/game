@@ -126,3 +126,207 @@ html,body{margin:0;height:100%;overflow:hidden;background:#2a2238;touch-action:n
 .hint.shake{animation:tutshake .35s,tuthint 1s infinite!important}
 @keyframes tutshake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 .irow button.hint{background:#ff6b8a}
+
+/* ===== ふくしゅう テスト（5かい ごと）===== */
+.tquiz{text-align:center}
+.tq-head{font-weight:800;color:#7c6cf0;margin-bottom:4px}
+.tq-en{font-size:40px;font-weight:800;color:#2a6ab8;letter-spacing:.02em}
+.tq-ja{font-size:30px;font-weight:800;color:#4a3a3a}
+.tq-pic{width:110px;margin:0 auto}
+.tquiz p{margin:6px 0}
+.tq-ch{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:6px}
+.tq-c{min-width:7.5em}.tq-c.en{font-size:22px}
+.tq-p{width:92px;height:92px;border-radius:16px;border:3px solid #e0d4d4;background:#fff;padding:6px;cursor:pointer}
+.tq-ch .ok{background:#5ac87a!important;border-color:#2f9a5a!important;color:#fff}
+.tq-ch .ng{background:#e0304a!important;border-color:#a8182e!important;box-shadow:0 4px 0 #a8182e!important;color:#fff}
+.tq-ch button:disabled:not(.ok):not(.ng){opacity:.45}
+.tq-ch .ok{box-shadow:0 4px 0 #2f9a5a!important}
+.tq-fb .tok{color:#2f9a5a;font-weight:800;font-size:22px;margin-top:6px}
+.tq-fb .tng{color:#e0304a;font-weight:800;font-size:22px;margin-top:6px}
+.tq-score{font-size:44px;font-weight:800;color:#e07a1a;text-align:center}
+
+/* ===== いまの そうび（うえ）・もちものの ふくろ・そうびがめん・まほうの なかま ===== */
+.chip.gear{display:flex;gap:3px;padding:3px 8px;align-items:center;width:auto!important;height:auto!important;min-width:0;border-radius:999px!important}
+.chip.gear .g{width:24px;height:24px;display:inline-flex;overflow:hidden}.chip.gear .g canvas{width:24px!important;height:24px!important}
+.chip.gear .g.none{border:2px dashed #d8c8c8;border-radius:7px;width:20px;height:20px}
+.bagtabs{display:flex;gap:6px;margin:2px 0 8px}
+.bagtabs button{flex:1;border:0;border-radius:12px;padding:7px 4px;font:inherit;font-weight:800;font-size:15px;background:#f3ecec;color:#8a7a7a;box-shadow:0 3px 0 #d8cccc}
+.bagtabs button small{display:block;font-size:11px;font-weight:700}
+.bagtabs button.on{background:#ffd34f;color:#6a4a00;box-shadow:0 3px 0 #d8a820}
+.bagtabs button:disabled{opacity:.4}
+.irow.on{background:#fff3c4;outline:2px solid #ffd34f}
+.gearpanel{display:flex;gap:10px;align-items:center;background:linear-gradient(#e8f2ff,#fff7f0);border-radius:16px;padding:6px 10px;margin-bottom:8px}
+.gearpanel .gv{flex:none;width:120px;height:120px}
+.gslots{flex:1;display:flex;flex-direction:column;gap:3px;text-align:left}
+.gs{display:flex;align-items:center;gap:6px;font-size:15px}
+.gs .gl{background:#7c6cf0;color:#fff;border-radius:999px;padding:0 8px;font-size:12px;font-weight:800;min-width:3.4em;text-align:center}
+.gs .gnone{color:#b8a8a8;font-size:13px}
+.gs .en{color:#3f7fc9}
+.gstat{margin-top:2px;font-size:14px;color:#5a4646}.gstat b{font-size:18px;color:#e07a1a}
+.mrow{display:flex;gap:6px;background:#f6f2ff;border-radius:14px;padding:6px}
+.mcell{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:1px;background:#fff;border-radius:12px;padding:5px 3px;text-align:center}
+.mcell b.en{font-size:15px;color:#3f7fc9;line-height:1.1}
+.mcell small{font-size:11px;color:#9a8a8a}
+.mcell.t2{background:linear-gradient(#fff6d8,#fff)}.mcell.t3{background:linear-gradient(#ffe0ec,#fff6d8);box-shadow:0 0 0 2px #ffb6ca inset}
+.mcell.no{justify-content:center;color:#c8b8c8;background:#faf7fa}.mcell.no i{font-style:normal;font-size:26px;font-weight:800}
+.mcell .mb{display:flex;gap:4px;margin-top:2px}
+.mcell button{border:0;border-radius:10px;padding:6px 9px;font:inherit;font-weight:800;font-size:14px;color:#fff;background:#7c6cf0;box-shadow:0 3px 0 #5a4ac8}
+.mcell button.q{background:#fff;color:#6a5a7a;box-shadow:0 3px 0 #c8b8c8;padding:6px 8px}
+.mcell button:disabled{background:#ddd;box-shadow:none}
+.mcell button.hint{background:#ff6b8a}
+
+.ilist.short{max-height:30vh}
+.gs .en{font-size:14px;white-space:nowrap}
+.gs canvas{width:30px!important;height:30px!important}
+.gearpanel{padding:4px 8px}
+#ov .irow .in{font-size:17px;line-height:1.2}
+#ov .irow .eqm{display:inline-block;margin:2px 0 0}
+.mcell button{padding:5px 7px;font-size:13px;white-space:nowrap}.mcell button.q{padding:5px 6px}
+.mcell canvas{width:46px!important;height:46px!important}
+@media (max-width:520px){.gearpanel .gv{width:96px;height:96px}.gearpanel .gv canvas{width:96px!important;height:96px!important}.bagtabs button{font-size:13px}.mcell b.en{font-size:13px}}
+
+/* まほうの ねらい（あたる ところを みせて「つかう」） */
+.aim{position:absolute;left:50%;transform:translateX(-50%);z-index:6;width:min(560px,calc(100vw - 20px));background:#fff;border-radius:18px;padding:8px 10px;box-shadow:0 4px 0 rgba(0,0,0,.25),0 0 0 3px #7c6cf0;display:flex;align-items:center;gap:10px}
+.aim .at{flex:1;display:flex;align-items:center;gap:8px;min-width:0}
+.aim .ia{flex:none;width:40px;height:40px}
+.aim .en{color:#3f7fc9;font-size:20px}.aim small{color:#9a8a8a;font-size:12px}
+.aim .ad{font-size:14px;color:#5a4646;line-height:1.3}
+.aim .ab{display:flex;gap:6px;flex:none}
+.aim button{border:0;border-radius:14px;padding:10px 14px;font:inherit;font-weight:800;font-size:17px;color:#fff;background:#7c6cf0;box-shadow:0 3px 0 #5a4ac8}
+.aim #aimNo{background:#c9bcbc;box-shadow:0 3px 0 #a99a9a}
+.aim button:disabled{background:#ddd;box-shadow:none}
+.aim button.off{opacity:.35}
+.bagtabs.sub{margin-top:-2px}.bagtabs.sub button{padding:5px 4px;font-size:14px;background:#f6f2ff;box-shadow:0 3px 0 #ddd4f0}.bagtabs.sub button.on{background:#7c6cf0;color:#fff;box-shadow:0 3px 0 #5a4ac8}
+.dock .log .calc.mp{color:#7ab0ff}
+@media (max-width:520px){.aim{flex-direction:column;align-items:stretch;gap:6px}.aim .ab button{flex:1}}
+.aim[hidden]{display:none}
+
+/* ことばが たくさんでも ボタンが がめんの そとに でない（ことばの ならびは その なかで スクロール） */
+#ov .pop{max-height:calc(100dvh - 40px);overflow-y:auto;-webkit-overflow-scrolling:touch}
+.wordlist{max-height:32vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:2px}
+
+/* ===== たからさがし：タイトルの ボタン・メニュー ===== */
+.tbtns.tre{margin-top:14px}
+.tbtns.tre button{background:linear-gradient(135deg,#ffd34f,#ff9a3a);color:#6a3a00;box-shadow:0 5px 0 #c87a1a;display:flex;flex-direction:column;align-items:center;line-height:1.2}
+.tbtns.tre button small{font-size:12px;font-weight:700}
+.tbtns.tre button.locked{background:#8a8098;color:#e8e0f0;box-shadow:0 5px 0 #5a5068}
+.tmenu-stat{background:#fff7e0;border-radius:14px;padding:8px;margin:6px 0;font-size:14px}.tmenu-stat b{color:#e07a1a;font-size:17px}
+.chip.floor.tre{background:linear-gradient(135deg,#ffd34f,#ff9a3a)}
+
+/* ===== カード（★ しろ・★★ ぎん・★★★ キラ）===== */
+.tcard{position:relative;border-radius:12px;padding:5px;background:#e8e0d8;box-shadow:0 3px 0 rgba(0,0,0,.2);overflow:hidden;user-select:none;-webkit-user-select:none}
+.tcard .tc-in{position:relative;background:#fffdf8;border-radius:8px;height:100%;display:flex;flex-direction:column;align-items:center;overflow:hidden}
+.tcard.r2{background:linear-gradient(135deg,#e8eef8,#a8b8d0 40%,#f4f8ff 55%,#98a8c4)}
+.tcard.r2 .tc-in{background:linear-gradient(#f4f8ff,#fff)}
+.tcard.r3{background:linear-gradient(135deg,#ffe066,#d8a020 30%,#fff3a8 50%,#c88a10 70%,#ffd34f)}
+.tcard.r3 .tc-in{background:linear-gradient(160deg,#fff6fb,#fffbe8 50%,#eef8ff)}
+.tc-top{width:100%;display:flex;justify-content:space-between;font-size:.62em;font-weight:800;color:#9a8a8a;padding:2px 5px 0}
+.tc-rare{color:#e0a020;letter-spacing:-1px}
+.tcard.r2 .tc-rare{color:#7a8ab0}.tcard.r3 .tc-rare{color:#ff5a8a}
+.tc-big{position:absolute;top:8%;left:50%;transform:translateX(-50%);font-size:4.4em;font-weight:900;color:rgba(124,108,240,.12);line-height:1;pointer-events:none}
+.tc-art{position:relative;margin-top:2px}
+.tc-art canvas{display:block}
+.tc-name{font-weight:800;color:#3f7fc9;font-size:1.05em;line-height:1.15;text-align:center}
+.tc-name b{color:#ff5a8a;font-size:1.2em}
+.tc-ja{font-size:.7em;color:#7a6a6a;padding-bottom:4px}
+.tcard.s{width:88px;height:124px;font-size:12px}.tcard.s .tc-art{width:64px;height:64px}
+.tcard.m{width:170px;height:238px;font-size:20px}.tcard.m .tc-art{width:110px;height:110px}
+.tcard.l{width:210px;height:294px;font-size:24px;margin:0 auto}.tcard.l .tc-art{width:150px;height:150px}
+/* ぎん：ゆっくり ひかりが とおる */
+.tcard .sheen{position:absolute;inset:0;background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.75) 48%,transparent 60%);background-size:300% 100%;animation:sheen 3.2s ease-in-out infinite;pointer-events:none;mix-blend-mode:screen}
+@keyframes sheen{0%{background-position:120% 0}60%,100%{background-position:-120% 0}}
+/* キラ：にじいろ（なぞると ひかりが うごく） */
+.tcard .holo{position:absolute;inset:0;pointer-events:none;mix-blend-mode:color-dodge;opacity:.55;
+  background:linear-gradient(115deg,transparent 15%,rgba(255,80,180,.7) 30%,rgba(255,230,80,.7) 42%,rgba(80,255,200,.7) 54%,rgba(80,160,255,.7) 66%,rgba(200,100,255,.7) 78%,transparent 92%);
+  background-size:300% 300%;background-position:var(--hx,50%) var(--hy,50%);animation:holo 5s linear infinite}
+.tcard.touch .holo{animation:none}
+@keyframes holo{0%{background-position:0% 0%}50%{background-position:100% 100%}100%{background-position:0% 0%}}
+.tcard .glint{position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at var(--hx,30%) var(--hy,20%),rgba(255,255,255,.75),transparent 35%);mix-blend-mode:overlay}
+
+/* めくる えんしゅつ */
+.reveal{text-align:center}
+.rv-head{font-weight:800;color:#e07a1a;font-size:20px;margin-bottom:6px}
+.flip{width:170px;height:238px;margin:6px auto;perspective:900px;cursor:pointer}
+.flip-in{position:relative;width:100%;height:100%;transition:transform .55s cubic-bezier(.3,1.4,.5,1);transform-style:preserve-3d}
+.flip.open .flip-in{transform:rotateY(180deg)}
+.flip .back,.flip .front{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.flip .front{transform:rotateY(180deg)}
+.flip .back{border-radius:12px;background:repeating-linear-gradient(45deg,#7c6cf0 0 12px,#8a7cf8 12px 24px);border:6px solid #fff;display:flex;align-items:center;justify-content:center;animation:bob 1.2s ease-in-out infinite}
+.back-mark{width:70px;height:70px;border-radius:50%;background:#ffd34f;color:#7c6cf0;font-size:44px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 5px #fff}
+.flip.r1 .back{box-shadow:0 0 18px 6px rgba(255,255,255,.9)}
+.flip.r2 .back{box-shadow:0 0 22px 9px rgba(170,200,255,.95)}
+.flip.r3 .back{box-shadow:0 0 30px 12px rgba(255,210,80,1),0 0 60px 20px rgba(255,120,200,.6);animation:bob 1.2s ease-in-out infinite,rainbow 1.6s linear infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes rainbow{0%{filter:hue-rotate(0)}100%{filter:hue-rotate(360deg)}}
+.rv-msg{min-height:3.2em;font-size:15px;color:#5a4646}
+.rv-msg .en{color:#3f7fc9;font-size:20px}
+.newb{background:#ff5a8a;color:#fff;border-radius:999px;padding:1px 9px;font-size:14px;animation:bob .8s infinite}
+.badgeb{color:#e07a1a}
+.wordlist span.r2 b{color:#7a8ab0}.wordlist span.r3 b{color:#ff5a8a}
+
+/* アルバム */
+.album h3 small{font-size:14px;color:#9a8a8a}
+.al-strip{display:grid;grid-template-columns:repeat(13,1fr);gap:3px;margin:4px 0 8px}
+.al-l{border:0;border-radius:7px;padding:4px 0;font:inherit;font-weight:800;font-size:13px;background:#f3ecec;color:#b8a8a8}
+.al-l.some{background:#fff3c4;color:#c87a1a}.al-l.full{background:#ffd34f;color:#6a4a00}
+.al-l.on{outline:3px solid #7c6cf0}
+.al-page{display:flex;align-items:center;gap:4px;justify-content:center}
+.al-nav{border:0;background:#f3ecf8;color:#7c6cf0;border-radius:10px;width:28px;height:60px;font-size:16px;flex:none}
+.al-cards{display:flex;gap:6px}
+.al-slot{position:relative;cursor:pointer}
+.al-n{position:absolute;right:-4px;bottom:-4px;background:#7c6cf0;color:#fff;border-radius:999px;font-size:11px;font-weight:800;padding:1px 6px}
+.al-empty{width:88px;height:124px;border-radius:12px;border:3px dashed #d8c8d8;background:#faf7fa;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#d0c0d0}
+.al-empty b{font-size:30px}.al-empty i{font-style:normal;font-size:22px;font-weight:800}.al-empty small{font-size:11px}
+.al-info{font-size:13px;color:#7a6a6a;margin-top:8px}
+.cardbig{text-align:center}.cb-ex{font-size:20px;font-weight:800;color:#3f7fc9;margin:8px 0 2px}
+@media (max-width:380px){.tcard.s{width:78px;height:112px;font-size:11px}.tcard.s .tc-art{width:56px;height:56px}.al-empty{width:78px;height:112px}}
+.rv-btns[hidden]{display:none}
+
+/* ===== レアカードの せなか（はいけい）も ひからせる ===== */
+.tcard .tc-in>*{position:relative;z-index:1}
+.tcard .tc-in>.bgfx,.tcard .tc-in>.glitter,.tcard .tc-in>.sparks{position:absolute;inset:0;z-index:0;pointer-events:none}
+.tcard .tc-big{position:absolute;z-index:0}
+/* ★★：ぎんいろの ひかりの すじが まわる＋きらきら */
+.tcard.r2 .tc-in{background:radial-gradient(circle at 50% 38%,#ffffff 0,#eef3fc 35%,#cfdaf0 75%,#b8c6e4 100%)}
+.tcard.r2 .bgfx{background:repeating-conic-gradient(from 0deg at 50% 38%,rgba(255,255,255,.75) 0 6deg,rgba(255,255,255,0) 6deg 18deg);animation:spin 14s linear infinite;-webkit-mask:radial-gradient(circle at 50% 38%,#000 0,transparent 75%);mask:radial-gradient(circle at 50% 38%,#000 0,transparent 75%)}
+.tcard.r2 .glitter{background-image:radial-gradient(circle,rgba(255,255,255,.95) 0 1px,transparent 1.6px);background-size:11px 13px;animation:glit 2.4s ease-in-out infinite alternate;opacity:.6}
+.tcard.r2 .tc-art canvas{filter:drop-shadow(0 0 5px rgba(160,190,255,.95))}
+.tcard.r2 .tc-big{color:rgba(120,150,210,.2)}
+/* ★★★：にじいろの はいけいが ながれる＋きんの ひかりの すじ＋きらきら */
+.tcard.r3 .tc-in{background:linear-gradient(135deg,#ffd6ec,#fff1b8,#c8ffe6,#cfe6ff,#ead2ff,#ffd6ec);background-size:400% 400%;animation:rainbg 6s linear infinite}
+.tcard.r3 .bgfx{background:repeating-conic-gradient(from 0deg at 50% 38%,rgba(255,236,140,.85) 0 5deg,rgba(255,255,255,0) 5deg 15deg);animation:spin 9s linear infinite;-webkit-mask:radial-gradient(circle at 50% 38%,#000 0,transparent 80%);mask:radial-gradient(circle at 50% 38%,#000 0,transparent 80%);mix-blend-mode:screen}
+.tcard.r3 .glitter{background-image:radial-gradient(circle,#fff 0 1.1px,transparent 1.8px),radial-gradient(circle,rgba(255,230,120,.95) 0 1px,transparent 1.6px);background-size:9px 11px,13px 9px;background-position:0 0,4px 5px;animation:glit 1.6s ease-in-out infinite alternate}
+.tcard.r3 .tc-art canvas{filter:drop-shadow(0 0 6px rgba(255,255,255,1)) drop-shadow(0 0 10px rgba(255,200,80,.9))}
+.tcard.r3 .tc-big{color:rgba(230,160,40,.28)}
+.tcard.r3 .tc-name{background:linear-gradient(90deg,#ff4a8a,#e0a020,#3aa8e0,#9a5af0);-webkit-background-clip:text;background-clip:text;color:transparent}
+.tcard.r3 .tc-name b{color:inherit}
+.tcard .sparks i{position:absolute;width:12%;aspect-ratio:1;margin:-6% 0 0 -6%;background:#fff;clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);animation:twinkle 2.2s ease-in-out infinite;opacity:0}
+.tcard.r3 .sparks i:nth-child(odd){background:#fff3a0}
+.tcard.r2 .sparks i:nth-child(n+5){display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes rainbg{0%{background-position:0% 50%}100%{background-position:400% 50%}}
+@keyframes glit{0%{opacity:.25;background-position:0 0,4px 5px}100%{opacity:.85;background-position:3px 4px,1px 2px}}
+@keyframes twinkle{0%,100%{opacity:0;transform:scale(.3) rotate(0)}50%{opacity:1;transform:scale(1) rotate(45deg)}}
+.tcard.r3{box-shadow:0 3px 0 rgba(0,0,0,.2),0 0 14px 3px rgba(255,210,90,.75)}
+.tcard.r2{box-shadow:0 3px 0 rgba(0,0,0,.2),0 0 10px 2px rgba(170,200,255,.7)}
+
+/* ===== たからさがし：しらべる・とびらの クイズ ===== */
+.acts .search{background:#3aa88a}
+.quiz{text-align:center}
+.qz-head{font-weight:800;color:#7c6cf0;font-size:18px;margin-bottom:4px}
+.qz-art{width:96px;height:96px;margin:0 auto}
+.qz-word{font-size:40px;font-weight:800;color:#3f7fc9;letter-spacing:.06em}
+.qz-blank{display:inline-block;min-width:1em;border-bottom:4px solid #ff5a8a;color:#ff5a8a}
+.qz-ch{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:6px}
+.qz-c{min-width:7em;font-size:22px}
+.qz-l{min-width:2.6em;font-size:28px;padding:10px 12px}
+.qz-l:disabled{opacity:.35}
+.qz-slots{display:flex;gap:6px;justify-content:center;margin:6px 0}
+.qz-slots span{width:42px;height:48px;border-radius:10px;background:#f3ecf8;border:3px solid #c8b8e8;font-size:30px;font-weight:800;color:#3f7fc9;display:flex;align-items:center;justify-content:center}
+.qz-rid{font-size:22px;font-weight:800;color:#3f7fc9;line-height:1.35;margin:4px 0}
+.qz-p{width:88px;height:88px;border-radius:16px;border:3px solid #e0d4d4;background:#fff;padding:6px}
+.qz-ch .ok{background:#5ac87a!important;border-color:#2f9a5a!important;color:#fff}
+.qz-ch .ng{background:#e0304a!important;border-color:#a8182e!important;color:#fff}
+.qz-fb .tok{color:#2f9a5a;font-weight:800;font-size:20px;margin-top:6px}
+.qz-fb .tng{color:#e0304a;font-weight:800;font-size:20px;margin-top:6px}
+.qz-ch .big{width:auto;display:inline-block}
