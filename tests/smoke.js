@@ -1194,6 +1194,10 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(await p.evaluate(() => __dg.run.floor === 20 && __dg.run.mons.some(m => m.id === 'bigdragon') && __dg.D.best === 20), '20かい：さいごの ボス big dragon');
     await p.evaluate(() => { const r = __dg.run, b = r.mons.find(m => m.boss); b.hp = 1; r.mons = [b]; r.hero.x = b.x - 1; r.hero.y = b.y; r.hero.dir = 'right'; __dg.act({ t: 'attack' }); });
     await p.waitForTimeout(300);
+    // かいだんを とおくから タップ → あるいて いって「すすむ？」
+    await p.evaluate(() => { closePop(); const r = __dg.run; r.hero.x = r.stairs.x - 3; r.hero.y = r.stairs.y; r.mons = []; const c = __dg.cam(); __dg.tapMap(c.ox + (r.stairs.x + 0.5) * c.t, c.oy + (r.stairs.y + 0.5) * c.t); });
+    await p.waitForTimeout(1300);
+    ok(await p.evaluate(() => { const r = __dg.run; return r.hero.x === r.stairs.x && r.hero.y === r.stairs.y && /すすむ/.test(document.getElementById('ov').textContent); }), 'ボスの あと：かいだんを タップすると あるいて いって「すすむ？」');
     await p.evaluate(() => { closePop(); const r = __dg.run; r.hero.x = r.stairs.x; r.hero.y = r.stairs.y; __dg.goDown(); });
     ok(await p.evaluate(() => !!__dg.test), '20かいの あとも テスト');
     await p.click('#ov [data-act=dgTestQ]');

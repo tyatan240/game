@@ -171,7 +171,7 @@ function hurtMon(run, m, dmg, ev, how = 'hit', note = '', tier = 1) {
     run.mons = run.mons.filter(x => x !== m);
     ev.push({ t: 'kill', id: m.id, x: m.x, y: m.y, uid: m.uid }); ev.push({ t: 'msg', text: `${en(m.id)} を たおした！` });
     gainExp(run, m.exp, ev);
-    if (m.boss) { run.bossDead = true; run.stairs = { x: m.x, y: m.y }; ev.push({ t: 'boss', id: m.id }); ev.push({ t: 'msg', text: `${en('stairs')} が あらわれた！` }); }
+    if (m.boss) { run.bossDead = true; run.stairs = { x: m.x, y: m.y }; ev.push({ t: 'boss', id: m.id }); ev.push({ t: 'msg', text: `${en('stairs')} が あらわれた！ のると ${run.floor >= MAX_FLOOR ? 'ゴール！' : 'つぎへ すすめるよ'}` }); }
   }
 }
 function attackMon(run, m, ev) {

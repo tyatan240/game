@@ -299,7 +299,8 @@ function tapMap(px, py) {
   if (m && dist === 1) return doAction({ t: 'move', dir: x > h.x ? 'right' : x < h.x ? 'left' : y > h.y ? 'down' : 'up' });
   if (m) return showCard(m.id, { mon: m });
   if (x === h.x && y === h.y) { if (onStairs(run)) return askStairs(); return; }
-  if ((it || b || st) && dist > 1) return showCard(it ? it.id : b ? 'treasurebox' : 'stairs', { floor: true, x, y });
+  if (st && !it && dist > 0) { speak('stairs'); return walkTo(x, y); } // かいだんを タップ → そこまで あるく（のると「すすむ？」）
+  if ((it || b) && dist > 1) return showCard(it ? it.id : 'treasurebox', { floor: true, x, y });
   if (dist === 1 && tileAt(run, x, y) !== '#') return doAction({ t: 'move', dir: x > h.x ? 'right' : x < h.x ? 'left' : y > h.y ? 'down' : 'up' });
   if (seenAt(run, x, y) && tileAt(run, x, y) !== '#') walkTo(x, y);
 }
@@ -611,8 +612,14 @@ function guide() {
 // マップの うえの やじるし（つぎに いく ところ・タップする もの）
 function drawTutArrow(now, t, ox, oy) {
   if (busy) return;
-  const i = tutInfo(); if (!i || !i.goal || (i.btn && !i.s.foe && !i.s.stairs) || (i.s.stairs && onStairs(run))) return;
-  const g = i.goal, cx = ox + (g.x + 0.5) * t, bob = Math.sin(now / 200) * t * 0.12, top = oy + g.y * t - t * 0.55 + bob;
+  const i = tutInfo();
+  // ボスを たおした あとは かいだんに やじるし（どこへ いけば いいか わかる ように）
+  if (!i && run && run.bossDead && run.stairs && !onStairs(run) && seenAt(run, run.stairs.x, run.stairs.y)) return drawArrowAt(now, t, ox, oy, run.stairs);
+  if (!i || !i.goal || (i.btn && !i.s.foe && !i.s.stairs) || (i.s.stairs && onStairs(run))) return;
+  drawArrowAt(now, t, ox, oy, i.goal);
+}
+function drawArrowAt(now, t, ox, oy, g) {
+  const cx = ox + (g.x + 0.5) * t, bob = Math.sin(now / 200) * t * 0.12, top = oy + g.y * t - t * 0.55 + bob;
   g.x != null && (() => {
     const c = cv.getContext('2d');
     c.strokeStyle = `rgba(255,211,79,${0.6 + Math.sin(now / 180) * 0.3})`; c.lineWidth = 4; c.beginPath(); c.arc(cx, oy + (g.y + 0.5) * t, t * 0.52, 0, 7); c.stroke();
