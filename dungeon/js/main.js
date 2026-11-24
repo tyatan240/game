@@ -3,7 +3,7 @@
 import { WORD, WORDS, CATS, MAX_FLOOR, STARS, BOSS_FLOORS, TEST_FLOORS, zoneOf, BAGS, GROUPS, bagOf, FAMS } from './data.js';
 import { isTreasure, openSecret, failSecret, unstackBoxes } from './game.js';
 import { makeQuiz } from './quiz.js';
-import { initTreasure, treasureUnlocked, cardCount, giveCard, showReveals, flipCard, revealNext, albumPop, cardBig, cardSay, revealPending, revealSay, quizPop, quizAns, quizTile, quizBack, quizDone, quizSay } from './treasure.js';
+import { initTreasure, treasureUnlocked, cardCount, giveCard, showReveals, flipCard, revealNext, albumPop, cardBig, cardSay, revealPending, revealSay, gachaPop, gachaGo, gachaBack, quizPop, quizAns, quizTile, quizBack, quizDone, quizSay } from './treasure.js';
 import { CARD, CARD_TOTAL, CARD_STARS } from './cards.js';
 import { newRun, act, descend, updateSeen, visible, tileAt, seenAt, onStairs, heroAtk, heroDef, monAt, DIRS, bagCount, spellTargets } from './game.js';
 import { drawTile, drawArt, wordArt } from './art.js';
@@ -82,11 +82,19 @@ function draw(now) {
   for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) drawTile(g, m.tiles[y][x], ox + x * t, oy + y * t, t, seenAt(run, x, y), vis.has(x + ',' + y), zone);
   const shown = (x, y) => seenAt(run, x, y);
   if (run.stairs && shown(run.stairs.x, run.stairs.y)) drawArt(g, 'dg_stairs', ox + run.stairs.x * t, oy + run.stairs.y * t, t);
-  for (const s of run.secrets || []) if (!s.open && shown(s.door.x, s.door.y)) drawCrack(s, now, t, ox, oy);
+  for (const s of run.secrets || []) if (!s.open) {
+    if (s.kind === 'hint') { for (const tc of s.torches || []) if (shown(tc.x, tc.y)) drawTorch(tc, s, now, t, ox, oy); }
+    else if (s.kind === 'gold') { if (shown(s.door.x, s.door.y)) drawGoldDoor(s, now, t, ox, oy); }
+    else if (shown(s.door.x, s.door.y)) drawCrack(s, now, t, ox, oy);
+  }
   for (const b of run.boxes) if (shown(b.x, b.y)) drawArt(g, b.open ? 'dg_boxopen' : 'dg_box', ox + b.x * t + t * 0.08, oy + b.y * t + t * 0.08, t * 0.84);
-  for (const it of run.items) if (shown(it.x, it.y)) drawArt(g, WORD[it.id].art, ox + it.x * t + t * 0.14, oy + it.y * t + t * 0.14, t * 0.72);
+  for (const it of run.items) if (shown(it.x, it.y)) {
+    drawArt(g, WORD[it.id].art, ox + it.x * t + t * 0.14, oy + it.y * t + t * 0.14, t * 0.72);
+    if (it.id === 'ltile') { g.fillStyle = '#c8701a'; g.font = `900 ${Math.round(t * 0.5)}px "M PLUS Rounded 1c",sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(it.letter.toUpperCase(), ox + (it.x + 0.47) * t, oy + (it.y + 0.47) * t); g.textBaseline = 'alphabetic'; }
+  }
+  for (const tr of run.traps || []) if (tr.found && shown(tr.x, tr.y)) drawTrap(tr, t, ox, oy);
   const drawMon = (mo, hp) => {
-    const big = WORD[mo.id].boss ? 1.5 : 1, s = t * 0.92 * big, bob = mo.frozen ? 0 : Math.sin(now / 300 + mo.uid) * t * 0.03;
+    const big = WORD[mo.id].boss || WORD[mo.id].hboss ? 1.5 : 1, s = t * 0.92 * big, bob = mo.frozen ? 0 : Math.sin(now / 300 + mo.uid) * t * 0.03;
     if (WORD[mo.id].wall) g.globalAlpha = m.tiles[mo.y][mo.x] === '#' ? 0.55 : 0.85; // おばけは すけて いる
     drawArt(g, WORD[mo.id].art, ox + (mo.x + 0.5) * t - s / 2, oy + (mo.y + 1) * t - s * 0.98 + bob, s); g.globalAlpha = 1;
     if (mo.frozen) { g.fillStyle = 'rgba(140,210,255,.38)'; g.fillRect(ox + mo.x * t + 2, oy + mo.y * t + 2, t - 4, t - 4); g.strokeStyle = '#7ac8ff'; g.lineWidth = 2; g.strokeRect(ox + mo.x * t + 2, oy + mo.y * t + 2, t - 4, t - 4); }
@@ -174,6 +182,30 @@ function drawCrack(s, now, t, ox, oy) {
     g.fillStyle = `rgba(255,240,150,${0.35 + a * 0.6})`; g.beginPath(); g.moveTo(cx, cy - r); g.quadraticCurveTo(cx, cy, cx + r, cy); g.quadraticCurveTo(cx, cy, cx, cy + r); g.quadraticCurveTo(cx, cy, cx - r, cy); g.quadraticCurveTo(cx, cy, cx, cy - r); g.fill(); }
   g.restore();
 }
+// いろの たいまつ（えいごだけの ヒント）
+const TORCH = { red: ['#ff4a4a', '#ffb0a0'], blue: ['#3a8aff', '#a8d4ff'], yellow: ['#ffd020', '#fff3a0'] };
+function drawTorch(tc, s, now, t, ox, oy) {
+  const x = ox + tc.x * t, y = oy + tc.y * t, [c1, c2] = TORCH[tc.color], fl = Math.sin(now / 120 + tc.x) * t * 0.04, dim = s.lock > run.turn;
+  g.save(); g.globalAlpha = dim ? 0.5 : 1;
+  g.fillStyle = '#8a5a3a'; g.fillRect(x + t * 0.44, y + t * 0.45, t * 0.12, t * 0.4);
+  const gr = g.createRadialGradient(x + t * 0.5, y + t * 0.32, 1, x + t * 0.5, y + t * 0.32, t * 0.45); gr.addColorStop(0, c2); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(x, y - t * 0.1, t, t * 0.8);
+  g.fillStyle = c1; g.beginPath(); g.moveTo(x + t * 0.5, y + t * 0.08 + fl); g.quadraticCurveTo(x + t * 0.72, y + t * 0.36, x + t * 0.5, y + t * 0.48); g.quadraticCurveTo(x + t * 0.28, y + t * 0.36, x + t * 0.5, y + t * 0.08 + fl); g.fill();
+  g.fillStyle = c2; g.beginPath(); g.arc(x + t * 0.5, y + t * 0.36, t * 0.07, 0, 7); g.fill(); g.restore();
+}
+// きんいろの なぞの とびら（きんの かぎで あく）
+function drawGoldDoor(s, now, t, ox, oy) {
+  const x = ox + s.door.x * t, y = oy + s.door.y * t, a = (Math.sin(now / 300) + 1) / 2;
+  g.save(); g.fillStyle = '#d8a020'; g.fillRect(x + t * 0.12, y + t * 0.06, t * 0.76, t * 0.9); g.fillStyle = '#ffd34f'; g.fillRect(x + t * 0.18, y + t * 0.12, t * 0.64, t * 0.8);
+  g.strokeStyle = `rgba(255,255,255,${0.4 + a * 0.5})`; g.lineWidth = 3; g.strokeRect(x + t * 0.12, y + t * 0.06, t * 0.76, t * 0.9);
+  g.fillStyle = '#8a5a00'; g.beginPath(); g.arc(x + t * 0.5, y + t * 0.48, t * 0.08, 0, 7); g.fill(); g.fillRect(x + t * 0.47, y + t * 0.5, t * 0.06, t * 0.16); g.restore();
+}
+// みつけた わな
+function drawTrap(tr, t, ox, oy) {
+  const x = ox + tr.x * t, y = oy + tr.y * t; g.save();
+  if (tr.kind === 'pit') { g.fillStyle = 'rgba(40,30,50,.75)'; g.beginPath(); g.ellipse(x + t / 2, y + t / 2, t * 0.36, t * 0.28, 0, 0, 7); g.fill(); }
+  else { g.fillStyle = 'rgba(160,120,220,.45)'; g.fillRect(x + t * 0.1, y + t * 0.1, t * 0.8, t * 0.8); g.fillStyle = '#fff'; g.font = `800 ${Math.round(t * 0.3)}px sans-serif`; g.textAlign = 'center'; g.fillText('zzz', x + t / 2, y + t * 0.6); }
+  g.strokeStyle = '#ff4a6a'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(x + t * 0.2, y + t * 0.2); g.lineTo(x + t * 0.8, y + t * 0.8); g.moveTo(x + t * 0.8, y + t * 0.2); g.lineTo(x + t * 0.2, y + t * 0.8); g.stroke(); g.restore();
+}
 const FX_COL = { fire: '255,130,50', water: '90,170,255', ice: '140,210,255', thunder: '255,220,60', heal: '120,230,150', wind: '110,210,180', light: '255,240,150' };
 // そうびの みため：モコの え の まえ（hand：けん・たて）と うしろ（armor：よろい）に かさねる。原点は あしもと
 const gearOf = slot => { const it = run && run.inv.find(i => i.uid === run.equip[slot]); return it ? WORD[it.id] : null; };
@@ -202,7 +234,7 @@ function hud() {
   $id('floor').classList.toggle('tre', isTreasure(run));
   const bw = $id('bWait'), tre = isTreasure(run); if (bw.dataset.tre !== String(tre)) { bw.dataset.tre = tre; bw.textContent = tre ? 'しらべる' : 'まつ'; bw.classList.toggle('search', tre); }
   // あやしい かべを はじめて みつけたら おしえる
-  for (const s of run.secrets || []) if (!s.open && !s.noted && seenAt(run, s.door.x, s.door.y)) { s.noted = true; setTimeout(() => toast('あやしい かべ（ひび）を みつけた！ となりで「しらべる」'), 400); }
+  for (const s of run.secrets || []) if (!s.open && !s.noted && seenAt(run, s.door.x, s.door.y)) { s.noted = true; const m = s.kind === 'gold' ? 'きんいろの なぞの とびらを みつけた！ gold key が いるよ' : s.kind === 'hint' ? 'いろの ついた たいまつ が ある…かんばんの ヒントを さがそう' : s.kind === 'collect' ? 'もじあつめの とびら！ ゆかの もじを ぜんぶ ひろって しらべよう' : 'あやしい かべ（ひび）を みつけた！ となりで「しらべる」'; setTimeout(() => toast(m), 400); }
   const hp = dispHp != null ? dispHp : h.hp; // せんとうちゅうは けいさんしきと いっしょに へる
   $id('hp').textContent = `${hp}/${h.maxhp}`; $id('hpbar').style.width = Math.max(0, 100 * hp / h.maxhp) + '%';
   $id('hpbar').parentNode.parentNode.classList.toggle('low', hp <= h.maxhp * 0.3);
@@ -247,7 +279,7 @@ function doAction(a) {
   return r;
 }
 async function handle(ev, slow) {
-  let stairs = false, dead = false, rope = false, gotCard = false, quizI = null;
+  let stairs = false, dead = false, rope = false, gotCard = false, quizI = null, hintAns = null, hbossId = null, signText = null;
   for (const e of ev) {
     if (e.t === 'msg') { log(e.text); if (e.heroHp != null) dispHp = e.heroHp; if (e.monUid != null && monHpShown) monHpShown.set(e.monUid, e.monHp); if (slow) { hud(); await wait(e.calc ? CALC_MS : MSG_MS); } }
     else if (e.t === 'fx') { fx.push({ ...e, t0: performance.now() }); if (e.kind === 'wind' && posShown && e.uid != null) posShown.set(e.uid, { x: e.x, y: e.y }); }
@@ -255,6 +287,11 @@ async function handle(ev, slow) {
     else if (e.t === 'treasure') { giveCard(e.rare, run); gotCard = true; }
     else if (e.t === 'search') fx.push({ kind: 'search', x: e.x, y: e.y, t0: performance.now(), dur: 900 });
     else if (e.t === 'quiz') quizI = e.i;
+    else if (e.t === 'hintAns') hintAns = e;
+    else if (e.t === 'hboss') hbossId = e.id;
+    else if (e.t === 'sign') signText = e.text;
+    else if (e.t === 'letter') { sfx.tap(); speak(e.letter); }
+    else if (e.t === 'trapfound') sfx.unlock();
     else if (e.t === 'secret') { sfx.unlock(); vis = visible(run); camTarget(false); } // てきの ばん：ここで うごいた ばしょに
     else if (e.t === 'bubble') fx.push({ kind: 'bubble', ...e, t0: performance.now(), dur: 1300 });
     else if (e.t === 'spell') { fx.push({ ...e, kind: 'spell', kind2: e.kind, t0: performance.now(), dur: SPELL_MS }); if (slow) await wait(SPELL_MS); } // まほうの えんしゅつを みせてから ダメージ
@@ -277,6 +314,9 @@ async function handle(ev, slow) {
     else if (e.t === 'dead') dead = true;
   }
   if (quizI != null) { stopWalk(); setTimeout(() => startQuiz(quizI), 250); } // あやしい かべ → とびらの クイズ
+  if (hintAns) { stopWalk(); hintResult(hintAns); }
+  if (hbossId) { stopWalk(); const id = hbossId; setTimeout(() => { if (mode !== 'play') return; showPop(`<h3>かくしボス！</h3><div class="dart" style="width:120px;margin:0 auto"></div><p>${en(id)}（${WORD[id].ja}）が あらわれた！<br><b class="en">${WORD[id].desc.split('　')[1] || ''}</b></p><p class="muted">weak の まほうは 2ばい きくよ。たおすと ★★★ の カード！</p><div class="btns"><button class="big" data-act="close">たたかう！</button></div>`); const a = document.querySelector('#ov .dart'); if (a) a.appendChild(wordArt(WORD[id].art, 120)); speak(WORD[id].en); }, 300); }
+  if (signText) { stopWalk(); const tx = signText; setTimeout(() => signPop(tx), 200); }
   if (gotCard) { stopWalk(); setTimeout(showReveals, slow ? 200 : 350); } // カードを めくる えんしゅつ（たおれても カードは のこる）
   if (dead) { stopWalk(); setTimeout(gameOver, slow ? 300 : 500); return; }
   if (rope) { stopWalk(); setTimeout(() => { if (run && mode === 'play') goDown(true); }, slow ? 300 : 500); return; }
@@ -329,6 +369,7 @@ function tapMap(px, py) {
   if (m) return showCard(m.id, { mon: m });
   if (x === h.x && y === h.y) { if (onStairs(run)) return askStairs(); return; }
   if (st && !it && dist > 0) { speak('stairs'); return walkTo(x, y); } // かいだんを タップ → そこまで あるく（のると「すすむ？」）
+  if (it && it.id === 'sign') return signPop(it.text); // かんばんは タップで よめる
   if ((it || b) && dist > 1) return showCard(it ? it.id : 'treasurebox', { floor: true, x, y });
   if (dist === 1 && tileAt(run, x, y) !== '#') return doAction({ t: 'move', dir: x > h.x ? 'right' : x < h.x ? 'left' : y > h.y ? 'down' : 'up' });
   if (seenAt(run, x, y) && tileAt(run, x, y) !== '#') walkTo(x, y);
@@ -708,7 +749,7 @@ function toTitle() {
 /* ---------- かくし部屋の とびらの クイズ ---------- */
 function startQuiz(i) {
   if (!run || mode !== 'play' || !run.secrets || !run.secrets[i]) return;
-  const s = run.secrets[i], q = makeQuiz(s.kind), iid = `tq-${Date.now()}`;
+  const s = run.secrets[i], q = s.kind === 'collect' ? makeQuiz('collect', Math.random, s.card) : makeQuiz(s.kind), iid = `tq-${Date.now()}`;
   try { if (typeof LH !== 'undefined') LH.begin(iid); } catch (e) { }
   quizPop(q, (ok, q2, user) => {
     try { if (typeof LH !== 'undefined') LH.recordAttempt({ questionInstanceId: iid, questionKey: `eigo:treasure:${q2.kind}:${q2.card.id}`, subject: 'eigo', topic: 'treasure', skill: 'treasure-' + q2.kind, difficulty: Math.ceil(run.floor / 5), mode: 'quiz', questionText: q2.kind === 'riddle' ? q2.en : q2.kind === 'letter' ? q2.shown : q2.kind === 'order' ? q2.tiles.join(' ') : `え → えいご（${q2.card.ja}）`, correctAnswer: q2.card.en, userAnswer: user, isCorrect: ok, attemptNumber: 1, earnedStars: ok ? 1 : 0, params: { card: q2.card.id, floor: run.floor } }); } catch (e) { }
@@ -718,6 +759,21 @@ function startQuiz(i) {
     else { failSecret(run, i); log('とびらは しまって しまった…（5ターン たったら また しらべよう）'); }
     persist(); hud();
   });
+}
+
+// えいごだけの ヒント：かんばんの いろの たいまつを しらべた ばあい
+function hintResult(e) {
+  const s = run.secrets[e.i]; if (!s) return;
+  try { if (typeof LH !== 'undefined') LH.recordAttempt({ questionInstanceId: `th-${Date.now()}`, questionKey: `eigo:treasure:hint:${s.color}`, subject: 'eigo', topic: 'treasure', skill: 'treasure-hint', difficulty: Math.ceil(run.floor / 5), mode: 'quiz', questionText: `Look at the ${s.color.toUpperCase()} torch.`, correctAnswer: s.color, userAnswer: e.user, isCorrect: e.ok, attemptNumber: 1, earnedStars: e.ok ? 1 : 0, params: { floor: run.floor } }); } catch (er) { }
+  if (!e.ok) { sfx.wrong(); return; }
+  sfx.correct(); speak(`${s.color} torch!`); stars(1, 'えいごの ヒント せいかい！'); logGroup++; log(`<b class="en">${s.color.toUpperCase()}</b> の たいまつだ！`);
+  handle(openSecret(run, e.i), false); persist(); hud();
+}
+function signPop(text) {
+  if (mode !== 'play') return;
+  showPop(`<div class="dcard"><div class="dart"></div><div class="dname">sign</div><p class="signtx">${text}</p><button class="say" data-act="dgSignSay" data-arg="${text}">🔊 きく</button>
+    <p class="muted">えいごだけの ヒント。よんで みよう！</p></div><div class="btns"><button class="big gray" data-act="close">とじる</button></div>`);
+  document.querySelector('#ov .dart').appendChild(wordArt('dg_sign', 90)); speak(text);
 }
 
 /* ---------- たからさがしの メニュー ---------- */
@@ -731,6 +787,7 @@ function treasureMenu() {
       ${T.run ? `<button class="big" data-act="dgTCont">つづきから（${T.run.floor}かい）</button>` : ''}
       <button class="big ${T.run ? 'sub' : ''}" data-act="dgTGo">${T.run ? 'あたらしく ぼうけん' : 'ぼうけんに いく！'}</button>
       <button class="big sub" data-act="dgAlbumT">カードずかん</button>
+      <button class="big sub gcbtn" data-act="dgGacha">カードガチャ（かけら ${T.shards}こ）</button>
       <button class="big gray" data-act="close">もどる</button></div>`);
 }
 function goPressed() {
@@ -774,6 +831,8 @@ Object.assign(ACT, {
   dgAlbumM: () => albumPop(null, 'dgMenu'),
   dgAlbum: L => { sfx.tap(); albumPop(L); },
   dgCardBig: id => cardBig(id), dgCardSay: id => cardSay(id),
+  dgGacha: () => { sfx.tap(); gachaPop(); }, dgGachaGo: () => gachaGo(), dgGachaBack: () => { gachaBack(); treasureMenu(); },
+  dgSignSay: t => speak(t),
   dgFlip: () => flipCard(), dgRevealNext: () => revealNext(), dgRevealSay: () => revealSay(),
   dgQzAns: i => quizAns(i), dgQzTile: i => quizTile(i), dgQzBack: () => quizBack(), dgQzDone: () => quizDone(), dgQzSay: () => quizSay(),
   dgHome: () => { if (run && run.tut) { run = null; D.run = null; } persist(); flush(D); location.href = '../index.html'; },
@@ -830,4 +889,4 @@ function setupInput() {
 })();
 
 // じどう テスト よう
-window.__dg = { tutInfo: () => { const i = tutInfo(); return i && { id: i.id, dirs: i.dirs, btn: i.btn, adj: !!i.adj, goal: i.goal && { x: i.goal.x, y: i.goal.y }, pick: i.s.pick, spell: i.s.spell }; }, set fast(v) { fast = v; }, get busy() { return busy; }, get ghosts() { return ghosts; }, get run() { return run; }, get D() { return D; }, get mode() { return mode; }, get tut() { return tut; }, act: doAction, start, resume, toTitle, goDown, showCard, tapMap, toTile, cam: () => cam(), visible: () => vis, shownPos: uid => posShown && posShown.get(uid), treasureMenu, startQuiz, get revealing() { return revealPending(); }, get test() { return TT; }, startTest, get aim() { return aim; } };
+window.__dg = { tutInfo: () => { const i = tutInfo(); return i && { id: i.id, dirs: i.dirs, btn: i.btn, adj: !!i.adj, goal: i.goal && { x: i.goal.x, y: i.goal.y }, pick: i.s.pick, spell: i.s.spell }; }, set fast(v) { fast = v; }, get busy() { return busy; }, get ghosts() { return ghosts; }, get run() { return run; }, get D() { return D; }, get mode() { return mode; }, get tut() { return tut; }, act: doAction, start, resume, toTitle, goDown, showCard, tapMap, toTile, cam: () => cam(), visible: () => vis, signPop, shownPos: uid => posShown && posShown.get(uid), treasureMenu, startQuiz, get revealing() { return revealPending(); }, get test() { return TT; }, startTest, get aim() { return aim; } };

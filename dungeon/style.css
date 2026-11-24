@@ -360,3 +360,22 @@ html,body{margin:0;height:100%;overflow:hidden;background:#2a2238;touch-action:n
 .tcard.r3 .tc-rib{background:linear-gradient(90deg,#e0a020,#fff3a0,#ffd34f,#fff3a0,#e0a020);background-size:200% 100%;animation:ribshine 2s linear infinite;color:#8a4a00;box-shadow:0 0 8px rgba(255,210,90,.9)}
 @keyframes ribshine{to{background-position:200% 0}}
 .tcard.s .tc-rib{font-size:.55em;margin-bottom:4%}
+
+/* ===== たからさがし 第3段階：ガチャ・かんばん・おいわい ===== */
+.gacha{text-align:center}
+.gc-mach{width:150px;margin:4px auto 8px;position:relative}
+.gc-glass{height:120px;border-radius:70px 70px 14px 14px;background:radial-gradient(circle at 35% 30%,#fff,#d8ecff 60%,#a8c8f0);border:5px solid #7c6cf0;position:relative;overflow:hidden}
+.tcard-back{position:absolute;width:34px;height:48px;border-radius:6px;background:repeating-linear-gradient(45deg,#7c6cf0 0 6px,#9a8af8 6px 12px);border:3px solid #fff;box-shadow:0 2px 0 rgba(0,0,0,.2)}
+.tcard-back.b1{left:20px;top:56px;transform:rotate(-18deg)}.tcard-back.b2{left:56px;top:40px;transform:rotate(6deg);background:repeating-linear-gradient(45deg,#ffb020 0 6px,#ffd34f 6px 12px)}.tcard-back.b3{left:88px;top:60px;transform:rotate(22deg);background:repeating-linear-gradient(45deg,#ff6b8a 0 6px,#ff9ab4 6px 12px)}
+.gc-base{background:#7c6cf0;color:#fff;font-weight:900;border-radius:0 0 18px 18px;padding:8px;letter-spacing:.2em}
+.gc-mach.spin .gc-glass{animation:gshake .15s linear infinite}
+.gc-mach.spin .tcard-back{animation:gtumble .3s linear infinite}
+@keyframes gshake{0%,100%{transform:translateX(0)}50%{transform:translateX(4px)}}
+@keyframes gtumble{to{transform:rotate(360deg) translateY(-6px)}}
+.gc-shard{font-size:17px}.gc-shard b{font-size:26px;color:#e07a1a}
+.gc-info{font-size:15px}.gc-pity{color:#ff5a8a}
+.gc-rate{font-size:12px;color:#9a8a8a}
+.gc-go:disabled{background:#ddd;box-shadow:none;color:#999}
+.signtx{font-size:24px;font-weight:800;color:#3f7fc9;margin:6px 0}
+.reveal.party .flip{animation:party 0.6s ease-in-out 3}
+@keyframes party{50%{transform:scale(1.08) rotate(2deg)}}

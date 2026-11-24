@@ -26,6 +26,8 @@
 - タイトルの「たからさがし」から。A〜Z の カード 78まい（`js/cards.js`、え は `js/cardart.js`）を あつめる。カードの がめん・アルバムは `js/treasure.js`
 - `run.mode === 'treasure'`：てきが つよい（`game.js` の `ef()`）・たからばこ／ゆかの カード（`tcard`）／ボスから カード（`treasure` イベント）・ふくしゅう テストなし
 - かくし部屋：「まつ」が「しらべる」に なり、あやしい かべ（ひび）→ とびらの クイズ（`js/quiz.js`）→ せいかいで ひらく（`game.js` の `placeSecrets`・`openSecret`）
+- 11かいから：えいごだけの ヒント（かんばん・いろの たいまつ）・きんの かぎ → なぞの とびら → かくしボス（weak の まほう 2ばい）・わな（おとしあな・ねむり）。16かいから もじあつめ
+- かけらの カードガチャ（`js/treasure.js` の `gachaPop`）。78まい コンプリートで おうちの きせかえ `h_treasure`
 - ちゅうだんは `D.treasure.run`（えいごの `D.run` と べつ）。仕様：`docs/treasure-dungeon-spec.md`
 
 ## こうせい

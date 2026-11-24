@@ -1300,6 +1300,67 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     const lhT = await p.evaluate(async () => { await LH.flushed(); return (await LH.getAttempts({ subject: 'eigo', topic: 'treasure' })).length; });
     ok(lhT >= 1, 'とびらの クイズは 学習履歴（eigo / treasure）へ ' + lhT);
     await p.evaluate(() => { const r = __dg.run; r.secrets.pop(); r.mons = []; closePop(); });
+    // 第3段階：えいごだけの ヒント・きんの とびらと かくしボス・もじあつめ・わな・weak
+    const p3 = await p.evaluate(async () => {
+      const G = await import('./js/game.js'), o = {}; closePop();
+      const r = __dg.run, h = r.hero, keep = { floor: r.floor };
+      const beside = d => [[0, -1, 'down'], [0, 1, 'up'], [-1, 0, 'right'], [1, 0, 'left']].map(([dx, dy, dir]) => [d.x + dx, d.y + dy, dir]).find(([x, y]) => r.map.tiles[y][x] !== '#');
+      const go = d => { const b = beside(d); h.x = b[0]; h.y = b[1]; h.dir = b[2]; };
+      // 12かいを つくりなおして ためす
+      let tries = 0; do { G.enterFloor(r, 12); tries++; } while (tries < 80 && !(r.secrets.some(s => s.kind === 'hint') && r.secrets.length >= 2));
+      r.mons = []; G.updateSeen(r);
+      const hs = r.secrets.find(s => s.kind === 'hint');
+      o.sign = r.items.some(i => i.id === 'sign' && /Look at the (RED|BLUE|YELLOW) torch\./.test(i.text)) && hs.torches.length === 3;
+      const dec = hs.torches.find(t => !(t.x === hs.door.x && t.y === hs.door.y)); go(dec); __dg.act({ t: 'search' });
+      o.wrong = hs.lock > r.turn && !hs.open; hs.lock = 0;
+      go(hs.door); __dg.act({ t: 'search' }); o.right = hs.open;
+      // きんの とびら → かくしボス → ★★★
+      const gs = { x: 2, y: 2, w: 3, h: 3, door: { x: 0, y: 0 }, open: false, lock: 0, kind: 'gold' }; const any = r.secrets.find(s => !s.open && s !== hs) || hs; Object.assign(gs, { x: any.x, y: any.y, w: any.w, h: any.h, door: any.door }); any.open = true; any.kind = 'x'; r.secrets.push(gs);
+      if (gs.open === false) { const rows = r.map.tiles.map(t => t.split('')); for (let y = gs.y; y < gs.y + gs.h; y++) for (let x = gs.x; x < gs.x + gs.w; x++) rows[y][x] = '#'; rows[gs.door.y][gs.door.x] = '#'; r.map.tiles = rows.map(t => t.join('')); }
+      go(gs.door); r.inv = r.inv.filter(i => i.id !== 'goldkey'); __dg.act({ t: 'search' }); o.needKey = !gs.open;
+      r.inv.push({ uid: 7900, id: 'goldkey', peek: false }); __dg.act({ t: 'search' });
+      const hb = r.mons.find(m => ['treasuredragon', 'crystalgolem', 'shadowking'].includes(m.id)); o.hboss = gs.open && !!hb && !r.inv.some(i => i.id === 'goldkey');
+      const weak = G.WORDS ? null : null; const hp0 = hb.hp; r.spells = ['fire', 'ice', 'thunder']; h.mp = 99;
+      hb.x = h.x; hb.y = h.y; const tx = h.x + 1; h.x = h.x - 1 >= 0 ? h.x : h.x; // そのまま
+      o.hbossId = hb.id;
+      hb.hp = 1; const nb = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => [hb.x + dx, hb.y + dy]).find(([x, y]) => r.map.tiles[y][x] !== '#');
+      r.mons = [hb]; h.x = nb[0]; h.y = nb[1]; const res = __dg.act({ t: 'attack' });
+      o.hbossCard = res.ev.some(e => e.t === 'treasure' && e.rare === 3) && r.hbossDone;
+      // もじあつめ
+      const cs = { x: any.x, y: any.y, w: any.w, h: any.h, door: any.door, open: false, lock: 0, kind: 'collect', card: 'C1', word: 'cup' }; r.secrets.push(cs); const ci = r.secrets.length - 1;
+      r.letters = [{ sid: ci, letter: 'c' }, { sid: ci, letter: 'u' }]; r.mons = []; go(cs.door); let e1 = __dg.act({ t: 'search' }); o.collectWait = !e1.ev.some(e => e.t === 'quiz');
+      r.letters.push({ sid: ci, letter: 'p' }); e1 = __dg.act({ t: 'search' }); o.collectQuiz = e1.ev.some(e => e.t === 'quiz' && e.kind === 'collect');
+      await new Promise(res => setTimeout(res, 400)); closePop(); __dg.startQuiz(ci); o.collectUI = /もじあつめの とびら/.test(document.getElementById('ov').textContent) && document.querySelectorAll('#ov [data-act=dgQzTile]').length === 3; closePop();
+      // わな：しらべる で みつける・おとしあな・ねむり
+      r.traps = [{ x: h.x + 1, y: h.y, kind: 'sleep', found: false }]; r.map.tiles[h.y] = r.map.tiles[h.y].slice(0, h.x + 1) + '.' + r.map.tiles[h.y].slice(h.x + 2); r.items = r.items.filter(i => !(i.x === h.x + 1 && i.y === h.y)); r.boxes = r.boxes.filter(b => !(b.x === h.x + 1 && b.y === h.y)); r.secrets = []; r.stairs = null;
+      __dg.act({ t: 'search' }); o.trapFound = r.traps[0].found;
+      r.traps[0].found = false; const x0 = h.x; __dg.act({ t: 'move', dir: 'right' }); const x1 = h.x; __dg.act({ t: 'move', dir: 'right' }); o.sleep = x1 === x0 + 1 && h.x === x1 && r.stuck === 1;
+      r.stuck = 0; r.traps = [{ x: h.x - 1, y: h.y, kind: 'pit', found: false }]; const f0 = r.floor; __dg.act({ t: 'move', dir: 'left' });
+      await new Promise(res => setTimeout(res, 800)); o.pit = __dg.run.floor === f0 + 1;
+      return o;
+    });
+    ok(Object.values(p3).every(v => v !== false), 'えいごだけの ヒント（かんばん・いろの たいまつ）・きんの とびら → かくしボス → ★★★・もじあつめ・わな ' + JSON.stringify(p3));
+    for (let k = 0; k < 6; k++) { await p.waitForTimeout(450); if (await p.$('#ov .flip:not(.open)')) { await p.click('#ov .flip'); await p.waitForTimeout(700); } if (await p.$('#ov [data-act=dgRevealNext]')) await p.click('#ov [data-act=dgRevealNext]'); }
+    await p.evaluate(() => closePop());
+    // weak は 2ばい
+    ok(await p.evaluate(() => { const r = __dg.run, h = r.hero; r.mons = [{ uid: 7950, id: 'treasuredragon', x: h.x + 1, y: h.y, hp: 500, maxhp: 500, atk: 0, exp: 1, tick: 0, hboss: true, frozen: 9 }]; r.spells = ['fire', 'ice']; h.mp = 99; h.dir = 'right';
+      __dg.act({ t: 'cast', id: 'fire' }); const d1 = 500 - r.mons[0].hp; const hp1 = r.mons[0].hp; __dg.act({ t: 'cast', id: 'ice' }); const d2 = hp1 - r.mons[0].hp; r.mons = []; return d2 >= 2 * 6 && /weak/.test(document.getElementById('log').textContent); }), 'かくしボスは weak の まほうが 2ばい');
+    // カードガチャ：かけら 10こで 1かい、10かいめは ★★いじょう
+    await p.evaluate(() => closePop());
+    const gres = await p.evaluate(async () => {
+      const T = await import('./js/treasure.js'), TD = __dg.D.treasure, o = {}; TD.shards = 100; TD.gacha = { pulls: 0, pity: 0 };
+      const r0 = Math.random; let rares = [];
+      Math.random = () => 0.99; // ★ ばかり でる ように
+      for (let i = 0; i < 10; i++) { T.gachaPop(); T.gachaGo(); rares.push(T.gachaLast()); await new Promise(res => setTimeout(res, 950)); closePop(); }
+      Math.random = r0; T.gachaBack(); closePop();
+      o.cost = TD.gacha.pulls === 10 && TD.shards < 100; /* ダブりで かけらが すこし もどる */ o.pity = rares.slice(0, 9).every(x => x === 1) && rares[9] >= 2; o.rares = rares.join('');
+      return o;
+    });
+    ok(gres.cost && gres.pity, 'カードガチャ（かけら 10こで 1かい・10かいめは ★★いじょう かくてい） ' + JSON.stringify(gres));
+    // コンプリートで きねんの かんむり
+    ok(await p.evaluate(async () => { const T = await import('./js/treasure.js'), { CARDS } = await import('./js/cards.js'), TD = __dg.D.treasure; CARDS.forEach(c => { if (c.id !== 'Z3') TD.cards[c.id] = TD.cards[c.id] || { n: 1, first: 1 }; }); delete TD.cards.Z3; TD.rewarded.complete = false;
+      for (let k = 0; k < 40 && !TD.cards.Z3; k++) T.giveCard(3, null); closePop(); return TD.rewarded.complete && S.owned.includes('h_treasure'); }), '78まい コンプリートで きねんの「たからさがしの かんむり」');
+    await p.waitForTimeout(300); await p.evaluate(() => closePop());
     // ちゅうだん → つづきから（たからさがしと えいごは べつべつ）
     const n0 = await p.evaluate(() => Object.keys(__dg.D.treasure.cards).length), fl0 = await p.evaluate(() => __dg.run.floor);
     await p.goto(B + 'index.html'); await p.goto(B + 'dungeon/index.html'); await p.waitForSelector('body[data-ready="1"]');
