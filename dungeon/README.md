@@ -7,7 +7,7 @@
 - チュートリアル「れんしゅうの へや」（はじめては かならず。2かいめからは「みる／とばす」。タイトルの「あそびかた」からも）
   - 14だんかい（うごく・しらべる・ひろう・たべる・こうげき（ボタン）・ぶつかって こうげき・key・たからばこ・まほうの ほん・よむ・fire・sword・そうび・かいだん）。せつめいは 1ぎょう、つぎに する ことは マップの やじるし と ひかる ボタン。それ いがいの そうさは できない。せんとうの ひょうじが おわるまで つぎの だんかいに しない（`main.js` の `TUT`・`tutInfo`・`tutAllows`）
 - 1〜20かい。5かい ごとに ボス（king slime・queen bee・ghost king・big dragon）と どうくつの いろ（`data.js` の `MAX_FLOOR`・`BOSS_FLOORS`・`BOSS_OF`・`ZONES`）
-- てき 12（slime・rat・bat・snake・angry pig・frog・spider・bee・crab・ghost・wolf・dragon。`minFloor`〜`maxFloor` の かいに でる。とくべつな うごき：`web` いと・`wall` かべを とおる・`breath` とおくから ほのお・`def` まもり）
+- てき 14（slime・rat・bat・snake・angry pig・frog・turtle・spider・bee・crab・ghost・snowman・wolf・dragon。`hard`：ふつうの こうげきは 1だけ・まほうを おぼえてから でる。`minFloor`〜`maxFloor` の かいに でる。とくべつな うごき：`web` いと・`wall` かべを とおる・`breath` とおくから ほのお・`def` まもり）
 - アイテム 13（apple・banana・bread・meat・candy・juice・blue potion・potion・key・magic book・angel feather・torch・rope）＋ treasure box・stairs、そうび 12（sword〜gold sword・shield〜silver shield・armor〜silver armor）、まほう 15（7つの なかま `fam` × ★ `tier`。`kind` で こうか が きまる）
 - もちものの ふくろは ぶき・たて・よろい（5こずつ）・たべもの（10こ）・ほん/どうぐ（8こ）。がめんの タブは `GROUPS`（`data.js` の `BAGS`・`bagOf`）。そうびしても もちもの がめんは とじない。HPは あるいても もどらない（たべもので かいふく）
 - いまの そうびは うえの `#gear`。マップの モコにも かさねて かく（`main.js` の `drawGear`）。そうびがめんは もちもの の「そうび」タブ（`gearView`）

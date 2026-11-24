@@ -32,7 +32,8 @@ function spawnMon(run, id, x, y, extra = {}) {
 }
 function rollItem(run) {
   const known = new Set(run.spells), f = run.floor;
-  const list = WORDS.filter(w => (w.cat === 'item' || w.cat === 'equip') && w.w && (!w.minFloor || w.minFloor <= f) && !(w.id === 'magicbook' && learnable(run).every(s => known.has(s))));
+  const owned = new Set(run.inv.map(i => i.id).concat(run.items.map(i => i.id))); // おなじ そうびは なんこも でない
+  const list = WORDS.filter(w => (w.cat === 'item' || w.cat === 'equip') && w.w && (!w.minFloor || w.minFloor <= f) && (!w.maxFloor || w.maxFloor >= f || w.cat !== 'equip') && !(w.cat === 'equip' && owned.has(w.id)) && !(w.id === 'magicbook' && learnable(run).every(s => known.has(s))));
   let t = rand() * list.reduce((n, w) => n + w.w, 0);
   for (const w of list) { t -= w.w; if (t <= 0) return w.id; }
   return 'apple';
@@ -67,11 +68,14 @@ export function enterFloor(run, floor) {
       food.forEach(id => { const c = freeCell(run, start); if (c) run.items.push({ uid: run.uid++, id, x: c[0], y: c[1] }); });
     } else {
       const last = rooms[rooms.length - 1], sc = freeCell(run, last); run.stairs = { x: sc[0], y: sc[1] };
-      const mtypes = WORDS.filter(w => w.cat === 'monster' && !w.boss && w.minFloor <= floor && (!w.maxFloor || w.maxFloor >= floor)).map(w => w.id);
+      const canMagic = run.spells.some(s => WORD[s].dmg); // まほうで しか たおせない てきは、こうげきの まほうを おぼえてから
+      const mtypes = WORDS.filter(w => w.cat === 'monster' && !w.boss && w.minFloor <= floor && (!w.maxFloor || w.maxFloor >= floor) && (!w.hard || canMagic)).map(w => w.id);
       for (let i = 0; i < Math.min(8, 3 + floor); i++) { const c = freeCell(run, pick(rooms.slice(1))); if (c) spawnMon(run, pick(mtypes), c[0], c[1]); }
       for (let i = 0; i < 4 + (floor > 2 ? 1 : 0) + (floor > 10 ? 1 : 0); i++) { const c = freeCell(run, pick(rooms)); if (c) run.items.push({ uid: run.uid++, id: rollItem(run), x: c[0], y: c[1] }); }
       if (rand() < 0.45) { // たからばこ と かぎ
-        const c = freeCell(run, pick(rooms.slice(1))), k = freeCell(run, pick(rooms));
+        // たからばこは みちの でいりぐちを ふさがない ところ（となりに つうろが ない マス）
+        const nearDoor = ([x, y]) => Object.values(DIRS).some(([dx, dy]) => tileAt(run, x + dx, y + dy) === ',');
+        const R = pick(rooms.slice(1)), c = freeCell(run, R, cellsOf(R).filter(nearDoor)), k = freeCell(run, pick(rooms));
         if (c && k) { run.boxes.push({ x: c[0], y: c[1], open: false }); run.items.push({ uid: run.uid++, id: 'key', x: k[0], y: k[1] }); }
       }
     }
@@ -129,7 +133,8 @@ export function act(run, a) {
     else if (walkable(run, nx, ny)) {
       h.x = nx; h.y = ny; turn = true; ev.push({ t: 'step' });
       const it = run.items.find(i => i.x === nx && i.y === ny);
-      if (it) { if (bagRoom(run, it.id)) { run.items = run.items.filter(i => i !== it); run.inv.push({ uid: it.uid, id: it.id, peek: false }); say(`${en(it.id)} を ひろった！`); ev.push({ t: 'pickup', id: it.id }); }
+      if (it && WORD[it.id].cat === 'equip' && run.inv.some(i => i.id === it.id)) say(`${en(it.id)} は もう もっているよ`);
+      else if (it) { if (bagRoom(run, it.id)) { run.items = run.items.filter(i => i !== it); run.inv.push({ uid: it.uid, id: it.id, peek: false }); say(`${en(it.id)} を ひろった！`); ev.push({ t: 'pickup', id: it.id }); }
         else say(`「${bagName(it.id)}」が いっぱい（${BAG_MAX[bagOf(it.id)]}こ）。${en(it.id)} は ひろえない`); }
       if (onStairs(run)) ev.push({ t: 'stairs' });
     } else ev.push({ t: 'bump' });
@@ -172,8 +177,9 @@ function hurtMon(run, m, dmg, ev, how = 'hit', note = '', tier = 1) {
 function attackMon(run, m, ev) {
   run.hero.dir = m.x > run.hero.x ? 'right' : m.x < run.hero.x ? 'left' : m.y > run.hero.y ? 'down' : 'up';
   ev.push({ t: 'bubble', x: run.hero.x, y: run.hero.y, text: 'こうげき！' }); ev.push({ t: 'msg', text: 'モコの こうげき！' });
-  const raw = heroAtk(run) + ri(0, 2), def = m.def || 0;
-  hurtMon(run, m, Math.max(1, raw - def), ev, 'hit', def ? '（こうらが かたい！）' : '');
+  const raw = heroAtk(run) + ri(0, 2), def = m.def || 0, hard = WORD[m.id].hard;
+  if (hard) { hurtMon(run, m, 1, ev, 'hit', `（${hard}）`); return; } // ふつうの こうげきは 1 だけ
+  hurtMon(run, m, Math.max(1, raw - def), ev, 'hit', def ? '（かたい！）' : '');
 }
 // x,y の ちかくで アイテムを おける ゆか（かべ・はこ・てき・かいだん・ほかの アイテムが ない）。なければ その ばしょ
 function freeNear(run, x, y) {
@@ -190,15 +196,17 @@ function openBox(run, b, ev) {
   const k = run.inv.find(i => i.id === 'key');
   if (!k) { ev.push({ t: 'msg', text: `${en('treasurebox')} だ。${en('key')} が あれば あけられる` }); ev.push({ t: 'bump' }); return; }
   run.inv = run.inv.filter(i => i !== k); b.open = true;
-  const got = run.tut ? ['bread', 'shield'] : [rollItem(run), rollItem(run)]; // れんしゅうは きまった もの
+  const got = run.tut ? ['bread', 'shield'] : []; // れんしゅうは きまった もの
+  while (!run.tut && got.length < 2) { let id = rollItem(run); for (let k = 0; k < 6 && WORD[id].cat === 'equip' && got.includes(id); k++) id = rollItem(run); got.push(id); }
   const floor = [];
   for (const id of got) {
+    if (WORD[id].cat === 'equip' && run.inv.some(i => i.id === id)) continue; // もう もっている そうびは ふえない
     if (bagRoom(run, id)) { run.inv.push({ uid: run.uid++, id, peek: false }); continue; }
     // もちものが いっぱい → モコの まわりの あいている ゆかに おく（ふんだら ひろえる）
     const c = freeNear(run, run.hero.x, run.hero.y);
     run.items.push({ uid: run.uid++, id, x: c[0], y: c[1] }); floor.push(id);
   }
-  ev.push({ t: 'open', got }); ev.push({ t: 'used', id: 'key' });
+  ev.push({ t: 'bubble', x: run.hero.x, y: run.hero.y, text: 'Open, treasure box!' }); ev.push({ t: 'open', got }); ev.push({ t: 'used', id: 'key' });
   ev.push({ t: 'msg', text: `${en('key')} で ${en('treasurebox')} を あけた！ ${got.map(en).join(' と ')} が はいっていた！` });
   if (floor.length) ev.push({ t: 'msg', text: `もちものが いっぱい！ ${floor.map(en).join(' と ')} は ゆかに おいたよ（「${bagName(floor[0])}」）` });
 }

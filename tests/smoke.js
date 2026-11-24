@@ -1152,6 +1152,28 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     await p.waitForTimeout(3500); await p.click('#bMagic'); await p.waitForTimeout(150);
     ok(await p.evaluate(() => { const row = document.querySelector('#ov .mrow'); return row && /fire/.test(row.textContent) && /big fire/.test(row.textContent) && /wide fire/.test(row.textContent); }), 'まほう：おなじ なかまを ならべて ひょうじ');
     await p.click('#ov [data-act=close]');
+    // かたい てき・たからばこの ばしょ・おなじ そうび・Open, treasure box!
+    const v4 = await p.evaluate(async () => {
+      const G = await import('./js/game.js'), o = {};
+      const r = __dg.run, h = r.hero; r.mons = [{ uid: 7501, id: 'turtle', x: h.x + 1, y: h.y, hp: 10, maxhp: 10, atk: 0, def: 0, exp: 1, tick: 0 }]; h.dir = 'right';
+      const res = __dg.act({ t: 'attack' }); o.hard = r.mons[0] && r.mons[0].hp === 9 && /まほうで たおそう/.test(document.getElementById('log').textContent); r.mons = [];
+      const hardIds = ['turtle', 'crab', 'snowman']; let noMagic = 0, withMagic = 0, boxBad = 0, boxes = 0;
+      for (let i = 0; i < 60; i++) {
+        const t = G.newRun(false); t.spells = []; G.enterFloor(t, 12); noMagic += t.mons.filter(m => hardIds.includes(m.id)).length;
+        t.spells = ['fire']; G.enterFloor(t, 12); withMagic += t.mons.filter(m => hardIds.includes(m.id)).length;
+        for (const b of t.boxes) { boxes++; if ([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => G.tileAt(t, b.x + dx, b.y + dy) === ',')) boxBad++; }
+      }
+      o.hardAfterMagic = noMagic === 0 && withMagic > 0; o.box = boxes > 5 && boxBad === 0;
+      r.inv = [{ uid: 7510, id: 'sword', peek: false }]; const x = h.x, y = h.y;
+      r.items = r.items.filter(i => !(i.x === x + 1 && i.y === y)); r.boxes = r.boxes.filter(b => !(b.x === x + 1 && b.y === y)); r.stairs = null; r.mons = [];
+      r.map.tiles[y] = r.map.tiles[y].slice(0, x + 1) + '.' + r.map.tiles[y].slice(x + 2);
+      r.items.push({ uid: 7511, id: 'sword', x: x + 1, y }); __dg.act({ t: 'move', dir: 'right' });
+      o.dup = r.inv.filter(i => i.id === 'sword').length === 1 && /もう もっている/.test(document.getElementById('log').textContent);
+      h.x = x; h.y = y; r.boxes.push({ x: x + 1, y, open: false }); r.items = r.items.filter(i => i.uid !== 7511); r.inv.push({ uid: 7512, id: 'key', peek: false });
+      const ob = __dg.act({ t: 'move', dir: 'right' }); o.open = ob.ev.some(e => e.t === 'bubble' && e.text === 'Open, treasure box!');
+      return o;
+    });
+    ok(Object.values(v4).every(Boolean), 'かたい てきは 1だけ（まほうを おぼえてから でる）・たからばこは みちを ふさがない・おなじ そうびは ふえない・Open, treasure box! ' + JSON.stringify(v4));
     // 20かいの ボス → テスト → クリア ⭐30
     const pts20 = await p.evaluate(() => S.points);
     await p.evaluate(() => { for (let k = 0; k < 20 && __dg.run.floor < 20; k++) { const r = __dg.run; r.tested = r.floor; r.stairs = { x: r.hero.x, y: r.hero.y }; __dg.goDown(); } closePop(); });

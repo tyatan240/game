@@ -315,6 +315,29 @@ Object.assign(WORD_ART, {
   },
 });
 
+// ===== まほうで しか たおせない てき（かたい）=====
+Object.assign(WORD_ART, {
+  dg_turtle: c => {
+    c.fillStyle = '#a8d878'; c.strokeStyle = '#6a9a48'; c.lineWidth = 3;
+    [[26, 82], [74, 82]].forEach(([x, y]) => { c.beginPath(); c.ellipse(x, y, 9, 6, 0, 0, Math.PI * 2); c.fill(); c.stroke(); });
+    c.beginPath(); c.ellipse(84, 62, 13, 11, 0, 0, Math.PI * 2); c.fill(); c.stroke();
+    eyes(c, 82, 92, 59, 2.8); c.strokeStyle = INK; c.lineWidth = 2; c.beginPath(); c.arc(88, 66, 3, 0.3, Math.PI - 0.3); c.stroke();
+    c.fillStyle = '#6aa858'; c.strokeStyle = '#3a6a30'; c.lineWidth = 3; c.beginPath(); c.moveTo(14, 78); c.quadraticCurveTo(16, 34, 48, 32); c.quadraticCurveTo(78, 34, 78, 78); c.closePath(); c.fill(); c.stroke();
+    c.strokeStyle = '#3a6a30'; c.lineWidth = 2.5; c.fillStyle = '#88c070';
+    [[46, 50, 10], [30, 64, 8], [62, 64, 8]].forEach(([x, y, r]) => { c.beginPath(); for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; i ? c.lineTo(x + r * Math.cos(a), y + r * Math.sin(a)) : c.moveTo(x + r, y); } c.closePath(); c.fill(); c.stroke(); });
+    c.fillStyle = 'rgba(255,255,255,.45)'; c.beginPath(); c.ellipse(32, 42, 7, 4, -0.5, 0, Math.PI * 2); c.fill();
+  },
+  dg_snowman: c => {
+    c.fillStyle = '#fff'; c.strokeStyle = '#a8c0d8'; c.lineWidth = 3;
+    circle(c, 50, 70, 24); c.fill(); c.stroke(); circle(c, 50, 36, 17); c.fill(); c.stroke();
+    c.fillStyle = '#ff6b6b'; rr(c, 30, 48, 40, 8, 4); c.fill(); c.fillRect(56, 50, 8, 18);
+    c.fillStyle = '#4a5a7a'; rr(c, 36, 12, 28, 8, 2); c.fill(); rr(c, 41, 0, 18, 14, 3); c.fill();
+    eyes(c, 44, 56, 34, 3); c.fillStyle = '#ff9a3a'; c.beginPath(); c.moveTo(50, 39); c.lineTo(62, 42); c.lineTo(50, 44); c.fill();
+    c.fillStyle = INK; [62, 72, 82].forEach(y => { circle(c, 50, y, 2.6); c.fill(); });
+    c.strokeStyle = '#8a6a4a'; c.lineWidth = 3; c.lineCap = 'round'; [[-1], [1]].forEach(([s]) => { c.beginPath(); c.moveTo(50 + s * 22, 64); c.lineTo(50 + s * 38, 50); c.moveTo(50 + s * 33, 54); c.lineTo(50 + s * 36, 46); c.stroke(); });
+  },
+});
+
 // マップの タイル（キャンバスに じかに かく。T … タイルの おおきさ）
 export function drawTile(c, ch, x, y, T, seen, lit, zone) {
   if (!seen) { c.fillStyle = '#1e1a2a'; c.fillRect(x, y, T, T); return; }

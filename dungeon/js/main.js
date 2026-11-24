@@ -239,7 +239,7 @@ async function handle(ev, slow) {
     else if (e.t === 'boss') bossDown(e.id);
     else if (e.t === 'level') { sfx.unlock(); fx.push({ kind: 'heal', x: run.hero.x, y: run.hero.y, n: 'Lv' + e.lv, t0: performance.now() }); }
     else if (e.t === 'hurt') { sfx.bump(); stopWalk(); }
-    else if (e.t === 'open') { sfx.chest(); e.got.forEach(meet); tutFlag('open'); }
+    else if (e.t === 'open') { speak('Open, treasure box!'); setTimeout(() => sfx.chest(), 900); const got = e.got; if (fast) got.forEach(meet); else setTimeout(() => got.forEach(meet), 1700); tutFlag('open'); } // あける ときは えいごで「Open, treasure box!」
     else if (e.t === 'bump') sfx.bump();
     else if (e.t === 'revive') sfx.unlock();
     else if (e.t === 'stairs') stairs = true;
