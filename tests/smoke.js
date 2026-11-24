@@ -365,7 +365,7 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
     await p.goto(B + 'program/index.html'); await p.waitForTimeout(300);
     const first = await p.evaluate(() => LEVELS.findIndex(l => l.set === 2));
-    ok(first === 12 && await p.evaluate(() => LEVELS.length) === 30, `ステージ 13〜30 を うしろに ついか（${first}〜）`);
+    ok(first === 12 && await p.evaluate(() => LEVELS.filter(l => l.set === 2).length) === 18 && await p.evaluate(() => LEVELS[29].set === 2), `ステージ 13〜30 を うしろに ついか（${first}〜）`);
     const res = [];
     for (let k = 0; k < sols.length; k++) {
       const i = first + k;
@@ -380,6 +380,53 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     await p.evaluate(() => { closePop(); openLv(28); });
     const vis = await p.evaluate(() => [...document.querySelectorAll('.pbtn, .big')].every(b => { const r = b.getBoundingClientRect(); return r.bottom <= innerHeight && r.top >= 0; }));
     ok(vis, 'iPad よこで やじるし・じっこうが がめんに おさまる');
+    await ctx.close();
+  }
+
+  console.log('8h. プログラミングの あたらしい しゅるい（むしとり・いろぬり・かぎと とびら）');
+  {
+    const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 }, serviceWorkers: 'block' });
+    await ctx.addInitScript(() => { const st = window.setTimeout; window.setTimeout = (f, t, ...a) => st(f, Math.min(t || 0, 10), ...a); });
+    const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
+    await p.goto(B + 'program/index.html'); await p.waitForTimeout(300);
+    const info = await p.evaluate(() => ({ first: LEVELS.findIndex(l => l.set === 3), n: LEVELS.filter(l => l.set === 3).length, kinds: ['bug', 'paint', 'key'].map(k => LEVELS.filter(l => l.kind === k).length) }));
+    ok(info.first === 30 && info.n === 21 && info.kinds.join() === '7,8,6', 'うしろに たすだけ（31〜。むしとり7・いろぬり8・かぎ6）' + JSON.stringify(info));
+    ok(await p.evaluate(() => !unlocked(30) && !unlocked(37) && !unlocked(45)), 'はじめは かぎが かかっている');
+    await p.evaluate(() => { S.best = { 5: 1 }; save(); render(); });
+    ok(await p.evaluate(() => unlocked(30) && unlocked(37) && unlocked(45) && !unlocked(31)), '➡️ ステージ6 を クリアすると 3つの しゅるいの 1つめが ひらく');
+    // むしとり：もとは しっぱい、1か所 なおすと クリア
+    const bug = await p.evaluate(() => LEVELS.map((l, i) => [l, i]).filter(([l]) => l.kind === 'bug').map(([l, i]) => {
+      const P = parse(l); if (simulate(P, l.bugProg).win) return i;
+      const pr = l.bugProg; let fix = false;
+      pr.forEach((b, ii) => { if (b.t === 'loop') { for (let n = 2; n <= 9; n++) { const q = clone(pr); q[ii].n = n; if (simulate(P, q).win) fix = true }
+        b.body.forEach((x, j) => 'UDLR'.split('').forEach(d => { const q = clone(pr); q[ii].body[j].t = d; if (simulate(P, q).win) fix = true })) }
+        else 'UDLR'.split('').forEach(d => { const q = clone(pr); q[ii].t = d; if (simulate(P, q).win) fix = true }) });
+      return fix ? null : i }).filter(x => x !== null));
+    ok(bug.length === 0, 'むしとり：もとの プログラムは しっぱい・1か所 なおすと クリア ' + JSON.stringify(bug));
+    // いろぬり・かぎ：てほんの こたえで ⭐3（par と おなじ かず）
+    const sols = { 37: 'RPRPRP', 38: 'DRPRPDPLP', 39: 'UURPRPUPDRPDLP', 40: 'DRPDPRPDPURPUP', 41: '6(RP)', 42: '4(DRP)', 43: '4(RPR)', 44: 'P3(RP)3(DP)3(LP)2(UP)', 45: 'RRDDLL', 46: 'UURDRRRD', 47: 'RRRRDDLLLL', 48: 'RRDDRR', 49: 'DDRUURRR', 50: 'RRDDLLRRRRUU' };
+    const sres = await p.evaluate(sols => Object.entries(sols).map(([i, t]) => { const pr = parseProg(t), n = pr.reduce((n, b) => n + (b.t === 'loop' ? 1 + b.body.length : 1), 0); return { i: +i, win: simulate(parse(LEVELS[i]), pr).win, n, par: LEVELS[i].par } }).filter(r => !r.win || r.n !== r.par), sols);
+    ok(sres.length === 0, 'いろぬり・かぎと とびら：ぜんぶ ⭐3 の こたえが ある ' + JSON.stringify(sres));
+    ok(await p.evaluate(() => { const P = parse(LEVELS[46]); const r1 = simulate(P, parseProg('URR')), P2 = parse(LEVELS[48]); const r2 = simulate(P2, parseProg('DD')); const P3 = parse(LEVELS[40]); const r3 = simulate(P3, parseProg('P')); return /かぎ/.test(r1.msg) && /みず/.test(r2.msg) && /おてほんに ない/.test(r3.msg) }), 'かぎが ない とびら・みず・ちがう ところを ぬる は しっぱい');
+    // むしとり を がめんで：まちがいを タップ → ただしい やじるし → じっこう
+    await p.evaluate(() => { closePop(); openLv(30); });
+    await p.click('#b2'); ok(await p.evaluate(() => document.querySelector('#b2').classList.contains('sel')), 'ブロックを タップで えらぶ');
+    await p.click('.pal .pbtn >> nth=3');
+    ok(await p.evaluate(() => prog.map(b => b.t).join('') === 'RRRR' && changes() === 1 && document.querySelector('#b2').classList.contains('fixed')), 'えらんだ ブロックが → に かわる（なおした かず 1）');
+    await p.evaluate(() => run()); await p.waitForSelector('#pop', { timeout: 15000 });
+    ok(await p.evaluate(() => S.best[30] === 3 && /1かい なおして/.test(document.querySelector('#pop').textContent)), 'むしとり クリア ⭐3');
+    // いろぬり を がめんで（🖌 ボタン）
+    await p.evaluate(() => { closePop(); openLv(37); });
+    for (const k of ['R', 'P', 'R', 'P', 'R', 'P']) await p.evaluate(k => add(k), k);
+    ok(await p.evaluate(() => !!document.querySelector('.pbtn.paint') && document.querySelectorAll('#prog .blk.paint').length === 3), '🖌 ぬる ブロックが ある');
+    await p.evaluate(() => run()); await p.waitForSelector('#pop', { timeout: 15000 });
+    ok(await p.evaluate(() => S.best[37] === 3 && document.querySelectorAll('.cell.painted').length === 3 && /「せん」が かけた/.test(document.querySelector('#pop').textContent)), 'いろぬり クリア：ぬった マスに いろ');
+    // かぎと とびら を がめんで
+    await p.evaluate(() => { closePop(); openLv(50); prog = parseProg('RRDDLLRRRRUU'); render(); run(); }); await p.waitForSelector('#pop', { timeout: 15000 });
+    ok(await p.evaluate(() => S.best[50] === 3 && vis.sw && vis.open.size === 1 && !!document.querySelector('.legend')), 'かぎと とびら クリア（とびらが あき、はしが かかる）');
+    const lh = await p.evaluate(async () => { await LH.flushed(); return (await LH.getAttempts()).filter(a => a.subject === 'prog').map(a => a.topic) });
+    ok(['bug', 'paint', 'key'].every(t => lh.includes(t)), 'がくしゅう きろくに しゅるいが のこる ' + JSON.stringify([...new Set(lh)]));
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / '));
     await ctx.close();
   }
 

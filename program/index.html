@@ -101,6 +101,26 @@ main{flex:1;padding:12px;display:flex;flex-direction:column;gap:12px}
  main.play .pbtn.lp{font-size:16px}
  main.play .blk{width:48px;height:48px;font-size:27px}
 }
+/* あたらしい しゅるい：むしとり・いろぬり・かぎと とびら */
+.sbtn.bug{background:#ffeef0;box-shadow:0 4px 0 #f3b8c0}
+.sbtn.paint{background:#f1ecff;box-shadow:0 4px 0 #c9b8f3}
+.sbtn.key{background:#e9f8ea;box-shadow:0 4px 0 #a9dcaf}
+.cell svg.tile{width:78%;height:78%}
+.cell.water{background:#9fd6f3;box-shadow:inset 0 -4px 0 #74bde3}
+.cell.tgt{background:#fff;box-shadow:inset 0 0 0 3px var(--pc,#ff7aa8);background-image:radial-gradient(circle,var(--pcl,#ffd6e5) 22%,transparent 24%)}
+.cell.painted{background:var(--pc,#ff7aa8)!important;box-shadow:inset 0 -4px 0 rgba(0,0,0,.12);background-image:none}
+.cell.bad{background:#cfd8de!important;background-image:repeating-linear-gradient(45deg,transparent 0 6px,rgba(229,72,77,.35) 6px 9px)!important}
+.cell.ppop{animation:paintpop .35s}
+@keyframes paintpop{0%{transform:scale(.6)}70%{transform:scale(1.12)}100%{transform:scale(1)}}
+.blk.paint{background:#a27cf0;box-shadow:0 3px 0 #7d57cc}
+.blk svg,.pbtn svg{width:70%;height:70%}
+.pbtn.paint{background:#a27cf0;box-shadow:0 4px 0 #7d57cc}
+.blk.sel{outline:4px solid #e5484d;outline-offset:2px;transform:scale(1.08)}
+.blk.fixed{background:#ff9f43;box-shadow:0 3px 0 #d97a1c}
+.loophd.fixed{background:#ff7a1a}
+.bugtip{background:#fff6f6;border-radius:14px;padding:8px 10px;font-weight:800;font-size:13px;color:#c0464f;text-align:center}
+.legend{display:flex;flex-wrap:wrap;gap:6px 12px;justify-content:center;font-size:12px;font-weight:800;color:#5d7f93}
+.legend span{display:flex;align-items:center;gap:3px}.legend svg{width:22px;height:22px}
 .buildcard{display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;background:linear-gradient(120deg,#eaf7ff,#f1ffe8)}
 .buildcard svg{width:64px;height:64px;flex:none}
 .buildcard b{display:block;font-size:17px;color:#2b7fa8}
@@ -150,27 +170,107 @@ const LEVELS=[
  {set:2,map:['S.....*','.#####.','.#####.','G.....*'],loop:true,par:6,max:7,hint:'ぐるっと まわって ⭐ を 2こ'},
  {set:2,map:['S#...#..G','.#.#.#.##','...#...##'],loop:true,par:9,max:10,hint:'いったり きたり。おなじ かたちが 2かい'},
  {set:2,map:['S.....*','#####..','*.....#','..#####','......G'],loop:true,par:11,max:12,hint:'さいごの ちょうせん！ ながい みちを 🔁 で'},
+
+ /* ---- あたらしい しゅるい（set:3。うしろに たすだけ。need：この ステージを クリアすると ひらく） ----
+    kind:'bug'   むしとり：bug の プログラムは まちがいが 1つ。ブロックを タップして なおす（⭐3 は 1かい で なおす）
+    kind:'paint' いろぬり：p を 🖌 で ぬる（P は スタート かつ ぬる ところ）。おてほんと おなじに なったら クリア
+    kind:'key'   かぎと とびら：k かぎ / D とびら（かぎで あく）/ o スイッチ / = はし（スイッチで かかる）/ ~ みず */
+ {set:3,kind:'bug',need:5,map:['S...G'],bug:'RRDR',hint:'ピコが とちゅうで とまっちゃう！ まちがいを 1つ なおそう'},
+ {set:3,kind:'bug',map:['S....','....G'],bug:'RRRUR',hint:'どこで おかしく なるかな？ ▶ で うごかして みよう'},
+ {set:3,kind:'bug',map:['S.#..','..#..','.....','....G'],bug:'DURRRRD',hint:'かべに ぶつかる まえの ブロックが あやしい'},
+ {set:3,kind:'bug',map:['S..','.*.','..G'],bug:'RDRR',hint:'⭐ を とってから 🏁 へ いきたいのに…'},
+ {set:3,kind:'bug',map:['S....G'],bug:'3(R)',loop:true,hint:'🔁 の かいすうが ちがう かも？'},
+ {set:3,kind:'bug',map:['....G','...*.','..*..','.*...','S....'],bug:'4(UL)',loop:true,hint:'かいだんを のぼりたい。🔁 の なかを よく みて'},
+ {set:3,kind:'bug',map:['S...#','###.#','G....'],bug:'3(R)2(D)3(R)',loop:true,hint:'さいごの ほうが あやしい…'},
+ {set:3,kind:'paint',need:5,color:'#ff7aa8',name:'せん',map:['Sppp.'],hint:'🖌 ぬる で、てんてんの マスを ぬろう'},
+ {set:3,kind:'paint',color:'#4ab3f4',name:'しかく',map:['S...','.pp.','.pp.','....'],hint:'しかくを ぬろう。どの じゅんばんが はやい？'},
+ {set:3,kind:'paint',color:'#3ccf8e',name:'プラス',map:['.....','..p..','.ppp.','..p..','S....'],hint:'＋ の かたちを ぬろう'},
+ {set:3,kind:'paint',color:'#ff5a7a',name:'ハート',map:['S....','.p.p.','.ppp.','..p..'],hint:'ハートを かこう！'},
+ {set:3,kind:'paint',color:'#ffb020',name:'ながい せん',map:['Spppppp'],loop:true,par:3,max:5,hint:'🔁 の なかに → と 🖌 を いれよう'},
+ {set:3,kind:'paint',color:'#a27cf0',name:'ななめの せん',map:['S....','.p...','..p..','...p.','....p'],loop:true,par:4,max:6,hint:'↓→🖌 の くりかえし'},
+ {set:3,kind:'paint',color:'#2fbfb0',name:'てんてん',map:['Sp.p.p.p.'],loop:true,par:4,max:6,hint:'ぬる、とばす、ぬる、とばす…'},
+ {set:3,kind:'paint',color:'#e0524f',name:'まど',map:['Pppp','p..p','p..p','pppp'],loop:true,par:13,max:15,hint:'ちょうせん！ 🔁 を 4つ つかって わくを かこう'},
+ {set:3,kind:'key',need:5,map:['S.k','##D','G..'],hint:'かぎを とると とびらが あくよ'},
+ {set:3,kind:'key',map:['k.#..','..D..','S.#.G'],hint:'さきに かぎを とりに いこう'},
+ {set:3,kind:'key',map:['S..k.','####D','G.Dk.'],hint:'とびらが 2つ。かぎも 2つ'},
+ {set:3,kind:'key',map:['S.o..','~~=~~','....G'],hint:'スイッチを ふむと はしが かかるよ'},
+ {set:3,kind:'key',map:['S.=.G','..~..','o.~..'],hint:'スイッチは どこかな？'},
+ {set:3,kind:'key',map:['S.k#G','##D#=','o....'],hint:'ちょうせん！ かぎ と スイッチ の じゅんばんは？'},
 ];
 const DIR={U:[0,-1,'↑'],D:[0,1,'↓'],L:[-1,0,'←'],R:[1,0,'→']};
+const KN={bug:'むしとり',paint:'いろぬり',key:'かぎと とびら'};
+// 'RR3(RD)P' → プログラム
+function parseProg(t){const out=[];let i=0;while(i<t.length){const c=t[i];
+ if(/\d/.test(c)){const j=t.indexOf(')',i);out.push({t:'loop',n:+c,body:t.slice(i+2,j).split('').map(x=>({t:x}))});i=j+1}else{out.push({t:c});i++}}return out}
+const clone=p=>JSON.parse(JSON.stringify(p));
+// ブロックの え（🖌 ぬる は SVG）
+const BRUSH='<svg viewBox="0 0 24 24"><path d="M14 3l7 7-7 7-4-4z" fill="#fff"/><path d="M10 13l-5 5c-1 1-1 3 1 3 3 0 4-1 5-3l2-2z" fill="#ffd34f" stroke="#fff" stroke-width="1.2"/></svg>';
+const lab=t=>t==='P'?BRUSH:DIR[t][2];
+const labT=t=>t==='P'?'ぬる':DIR[t][2];
+// マスの え
+const TILE={
+ key:'<svg class="tile" viewBox="0 0 40 40"><circle cx="13" cy="20" r="8" fill="none" stroke="#f2b400" stroke-width="5"/><path d="M20 20h16M30 20v7M35 20v5" stroke="#f2b400" stroke-width="5" stroke-linecap="round"/></svg>',
+ door:'<svg class="tile" viewBox="0 0 40 40"><rect x="7" y="3" width="26" height="35" rx="5" fill="#b07a46" stroke="#7d5230" stroke-width="3"/><path d="M13 9h14M13 17h14M13 25h14" stroke="#8d5d33" stroke-width="2"/><circle cx="20" cy="21" r="4" fill="#ffd34f"/><path d="M19 23h2l1 6h-4z" fill="#ffd34f"/></svg>',
+ open:'<svg class="tile" viewBox="0 0 40 40"><rect x="7" y="3" width="26" height="35" rx="5" fill="none" stroke="#b07a46" stroke-width="3" stroke-dasharray="4 3"/><path d="M7 3l9 4v32l-9-1z" fill="#b07a46" stroke="#7d5230" stroke-width="2"/></svg>',
+ sw:'<svg class="tile" viewBox="0 0 40 40"><rect x="5" y="22" width="30" height="12" rx="4" fill="#8fa6b5"/><ellipse cx="20" cy="22" rx="10" ry="7" fill="#e5484d" stroke="#b8343a" stroke-width="2"/></svg>',
+ swOn:'<svg class="tile" viewBox="0 0 40 40"><rect x="5" y="22" width="30" height="12" rx="4" fill="#8fa6b5"/><ellipse cx="20" cy="26" rx="10" ry="4" fill="#3ccf8e" stroke="#22a56b" stroke-width="2"/></svg>',
+ wave:'<svg class="tile" viewBox="0 0 40 40"><path d="M4 16q4-4 8 0t8 0 8 0 8 0M4 27q4-4 8 0t8 0 8 0 8 0" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".8"/></svg>',
+ bridge:'<svg class="tile" viewBox="0 0 40 40"><rect x="2" y="6" width="36" height="28" rx="3" fill="#c9915a"/><path d="M2 13h36M2 20h36M2 27h36" stroke="#8d5d33" stroke-width="2"/></svg>',
+};
 
 function parse(lv){
- const g=lv.map.map(r=>r.split(''));const H=g.length,W=g[0].length;let s,goal,stars=[];
- g.forEach((r,y)=>r.forEach((c,x)=>{if(c==='S')s=[x,y];if(c==='G')goal=[x,y];if(c==='*')stars.push([x,y])}));
- return {g,W,H,s,goal,stars};
+ const g=lv.map.map(r=>r.split(''));const H=g.length,W=g[0].length;let s,goal,stars=[],keys=[],doors=[],tg=[];
+ g.forEach((r,y)=>r.forEach((c,x)=>{if(c==='S'||c==='P')s=[x,y];if(c==='G')goal=[x,y];if(c==='*')stars.push([x,y]);
+  if(c==='k')keys.push([x,y]);if(c==='D')doors.push([x,y]);if(c==='p'||c==='P')tg.push(x+'_'+y)}));
+ return {g,W,H,s,goal,stars,keys,doors,tg,tgS:new Set(tg)};
+}
+// 1ぽ うごく（すすめない ときは msg）。st を かきかえる
+function move1(P,st,d){
+ const [dx,dy]=DIR[d],nx=st.pos[0]+dx,ny=st.pos[1]+dy,out=nx<0||ny<0||nx>=P.W||ny>=P.H,c=out?'#':P.g[ny][nx],sk=nx+'_'+ny,e={dx,x:nx,y:ny};
+ if(out)return {msg:'そとに でちゃう！',...e};
+ if(c==='#')return {msg:'かべに ぶつかっちゃった！',...e};
+ if(c==='~'||(c==='='&&!st.sw))return {msg:'みずが あって わたれない！',...e};
+ if(c==='D'&&!st.open.has(sk)){if(st.keys<1)return {msg:'かぎが ないと とびらが あかない！',...e};st.keys--;st.open.add(sk);e.open=sk}
+ st.pos=[nx,ny];
+ if(c==='*'&&!st.got.has(sk)){st.got.add(sk);e.star=sk}
+ if(c==='k'&&!st.keyGot.has(sk)){st.keyGot.add(sk);st.keys++;e.key=sk}
+ if(c==='o'&&!st.sw){st.sw=true;e.sw=1}
+ return e;
+}
+const newSt=P=>({pos:[...P.s],keys:0,got:new Set(),keyGot:new Set(),open:new Set(),sw:false,paint:new Set()});
+const isPaint=P=>P.tg.length>0;
+// プログラムを さいごまで ためす（うごきの れつと、かち・まけ）
+function simulate(P,pr){
+ const st=newSt(P),ev=[];
+ for(const s of steps(pr)){
+  if(s.d==='P'){const k=st.pos.join('_');st.paint.add(k);ev.push({k:'paint',s,key:k,bad:!P.tgS.has(k)});continue}
+  const e=move1(P,st,s.d);e.s=s;
+  if(e.msg){e.k='bonk';ev.push(e);return {ev,win:false,msg:e.msg,st}}
+  e.k='move';ev.push(e);
+  if(!isPaint(P)&&e.x===P.goal[0]&&e.y===P.goal[1]&&st.got.size===P.stars.length)return {ev,win:true,st};
+ }
+ if(isPaint(P)){const extra=[...st.paint].some(k=>!P.tgS.has(k)),miss=P.tg.some(k=>!st.paint.has(k));
+  if(!extra&&!miss)return {ev,win:true,st};
+  return {ev,win:false,st,msg:extra?'おてほんに ない ところを ぬっちゃった':'まだ ぬって いない ところが あるよ',left:P.tg.filter(k=>!st.paint.has(k)).length}}
+ return {ev,win:false,st,msg:'🏁 に とどかなかった…'};
 }
 // ⭐ を ぜんぶ ひろって ゴールする さいたん てすう（loop なし ステージ よう）
+// （かぎ・とびら・スイッチ・ぬる も ふくめて しらべる）
 function shortest(lv){
- const P=parse(lv),full=(1<<P.stars.length)-1,key=(x,y,m)=>x+','+y+','+m;
- const q=[[P.s[0],P.s[1],0,0]],seen=new Set([key(P.s[0],P.s[1],0)]);
- while(q.length){const [x,y,m,d]=q.shift();
-  for(const k in DIR){const nx=x+DIR[k][0],ny=y+DIR[k][1];
-   if(nx<0||ny<0||nx>=P.W||ny>=P.H||P.g[ny][nx]==='#')continue;
-   let nm=m;P.stars.forEach((s,i)=>{if(s[0]===nx&&s[1]===ny)nm|=1<<i});
-   if(nx===P.goal[0]&&ny===P.goal[1]&&nm===full)return d+1;
-   const kk=key(nx,ny,nm);if(!seen.has(kk)){seen.add(kk);q.push([nx,ny,nm,d+1])}}}
+ const P=parse(lv),paint=isPaint(P),acts=paint?[...Object.keys(DIR),'P']:Object.keys(DIR);
+ const sk=st=>[st.pos,[...st.got].sort(),[...st.keyGot].sort(),[...st.open].sort(),st.sw,[...st.paint].sort()].join('|');
+ const done=st=>paint?P.tg.every(k=>st.paint.has(k)):st.pos[0]===P.goal[0]&&st.pos[1]===P.goal[1]&&st.got.size===P.stars.length;
+ const cp=st=>({pos:[...st.pos],keys:st.keys,got:new Set(st.got),keyGot:new Set(st.keyGot),open:new Set(st.open),sw:st.sw,paint:new Set(st.paint)});
+ const s0=newSt(P),q=[[s0,0]],seen=new Set([sk(s0)]);
+ while(q.length){const [st,d]=q.shift();
+  for(const a of acts){const n=cp(st);
+   if(a==='P'){const k=n.pos.join('_');if(!P.tgS.has(k)||n.paint.has(k))continue;n.paint.add(k)}
+   else if(move1(P,n,a).msg)continue;
+   if(done(n))return d+1;
+   const kk=sk(n);if(!seen.has(kk)){seen.add(kk);q.push([n,d+1])}}}
  return 99;
 }
-LEVELS.forEach(lv=>{if(!lv.par)lv.par=shortest(lv);if(!lv.max)lv.max=lv.par+4});
+LEVELS.forEach(lv=>{if(lv.kind==='bug'){lv.bugProg=parseProg(lv.bug);lv.par=1;lv.max=99;return}if(!lv.par)lv.par=shortest(lv);if(!lv.max)lv.max=lv.par+4});
 
 // ===== ほぞん =====
 const LS='piko-prog-v1';
@@ -199,7 +299,7 @@ idbOpen().then(db=>{const r=db.transaction('kv').objectStore('kv').get(HOUSE);r.
 const ptsChip=()=>`<span class="hbtn pts">⭐ ${housePts()}</span>`;
 const cleared=i=>(S.best[i]||0)>0;
 const adminOn=()=>{try{return !!((houseGet().settings||{}).admin)}catch(e){return false}}; // おうちの 管理者モード
-const unlocked=i=>i===0||cleared(i-1)||adminOn();
+const unlocked=i=>i===0||cleared(LEVELS[i].need!=null?LEVELS[i].need:i-1)||adminOn();
 
 // ===== おと =====
 let AC=null;
@@ -227,7 +327,7 @@ function render(){app.innerHTML=view==='title'?titleV():playV();if(view==='play'
 
 function titleV(){
  const btn=(lv,i)=>{const lk=!unlocked(i),b=S.best[i]||0;
-  return `<button class="sbtn ${lk?'lock':lv.loop?'loop':''}" ${lk?'disabled':`onclick="openLv(${i})"`}>${lk?'🔒':i+1}<small>${lk?'':'★'.repeat(b)+'<span style="color:#d7e2e8">'+'★'.repeat(3-b)+'</span>'}</small></button>`};
+  return `<button class="sbtn ${lk?'lock':lv.kind||(lv.loop?'loop':'')}" ${lk?'disabled':`onclick="openLv(${i})"`}>${lk?'🔒':i+1}<small>${lk?'':'★'.repeat(b)+'<span style="color:#d7e2e8">'+'★'.repeat(3-b)+'</span>'}</small></button>`};
  const a=LEVELS.map((l,i)=>[l,i]);
  return `<header><a class="hbtn" href="../index.html" style="text-decoration:none;display:flex;align-items:center">🏠</a><div class="ttl">ピコの プログラミング</div>${ptsChip()}</header>
  <main>
@@ -237,75 +337,95 @@ function titleV(){
  <div class="card"><div class="sec">🔁 くりかえし</div><div class="stages">${a.filter(([l])=>l.loop&&!l.set).map(([l,i])=>btn(l,i)).join('')}</div></div>
  <div class="card"><div class="sec">🌟 もっと ならべて</div><div class="stages">${a.filter(([l])=>!l.loop&&l.set===2).map(([l,i])=>btn(l,i)).join('')}</div></div>
  <div class="card"><div class="sec">🌟 もっと くりかえし</div><div class="stages">${a.filter(([l])=>l.loop&&l.set===2).map(([l,i])=>btn(l,i)).join('')}</div></div>
+ <div class="card"><div class="sec">🐞 むしとり（まちがいを なおす）</div><div class="stages">${a.filter(([l])=>l.kind==='bug').map(([l,i])=>btn(l,i)).join('')}</div></div>
+ <div class="card"><div class="sec">🎨 いろぬり（えを かく）</div><div class="stages">${a.filter(([l])=>l.kind==='paint').map(([l,i])=>btn(l,i)).join('')}</div></div>
+ <div class="card"><div class="sec">🔑 かぎと とびら（じゅんばんを かんがえる）</div><div class="stages">${a.filter(([l])=>l.kind==='key').map(([l,i])=>btn(l,i)).join('')}</div></div>
+ ${LEVELS.some((l,i)=>l.set===3&&!unlocked(i))?'<div class="muted">🐞🎨🔑 は ➡️ の ステージ 6 を クリアすると あそべるよ</div>':''}
  </main>`;
 }
 
 // ===== プレイ =====
-let P,prog,target,running=false,pos,face,got,timer=null;
+let P,prog,target,running=false,pos,face,got,vis,sel=null,timer=null;
 // 学習履歴（保護者レポート用）：ステージを ひらくと 1つの しゅつだい、じっこう 1かいが 1かいの かいとう
 let lhIid=null,lhTry=0;
-const progTopic=i=>i<6?'seq':i<12?'loop':i<20?'seq2':'loop2';
-const progText=()=>prog.map(b=>b.t==='loop'?`🔁${b.n}[${b.body.map(c=>DIR[c.t][2]).join('')}]`:DIR[b.t][2]).join(' ');
-function lhRun(win,stars,earn){if(!lhIid)return;lhTry++;LH.recordAttempt({questionInstanceId:lhIid,questionKey:'prog:stage-'+(cur+1),subject:'prog',topic:progTopic(cur),skill:LEVELS[cur].loop?'loop':'sequence',difficulty:cur+1,mode:'stage',questionText:`ステージ ${cur+1}（${LEVELS[cur].hint}）`,correctAnswer:`ゴール（⭐3は ${LEVELS[cur].par}こ）`,userAnswer:`${count()}こ：${progText()}`,isCorrect:!!win,attemptNumber:lhTry,earnedStars:earn||0,params:{stage:cur,stars:stars||0}})}
-function openLv(i){cur=i;P=parse(LEVELS[i]);prog=[];target=null;view='play';resetRun();render();sfx.tap();LH.startSession({subject:'prog',mode:'stage'});lhIid=LH.newInstance();lhTry=0;LH.begin(lhIid)}
-function resetRun(){clearTimeout(timer);running=false;pos=[...P.s];face=1;got=new Set()}
+const progTopic=i=>LEVELS[i].kind||(i<6?'seq':i<12?'loop':i<20?'seq2':'loop2');
+const progText=()=>prog.map(b=>b.t==='loop'?`🔁${b.n}[${b.body.map(c=>labT(c.t)).join('')}]`:labT(b.t)).join(' ');
+function lhRun(win,stars,earn){if(!lhIid)return;lhTry++;LH.recordAttempt({questionInstanceId:lhIid,questionKey:'prog:stage-'+(cur+1),subject:'prog',topic:progTopic(cur),skill:LEVELS[cur].kind||(LEVELS[cur].loop?'loop':'sequence'),difficulty:cur+1,mode:'stage',questionText:`ステージ ${cur+1}（${LEVELS[cur].hint}）`,correctAnswer:isBug()?'まちがいを 1かいで なおす':`ゴール（⭐3は ${LEVELS[cur].par}こ）`,userAnswer:isBug()?`${changes()}かい なおした：${progText()}`:`${count()}こ：${progText()}`,isCorrect:!!win,attemptNumber:lhTry,earnedStars:earn||0,params:{stage:cur,stars:stars||0}})}
+function openLv(i){cur=i;P=parse(LEVELS[i]);prog=LEVELS[i].kind==='bug'?clone(LEVELS[i].bugProg):[];target=null;sel=null;view='play';resetRun();render();sfx.tap();LH.startSession({subject:'prog',mode:'stage'});lhIid=LH.newInstance();lhTry=0;LH.begin(lhIid)}
+function resetRun(){clearTimeout(timer);running=false;pos=[...P.s];face=1;got=new Set();vis=newSt(P)}
+const isBug=()=>LEVELS[cur].kind==='bug';
+// むしとり：もとの プログラムから いくつ かえたか
+function changes(){const o=LEVELS[cur].bugProg;let n=0;o.forEach((b,i)=>{const c=prog[i];
+ if(b.t==='loop'){if(c.n!==b.n)n++;b.body.forEach((x,j)=>{if(c.body[j].t!==x.t)n++})}else if(c.t!==b.t)n++});return n}
+const isFixed=(i,j)=>{const o=LEVELS[cur].bugProg[i];return j===undefined?o.t!=='loop'&&o.t!==prog[i].t:o.body[j].t!==prog[i].body[j].t};
 function count(){return prog.reduce((n,b)=>n+(b.t==='loop'?1+b.body.length:1),0)}
 
 function playV(){
  const lv=LEVELS[cur],cs=[];
  for(let y=0;y<P.H;y++)for(let x=0;x<P.W;x++){const c=P.g[y][x];
-  cs.push(`<div class="cell ${c==='#'?'wall':c==='G'?'goal':''}">${c==='G'?'🏁':c==='*'?`<span class="star" id="st${x}_${y}" style="${got.has(x+'_'+y)?'opacity:0':''}">⭐</span>`:''}</div>`)}
- const n=count();
- return `<header><button class="hbtn" onclick="back()">◀</button><div class="ttl">ステージ ${cur+1}</div>${ptsChip()}</header>
+  cs.push(cellHTML(x,y))}
+ const n=count(),bug=isBug(),paint=isPaint(P),kinds=new Set(lv.map.join(''));
+ const leg=[kinds.has('k')&&`<span>${TILE.key} かぎ</span>`,kinds.has('D')&&`<span>${TILE.door} とびら</span>`,kinds.has('o')&&`<span>${TILE.sw} スイッチ</span>`,kinds.has('=')&&`<span>${TILE.bridge} はし</span>`].filter(Boolean).join('');
+ return `<header><button class="hbtn" onclick="back()">◀</button><div class="ttl">${lv.kind?`${KN[lv.kind]} ${LEVELS.filter((l,i)=>l.kind===lv.kind&&i<=cur).length}`:`ステージ ${cur+1}`}</div>${ptsChip()}</header>
  <main class="play"><div class="colL">
- <div class="hint">${lv.hint}</div>
+ <div class="hint">${lv.hint}</div>${paint?`<div class="muted" style="margin:0">おてほん：<b style="color:${lv.color}">${lv.name}</b>（てんてんの マスを ぬってね）</div>`:''}
  <div class="boardwrap" id="bw" style="max-width:${P.H>P.W?Math.round(P.W/P.H*100)+'%':'100%'};--ar:${(P.W/P.H).toFixed(3)}">
-  <div class="board" id="board" style="grid-template-columns:repeat(${P.W},1fr)">${cs.join('')}</div>
+  <div class="board" id="board" style="grid-template-columns:repeat(${P.W},1fr)${lv.color?`;--pc:${lv.color};--pcl:${lv.color}55`:''}">${cs.join('')}</div>
   <div class="robot" id="robot"></div>
- </div>
+ </div>${leg?`<div class="legend">${leg}</div>`:''}
 </div><div class="colR">
  <div class="card">
-  <div class="counter"><span>プログラム</span><span>ブロック <b class="${n>lv.max?'over':''}">${n}</b> / ${lv.max}　⭐3 は ${lv.par} こ</span></div>
-  <div class="prog ${target===null&&lv.loop?'target':''}" onclick="setTarget(event,-1)" id="prog">${progHTML()}</div>
+  <div class="counter"><span>プログラム</span>${bug?`<span>なおした かず <b>${changes()}</b>　⭐3 は 1かい で</span>`:`<span>ブロック <b class="${n>lv.max?'over':''}">${n}</b> / ${lv.max}　⭐3 は ${lv.par} こ</span>`}</div>
+  ${bug?`<div class="bugtip">${sel?'ただしい やじるしを したの ボタンで えらんでね':'まちがって いる ブロックを タップしてね'}</div>`:''}
+  <div class="prog ${target===null&&lv.loop&&!bug?'target':''}" onclick="setTarget(event,-1)" id="prog">${progHTML()}</div>
  </div>
  <div class="pal">
   ${['U','D','L','R'].map(k=>`<button class="pbtn" onclick="add('${k}')" ${running?'disabled':''}>${DIR[k][2]}</button>`).join('')}
+  ${bug?`<button class="pbtn sub" onclick="bugReset()" ${running?'disabled':''} style="grid-column:span 4">↺ もとの プログラムに もどす</button>`:`
+  ${paint?`<button class="pbtn paint" onclick="add('P')" ${running?'disabled':''} aria-label="ぬる">${BRUSH}</button>`:''}
   ${lv.loop?`<button class="pbtn lp" onclick="addLoop()" ${running?'disabled':''}>🔁<br><span style="font-size:12px">くりかえし</span></button>`:''}
-  <button class="pbtn sub" onclick="undo()" ${running?'disabled':''} style="grid-column:${lv.loop?'span 1':'span 2'}">⌫ けす</button>
-  <button class="pbtn sub" onclick="clearAll()" ${running?'disabled':''} style="grid-column:span 2">🗑 ぜんぶ けす</button>
+  <button class="pbtn sub" onclick="undo()" ${running?'disabled':''} style="grid-column:span ${paint&&lv.loop?1:2-(paint?1:0)-(lv.loop?1:0)}">⌫ けす</button>
+  <button class="pbtn sub" onclick="clearAll()" ${running?'disabled':''} style="grid-column:span ${paint&&lv.loop?1:2}">🗑 ぜんぶ けす</button>`}
  </div>
  <div class="row">
   <button class="big gray" onclick="stop()">↺ もどす</button>
   <button class="big" onclick="run()" ${running||!n?'disabled':''}>▶ じっこう</button>
  </div>
- <div class="muted">ブロックを タップすると けせるよ${lv.loop?'。🔁 の かずを タップすると かいすうが かわるよ':''}</div>
+ <div class="muted">${bug?'まず ▶ で うごかして、どこで まちがえるか みてみよう'+(lv.loop?'。🔁 の かずも タップで かえられるよ':''):`ブロックを タップすると けせるよ${lv.loop?'。🔁 の かずを タップすると かいすうが かわるよ':''}`}</div>
  </div></main>`;
 }
 function progHTML(){
  if(!prog.length)return `<span class="empty">↓ の ボタンで ブロックを いれてね</span>`;
  return prog.map((b,i)=>{
-  if(b.t!=='loop')return `<button class="blk" id="b${i}" onclick="del(event,${i})">${DIR[b.t][2]}</button>`;
-  return `<div class="loopbox ${target===i?'target':''}" id="b${i}" onclick="setTarget(event,${i})">
-   <button class="loophd" onclick="cycle(event,${i})">🔁 ${b.n}かい</button>
-   ${b.body.map((c,j)=>`<button class="blk" id="b${i}_${j}" onclick="del(event,${i},${j})">${DIR[c.t][2]}</button>`).join('')}
+  const bug=isBug(),cls=(t,i,j)=>`blk${t==='P'?' paint':''}${bug&&isFixed(i,j)?' fixed':''}${bug&&sel&&sel[0]===i&&sel[1]===j?' sel':''}`;
+  if(b.t!=='loop')return `<button class="${cls(b.t,i)}" id="b${i}" onclick="del(event,${i})">${lab(b.t)}</button>`;
+  return `<div class="loopbox ${target===i&&!bug?'target':''}" id="b${i}" onclick="setTarget(event,${i})">
+   <button class="loophd ${bug&&b.n!==LEVELS[cur].bugProg[i].n?'fixed':''}" onclick="cycle(event,${i})">🔁 ${b.n}かい</button>
+   ${b.body.map((c,j)=>`<button class="${cls(c.t,i,j)}" id="b${i}_${j}" onclick="del(event,${i},${j})">${lab(c.t)}</button>`).join('')}
    ${b.body.length?'':`<span class="slot">${target===i?'ここに はいるよ':'タップで えらぶ'}</span>`}
-   <button class="loopx" onclick="del(event,${i})">✕</button></div>`}).join('');
+   ${bug?'':`<button class="loopx" onclick="del(event,${i})">✕</button>`}</div>`}).join('');
 }
 function refresh(){if(!running){const sc=window.scrollY;render();window.scrollTo(0,sc)}}
 function full(){if(count()>=LEVELS[cur].max){sfx.bonk();flash('これいじょう おけないよ');return true}return false}
-function add(k){if(running||full())return;sfx.tap();stopIfMoved();
+function add(k){if(running)return;
+ if(isBug()){if(!sel){sfx.bonk();flash('なおす ブロックを さきに タップしてね');return}
+  sfx.tap();stopIfMoved();const b=sel[1]===undefined?prog[sel[0]]:prog[sel[0]].body[sel[1]];b.t=k;sel=null;refresh();return}
+ if(full())return;sfx.tap();stopIfMoved();
  if(target!==null&&prog[target])prog[target].body.push({t:k});else prog.push({t:k});refresh()}
 function addLoop(){if(running||full())return;sfx.tap();stopIfMoved();prog.push({t:'loop',n:2,body:[]});target=prog.length-1;refresh()}
-function setTarget(e,i){e.stopPropagation();if(running)return;target=i<0?null:(target===i?null:i);refresh()}
+function setTarget(e,i){e.stopPropagation();if(running||isBug())return;target=i<0?null:(target===i?null:i);refresh()}
 function cycle(e,i){e.stopPropagation();if(running)return;sfx.tap();prog[i].n=prog[i].n>=9?2:prog[i].n+1;target=i;refresh()}
-function del(e,i,j){e.stopPropagation();if(running)return;sfx.tap();stopIfMoved();
+function del(e,i,j){e.stopPropagation();if(running)return;sfx.tap();
+ if(isBug()){sel=sel&&sel[0]===i&&sel[1]===j?null:[i,j];refresh();return}
+ stopIfMoved();
  if(j===undefined){prog.splice(i,1);if(target===i)target=null;else if(target>i)target--}else prog[i].body.splice(j,1);refresh()}
 function undo(){if(running)return;stopIfMoved();
  if(target!==null&&prog[target]&&prog[target].body.length){prog[target].body.pop()}
  else if(prog.length){prog.pop();if(target!==null&&target>=prog.length)target=null}
  sfx.tap();refresh()}
+function bugReset(){if(running)return;prog=clone(LEVELS[cur].bugProg);sel=null;stopIfMoved();sfx.tap();refresh()}
 function clearAll(){if(running)return;prog=[];target=null;stopIfMoved();sfx.tap();refresh()}
-function stopIfMoved(){if(pos[0]!==P.s[0]||pos[1]!==P.s[1]||got.size){resetRun()}}
+function stopIfMoved(){if(pos[0]!==P.s[0]||pos[1]!==P.s[1]||got.size||vis.paint.size||vis.sw||vis.keyGot.size){resetRun()}}
 function back(){resetRun();view='title';render();LH.endSession();lhIid=null}
 function stop(){resetRun();render()}
 
@@ -320,38 +440,56 @@ function drawRobot(instant){
 window.addEventListener('resize',()=>{if(view==='play')drawRobot(true)});
 
 // プログラムを 1ぽずつの れつに する
-function steps(){const out=[];prog.forEach((b,i)=>{
+function steps(pr=prog){const out=[];pr.forEach((b,i)=>{
  if(b.t!=='loop')out.push({d:b.t,id:'b'+i});
  else for(let k=0;k<b.n;k++)b.body.forEach((c,j)=>out.push({d:c.t,id:'b'+i+'_'+j,box:'b'+i}))});return out}
 
+// マスの え（vis：いま みえて いる ようす）
+function cellHTML(x,y){
+ const c=P.g[y][x],k=x+'_'+y,v=vis;let cl='cell',in_='';
+ if(c==='#')cl+=' wall';else if(c==='G'){cl+=' goal';in_='🏁'}
+ else if(c==='*')in_=`<span class="star" id="st${k}" style="${got.has(k)?'opacity:0':''}">⭐</span>`;
+ else if(c==='k')in_=v.keyGot.has(k)?'':`<span class="star" id="st${k}">${TILE.key}</span>`;
+ else if(c==='D')in_=v.open.has(k)?TILE.open:TILE.door;
+ else if(c==='o')in_=v.sw?TILE.swOn:TILE.sw;
+ else if(c==='~'){cl+=' water';in_=TILE.wave}
+ else if(c==='='){if(v.sw)in_=TILE.bridge;else{cl+=' water';in_=TILE.wave}}
+ if(P.tgS.has(k))cl+=' tgt';
+ if(v.paint.has(k))cl+=P.tgS.has(k)?' painted':' bad';
+ return `<div class="${cl}" id="c${k}">${in_}</div>`;
+}
+function updCell(x,y,extra){const el=$('#c'+x+'_'+y);if(!el)return;el.outerHTML=cellHTML(x,y);if(extra){const n=$('#c'+x+'_'+y);if(n)n.classList.add(extra)}}
+
 function run(){
  if(running||!prog.length)return;
- if(count()>LEVELS[cur].max){flash('ブロックが おおすぎるよ');return}
- resetRun();target=null;render();running=true;
+ if(!isBug()&&count()>LEVELS[cur].max){flash('ブロックが おおすぎるよ');return}
+ resetRun();target=null;sel=null;render();running=true;
  document.querySelectorAll('.pal button,.big').forEach(b=>{if(!b.classList.contains('gray'))b.disabled=true});
- const st=steps();let k=0;
+ const r=simulate(P,prog);let k=0;
  const tick=()=>{
   document.querySelectorAll('.run').forEach(e=>e.classList.remove('run'));
-  if(k>=st.length){end(false,'🏁 に とどかなかった…');return}
-  const s=st[k++],el=document.getElementById(s.id);if(el)el.classList.add('run');if(s.box)document.getElementById(s.box).classList.add('run');
-  const [dx,dy]=DIR[s.d],nx=pos[0]+dx,ny=pos[1]+dy;if(dx)face=dx;
-  if(nx<0||ny<0||nx>=P.W||ny>=P.H||P.g[ny][nx]==='#'){
-   drawRobot();const r=$('#robot');r.classList.add('bonk');sfx.bonk();timer=setTimeout(()=>end(false,nx<0||ny<0||nx>=P.W||ny>=P.H?'そとに でちゃう！':'かべに ぶつかっちゃった！'),450);return}
-  pos=[nx,ny];drawRobot();sfx.step();
-  const sk=nx+'_'+ny;if(P.g[ny][nx]==='*'&&!got.has(sk)){got.add(sk);const se=$('#st'+sk);if(se)se.classList.add('got');setTimeout(sfx.star,150)}
-  if(nx===P.goal[0]&&ny===P.goal[1]&&got.size===P.stars.length){timer=setTimeout(()=>end(true),380);return}
-  timer=setTimeout(tick,420)};
+  if(k>=r.ev.length){if(r.win)end(true);else end(false,r.msg,r);return}
+  const e=r.ev[k++],s=e.s,el=document.getElementById(s.id);if(el)el.classList.add('run');if(s.box)document.getElementById(s.box).classList.add('run');
+  if(e.k==='paint'){vis.paint.add(e.key);const [x,y]=e.key.split('_').map(Number);updCell(x,y,'ppop');e.bad?sfx.bonk():beep(700+vis.paint.size*40,.12,'triangle');timer=setTimeout(tick,420);return}
+  if(e.dx)face=e.dx;
+  if(e.k==='bonk'){if(e.msg.includes('とびら')||e.msg.includes('みず')){const r2=$('#robot');r2.classList.add('bonk')}else{drawRobot();$('#robot').classList.add('bonk')}sfx.bonk();timer=setTimeout(tick,450);return}
+  if(e.open){vis.open.add(e.open);updCell(e.x,e.y);beep(440,.1,'square',.08);setTimeout(()=>beep(660,.15,'triangle'),90)}
+  pos=[e.x,e.y];drawRobot();sfx.step();
+  if(e.star){got.add(e.star);const se=$('#st'+e.star);if(se)se.classList.add('got');setTimeout(sfx.star,150)}
+  if(e.key){vis.keyGot.add(e.key);vis.keys++;const se=$('#st'+e.key);if(se)se.classList.add('got');setTimeout(sfx.star,150)}
+  if(e.sw){vis.sw=true;P.g.forEach((row,y)=>row.forEach((c,x)=>{if(c==='o'||c==='=')updCell(x,y,c==='='?'ppop':'')}));setTimeout(()=>[392,523,659].forEach((f,i)=>setTimeout(()=>beep(f,.15,'triangle'),i*80)),120)}
+  timer=setTimeout(tick,k>=r.ev.length&&r.win?380:420)};
  timer=setTimeout(tick,250);
 }
-function end(win,msg){
+function end(win,msg,r){
  running=false;document.querySelectorAll('.run').forEach(e=>e.classList.remove('run'));
  document.querySelectorAll('.pal button,.big').forEach(b=>b.disabled=false);
  const lv=LEVELS[cur];
  if(!win){lhRun(false);
-  const left=P.stars.length-got.size;
-  showPop(`<div style="font-size:48px">🤔</div><h3>${msg}</h3><div class="muted">${left&&!msg.includes('ぶつ')&&!msg.includes('そと')?`⭐ が あと ${left}こ のこってるよ。`:''}ブロックを なおして もういちど！</div>
+  const left=P.stars.length-got.size,bug=isBug();
+  showPop(`<div style="font-size:48px">${bug?'🐞':'🤔'}</div><h3>${msg}</h3><div class="muted">${isPaint(P)&&r&&r.left&&!msg.includes('ない ところ')?`あと ${r.left}マス ぬろう。`:''}${!isPaint(P)&&left&&msg.includes('とどか')?`⭐ が あと ${left}こ のこってるよ。`:''}${bug?(changes()?'まだ まちがいが あるかも。':'どの ブロックが まちがいかな？')+'ブロックを タップして なおそう':'ブロックを なおして もういちど！'}</div>
    <div class="btns"><button class="big blue" onclick="closePop();stop()">なおす</button></div>`);return}
- const n=count(),stars=n<=lv.par?3:n<=lv.par+2?2:1;
+ const n=count(),ch=isBug()?changes():0,stars=isBug()?(ch<=1?3:ch<=2?2:1):n<=lv.par?3:n<=lv.par+2?2:1;
  const prev=S.best[cur]||0,earn=Math.max(0,stars-prev)*starPts();if(stars>prev){S.best[cur]=stars;save()}houseAdd(earn);houseDaily();
  lhRun(true,stars,earn);
  const hw=HW&&cur===HW.stage;if(hw)houseWrite(d=>{d.hw=d.hw||{};d.hw[HW.mob]=Date.now()});
@@ -360,7 +498,8 @@ function end(win,msg){
  setTimeout(()=>showPop(`<div style="font-size:48px">🎉</div><h3>クリア！</h3>
   <div class="stars">${[1,2,3].map(i=>`<span class="${i<=stars?'':'off'}">⭐</span>`).join('')}</div>
   ${earn?`<div style="font-weight:800;font-size:20px;color:#e0719a;margin:4px 0">ポイント ⭐＋${earn}</div>`:''}
-  <div class="muted">ブロック ${n}こ で できたよ${stars<3?`<br>${lv.par}こ で できたら ⭐3！`:'<br>さいこうの プログラム！'}</div>
+  ${isPaint(P)?`<div style="font-weight:800;color:${lv.color};font-size:18px">「${lv.name}」が かけたよ！</div>`:''}
+  <div class="muted">${isBug()?`${ch}かい なおして できたよ${stars<3?'<br>1かい で なおせたら ⭐3！':'<br>むしとり めいじん！'}`:`ブロック ${n}こ で できたよ${stars<3?`<br>${lv.par}こ で できたら ⭐3！`:'<br>さいこうの プログラム！'}`}</div>
   <div class="btns">${last?'':`<button class="big" onclick="closePop();openLv(${cur+1})">つぎの ステージ ▶</button>`}
   ${stars<3?`<button class="big blue" onclick="closePop();stop()">もういちど ちょうせん</button>`:''}
   ${hw?`<a class="big" href="../machi/index.html" style="text-decoration:none;text-align:center;background:#7cc46a;box-shadow:0 4px 0 #5aa04a">📒 しゅくだい できた！ まちへ</a>`:''}
@@ -370,7 +509,7 @@ function end(win,msg){
 // ===== ポップアップ =====
 function showPop(h){closePop();const d=document.createElement('div');d.className='pop';d.id='pop';d.innerHTML=`<div class="card">${h}</div>`;document.body.appendChild(d)}
 function closePop(){const p=$('#pop');if(p)p.remove()}
-let flT;function flash(t){const h=$('.hint');if(!h)return;const o=LEVELS[cur].hint;h.textContent=t;h.style.color='#e5484d';clearTimeout(flT);flT=setTimeout(()=>{const hh=$('.hint');if(hh){hh.textContent=o;hh.style.color=''}},1400)}
+let flT;function flash(t){const h=$('.hint');if(!h)return;clearTimeout(flT);const o=LEVELS[cur].hint;h.textContent=t;h.style.color='#e5484d';clearTimeout(flT);flT=setTimeout(()=>{const hh=$('.hint');if(hh){hh.textContent=o;hh.style.color=''}},1400)}
 
 // まちの じゅうにんの しゅくだい（#hw=だれ|ステージばんごう）：その ステージを ひらく
 const HW=(()=>{const m=/[#&]hw=([a-z_]+)\|(\d+)/.exec(location.hash);return m?{mob:m[1],stage:Math.min(LEVELS.length-1,+m[2])}:null})();
