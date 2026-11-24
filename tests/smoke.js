@@ -244,7 +244,7 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     d = await daily(); ok(d.prog === 1 && d.abc === 2, 'プログラミング・ぼうけんも かぞえる ' + JSON.stringify(d));
     // おうちに もどると ごほうび
     await p.goto(B + 'index.html'); await p.waitForTimeout(800);
-    for (let k = 0; k < 5 && await p.$('#ov .pop'); k++) { await p.click('#ov [data-act=close] >> nth=0'); await p.waitForTimeout(400); }
+    for (let k = 0; k < 5 && await p.$('#ov .pop'); k++) { await p.click('#ov [data-act=close], #ov [data-act=petClose] >> nth=0'); await p.waitForTimeout(400); } // ペットの たまごの おしらせも とじる
     const r = await p.evaluate(() => ({ pts: S.points, got: S.daily.got, all: S.daily.all }));
     ok(r.all && Object.keys(r.got).length === 4, 'ぜんぶ たっせいで ごほうび ' + JSON.stringify(r));
     await p.reload(); await p.waitForTimeout(800);
@@ -387,7 +387,7 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
   {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
     const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
-    await p.goto(B + 'index.html'); await p.waitForTimeout(500);
+    await p.goto(B + 'index.html'); await p.waitForTimeout(1600);
     await p.evaluate(() => { closePop(); S.points = 150; S.settings.goalPts = 0; S.settings.goalAll = 0; S.owned.push('c_hamster', 'c_cat', 'u_bed', 'w_dots'); save(); render(); });
     const owned0 = await p.evaluate(() => [...S.owned].sort().join());
     ok(await p.isVisible('.room .todoor'), 'おへやに「まちへ」の ドア');
@@ -1111,6 +1111,9 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
       return o;
     });
     ok(Object.values(mech).every(Boolean), 'ice・thunder・wind・light・armor・crab・ghost・spider ' + JSON.stringify(mech));
+    await p.evaluate(() => { const r = __dg.run; __dg.showCard('crab', { mon: { hp: 9, maxhp: 12, atk: 4 } }); });
+    ok(await p.evaluate(() => /weak: thunder/.test(document.getElementById('ov').textContent)), 'てきの カードに えいごだけの「weak: thunder」');
+    await p.evaluate(() => closePop());
     // rope で つぎの かいへ（ボスの かいでは つかえない）
     ok(await p.evaluate(async () => { const r = __dg.run; r.mons = []; r.inv = [{ uid: 821, id: 'rope', peek: false }]; __dg.act({ t: 'use', uid: 821 }); await new Promise(ok => setTimeout(ok, 700)); return r.floor === 7; }), 'rope で つぎの かいへ');
     // あるいても HPは もどらない・ふくろは べつべつ・つよい まほう・そうびの みため
@@ -1153,6 +1156,7 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     });
     ok(Object.values(farR).every(Boolean), 'とおくの てきに まほう：えんしゅつ・ダメージの あいだは てきが うごかない ' + JSON.stringify(farR));
     // MPを かいふく する たべもの
+    ok(await p.evaluate(() => { const r = __dg.run; r.inv.push({ uid: 7230, id: 'candy', peek: false }, { uid: 7231, id: 'bluepotion', peek: false }, { uid: 7232, id: 'potion', peek: false }); ACT.dgBag('food'); const t = document.getElementById('ov').textContent; r.inv = r.inv.filter(i => ![7230, 7231, 7232].includes(i.uid)); closePop(); return /MP ＋5/.test(t) && /MP ぜんぶ かいふく/.test(t) && /HP・MP ぜんぶ かいふく/.test(t); }), 'たべもの：MP かいふく・くすり にも こうかを ひょうじ');
     ok(await p.evaluate(() => { const r = __dg.run, h = r.hero; h.mp = 1; r.inv.push({ uid: 7220, id: 'juice', peek: false }); __dg.act({ t: 'use', uid: 7220 }); return h.mp === Math.min(h.maxmp, 13) && /MPが/.test(document.getElementById('log').textContent); }), 'juice で MPが かいふく');
     // まほうは まず あたる ところを みせる →「つかう」で つかう。えんしゅつ（spell）が ダメージより さき
     const aimR = await p.evaluate(async () => {
@@ -1205,6 +1209,24 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     await p.click('#ov [data-act=dgTestDone]'); await p.waitForTimeout(800);
     ok(await p.evaluate(p0 => __dg.D.clears === 1 && __dg.run === null && __dg.D.rewarded.clear && /ダンジョン クリア/.test(document.getElementById('ov').textContent) && S.points >= p0 + 10 + 30, pts20), '20かい クリア（はじめては ⭐30）');
     ok(await p.evaluate(() => { const b = document.querySelector('#ov [data-act=dgTitle]').getBoundingClientRect(); return b.top >= 0 && b.bottom <= innerHeight; }), 'ことばが たくさんでも「タイトルへ」が がめんの なかに ある');
+    ok(await p.evaluate(() => S.owned.includes('a_dcape') && /ダンジョンの マント/.test(document.getElementById('ov').textContent)), '20かい クリアの きねん「ダンジョンの マント」（おうちの きせかえ）');
+    // だい3かい：2ごの なまえの てき・えいごだけの ヒント（じゅうたん と かんばん）・weak
+    const v3e = await p.evaluate(async () => {
+      const G = await import('./js/game.js'), { WORD } = await import('./js/data.js'), o = {}; let two = 0, signs = 0, okSign = 0;
+      const twoIds = ['bigslime', 'bluesnake', 'littlebat', 'angrywolf', 'reddragon'];
+      for (let g = 0; g < 40; g++) { const t = G.newRun(false); t.spells = ['fire'];
+        for (const f of [8, 12, 17]) { G.enterFloor(t, f); two += t.mons.filter(m => twoIds.includes(m.id)).length;
+          const sg = t.items.find(i => i.id === 'sign'); if (!sg) continue; signs++;
+          const m = sg.text.match(/^The (stairs are|key is) in the (RED|BLUE|YELLOW|GREEN|PINK|PURPLE) room\.$/); if (!m) continue;
+          const col = m[2].toLowerCase(), ri = t.rugs.indexOf(col), R = t.map.rooms[ri], tgt = m[1] === 'key is' ? t.items.find(i => i.id === 'key') : t.stairs;
+          if (R && tgt && tgt.x >= R.x && tgt.x < R.x + R.w && tgt.y >= R.y && tgt.y < R.y + R.h) okSign++; } }
+      o.two = two > 0; o.sign = signs > 20 && okSign === signs;
+      const t = G.newRun(false); G.enterFloor(t, 3); o.noSignEarly = !t.items.some(i => i.id === 'sign') && !t.rugs;
+      // little bat は 2ほ
+      const r = __dg.run; o.fast = !!WORD.littlebat.fast;
+      return o;
+    });
+    ok(Object.values(v3e).every(Boolean), '2ごの なまえの てき（11かいから）・かんばん「The stairs are in the GREEN room.」と じゅうたんの いろが あう（6かいから） ' + JSON.stringify(v3e));
     // にかいめは せつめいを えらべる・たおれた とき
     await p.evaluate(() => __dg.toTitle()); await p.click('#tGo'); await p.waitForTimeout(200);
     ok(await p.isVisible('#ov [data-act=dgSkipTut]') && await p.isVisible('#ov [data-act=dgTut]'), '2かいめからは せつめいを「みる／とばす」');
@@ -1214,6 +1236,102 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(await p.evaluate(() => __dg.mode === 'over' && /たおれて/.test(document.getElementById('ov').textContent) && !__dg.D.run && __dg.D.best === 20 && Object.keys(__dg.D.dex).length > 3), 'たおれたら おしまい（ずかん・さいこう とうたつは のこる）');
     await p.evaluate(() => { __dg.toTitle(); });
     ok(/20かい/.test(await p.textContent('#tbest')), 'タイトルに さいこう とうたつ 20かい');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+  }
+
+  console.log('23. はなまるスタンプ（パパ・ママから）');
+  {
+    const p = await page({ width: 820, height: 1180 });
+    await p.goto(B + 'index.html'); await p.waitForTimeout(600); await p.evaluate(() => closePop());
+    ok(await p.evaluate(() => S.notes && S.notes.senders.length === 2 && S.notes.senders[0].name === 'パパ' && S.notes.senders[1].name === 'ママ' && Array.isArray(S.notes.list)), 'はじめは パパ・ママ（ふるい データにも つく）');
+    await p.evaluate(() => go('settings')); await p.waitForTimeout(200);
+    ok(await p.isVisible('[data-act=hmSend]'), 'せってい（おうちのひと よう）に「はなまるを おくる」');
+    await p.click('[data-act=hmSend]'); await p.waitForTimeout(200);
+    ok(await p.evaluate(() => document.querySelectorAll('#ov [data-act=hmStamp]').length === 16), 'スタンプは 16しゅるい');
+    await p.click('#ov [data-act=hmStamp][data-arg=kin]'); await p.click('#ov [data-act=hmPre] >> nth=0'); await p.click('#ov [data-act=hmGo]'); await p.waitForTimeout(150);
+    await p.click('#ov [data-act=hmSend]'); await p.click('#ov [data-act=hmFrom][data-arg=mama]'); await p.click('#ov [data-act=hmStamp][data-arg=heart]'); await p.fill('#hmText', '7のだん すごい！'); await p.click('#ov [data-act=hmGo]'); await p.click('#ov [data-act=hmClose]');
+    ok(await p.evaluate(() => { const L = S.notes.list; return L.length === 2 && L[0].from === 'papa' && L[0].stamp === 'kin' && L[1].from === 'mama' && L[1].text === '7のだん すごい！' && L.every(n => !n.seen); }), 'パパと ママから おくれる（ひとことつき）');
+    const pts = await p.evaluate(() => S.points);
+    // おばあちゃんを ふやす・なまえを かえる
+    await p.click('[data-act=hmAddSender]'); await p.waitForTimeout(100);
+    ok(await p.evaluate(() => S.notes.senders.length === 3 && S.notes.senders[2].name === 'おばあちゃん'), 'おくる ひとを ふやせる（さいだい 4にん）');
+    // こどもが ひらく
+    await p.goto(B + 'index.html'); await p.waitForTimeout(400);
+    for (let k = 0; k < 12; k++) { await p.waitForTimeout(600); const t = await p.evaluate(() => document.getElementById('ov').textContent); if (/おてがみが とどいてるよ/.test(t)) break; await p.evaluate(() => { const b = document.querySelector('#ov .btns button'); if (b) b.click(); else closePop(); }); }
+    ok(await p.evaluate(() => /おてがみが とどいてるよ/.test(document.getElementById('ov').textContent) && /2まい/.test(document.getElementById('ov').textContent)), 'おうちを ひらくと「おてがみが とどいてるよ！」');
+    await p.click('#ov .btns [data-act=hmOpen]'); await p.waitForTimeout(400);
+    ok(await p.evaluate(() => !!document.querySelector('#ov .hm-press svg') && /パパ より/.test(document.getElementById('ov').textContent) && S.notes.list[0].seen), 'スタンプが おされて「パパ より」');
+    await p.click('#ov [data-act=hmNext]'); await p.waitForTimeout(400);
+    ok(await p.evaluate(() => /7のだん すごい！/.test(document.getElementById('ov').textContent) && /ママ より/.test(document.getElementById('ov').textContent)), 'つぎの おてがみ（ママ・ひとこと）');
+    await p.click('#ov [data-act=hmThanks]'); await p.waitForTimeout(200);
+    ok(await p.evaluate(p0 => S.notes.list.every(n => n.seen) && S.points === p0, pts), 'ぜんぶ みた・⭐は ふえない');
+    await p.click('[data-act=hmNote]'); await p.waitForTimeout(200);
+    ok(await p.evaluate(() => document.querySelectorAll('#ov .hm-c.has').length === 1 && /パパ 1こ/.test(document.getElementById('ov').textContent) && /ママ 1こ/.test(document.getElementById('ov').textContent)), 'はなまるノート（カレンダー・パパ ママの かず）');
+    await p.click('#ov .hm-c.has'); await p.waitForTimeout(150);
+    ok(await p.evaluate(() => document.querySelectorAll('#ov .hm-dn').length === 2), 'その日の はなまるを おおきく みる');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+  }
+
+  console.log('24. モコの ペット');
+  {
+    const p = await page({ width: 820, height: 1180 });
+    await p.goto(B + 'index.html'); await p.waitForTimeout(400);
+    for (let k = 0; k < 12; k++) { await p.waitForTimeout(600); const t = await p.evaluate(() => document.getElementById('ov').textContent); if (/なにか とどいたよ/.test(t)) break; await p.evaluate(() => { const b = document.querySelector('#ov .btns button'); if (b) b.click(); else closePop(); }); }
+    ok(await p.evaluate(() => /なにか とどいたよ/.test(document.getElementById('ov').textContent) && S.pet.eggs.length === 1 && S.pet.started), 'はじめは なぞの たまごが とどく');
+    await p.evaluate(() => ACT.petClose()); await p.waitForTimeout(200);
+    ok(await p.evaluate(() => !!document.querySelector('.room .pet-in.egg') && /たまご 0\/3/.test(document.querySelector('.pet-mini').textContent)), 'おへやに たまご・アイコンに「たまご 0/3」');
+    // もんだいを とくと ごはん と たまごが あたたまる（1もんで 1こ、5もんごとに +1、1日 3こまで）
+    const fed = await p.evaluate(async () => {
+      const rec = i => LH.recordAttempt({ questionInstanceId: 'pt' + i, questionKey: 'sansu:add:1+' + i, subject: 'sansu', topic: 'add1', isCorrect: true, attemptNumber: 1 });
+      rec(0); await LH.flushed(); await petUpdate(); const o = { a: S.pet.stock, warm: S.pet.eggs[0].warm };
+      for (let i = 1; i < 12; i++) rec(i); await LH.flushed(); await petUpdate(); o.b = S.pet.stock; o.warm2 = S.pet.eggs[0].warm; return o;
+    });
+    ok(fed.a === 1 && fed.warm === 1 && fed.b === 3 && fed.warm2 === 1, '1もんで ごはん 1こ・12もんで 3こ（1日 3こ まで）・たまごは 1日 1かい あたたまる ' + JSON.stringify(fed));
+    // 3日めで かえる → なまえ
+    await p.evaluate(() => { S.pet.eggs[0].warm = 3; save(); render(); document.querySelector('[data-act=petEgg]').click(); }); await p.waitForTimeout(200);
+    ok(await p.evaluate(() => /うごいてる/.test(document.getElementById('ov').textContent)), 'べんきょうした 日が 3日で たまごが うごく');
+    await p.click('#ov [data-act=petHatchGo]'); await p.waitForTimeout(300); await p.fill('#petName', 'ぽち'); await p.click('#ov [data-act=petNameOk]'); await p.waitForTimeout(200);
+    ok(await p.evaluate(() => S.pet.pets.length === 1 && S.pet.pets[0].name === 'ぽち' && !S.pet.eggs.length && /あかちゃん/.test(document.getElementById('ov').textContent)), 'かえって なまえを つける（あかちゃん）');
+    // ごはんで そだつ：10で こども、30で おとな（きょうかで すがた）＋ つぎの たまご
+    const grow = await p.evaluate(async () => {
+      const pt = S.pet.pets[0], o = {}; S.pet.stock = 40;
+      for (let i = 0; i < 10; i++) await ACT.petFeed(pt.id);
+      o.child = pt.food === 10 && /こども/.test(document.getElementById('ov').textContent);
+      for (let i = 0; i < 20; i++) await ACT.petFeed(pt.id);
+      o.adult = pt.food === 30 && pt.form === 'sansu' && /おとな/.test(document.getElementById('ov').textContent) && S.pet.eggs.length === 1 && S.pet.stock === 10;
+      return o;
+    });
+    ok(grow.child && grow.adult, 'ごはん 10で こども・30で おとな（さんすうの すがた）・つぎの たまご ' + JSON.stringify(grow));
+    // あえない 日が つづくと さびしがる（よわらない）
+    await p.evaluate(() => { const d = new Date(); d.setDate(d.getDate() - 3); S.pet.lastSeen = d.toISOString().slice(0, 10); save(); });
+    await p.goto(B + 'index.html'); await p.waitForTimeout(400);
+    let lonely = false; for (let k = 0; k < 12 && !lonely; k++) { await p.waitForTimeout(600); const t = await p.evaluate(() => document.getElementById('ov').textContent); if (/さびしかったよ/.test(t)) lonely = true; else await p.evaluate(() => { const b = document.querySelector('#ov .btns button'); if (b) b.click(); else closePop(); }); }
+    ok(lonely && await p.evaluate(() => S.pet.pets[0].food === 30), '3日 あえないと「さびしかったよ〜」（よわらない）');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+  }
+
+  console.log('25. まいにちの えほん');
+  {
+    const p = await page({ width: 820, height: 1180 });
+    await p.goto(B + 'index.html'); await p.waitForTimeout(400);
+    await p.evaluate(() => { closePop(); S.pet.started = true; save(); render(); });
+    ok(await p.evaluate(() => S.book.open === 0 && /えほん 0\//.test(document.querySelector('.bk-mini').textContent) && !document.querySelector('.bk-mini').classList.contains('on')), 'はじめは「えほん 0/7」');
+    await p.evaluate(() => { dailyOf(S).sansu = 2; save(); render(); });
+    ok(await p.evaluate(() => S.book.open === 1 && document.querySelector('.bk-mini').classList.contains('on')), 'もくひょうを 1つ たっせい → 1ページめが ひらく（NEW）');
+    await p.evaluate(() => { closePop(); document.querySelector('[data-act=bkOpen]').click(); }); await p.waitForTimeout(300);
+    ok(await p.evaluate(() => /モコと なぞの たまご/.test(document.getElementById('ov').textContent) && /1 \/ 7/.test(document.getElementById('ov').textContent) && !!document.querySelector('#ov .bk-scene') && document.querySelector('#ov [data-act=bkPage][data-arg="1"]').disabled && /つづきは あした/.test(document.getElementById('ov').textContent)), 'よむ（え・ぶん・つづきは あした）');
+    ok(await p.evaluate(() => { render(); return S.book.open === 1; }), 'おなじ日は もう ひらかない（1日 1ページ）');
+    // 7日 たつと おしまい → ⭐5 → つぎの おはなしへ
+    const fin = await p.evaluate(async () => {
+      const pts = S.points; for (let i = 0; i < 6; i++) { S.book.last = '2000-01-0' + (i + 1); bookUpdate(); }
+      const o = { open: S.book.open }; ACT.bkPage(6); await new Promise(r => setTimeout(r, 1100));
+      o.fin = /おしまい/.test(document.getElementById('ov').textContent) && /まちへ おつかい/.test(document.getElementById('ov').textContent); o.star = S.points === pts + 5;
+      S.book.last = '2000-02-01'; bookUpdate(); o.next = S.book.story === 1 && S.book.open === 1;
+      return o;
+    });
+    ok(fin.open === 7 && fin.fin && fin.star && fin.next, '7ページ → おしまい（⭐5・つぎの おはなしの ちらみ）→ つぎの 日は つぎの おはなし ' + JSON.stringify(fin));
+    await p.evaluate(() => ACT.bkShelf()); await p.waitForTimeout(150);
+    ok(await p.evaluate(() => document.querySelectorAll('#ov .bk-b.done').length === 1 && document.querySelectorAll('#ov .bk-b.now').length === 1 && document.querySelectorAll('#ov .bk-b.lock').length === 1), 'ほんだな（よみおわった・よんでいる・まだ）');
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
   }
 

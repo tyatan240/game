@@ -379,3 +379,5 @@ html,body{margin:0;height:100%;overflow:hidden;background:#2a2238;touch-action:n
 .signtx{font-size:24px;font-weight:800;color:#3f7fc9;margin:6px 0}
 .reveal.party .flip{animation:party 0.6s ease-in-out 3}
 @keyframes party{50%{transform:scale(1.08) rotate(2deg)}}
+.weakb{color:#e07a1a!important}
+.capeb{color:#7c4ac8;font-weight:800;background:#f3ecff;border-radius:12px;padding:6px}

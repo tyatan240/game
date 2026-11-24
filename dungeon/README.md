@@ -47,5 +47,7 @@ js/main.js   がめん・そうさ・カード・もちもの・まほう・ず�
 `{ v, t, best, clears, runs, tutorialDone, dex:{id:{seen,used,read,looked,first,tq,tok}}, rewarded:{floor,boss:[],dex,clear}, settings, run, treasure:{runs,best,clears,cards:{A1:{n,first}},shards,badges:[],gacha:{pulls,pity},rewarded:{clear,complete},run} }`（tq・tok：テストの もんだい かず・せいかい）
 `run` は ちゅうだん ちゅうの ぼうけん（`game.js` の じょうたい そのまま）。こうもくは ついかのみ。
 
-## つぎ（だい3かい「しあげ」）
-2ごの なまえ（magic sword・blue shield など）・えいごだけの ヒントの しかけ・20かい クリアの きねんの きせかえ。
+## だい3かい「しあげ」
+- 2ごの なまえの てき（big slime・blue snake・little bat・angry wolf・red dragon。11かいから）。え は `art.js` の `tinted`（いろを かえる）と `size`
+- えいごだけの ヒント（6かいから）：へやの いろの じゅうたん（`run.rugs`）と スタートの へやの かんばん「The stairs are in the GREEN room.」（`game.js` の `placeRugSign`）。てきの カードに「weak: fire」
+- 20かい クリアで おうちの きせかえ「ダンジョンの マント」（`a_dcape`）

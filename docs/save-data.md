@@ -63,3 +63,12 @@ core.js を読める部屋は `S.points += n; save();`。
 
 ## イングリッシュダンジョン（`moko-dungeon-v1`）
 localStorage と IndexedDB（`moko-dungeon`/`kv`）。形は `dungeon/README.md`。 たからさがしの カード・かけら・中断は 同じキーの `treasure` に入れる（追加のみ。`save.js` の `defTreasure`/`merge`）。⭐ は `moko-math-v1` の `points` に足すだけ。
+
+## はなまるスタンプ（`moko-math-v1` の `notes`）
+`{ senders:[{id,name,color}], list:[{id,from,stamp,text,day,at,seen,seenAt}] }`。はじめは パパ・ママ。`merge()` で 足りないときは 初期値。スタンプの id（`common/hanamaru.js` の HM_STAMPS）は 変えない。
+
+## モコの ペット（`moko-math-v1` の `pet`）
+`{ eggs:[{kind,warm,last,at,first,greeted}], pets:[{id,kind,name,food,form,born,bornDay,lastFed}], stock, day:{d,earned}, lastSeen, started }`。`merge()` で 足りないときは 初期値。kind（cat・bird・dragon）・form（sansu・kokugo・eigo・prog）の id は 変えない。
+
+## まいにちの えほん（`moko-math-v1` の `book`）
+`{ story, open, last, seen:{"話id-ページ":1}, rewarded:[話id] }`。`merge()` で 足りないときは 初期値。話の id（`common/book.js` の BOOKS：egg・otsukai・abc）と 順番は 変えない（新しい話は うしろに 足す）。

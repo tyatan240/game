@@ -82,6 +82,7 @@ function draw(now) {
   for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) drawTile(g, m.tiles[y][x], ox + x * t, oy + y * t, t, seenAt(run, x, y), vis.has(x + ',' + y), zone);
   const shown = (x, y) => seenAt(run, x, y);
   if (run.stairs && shown(run.stairs.x, run.stairs.y)) drawArt(g, 'dg_stairs', ox + run.stairs.x * t, oy + run.stairs.y * t, t);
+  if (run.rugs) run.map.rooms.forEach((R, i) => { if (run.rugs[i] && shown(R.x + (R.w >> 1), R.y + (R.h >> 1))) drawRug(R, run.rugs[i], t, ox, oy); }); // いろの じゅうたん（えいごだけの ヒント）
   for (const s of run.secrets || []) if (!s.open) {
     if (s.kind === 'hint') { for (const tc of s.torches || []) if (shown(tc.x, tc.y)) drawTorch(tc, s, now, t, ox, oy); }
     else if (s.kind === 'gold') { if (shown(s.door.x, s.door.y)) drawGoldDoor(s, now, t, ox, oy); }
@@ -94,7 +95,7 @@ function draw(now) {
   }
   for (const tr of run.traps || []) if (tr.found && shown(tr.x, tr.y)) drawTrap(tr, t, ox, oy);
   const drawMon = (mo, hp) => {
-    const big = WORD[mo.id].boss || WORD[mo.id].hboss ? 1.5 : 1, s = t * 0.92 * big, bob = mo.frozen ? 0 : Math.sin(now / 300 + mo.uid) * t * 0.03;
+    const big = WORD[mo.id].boss || WORD[mo.id].hboss ? 1.5 : (WORD[mo.id].size || 1), s = t * 0.92 * big, bob = mo.frozen ? 0 : Math.sin(now / 300 + mo.uid) * t * 0.03;
     if (WORD[mo.id].wall) g.globalAlpha = m.tiles[mo.y][mo.x] === '#' ? 0.55 : 0.85; // おばけは すけて いる
     drawArt(g, WORD[mo.id].art, ox + (mo.x + 0.5) * t - s / 2, oy + (mo.y + 1) * t - s * 0.98 + bob, s); g.globalAlpha = 1;
     if (mo.frozen) { g.fillStyle = 'rgba(140,210,255,.38)'; g.fillRect(ox + mo.x * t + 2, oy + mo.y * t + 2, t - 4, t - 4); g.strokeStyle = '#7ac8ff'; g.lineWidth = 2; g.strokeRect(ox + mo.x * t + 2, oy + mo.y * t + 2, t - 4, t - 4); }
@@ -181,6 +182,13 @@ function drawCrack(s, now, t, ox, oy) {
   if (!locked) { const a = (Math.sin(now / 320 + s.door.x) + 1) / 2, cx = x + t * 0.68, cy = y + t * 0.28, r = t * 0.16 * (0.5 + a * 0.6);
     g.fillStyle = `rgba(255,240,150,${0.35 + a * 0.6})`; g.beginPath(); g.moveTo(cx, cy - r); g.quadraticCurveTo(cx, cy, cx + r, cy); g.quadraticCurveTo(cx, cy, cx, cy + r); g.quadraticCurveTo(cx, cy, cx - r, cy); g.quadraticCurveTo(cx, cy, cx, cy - r); g.fill(); }
   g.restore();
+}
+// へやの いろの じゅうたん（「The stairs are in the GREEN room.」）
+const RUG = { red: ['#ff6b6b', '#c83a3a'], blue: ['#5aa0ff', '#2a60c8'], yellow: ['#ffd84a', '#c8a020'], green: ['#5ac87a', '#2a8a4a'], pink: ['#ff9ad0', '#d85a9a'], purple: ['#a87ae8', '#6a3ac8'] };
+function drawRug(R, col, t, ox, oy) {
+  const [f, e] = RUG[col], cx = ox + (R.x + R.w / 2) * t, cy = oy + (R.y + R.h / 2) * t, rx = Math.max(0.9, (R.w - 1.4) / 2) * t, ry = Math.max(0.7, (R.h - 1.4) / 2) * t;
+  g.save(); g.globalAlpha = 0.55; g.fillStyle = f; g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, 7); g.fill();
+  g.globalAlpha = 0.9; g.strokeStyle = e; g.lineWidth = Math.max(2, t * 0.08); g.setLineDash([t * 0.18, t * 0.12]); g.beginPath(); g.ellipse(cx, cy, rx - t * 0.12, ry - t * 0.12, 0, 0, 7); g.stroke(); g.setLineDash([]); g.restore();
 }
 // いろの たいまつ（えいごだけの ヒント）
 const TORCH = { red: ['#ff4a4a', '#ffb0a0'], blue: ['#3a8aff', '#a8d4ff'], yellow: ['#ffd020', '#fff3a0'] };
@@ -382,7 +390,7 @@ function showCard(id, ctx = {}) {
   if (!ctx.dex) dexOf(id).looked++;
   tutFlag('look', id);
   let stat = '', btns = '';
-  if (ctx.mon) stat = `<div class="dstat">HP ${ctx.mon.hp}/${ctx.mon.maxhp}　つよさ ${ctx.mon.atk}</div>`;
+  if (ctx.mon) stat = `<div class="dstat">HP ${ctx.mon.hp}/${ctx.mon.maxhp}　つよさ ${ctx.mon.atk}${w.weak ? `<br><b class="en weakb">weak: ${w.weak}</b>` : ''}</div>`;
   if (ctx.dex) { const d = D.dex[id] || {}; stat = `<div class="dstat">であった ${d.seen || 0}かい・つかった ${d.used || 0}かい・よめた ${d.read || 0}かい${d.tq ? `<br>テスト ${d.tq}もん ちゅう ${d.tok || 0}もん せいかい` : ''}</div>`; }
   if (ctx.inv) {
     const it = ctx.inv, eqd = Object.values(run.equip).includes(it.uid);
@@ -424,6 +432,9 @@ function drawAim(now, t, ox, oy) {
   for (const m of tg.mons) { const cx = ox + (m.x + 0.5) * t, cy = oy + (m.y + 0.5) * t, r = t * (0.55 + Math.sin(now / 140) * 0.06); g.strokeStyle = '#ff3a5a'; g.lineWidth = 3.5; g.beginPath(); g.arc(cx, cy, r, 0, 7); g.stroke(); g.beginPath(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { g.moveTo(cx + dx * r * 0.7, cy + dy * r * 0.7); g.lineTo(cx + dx * r * 1.25, cy + dy * r * 1.25); } g.stroke(); }
 }
 
+// もちものの こうか（みじかく）。たべもの は かいふく りょう、どうぐ は つかいかた
+const USE_NOTE = { potion: 'HP・MP ぜんぶ かいふく', key: 'たからばこを あける', book: 'あたらしい まほうを おぼえる', torch: 'ちずが ぜんぶ みえる', rope: 'つぎの かいへ', feather: 'たおれても 1かい ふっかつ', goldkey: 'きんいろの とびらを あける' };
+const useNote = w => w.use === 'heal' ? `HP ＋${w.val}` : w.use === 'mp' ? (w.val >= 99 ? 'MP ぜんぶ かいふく' : `MP ＋${w.val}`) : USE_NOTE[w.use] || '';
 let bagTab = 'weapon';
 const SLOT_NAME = { weapon: 'ぶき', shield: 'たて', armor: 'よろい' };
 function itemsPop(tab) {
@@ -433,7 +444,7 @@ function itemsPop(tab) {
   const list = run.inv.filter(it => bagOf(it.id) === bagTab), B = BAGS.find(b => b.id === bagTab), grp = B.group;
   const rows = list.map(it => {
     const w = WORD[it.id], eqd = Object.values(run.equip).includes(it.uid), ok = !ti || it.id === want, cls = ti && ok ? 'hint' : '';
-    const stat = w.slot ? `<small>${SLOT_NAME[w.slot]}・${w.atk ? `つよさ ＋${w.atk}` : `まもり ＋${w.def}`}</small>` : w.use === 'heal' ? `<small>HP ＋${w.val}</small>` : '';
+    const stat = w.slot ? `<small>${SLOT_NAME[w.slot]}・${w.atk ? `つよさ ＋${w.atk}` : `まもり ＋${w.def}`}</small>` : `<small>${useNote(w)}</small>`;
     const b = w.slot ? `<button class="${cls}" data-act="dgEquip" data-arg="${it.uid}" ${ok ? '' : 'disabled'}>${eqd ? 'はずす' : 'そうび'}</button>` : w.verb ? `<button class="${cls}" data-act="dgUse" data-arg="${it.uid}" ${ok ? '' : 'disabled'}>${w.verb}</button>` : '';
     return `<div class="irow${eqd ? ' on' : ''}"><span class="ia" data-art="${w.art}"></span><div class="in">${w.en}${eqd ? '<span class="eqm">そうびちゅう</span>' : ''}${stat}</div>${b}${ti ? '' : `<button class="q" data-act="dgLook" data-arg="${it.uid}">？</button>`}</div>`;
   }).join('');
@@ -521,6 +532,13 @@ function gameOver() {
     <p class="muted">ずかんと ことばの きろくは のこるよ。また ちょうせん しよう！</p><div class="btns"><button class="big" data-act="dgTitle">タイトルへ</button></div>`);
   run = null;
 }
+// 20かい クリアの きねん：おうちの きせかえ「ダンジョンの マント」
+function giveCape(now) {
+  if (!D.rewarded.clear || typeof grantItem !== 'function' || S.owned.includes('a_dcape')) return;
+  grantItem('a_dcape'); save();
+  if (now) { const w = document.querySelector('#ov .pop'); if (w) w.insertAdjacentHTML('beforeend', '<p class="capeb">きねんに「ダンジョンの マント」を もらったよ！（おうちの きせかえ）</p>'); }
+  else toast('20かい クリアの きねん「ダンジョンの マント」を もらったよ！');
+}
 const cardList = ids => (ids || []).map(id => { const c = CARD[id]; return `<span class="r${c.rare}"><b>${c.en}</b> ${'★'.repeat(c.rare)}</span>`; }).join('') || '<span>なし</span>';
 function clearRun() {
   if (isTreasure(run)) { // たからさがしの クリア
@@ -541,6 +559,7 @@ function clearRun() {
     <div>こんかい であった ことば（${met.length}こ）</div><div class="wordlist">${met.map(id => `<span><b>${WORD[id].en}</b> ${WORD[id].ja}</span>`).join('')}</div>
     <div class="btns"><button class="big" data-act="dgTitle">タイトルへ</button></div>`);
   if (first) setTimeout(() => stars(STARS.clear, 'はじめての ダンジョン クリア！'), 600);
+  giveCape(true);
   run = null;
 }
 
@@ -882,6 +901,7 @@ function setupInput() {
   resize(); setupInput();
   [, D] = await Promise.all([ready, load()]);
   setAudioSettings({ bgm: false, se: D.settings.se, voice: D.settings.voice && S.settings.sound !== false });
+  setTimeout(() => giveCape(false), 800); // まえに クリアした ひとにも マントを わたす
   initTreasure({ D: () => D, speak, stars, toast, sfx, save: () => saveDg(D), onRevealDone: () => { if (run) hud(); } });
   makeHero(); toTitle();
   requestAnimationFrame(loop);

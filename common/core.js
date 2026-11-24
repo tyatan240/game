@@ -108,7 +108,8 @@ const ITEMS=[
  /* テスト ごうかくで もらえる アイテム */
  {id:'a_icecream',cat:'acc',name:'アイスクリーム',test:'add1-1'},
  {id:'h_tiara',cat:'hat',name:'ティアラ',test:'add1-2'},
- {id:'h_treasure',cat:'hat',name:'たからさがしの かんむり',reward:'treasure'}, // たからさがしの カード 78まい コンプリートの きねん（おみせには ならばない）
+ {id:'h_treasure',cat:'hat',name:'たからさがしの かんむり',reward:'treasure'},
+ {id:'a_dcape',cat:'acc',name:'ダンジョンの マント',reward:'dungeon'}, // イングリッシュダンジョン 20かい クリアの きねん（おみせには ならばない） // たからさがしの カード 78まい コンプリートの きねん（おみせには ならばない）
  {id:'u_trophy',cat:'furn',name:'きんのトロフィー',test:'add1-3',box:'230 252 50 50'},
  {id:'a_bouquet',cat:'acc',name:'はなたば',test:'add21-1'},
  {id:'o_sailor',cat:'outfit',name:'セーラーふく',test:'add21-2'},
@@ -290,7 +291,13 @@ function defState(){return{v:1,t:0,points:0,
   ktypes:Object.fromEntries(KTYPES.map(t=>[t.id,{on:true,pts:t.pts}])),
   etypes:Object.fromEntries(ETYPES.map(t=>[t.id,{on:true,pts:t.pts}])),
   perRound:5,perfect:3,daily:5,sound:true,testScale:1,practiceMul:2,practiceBonus:5,progPts:3,gachaOn:true,gachaCost:100,gachaDaily:0,abcPts:10,goalPts:10,goalAll:50,admin:false},
- lastDay:'',stats:{q:0,ok:0},kstats:{q:0,ok:0},estats:{q:0,ok:0},tests:{},daily:newDaily(''),gacha:{day:'',count:0,pulls:0},looks:{},hw:{},streakGot:[],adminBackup:null}}
+ lastDay:'',stats:{q:0,ok:0},kstats:{q:0,ok:0},estats:{q:0,ok:0},tests:{},daily:newDaily(''),gacha:{day:'',count:0,pulls:0},looks:{},hw:{},streakGot:[],adminBackup:null,notes:defNotes(),pet:defPet(),book:defBook()}}
+// まいにちの えほん：story＝いま よんでいる はなしの ばんごう、open＝ひらいた ページの かず、last＝さいごに ページが ひらいた日、seen＝よんだ ページ、rewarded＝⭐を もらった はなし
+function defBook(){return{story:0,open:0,last:'',seen:{},rewarded:[]}}
+// モコの ペット：eggs＝あたためちゅうの たまご、pets＝そだてた ペット、stock＝まだ あげていない ごはん、day＝その日に もらった ごはんの かず
+function defPet(){return{eggs:[],pets:[],stock:0,day:{d:'',earned:0},lastSeen:'',started:false}}
+// はなまるスタンプ（パパ・ママから）：senders＝おくる ひと（さいだい4にん）、list＝おくった スタンプ
+function defNotes(){return{senders:[{id:'papa',name:'パパ',color:'#4a8fe0'},{id:'mama',name:'ママ',color:'#ff6b9a'}],list:[]}}
 function merge(d){
  const s=defState(); if(!d||typeof d!=='object') return s;
  if(typeof d.points==='number') s.points=d.points;
@@ -313,6 +320,15 @@ function merge(d){
  if(d.daily&&typeof d.daily==='object') s.daily={...s.daily,...d.daily,got:{...(d.daily.got||{})}};
  if(d.tests&&typeof d.tests==='object') s.tests=d.tests;
  if(Array.isArray(d.streakGot)) s.streakGot=d.streakGot.filter(n=>typeof n==='number');
+ if(d.book&&typeof d.book==='object'){const B=d.book,Q=s.book;for(const k of ['story','open'])if(typeof B[k]==='number')Q[k]=B[k];if(typeof B.last==='string')Q.last=B.last;if(B.seen&&typeof B.seen==='object')Q.seen=B.seen;if(Array.isArray(B.rewarded))Q.rewarded=B.rewarded}
+ if(d.pet&&typeof d.pet==='object'){const P=d.pet,Q=s.pet;
+  if(Array.isArray(P.eggs))Q.eggs=P.eggs.filter(e=>e&&typeof e.kind==='string');
+  if(Array.isArray(P.pets))Q.pets=P.pets.filter(x=>x&&typeof x.kind==='string');
+  if(typeof P.stock==='number')Q.stock=P.stock;if(P.day&&typeof P.day==='object')Q.day={d:String(P.day.d||''),earned:+P.day.earned||0};
+  if(typeof P.lastSeen==='string')Q.lastSeen=P.lastSeen;Q.started=!!P.started}
+ if(d.notes&&typeof d.notes==='object'){
+  if(Array.isArray(d.notes.senders)&&d.notes.senders.length) s.notes.senders=d.notes.senders.filter(x=>x&&typeof x.id==='string').slice(0,4).map(x=>({id:x.id,name:String(x.name||'').slice(0,8)||'おうちのひと',color:typeof x.color==='string'?x.color:'#4a8fe0'}));
+  if(Array.isArray(d.notes.list)) s.notes.list=d.notes.list.filter(n=>n&&typeof n.stamp==='string'&&typeof n.day==='string')}
  if(d.hw&&typeof d.hw==='object') for(const k in d.hw) if(typeof d.hw[k]==='number') s.hw[k]=d.hw[k];
  if(d.looks&&typeof d.looks==='object') for(const c in d.looks){const l=d.looks[c];if(!ITEM[c]||!l||typeof l!=='object')continue;
   s.looks[c]={};for(const k of LOOK) if(l[k]&&ITEM[l[k]]) s.looks[c][k]=l[k]}
@@ -455,10 +471,11 @@ const ACC_BACK={
 const wingPath=(dir,c1,c2,op)=>{const m=dir<0?'':'transform="translate(200 0) scale(-1 1)"';
  return `<g ${m} opacity="${op}"><path d="M70 176 C30 120 4 130 10 156 C-2 168 10 188 30 186 C20 204 44 214 70 196 Z" fill="${c1}" stroke="${c2}" stroke-width="3" stroke-linejoin="round"/><path d="M66 180 C40 160 26 158 20 162 M66 186 C44 182 34 186 30 190" stroke="${c2}" stroke-width="2" fill="none"/></g>`};
 Object.assign(ACC_BACK,{
+ a_dcape:`<path d="M66 140 Q100 132 134 140 L178 232 Q100 250 22 232 Z" fill="#5a3aa8" stroke="#3a2078" stroke-width="3" stroke-linejoin="round"/><path d="M28 224 Q100 242 172 224" stroke="#ffd34f" stroke-width="5" fill="none"/><path d="M62 142 L50 124 L80 138 M138 142 L150 124 L120 138" fill="#7a5ac8" stroke="#3a2078" stroke-width="3" stroke-linejoin="round"/><path d="M80 150 L50 226 M120 150 L150 226" stroke="#7a5ac8" stroke-width="2.5"/>`,
  a_wings:wingPath(-1,'#fff','#b9d8f5',1)+wingPath(1,'#fff','#b9d8f5',1),
  a_fairy:`<g>${wingPath(-1,'#d9c4ff','#b394f0',.85)}${wingPath(1,'#ffc4e1','#f08aa8',.85)}</g>`
 });
-Object.assign(ACC,{a_wings:'',a_fairy:`<g fill="#fff6a8">${[[30,140],[172,136],[22,190],[180,196]].map(([x,y])=>`<polygon points="${star(x,y,5,2)}"/>`).join('')}</g>`});
+Object.assign(ACC,{a_dcape:`<circle cx="100" cy="152" r="6" fill="#ffd34f" stroke="#c8901a" stroke-width="2"/><circle cx="100" cy="152" r="2.4" fill="#ff5a8a"/>`,a_wings:'',a_fairy:`<g fill="#fff6a8">${[[30,140],[172,136],[22,190],[180,196]].map(([x,y])=>`<polygon points="${star(x,y,5,2)}"/>`).join('')}</g>`});
 Object.assign(OUTFIT,{
  o_kimono:`<path d="M70 160 Q100 152 130 160 L140 220 Q100 228 60 220 Z" fill="#ff8fa3" stroke="#e0607a" stroke-width="3"/>
   <path d="M86 158 L100 182 L114 158" fill="none" stroke="#fff" stroke-width="4"/><path d="M90 158 L100 176 L110 158" fill="none" stroke="#ffd34f" stroke-width="2"/>
