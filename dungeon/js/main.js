@@ -1,8 +1,9 @@
 // モコの イングリッシュダンジョン：がめん・そうさ・チュートリアル・ずかん・⭐
 // core.js（S・save・charSVG・showPop・ACT）を つかう。きまりは game.js、えは art.js、ほぞんは save.js
 import { WORD, WORDS, CATS, MAX_FLOOR, STARS, BOSS_FLOORS, TEST_FLOORS, zoneOf, BAGS, GROUPS, bagOf, FAMS } from './data.js';
-import { isTreasure } from './game.js';
-import { initTreasure, treasureUnlocked, cardCount, giveCard, showReveals, flipCard, revealNext, albumPop, cardBig, cardSay, revealPending } from './treasure.js';
+import { isTreasure, openSecret, failSecret } from './game.js';
+import { makeQuiz } from './quiz.js';
+import { initTreasure, treasureUnlocked, cardCount, giveCard, showReveals, flipCard, revealNext, albumPop, cardBig, cardSay, revealPending, quizPop, quizAns, quizTile, quizBack, quizDone, quizSay } from './treasure.js';
 import { CARD, CARD_TOTAL, CARD_STARS } from './cards.js';
 import { newRun, act, descend, updateSeen, visible, tileAt, seenAt, onStairs, heroAtk, heroDef, monAt, DIRS, bagCount, spellTargets } from './game.js';
 import { drawTile, drawArt, wordArt } from './art.js';
@@ -81,6 +82,7 @@ function draw(now) {
   for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) drawTile(g, m.tiles[y][x], ox + x * t, oy + y * t, t, seenAt(run, x, y), vis.has(x + ',' + y), zone);
   const shown = (x, y) => seenAt(run, x, y);
   if (run.stairs && shown(run.stairs.x, run.stairs.y)) drawArt(g, 'dg_stairs', ox + run.stairs.x * t, oy + run.stairs.y * t, t);
+  for (const s of run.secrets || []) if (!s.open && shown(s.door.x, s.door.y)) drawCrack(s, now, t, ox, oy);
   for (const b of run.boxes) if (shown(b.x, b.y)) drawArt(g, b.open ? 'dg_boxopen' : 'dg_box', ox + b.x * t + t * 0.08, oy + b.y * t + t * 0.08, t * 0.84);
   for (const it of run.items) if (shown(it.x, it.y)) drawArt(g, WORD[it.id].art, ox + it.x * t + t * 0.14, oy + it.y * t + t * 0.14, t * 0.72);
   const drawMon = (mo, hp) => {
@@ -116,6 +118,7 @@ function draw(now) {
     }
     if (f.kind === 'vanish') { const s = t * (1 - k * 0.7); g.globalAlpha = Math.max(0, 1 - k * 1.2); drawArt(g, WORD[f.id].art, ox + (f.x + 0.5) * t - s / 2, oy + (f.y + 0.5) * t - s / 2, s); g.globalAlpha = 1; g.fillStyle = `rgba(255,230,120,${1 - k})`; for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2, d = t * (0.2 + k * 0.6); g.beginPath(); g.arc(ox + (f.x + 0.5) * t + Math.cos(a) * d, oy + (f.y + 0.5) * t + Math.sin(a) * d, t * 0.06, 0, 7); g.fill(); } continue; }
     if (f.kind === 'spell') { drawSpell(f, now, t, ox, oy); continue; }
+    if (f.kind === 'search') { const kk = (now - f.t0) / f.dur, cx = ox + (f.x + 0.5) * t, cy = oy + (f.y + 0.5) * t; g.strokeStyle = `rgba(255,255,255,${1 - kk})`; g.lineWidth = 3; g.beginPath(); g.arc(cx, cy, t * (0.25 + kk * 0.3), 0, 7); g.stroke(); g.beginPath(); g.moveTo(cx + t * 0.25, cy + t * 0.25); g.lineTo(cx + t * 0.45, cy + t * 0.45); g.stroke(); continue; }
     if (f.kind === 'aura') { // つよい まほう：モコの まわりに ひかりの わ（tier 3 は 2じゅう）
       const col = FX_COL[f.fam] || '255,220,120', cx2 = ox + (f.x + 0.5) * t, cy2 = oy + (f.y + 0.5) * t;
       for (let r = 0; r < f.tier - 1; r++) { const kk = Math.min(1, k * 1.3 + r * 0.15); g.strokeStyle = `rgba(${col},${Math.max(0, 1 - kk)})`; g.lineWidth = t * 0.12 * f.tier; g.beginPath(); g.arc(cx2, cy2, t * (0.4 + kk * (0.9 + f.tier * 0.5)), 0, 7); g.stroke(); }
@@ -161,6 +164,16 @@ function drawSpell(f, now, t, ox, oy) {
     else { const p = f.kind2 === 'all' ? k : (k - 0.5) / 0.5, s = t * (0.8 + 0.45 * tier) * (0.7 + p * 0.5); glow(tx, ty, t * (0.6 + p * tier * 0.6), 0.75 * (1 - p)); if (art) { g.globalAlpha = Math.max(0, 1 - p * 0.8); drawArt(g, art, tx - s / 2, ty - s / 2 - t * 0.1, s); g.globalAlpha = 1; } for (let i = 0; i < 6 + 4 * tier; i++) { const a = i / (6 + 4 * tier) * Math.PI * 2, d = t * (0.2 + p * (0.6 + 0.3 * tier)); g.fillStyle = `rgba(255,250,200,${1 - p})`; g.beginPath(); g.arc(tx + Math.cos(a) * d, ty + Math.sin(a) * d, t * 0.05 * tier, 0, 7); g.fill(); } }
   }
 }
+// あやしい かべ：ひびと、ときどき ひかる ほし（しまっている あいだは うすく）
+function drawCrack(s, now, t, ox, oy) {
+  const x = ox + s.door.x * t, y = oy + s.door.y * t, locked = s.lock > run.turn;
+  g.save(); g.strokeStyle = locked ? 'rgba(60,40,60,.45)' : 'rgba(40,20,40,.8)'; g.lineWidth = Math.max(1.5, t * 0.05); g.lineCap = 'round'; g.beginPath();
+  g.moveTo(x + t * 0.5, y + t * 0.12); g.lineTo(x + t * 0.42, y + t * 0.36); g.lineTo(x + t * 0.58, y + t * 0.52); g.lineTo(x + t * 0.44, y + t * 0.82);
+  g.moveTo(x + t * 0.42, y + t * 0.36); g.lineTo(x + t * 0.26, y + t * 0.42); g.moveTo(x + t * 0.58, y + t * 0.52); g.lineTo(x + t * 0.76, y + t * 0.6); g.stroke();
+  if (!locked) { const a = (Math.sin(now / 320 + s.door.x) + 1) / 2, cx = x + t * 0.68, cy = y + t * 0.28, r = t * 0.16 * (0.5 + a * 0.6);
+    g.fillStyle = `rgba(255,240,150,${0.35 + a * 0.6})`; g.beginPath(); g.moveTo(cx, cy - r); g.quadraticCurveTo(cx, cy, cx + r, cy); g.quadraticCurveTo(cx, cy, cx, cy + r); g.quadraticCurveTo(cx, cy, cx - r, cy); g.quadraticCurveTo(cx, cy, cx, cy - r); g.fill(); }
+  g.restore();
+}
 const FX_COL = { fire: '255,130,50', water: '90,170,255', ice: '140,210,255', thunder: '255,220,60', heal: '120,230,150', wind: '110,210,180', light: '255,240,150' };
 // そうびの みため：モコの え の まえ（hand：けん・たて）と うしろ（armor：よろい）に かさねる。原点は あしもと
 const gearOf = slot => { const it = run && run.inv.find(i => i.uid === run.equip[slot]); return it ? WORD[it.id] : null; };
@@ -187,6 +200,9 @@ function hud() {
   const h = run.hero;
   $id('floor').textContent = run.tut ? 'れんしゅう' : isTreasure(run) ? `${run.floor}かい・カード${(run.cards || []).length}` : `${run.floor}かい`;
   $id('floor').classList.toggle('tre', isTreasure(run));
+  const bw = $id('bWait'), tre = isTreasure(run); if (bw.dataset.tre !== String(tre)) { bw.dataset.tre = tre; bw.textContent = tre ? 'しらべる' : 'まつ'; bw.classList.toggle('search', tre); }
+  // あやしい かべを はじめて みつけたら おしえる
+  for (const s of run.secrets || []) if (!s.open && !s.noted && seenAt(run, s.door.x, s.door.y)) { s.noted = true; setTimeout(() => toast('あやしい かべ（ひび）を みつけた！ となりで「しらべる」'), 400); }
   const hp = dispHp != null ? dispHp : h.hp; // せんとうちゅうは けいさんしきと いっしょに へる
   $id('hp').textContent = `${hp}/${h.maxhp}`; $id('hpbar').style.width = Math.max(0, 100 * hp / h.maxhp) + '%';
   $id('hpbar').parentNode.parentNode.classList.toggle('low', hp <= h.maxhp * 0.3);
@@ -231,12 +247,15 @@ function doAction(a) {
   return r;
 }
 async function handle(ev, slow) {
-  let stairs = false, dead = false, rope = false, gotCard = false;
+  let stairs = false, dead = false, rope = false, gotCard = false, quizI = null;
   for (const e of ev) {
     if (e.t === 'msg') { log(e.text); if (e.heroHp != null) dispHp = e.heroHp; if (e.monUid != null && monHpShown) monHpShown.set(e.monUid, e.monHp); if (slow) { hud(); await wait(e.calc ? CALC_MS : MSG_MS); } }
     else if (e.t === 'fx') { fx.push({ ...e, t0: performance.now() }); if (e.kind === 'wind' && posShown && e.uid != null) posShown.set(e.uid, { x: e.x, y: e.y }); }
     else if (e.t === 'enemyTurn') posShown = null;
-    else if (e.t === 'treasure') { giveCard(e.rare, run); gotCard = true; } // てきの ばん：ここで うごいた ばしょに
+    else if (e.t === 'treasure') { giveCard(e.rare, run); gotCard = true; }
+    else if (e.t === 'search') fx.push({ kind: 'search', x: e.x, y: e.y, t0: performance.now(), dur: 900 });
+    else if (e.t === 'quiz') quizI = e.i;
+    else if (e.t === 'secret') { sfx.unlock(); vis = visible(run); camTarget(false); } // てきの ばん：ここで うごいた ばしょに
     else if (e.t === 'bubble') fx.push({ kind: 'bubble', ...e, t0: performance.now(), dur: 1300 });
     else if (e.t === 'spell') { fx.push({ ...e, kind: 'spell', kind2: e.kind, t0: performance.now(), dur: SPELL_MS }); if (slow) await wait(SPELL_MS); } // まほうの えんしゅつを みせてから ダメージ
     else if (e.t === 'meet') meet(e.id);
@@ -257,6 +276,7 @@ async function handle(ev, slow) {
     else if (e.t === 'reveal') sfx.unlock();
     else if (e.t === 'dead') dead = true;
   }
+  if (quizI != null) { stopWalk(); setTimeout(() => startQuiz(quizI), 250); } // あやしい かべ → とびらの クイズ
   if (gotCard) { stopWalk(); setTimeout(showReveals, slow ? 200 : 350); } // カードを めくる えんしゅつ（たおれても カードは のこる）
   if (dead) { stopWalk(); setTimeout(gameOver, slow ? 300 : 500); return; }
   if (rope) { stopWalk(); setTimeout(() => { if (run && mode === 'play') goDown(true); }, slow ? 300 : 500); return; }
@@ -684,6 +704,21 @@ function toTitle() {
   const tb = $id('tTreasure'), un = treasureUnlocked();
   tb.classList.toggle('locked', !un); tb.innerHTML = un ? `たからさがし<small>カード ${cardCount()} / ${CARD_TOTAL}</small>` : `たからさがし<small>20かいを クリアすると あそべるよ</small>`;
 }
+/* ---------- かくし部屋の とびらの クイズ ---------- */
+function startQuiz(i) {
+  if (!run || mode !== 'play' || !run.secrets || !run.secrets[i]) return;
+  const s = run.secrets[i], q = makeQuiz(s.kind), iid = `tq-${Date.now()}`;
+  try { if (typeof LH !== 'undefined') LH.begin(iid); } catch (e) { }
+  quizPop(q, (ok, q2, user) => {
+    try { if (typeof LH !== 'undefined') LH.recordAttempt({ questionInstanceId: iid, questionKey: `eigo:treasure:${q2.kind}:${q2.card.id}`, subject: 'eigo', topic: 'treasure', skill: 'treasure-' + q2.kind, difficulty: Math.ceil(run.floor / 5), mode: 'quiz', questionText: q2.kind === 'riddle' ? q2.en : q2.kind === 'letter' ? q2.shown : q2.kind === 'order' ? q2.tiles.join(' ') : `え → えいご（${q2.card.ja}）`, correctAnswer: q2.card.en, userAnswer: user, isCorrect: ok, attemptNumber: 1, earnedStars: ok ? 1 : 0, params: { card: q2.card.id, floor: run.floor } }); } catch (e) { }
+    if (!run) return;
+    logGroup++;
+    if (ok) { stars(1, 'とびらの クイズ せいかい！'); handle(openSecret(run, i), false); }
+    else { failSecret(run, i); log('とびらは しまって しまった…（5ターン たったら また しらべよう）'); }
+    persist(); hud();
+  });
+}
+
 /* ---------- たからさがしの メニュー ---------- */
 function treasureMenu() {
   if (!treasureUnlocked()) { sfx.bump(); return showPop(`<h3>たからさがし ダンジョン</h3><p>イングリッシュダンジョンを <b>20かいまで クリア</b> すると あそべるよ。</p><div class="btns"><button class="big gray" data-act="close">とじる</button></div>`); }
@@ -739,6 +774,7 @@ Object.assign(ACT, {
   dgAlbum: L => { sfx.tap(); albumPop(L); },
   dgCardBig: id => cardBig(id), dgCardSay: id => cardSay(id),
   dgFlip: () => flipCard(), dgRevealNext: () => revealNext(),
+  dgQzAns: i => quizAns(i), dgQzTile: i => quizTile(i), dgQzBack: () => quizBack(), dgQzDone: () => quizDone(), dgQzSay: () => quizSay(),
   dgHome: () => { if (run && run.tut) { run = null; D.run = null; } persist(); flush(D); location.href = '../index.html'; },
 });
 
@@ -753,7 +789,7 @@ function setupInput() {
     else if (aim && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); ACT.dgAimGo(); }
     else if (aim && e.key === 'Escape') ACT.dgAimNo();
     else if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); if (onStairs(run)) askStairs(); else doAction({ t: 'attack' }); }
-    else if (e.key === 'm') magicPop(); else if (e.key === 'i') itemsPop(); else if (e.key === '.') doAction({ t: 'wait' });
+    else if (e.key === 'm') magicPop(); else if (e.key === 'i') itemsPop(); else if (e.key === '.') doAction({ t: 'wait' }); else if (e.key === 'f') doAction({ t: 'search' });
   });
   // おしっぱなしで あるく のは てきが みえない とき だけ（てきが いたら 1かい おす ごとに 1ぽ）
   const monsSeen = () => run && run.mons.some(m => vis.has(m.x + ',' + m.y));
@@ -767,7 +803,7 @@ function setupInput() {
   $id('bAttack').onclick = () => { stopWalk(); if (aim) endAim(); if (tutBtn('bAttack')) doAction({ t: 'attack' }); };
   $id('bMagic').onclick = () => { stopWalk(); if (aim) endAim(); if (tutBtn('bMagic')) magicPop(); };
   $id('bItems').onclick = () => { stopWalk(); if (aim) endAim(); if (tutBtn('bItems')) itemsPop(); };
-  $id('bWait').onclick = () => { stopWalk(); if (tutBtn('bWait')) doAction({ t: 'wait' }); };
+  $id('bWait').onclick = () => { stopWalk(); if (aim) endAim(); if (tutBtn('bWait')) doAction({ t: isTreasure(run) ? 'search' : 'wait' }); }; // たからさがしでは「しらべる」
   $id('bStairs').onclick = () => { if (tutBtn('bStairs')) askStairs(); };
   $id('menuBtn').onclick = () => menu();
   $id('gear').onclick = () => ACT.dgGear();
@@ -793,4 +829,4 @@ function setupInput() {
 })();
 
 // じどう テスト よう
-window.__dg = { tutInfo: () => { const i = tutInfo(); return i && { id: i.id, dirs: i.dirs, btn: i.btn, adj: !!i.adj, goal: i.goal && { x: i.goal.x, y: i.goal.y }, pick: i.s.pick, spell: i.s.spell }; }, set fast(v) { fast = v; }, get busy() { return busy; }, get ghosts() { return ghosts; }, get run() { return run; }, get D() { return D; }, get mode() { return mode; }, get tut() { return tut; }, act: doAction, start, resume, toTitle, goDown, showCard, tapMap, toTile, cam: () => cam(), visible: () => vis, shownPos: uid => posShown && posShown.get(uid), treasureMenu, get revealing() { return revealPending(); }, get test() { return TT; }, startTest, get aim() { return aim; } };
+window.__dg = { tutInfo: () => { const i = tutInfo(); return i && { id: i.id, dirs: i.dirs, btn: i.btn, adj: !!i.adj, goal: i.goal && { x: i.goal.x, y: i.goal.y }, pick: i.s.pick, spell: i.s.spell }; }, set fast(v) { fast = v; }, get busy() { return busy; }, get ghosts() { return ghosts; }, get run() { return run; }, get D() { return D; }, get mode() { return mode; }, get tut() { return tut; }, act: doAction, start, resume, toTitle, goDown, showCard, tapMap, toTile, cam: () => cam(), visible: () => vis, shownPos: uid => posShown && posShown.get(uid), treasureMenu, startQuiz, get revealing() { return revealPending(); }, get test() { return TT; }, startTest, get aim() { return aim; } };

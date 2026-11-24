@@ -25,6 +25,7 @@
 ## たからさがし（20かい クリアで あそべる）
 - タイトルの「たからさがし」から。A〜Z の カード 78まい（`js/cards.js`、え は `js/cardart.js`）を あつめる。カードの がめん・アルバムは `js/treasure.js`
 - `run.mode === 'treasure'`：てきが つよい（`game.js` の `ef()`）・たからばこ／ゆかの カード（`tcard`）／ボスから カード（`treasure` イベント）・ふくしゅう テストなし
+- かくし部屋：「まつ」が「しらべる」に なり、あやしい かべ（ひび）→ とびらの クイズ（`js/quiz.js`）→ せいかいで ひらく（`game.js` の `placeSecrets`・`openSecret`）
 - ちゅうだんは `D.treasure.run`（えいごの `D.run` と べつ）。仕様：`docs/treasure-dungeon-spec.md`
 
 ## こうせい

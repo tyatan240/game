@@ -281,3 +281,52 @@ html,body{margin:0;height:100%;overflow:hidden;background:#2a2238;touch-action:n
 .cardbig{text-align:center}.cb-ex{font-size:20px;font-weight:800;color:#3f7fc9;margin:8px 0 2px}
 @media (max-width:380px){.tcard.s{width:78px;height:112px;font-size:11px}.tcard.s .tc-art{width:56px;height:56px}.al-empty{width:78px;height:112px}}
 .rv-btns[hidden]{display:none}
+
+/* ===== レアカードの せなか（はいけい）も ひからせる ===== */
+.tcard .tc-in>*{position:relative;z-index:1}
+.tcard .tc-in>.bgfx,.tcard .tc-in>.glitter,.tcard .tc-in>.sparks{position:absolute;inset:0;z-index:0;pointer-events:none}
+.tcard .tc-big{position:absolute;z-index:0}
+/* ★★：ぎんいろの ひかりの すじが まわる＋きらきら */
+.tcard.r2 .tc-in{background:radial-gradient(circle at 50% 38%,#ffffff 0,#eef3fc 35%,#cfdaf0 75%,#b8c6e4 100%)}
+.tcard.r2 .bgfx{background:repeating-conic-gradient(from 0deg at 50% 38%,rgba(255,255,255,.75) 0 6deg,rgba(255,255,255,0) 6deg 18deg);animation:spin 14s linear infinite;-webkit-mask:radial-gradient(circle at 50% 38%,#000 0,transparent 75%);mask:radial-gradient(circle at 50% 38%,#000 0,transparent 75%)}
+.tcard.r2 .glitter{background-image:radial-gradient(circle,rgba(255,255,255,.95) 0 1px,transparent 1.6px);background-size:11px 13px;animation:glit 2.4s ease-in-out infinite alternate;opacity:.6}
+.tcard.r2 .tc-art canvas{filter:drop-shadow(0 0 5px rgba(160,190,255,.95))}
+.tcard.r2 .tc-big{color:rgba(120,150,210,.2)}
+/* ★★★：にじいろの はいけいが ながれる＋きんの ひかりの すじ＋きらきら */
+.tcard.r3 .tc-in{background:linear-gradient(135deg,#ffd6ec,#fff1b8,#c8ffe6,#cfe6ff,#ead2ff,#ffd6ec);background-size:400% 400%;animation:rainbg 6s linear infinite}
+.tcard.r3 .bgfx{background:repeating-conic-gradient(from 0deg at 50% 38%,rgba(255,236,140,.85) 0 5deg,rgba(255,255,255,0) 5deg 15deg);animation:spin 9s linear infinite;-webkit-mask:radial-gradient(circle at 50% 38%,#000 0,transparent 80%);mask:radial-gradient(circle at 50% 38%,#000 0,transparent 80%);mix-blend-mode:screen}
+.tcard.r3 .glitter{background-image:radial-gradient(circle,#fff 0 1.1px,transparent 1.8px),radial-gradient(circle,rgba(255,230,120,.95) 0 1px,transparent 1.6px);background-size:9px 11px,13px 9px;background-position:0 0,4px 5px;animation:glit 1.6s ease-in-out infinite alternate}
+.tcard.r3 .tc-art canvas{filter:drop-shadow(0 0 6px rgba(255,255,255,1)) drop-shadow(0 0 10px rgba(255,200,80,.9))}
+.tcard.r3 .tc-big{color:rgba(230,160,40,.28)}
+.tcard.r3 .tc-name{background:linear-gradient(90deg,#ff4a8a,#e0a020,#3aa8e0,#9a5af0);-webkit-background-clip:text;background-clip:text;color:transparent}
+.tcard.r3 .tc-name b{color:inherit}
+.tcard .sparks i{position:absolute;width:12%;aspect-ratio:1;margin:-6% 0 0 -6%;background:#fff;clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);animation:twinkle 2.2s ease-in-out infinite;opacity:0}
+.tcard.r3 .sparks i:nth-child(odd){background:#fff3a0}
+.tcard.r2 .sparks i:nth-child(n+5){display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes rainbg{0%{background-position:0% 50%}100%{background-position:400% 50%}}
+@keyframes glit{0%{opacity:.25;background-position:0 0,4px 5px}100%{opacity:.85;background-position:3px 4px,1px 2px}}
+@keyframes twinkle{0%,100%{opacity:0;transform:scale(.3) rotate(0)}50%{opacity:1;transform:scale(1) rotate(45deg)}}
+.tcard.r3{box-shadow:0 3px 0 rgba(0,0,0,.2),0 0 14px 3px rgba(255,210,90,.75)}
+.tcard.r2{box-shadow:0 3px 0 rgba(0,0,0,.2),0 0 10px 2px rgba(170,200,255,.7)}
+
+/* ===== たからさがし：しらべる・とびらの クイズ ===== */
+.acts .search{background:#3aa88a}
+.quiz{text-align:center}
+.qz-head{font-weight:800;color:#7c6cf0;font-size:18px;margin-bottom:4px}
+.qz-art{width:96px;height:96px;margin:0 auto}
+.qz-word{font-size:40px;font-weight:800;color:#3f7fc9;letter-spacing:.06em}
+.qz-blank{display:inline-block;min-width:1em;border-bottom:4px solid #ff5a8a;color:#ff5a8a}
+.qz-ch{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:6px}
+.qz-c{min-width:7em;font-size:22px}
+.qz-l{min-width:2.6em;font-size:28px;padding:10px 12px}
+.qz-l:disabled{opacity:.35}
+.qz-slots{display:flex;gap:6px;justify-content:center;margin:6px 0}
+.qz-slots span{width:42px;height:48px;border-radius:10px;background:#f3ecf8;border:3px solid #c8b8e8;font-size:30px;font-weight:800;color:#3f7fc9;display:flex;align-items:center;justify-content:center}
+.qz-rid{font-size:22px;font-weight:800;color:#3f7fc9;line-height:1.35;margin:4px 0}
+.qz-p{width:88px;height:88px;border-radius:16px;border:3px solid #e0d4d4;background:#fff;padding:6px}
+.qz-ch .ok{background:#5ac87a!important;border-color:#2f9a5a!important;color:#fff}
+.qz-ch .ng{background:#e0304a!important;border-color:#a8182e!important;color:#fff}
+.qz-fb .tok{color:#2f9a5a;font-weight:800;font-size:20px;margin-top:6px}
+.qz-fb .tng{color:#e0304a;font-weight:800;font-size:20px;margin-top:6px}
+.qz-ch .big{width:auto;display:inline-block}

@@ -1,6 +1,7 @@
 // ゲームの きまり（ターン・こうげき・てきの うごき・アイテム・まほう）。ひょうじとは べつ
 import { WORD, WORDS, SPELLS, HERO0, LV_EXP, MAX_FLOOR, BOSS_FLOORS, BOSS_OF, MINION_OF, BAGS, BAG_MAX, bagOf } from './data.js';
 import { RARE_BY_DEPTH } from './cards.js';
+import { quizKind } from './quiz.js';
 import { genFloor, genTutorial } from './gen.js';
 
 let rand = Math.random;
@@ -97,8 +98,53 @@ export function enterFloor(run, floor) {
       if (isTreasure(run) && rand() < 0.2) { const c = freeCell(run, pick(rooms.slice(1))); if (c) run.items.push({ uid: run.uid++, id: 'tcard', x: c[0], y: c[1], rare: rollRare(run, -1) }); }
     }
   }
+  run.secrets = [];
+  if (isTreasure(run) && floor > 0 && !BOSS_FLOORS.includes(floor)) placeSecrets(run);
   run.seen = '0'.repeat(run.map.w * run.map.h); // みえる ところは よびだしがわで updateSeen()
 }
+
+/* ---------- かくし部屋（たからさがし）---------- */
+// かべの なかに ちいさな へやを よやく（まだ かべの まま）。いりぐちは つうろ・へやの となりの「あやしい かべ」1マス
+//   ひらくまで タイルは '#' の まま。とびらの クイズに せいかい すると openSecret() で ほる
+function placeSecrets(run) {
+  const f = run.floor, W = run.map.w, H = run.map.h, tl = run.map.tiles;
+  const n = (rand() < (f <= 5 ? 0.6 : f <= 10 ? 0.8 : 1) ? 1 : 0) + (rand() < (f <= 5 ? 0.1 : f <= 10 ? 0.25 : 0.45) ? 1 : 0);
+  const isOpen = (x, y) => x >= 0 && y >= 0 && x < W && y < H && tl[y][x] !== '#';
+  for (let tries = 0; run.secrets.length < n && tries < 400; tries++) {
+    const w = ri(3, 4), h = 3, x = ri(2, W - w - 3), y = ri(2, H - h - 3);
+    let ok = true;
+    for (let yy = y - 1; yy <= y + h && ok; yy++) for (let xx = x - 1; xx <= x + w; xx++) if (isOpen(xx, yy)) { ok = false; break; }
+    if (!ok || run.secrets.some(o => x - 2 < o.x + o.w && o.x - 2 < x + w && y - 2 < o.y + o.h && o.y - 2 < y + h)) continue;
+    const cands = [];
+    for (let xx = x; xx < x + w; xx++) { cands.push([xx, y - 1, xx, y - 2], [xx, y + h, xx, y + h + 1]); }
+    for (let yy = y; yy < y + h; yy++) { cands.push([x - 1, yy, x - 2, yy], [x + w, yy, x + w + 1, yy]); }
+    const ds = cands.filter(([, , ox, oy]) => isOpen(ox, oy) && !(run.stairs && run.stairs.x === ox && run.stairs.y === oy) && !run.boxes.some(b => b.x === ox && b.y === oy));
+    if (!ds.length) continue;
+    const [dx, dy] = pick(ds);
+    run.secrets.push({ x, y, w, h, door: { x: dx, y: dy }, open: false, lock: 0, kind: quizKind(f, rand) });
+  }
+}
+// せいかい → かくし部屋を ほって なかに たからもの（カードは 1だん ふかい わりあい）
+export function openSecret(run, i) {
+  const s = run.secrets && run.secrets[i], ev = []; if (!s || s.open) return ev;
+  s.open = true;
+  const rows = run.map.tiles.map(r => r.split(''));
+  for (let y = s.y; y < s.y + s.h; y++) for (let x = s.x; x < s.x + s.w; x++) rows[y][x] = '.';
+  rows[s.door.y][s.door.x] = ',';
+  run.map.tiles = rows.map(r => r.join(''));
+  run.map.rooms.push({ x: s.x, y: s.y, w: s.w, h: s.h, secret: true });
+  const cells = []; for (let y = s.y; y < s.y + s.h; y++) for (let x = s.x; x < s.x + s.w; x++) cells.push([x, y]);
+  const free = () => { const c = cells.filter(([x, y]) => !run.items.some(it => it.x === x && it.y === y)); return c.length ? pick(c) : null; };
+  const nCard = rand() < 0.3 ? 2 : 1;
+  for (let k = 0; k < nCard; k++) { const c = free(); if (c) run.items.push({ uid: run.uid++, id: 'tcard', x: c[0], y: c[1], rare: rollRare(run, 1) }); }
+  if (rand() < 0.6) { const c = free(); if (c) run.items.push({ uid: run.uid++, id: rollItem(run), x: c[0], y: c[1] }); }
+  ev.push({ t: 'secret', i }); ev.push({ t: 'msg', text: 'かくし部屋の とびらが ひらいた！ なかに たからが ある！' });
+  for (const id of updateSeen(run)) ev.push({ t: 'meet', id });
+  return ev;
+}
+// まちがい → その とびらは 5ターン しまる
+export function failSecret(run, i) { const s = run.secrets && run.secrets[i]; if (s) s.lock = run.turn + 5; }
+export const secretAt = (run, x, y) => (run.secrets || []).find(s => !s.open && s.door.x === x && s.door.y === y) || null;
 
 /* ---------- みえる ところ ---------- */
 export const tileAt = (run, x, y) => (x < 0 || y < 0 || x >= run.map.w || y >= run.map.h) ? '#' : run.map.tiles[y][x];
@@ -161,6 +207,18 @@ export function act(run, a) {
     const [dx, dy] = DIRS[h.dir], m = monAt(run, h.x + dx, h.y + dy) || Object.values(DIRS).map(([ax, ay]) => monAt(run, h.x + ax, h.y + ay)).find(Boolean);
     if (m) { attackMon(run, m, ev); turn = true; } else { say('まえに てきが いないよ'); ev.push({ t: 'swing' }); turn = true; }
   } else if (a.t === 'wait') { turn = true; say('ひとやすみ'); }
+  else if (a.t === 'search') { // しらべる：むいている ほう（または となり）の あやしい かべ → とびらの クイズ。なにも なければ ひとやすみ
+    const [dx, dy] = DIRS[h.dir];
+    let s = secretAt(run, h.x + dx, h.y + dy);
+    if (!s) for (const [d, [ax, ay]] of Object.entries(DIRS)) { s = secretAt(run, h.x + ax, h.y + ay); if (s) { h.dir = d; break; } }
+    ev.push({ t: 'search', x: h.x + DIRS[h.dir][0], y: h.y + DIRS[h.dir][1] });
+    if (s && s.lock > run.turn) { say(`あやしい かべ。…いまは しまっている（あと ${s.lock - run.turn}ターン）`); turn = true; }
+    else if (s) { say('あやしい かべを しらべた！ もじが うかんで きた…'); ev.push({ t: 'quiz', i: run.secrets.indexOf(s), kind: s.kind }); }
+    else {
+      const near = (run.secrets || []).some(o => !o.open && Math.abs(o.door.x - h.x) + Math.abs(o.door.y - h.y) <= 4);
+      say(near ? 'この ちかくの かべが あやしい…（ひびの ある かべを しらべよう）' : 'しらべた けど なにも ない（ひとやすみ）'); turn = true;
+    }
+  }
   else if (a.t === 'use') turn = useItem(run, a.uid, ev);
   else if (a.t === 'equip') turn = equipItem(run, a.uid, ev);
   else if (a.t === 'drop') {

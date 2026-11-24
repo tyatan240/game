@@ -1266,13 +1266,41 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     for (let k = 0; k < 6; k++) { await p.waitForTimeout(450); if (await p.$('#ov .flip:not(.open)')) { await p.click('#ov .flip'); await p.waitForTimeout(700); } if (await p.$('#ov [data-act=dgRevealNext]')) await p.click('#ov [data-act=dgRevealNext]'); }
     await p.evaluate(() => { closePop(); const r = __dg.run; r.hero.x = r.stairs.x; r.hero.y = r.stairs.y; __dg.goDown(); });
     ok(await p.evaluate(() => __dg.run.floor === 6 && !__dg.test), 'たからさがしは ふくしゅう テストなしで 6かいへ');
+    // かくし部屋：あやしい かべを「しらべる」→ とびらの クイズ → せいかいで ひらく／まちがいは 5ターン しまる
+    const prep = await p.evaluate(() => {
+      let r = __dg.run; for (let k = 0; k < 40 && r.secrets.length < 1; k++) { r.stairs = { x: r.hero.x, y: r.hero.y }; r.tested = r.floor; __dg.goDown(); r = __dg.run; } closePop();
+      const s = r.secrets[0], d = s.door, o = [[0, -1, 'down'], [0, 1, 'up'], [-1, 0, 'right'], [1, 0, 'left']].map(([dx, dy, dir]) => [d.x + dx, d.y + dy, dir]).find(([x, y]) => r.map.tiles[y][x] !== '#');
+      r.mons = []; r.hero.x = o[0]; r.hero.y = o[1]; r.hero.dir = o[2]; s.kind = 'word'; return { n: r.secrets.length, wall: r.map.tiles[s.y][s.x] === '#' };
+    });
+    ok(prep.n >= 1 && prep.wall, 'たからさがしの かいに かくし部屋（まだ かべ）');
+    ok(await p.evaluate(() => document.getElementById('bWait').textContent === 'しらべる'), 'たからさがしでは「まつ」が「しらべる」');
+    await p.waitForTimeout(500); await p.evaluate(() => closePop()); // かいを うつった ときの ボスの おしらせ など
+    await p.click('#bWait'); await p.waitForTimeout(500);
+    ok(await p.evaluate(() => /ことばの とびら/.test(document.getElementById('ov').textContent) && document.querySelectorAll('#ov [data-act=dgQzAns]').length === 3), '「しらべる」→ とびらの クイズ');
+    // まちがえる → 5ターン しまる
+    const wrong = await p.evaluate(async () => { const T = await import('./js/treasure.js'), q = T.quizState(); return (q.answer + 1) % 3; });
+    await p.click(`#ov [data-act=dgQzAns][data-arg="${wrong}"]`); await p.waitForTimeout(100); await p.click('#ov [data-act=dgQzDone]'); await p.waitForTimeout(150);
+    const lk = await p.evaluate(() => { const r = __dg.run, s = r.secrets[0], o = { locked: s.lock === r.turn + 5 && !s.open }; const res = __dg.act({ t: 'search' }); o.msg = /しまっている/.test(document.getElementById('log').textContent) && !res.ev.some(e => e.t === 'quiz'); s.lock = 0; return o; });
+    ok(lk.locked && lk.msg, 'まちがいは とびらが 5ターン しまる ' + JSON.stringify(lk));
+    // せいかい → かくし部屋が ひらいて カード
+    const pts0 = await p.evaluate(() => S.points);
+    await p.click('#bWait'); await p.waitForTimeout(500);
+    const right = await p.evaluate(async () => { const T = await import('./js/treasure.js'); return T.quizState().answer; });
+    await p.click(`#ov [data-act=dgQzAns][data-arg="${right}"]`); await p.waitForTimeout(100); await p.click('#ov [data-act=dgQzDone]'); await p.waitForTimeout(200);
+    ok(await p.evaluate(p0 => { const r = __dg.run, s = r.secrets[0]; return s.open && r.map.tiles[s.y][s.x] !== '#' && r.map.tiles[s.door.y][s.door.x] !== '#' && r.items.some(it => it.id === 'tcard' && it.x >= s.x && it.x < s.x + s.w && it.y >= s.y && it.y < s.y + s.h) && S.points >= p0 + 1; }, pts0), 'せいかいで かくし部屋が ひらく（なかに カード・⭐）');
+    // とびらの クイズの こたえは 学習履歴へ（eigo / treasure）
+    await p.evaluate(async () => { const r = __dg.run; r.secrets.push({ x: 1, y: 1, w: 3, h: 3, door: { x: 0, y: 0 }, open: true, lock: 0, kind: 'letter' }); r.secrets[r.secrets.length - 1].open = false; __dg.startQuiz(r.secrets.length - 1); });
+    await p.waitForTimeout(150); await p.click('#ov [data-act=dgQzAns] >> nth=0'); await p.waitForTimeout(100); await p.click('#ov [data-act=dgQzDone]');
+    const lhT = await p.evaluate(async () => { await LH.flushed(); return (await LH.getAttempts({ subject: 'eigo', topic: 'treasure' })).length; });
+    ok(lhT >= 1, 'とびらの クイズは 学習履歴（eigo / treasure）へ ' + lhT);
+    await p.evaluate(() => { const r = __dg.run; r.secrets.pop(); r.mons = []; closePop(); });
     // ちゅうだん → つづきから（たからさがしと えいごは べつべつ）
-    const n0 = await p.evaluate(() => Object.keys(__dg.D.treasure.cards).length);
+    const n0 = await p.evaluate(() => Object.keys(__dg.D.treasure.cards).length), fl0 = await p.evaluate(() => __dg.run.floor);
     await p.goto(B + 'index.html'); await p.goto(B + 'dungeon/index.html'); await p.waitForSelector('body[data-ready="1"]');
     await p.click('#tTreasure'); await p.waitForTimeout(150);
     ok(await p.evaluate(() => !!document.querySelector('#ov [data-act=dgTCont]') && !document.getElementById('tCont').hidden), 'たからさがしの つづきから と えいごの つづきから が べつべつ');
     await p.click('#ov [data-act=dgTCont]'); await p.waitForTimeout(200); await p.evaluate(() => { __dg.fast = true; });
-    ok(await p.evaluate(n => __dg.run.mode === 'treasure' && __dg.run.floor === 6 && Object.keys(__dg.D.treasure.cards).length === n, n0), 'たからさがしを つづきから（6かい・カードも のこる）');
+    ok(await p.evaluate(([n, f]) => __dg.run.mode === 'treasure' && __dg.run.floor === f && Object.keys(__dg.D.treasure.cards).length === n, [n0, fl0]), 'たからさがしを つづきから（おなじ かい・カードも のこる）');
     // たおれても カードは のこる
     await p.evaluate(() => { const r = __dg.run, h = r.hero; h.hp = 1; r.inv = []; r.mons = [{ uid: 9901, id: 'rat', x: h.x + 1, y: h.y, hp: 6, maxhp: 6, atk: 99, exp: 1, tick: 0 }]; __dg.act({ t: 'wait' }); });
     await p.waitForTimeout(900);

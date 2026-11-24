@@ -45,10 +45,12 @@ export function giveCard(rare, run) {
 
 /* ---------- カードの みため ---------- */
 // カード 1まいの HTML（あとで data-art に え を いれる）。size：'s'（アルバム）・'m'（めくる）・'l'（おおきく）
+// レアカードの きらきら（ばしょと はやさを ずらした ほし）
+const SPARKS = [[14, 18, 0], [82, 12, .6], [70, 46, 1.2], [20, 58, .3], [88, 70, 1.6], [46, 8, 2.1], [10, 84, .9], [60, 86, 1.9]].map(([x, y, d]) => `<i style="left:${x}%;top:${y}%;animation-delay:${d}s"></i>`).join('');
 export function cardHTML(card, size = 'm') {
   const w = card.en, first = w[0], rest = w.slice(1);
   return `<div class="tcard r${card.rare} ${size}" data-card="${card.id}">
-    <div class="tc-in">
+    <div class="tc-in">${card.rare > 1 ? `<div class="bgfx"></div><div class="glitter"></div><div class="sparks">${SPARKS}</div>` : ''}
       <div class="tc-top"><span class="tc-no">No.${String(card.no).padStart(3, '0')}</span><span class="tc-rare">${stars(card.rare)}</span></div>
       <div class="tc-big">${card.letter}</div>
       <div class="tc-art" data-art="${card.art}"></div>
@@ -139,3 +141,50 @@ export function cardBig(id) {
 }
 export const cardSay = id => { const c = CARD[id]; if (c) X.speak(`${c.en}. ${c.ex}`); };
 export const albumBackAct = () => albumBack;
+
+/* ---------- かくし部屋の とびらの クイズ ---------- */
+// q は quiz.js の makeQuiz()。こたえが きまったら done(ok, q, userAnswer)
+import { QUIZ_NAME } from './quiz.js';
+let Q = null;
+export function quizPop(q, done) {
+  Q = { q, done, picked: [], answered: false };
+  const head = `<div class="qz-head">${QUIZ_NAME[q.kind]}</div>`;
+  let body = '';
+  if (q.kind === 'word') body = `<div class="qz-art" data-art="${q.card.art}"></div><p>この え は えいごで どれ？</p><div class="qz-ch">${q.choices.map((id, i) => `<button class="big qz-c en" data-act="dgQzAns" data-arg="${i}">${CARD[id].en}</button>`).join('')}</div>`;
+  if (q.kind === 'letter') body = `<div class="qz-art" data-art="${q.card.art}"></div><div class="qz-word">${q.shown.replace('_', '<b class="qz-blank">？</b>')}</div><p>はじめの もじは どれ？</p><div class="qz-ch">${q.choices.map((L, i) => `<button class="big qz-l" data-act="dgQzAns" data-arg="${i}">${L}</button>`).join('')}</div>`;
+  if (q.kind === 'order') body = `<div class="qz-art" data-art="${q.card.art}"></div><div class="qz-slots">${q.answer.split('').map(() => '<span></span>').join('')}</div><p>もじを じゅんばんに タップして ことばを つくろう</p><div class="qz-ch">${q.tiles.map((L, i) => `<button class="big qz-l" data-act="dgQzTile" data-arg="${i}">${L}</button>`).join('')}</div><div class="btns"><button class="big gray" data-act="dgQzBack">ひとつ けす</button></div>`;
+  if (q.kind === 'riddle') body = `<div class="qz-rid">${q.en}</div><button class="say" data-act="dgQzSay">🔊 もう いちど きく</button><p>なんの こと？ えを えらぼう</p><div class="qz-ch">${q.choices.map((id, i) => `<button class="qz-p" data-act="dgQzAns" data-arg="${i}" data-art="${CARD[id].art}"></button>`).join('')}</div>`;
+  showPop(`<div class="quiz">${head}${body}<div class="qz-fb" id="qzfb"></div></div>`);
+  document.querySelectorAll('#ov .qz-art[data-art]').forEach(el => el.appendChild(wordArt(el.dataset.art, 96)));
+  document.querySelectorAll('#ov .qz-p[data-art]').forEach(el => el.appendChild(wordArt(el.dataset.art, 70)));
+  if (q.kind === 'riddle') setTimeout(() => X.speak(q.en), 300);
+}
+export const quizSay = () => { if (Q && Q.q.kind === 'riddle') X.speak(Q.q.en); };
+export function quizTile(i) {
+  if (!Q || Q.answered || Q.q.kind !== 'order') return;
+  const b = document.querySelector(`#ov [data-act=dgQzTile][data-arg="${i}"]`); if (!b || b.disabled) return;
+  X.sfx.tap(); b.disabled = true; Q.picked.push(+i);
+  const slots = document.querySelectorAll('#ov .qz-slots span'); slots[Q.picked.length - 1].textContent = Q.q.tiles[i];
+  if (Q.picked.length === Q.q.answer.length) quizAns(null);
+}
+export function quizBack() {
+  if (!Q || Q.answered || !Q.picked.length) return;
+  const i = Q.picked.pop(); document.querySelector(`#ov [data-act=dgQzTile][data-arg="${i}"]`).disabled = false;
+  document.querySelectorAll('#ov .qz-slots span')[Q.picked.length].textContent = '';
+}
+export function quizAns(i) {
+  if (!Q || Q.answered) return; Q.answered = true;
+  const q = Q.q; let ok, user;
+  if (q.kind === 'order') { user = Q.picked.map(k => q.tiles[k]).join(''); ok = user === q.answer; }
+  else { ok = +i === q.answer; user = q.kind === 'letter' ? q.choices[i] : CARD[q.choices[i]].en;
+    document.querySelectorAll('#ov [data-act=dgQzAns]').forEach((b, j) => { b.disabled = true; b.classList.toggle('ok', j === q.answer); b.classList.toggle('ng', j === +i && !ok); }); }
+  document.querySelectorAll('#ov [data-act=dgQzTile],#ov [data-act=dgQzBack]').forEach(b => { b.disabled = true; });
+  (ok ? X.sfx.correct : X.sfx.wrong)();
+  X.speak(q.card.en);
+  document.getElementById('qzfb').innerHTML = `<div class="${ok ? 'tok' : 'tng'}">${ok ? 'せいかい！ とびらが ひらいた！' : 'ざんねん… とびらは 5ターン しまるよ'}</div>
+    <div><b class="en">${q.card.en}</b> ＝「${q.card.ja}」${q.kind === 'riddle' ? `<br><small>${q.en}（${q.ja}）</small>` : ''}</div>
+    <div class="btns"><button class="big" data-act="dgQzDone">${ok ? 'なかへ はいる' : 'とじる'}</button></div>`;
+  Q.result = { ok, user };
+}
+export function quizDone() { if (!Q || !Q.result) return; const { ok, user } = Q.result, { q, done } = Q; Q = null; closePop(); done(ok, q, user); }
+export const quizState = () => Q && Q.q; // テスト よう

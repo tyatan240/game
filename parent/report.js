@@ -20,6 +20,7 @@
     } catch (e) { }
     if (subject === 'prog') return PROG_TOPIC[topic] || topic;
     if (subject === 'eigo' && topic === 'dungeon') return 'イングリッシュダンジョン（復習テスト）';
+    if (subject === 'eigo' && topic === 'treasure') return 'たからさがし（とびらのクイズ）';
     return topic;
   }
   const pct = (a, b) => b ? Math.round(a / b * 100) : null;
