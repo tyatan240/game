@@ -89,6 +89,11 @@ function bookHomeCard() {
   const sub = u ? `あたらしい ページが よめるよ！` : B.last === bkToday() ? 'つづきは あした！' : ok ? '' : 'もくひょうを 1つ たっせいすると つぎの ページが よめるよ';
   return `<button class="card bk-card ${u ? 'new' : ''}" data-act="bkOpen"><span class="bk-ci">${BK_ICON}</span><span class="bk-ct"><b>📖 えほん「${bk.title}」${u ? '<i class="bk-new">NEW</i>' : ''}</b><small>${B.open}/${BK_PAGES}ページ　${sub}</small></span></button>`;
 }
+// おうちの ちいさな アイコン（あたらしい ページが あると NEW）
+function bookMini() {
+  const u = bkUnread();
+  return `<button class="mini bk-mini ${u ? 'on' : ''}" data-act="bkOpen" aria-label="えほん">${BK_ICON.replace('width="48" height="36"', 'width="34" height="26"')}<span>えほん ${S.book.open}/${BK_PAGES}</span>${u ? '<i class="mb">NEW</i>' : ''}</button>`;
+}
 const BK_ICON = `<svg viewBox="0 0 60 44" width="48" height="36"><path d="M30 8 Q18 2 4 6 V40 Q18 36 30 42Z" fill="#ffb0c8" stroke="#e06a8a" stroke-width="3"/><path d="M30 8 Q42 2 56 6 V40 Q42 36 30 42Z" fill="#bfe0ff" stroke="#5a9ae0" stroke-width="3"/><path d="M30 8 V42" stroke="#a88a8a" stroke-width="2"/></svg>`;
 
 /* ---------- よむ ---------- */

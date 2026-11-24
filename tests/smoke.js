@@ -387,7 +387,7 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
   {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
     const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
-    await p.goto(B + 'index.html'); await p.waitForTimeout(500);
+    await p.goto(B + 'index.html'); await p.waitForTimeout(1600);
     await p.evaluate(() => { closePop(); S.points = 150; S.settings.goalPts = 0; S.settings.goalAll = 0; S.owned.push('c_hamster', 'c_cat', 'u_bed', 'w_dots'); save(); render(); });
     const owned0 = await p.evaluate(() => [...S.owned].sort().join());
     ok(await p.isVisible('.room .todoor'), 'おへやに「まちへ」の ドア');
@@ -1279,7 +1279,7 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     for (let k = 0; k < 12; k++) { await p.waitForTimeout(600); const t = await p.evaluate(() => document.getElementById('ov').textContent); if (/なにか とどいたよ/.test(t)) break; await p.evaluate(() => { const b = document.querySelector('#ov .btns button'); if (b) b.click(); else closePop(); }); }
     ok(await p.evaluate(() => /なにか とどいたよ/.test(document.getElementById('ov').textContent) && S.pet.eggs.length === 1 && S.pet.started), 'はじめは なぞの たまごが とどく');
     await p.evaluate(() => ACT.petClose()); await p.waitForTimeout(200);
-    ok(await p.evaluate(() => !!document.querySelector('.room .pet-in.egg') && /たまごを あたためよう/.test(document.querySelector('.pet-card').textContent)), 'おへやに たまご・カードに「べんきょうした 日 0 / 3」');
+    ok(await p.evaluate(() => !!document.querySelector('.room .pet-in.egg') && /たまご 0\/3/.test(document.querySelector('.pet-mini').textContent)), 'おへやに たまご・アイコンに「たまご 0/3」');
     // もんだいを とくと ごはん と たまごが あたたまる（1もんで 1こ、5もんごとに +1、1日 3こまで）
     const fed = await p.evaluate(async () => {
       const rec = i => LH.recordAttempt({ questionInstanceId: 'pt' + i, questionKey: 'sansu:add:1+' + i, subject: 'sansu', topic: 'add1', isCorrect: true, attemptNumber: 1 });
@@ -1315,9 +1315,9 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     const p = await page({ width: 820, height: 1180 });
     await p.goto(B + 'index.html'); await p.waitForTimeout(400);
     await p.evaluate(() => { closePop(); S.pet.started = true; save(); render(); });
-    ok(await p.evaluate(() => S.book.open === 0 && /もくひょうを 1つ たっせい/.test(document.querySelector('.bk-card').textContent)), 'はじめは「もくひょうを 1つ たっせい すると よめるよ」');
+    ok(await p.evaluate(() => S.book.open === 0 && /えほん 0\//.test(document.querySelector('.bk-mini').textContent) && !document.querySelector('.bk-mini').classList.contains('on')), 'はじめは「えほん 0/7」');
     await p.evaluate(() => { dailyOf(S).sansu = 2; save(); render(); });
-    ok(await p.evaluate(() => S.book.open === 1 && document.querySelector('.bk-card').classList.contains('new')), 'もくひょうを 1つ たっせい → 1ページめが ひらく（NEW）');
+    ok(await p.evaluate(() => S.book.open === 1 && document.querySelector('.bk-mini').classList.contains('on')), 'もくひょうを 1つ たっせい → 1ページめが ひらく（NEW）');
     await p.evaluate(() => { closePop(); document.querySelector('[data-act=bkOpen]').click(); }); await p.waitForTimeout(300);
     ok(await p.evaluate(() => /モコと なぞの たまご/.test(document.getElementById('ov').textContent) && /1 \/ 7/.test(document.getElementById('ov').textContent) && !!document.querySelector('#ov .bk-scene') && document.querySelector('#ov [data-act=bkPage][data-arg="1"]').disabled && /つづきは あした/.test(document.getElementById('ov').textContent)), 'よむ（え・ぶん・つづきは あした）');
     ok(await p.evaluate(() => { render(); return S.book.open === 1; }), 'おなじ日は もう ひらかない（1日 1ページ）');

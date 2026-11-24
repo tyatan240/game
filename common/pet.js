@@ -101,6 +101,13 @@ function petHomeCard() {
     : `🍙 ごはん ${p.stock}こ（きょう もらった ${Math.min(e, FOOD_MAX + 1)}こ）${e < FOOD_MAX ? '・もんだいを とくと もらえるよ' : ''}`;
   return `<button class="card pet-card" data-act="${egg && (egg.warm >= EGG_DAYS || !p.pets.length) ? 'petEgg' : 'petOpen'}" data-arg="${p.pets.length ? p.pets[p.pets.length - 1].id : ''}"><span class="pet-ci">${egg && !p.pets.length ? eggSVG(egg, 40) : petSVG(p.pets[p.pets.length - 1], 44)}</span><span class="pet-ct"><b>${egg && !p.pets.length ? 'なぞの たまご' : petEsc(p.pets[p.pets.length - 1].name)}</b><small>${msg}</small></span></button>`;
 }
+// おうちの ちいさな アイコン（たまごは 「1/3」、ペットは ごはんの かずの バッジ）
+function petMini() {
+  const p = P(); if (!p.started) return '';
+  const egg = p.eggs[0], pt = p.pets[p.pets.length - 1];
+  if (egg && (!pt || egg.warm >= EGG_DAYS)) return `<button class="mini pet-mini ${egg.warm >= EGG_DAYS ? 'on' : ''}" data-act="petEgg" aria-label="たまご">${eggSVG(egg, 32)}<span>たまご ${Math.min(egg.warm || 0, EGG_DAYS)}/${EGG_DAYS}</span>${egg.warm >= EGG_DAYS ? '<i class="mb">!</i>' : ''}</button>`;
+  return `<button class="mini pet-mini ${p.stock ? 'on' : ''}" data-act="petOpen" data-arg="${pt.id}" aria-label="${petEsc(pt.name)}">${petSVG(pt, 34)}<span>${petEsc(pt.name)}</span>${p.stock ? `<i class="mb">🍙${p.stock}</i>` : ''}</button>`;
+}
 // はじめて：たまごが とどく ／ かえる じゅんびが できた ／ さびしかった
 let petShown = false;
 function petCheck(tries = 0) {

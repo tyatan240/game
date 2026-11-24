@@ -180,6 +180,12 @@ function hmHomeCard() {
     <span class="hm-ht"><b>${u ? 'おてがみが とどいてるよ！' : '💮 はなまるノート'}</b><small>${u ? `${u}まい まだ ひらいて いないよ` : `もらった スタンプ ${total}こ`}</small></span></button>`;
 }
 
+// おうちの ちいさな アイコン（おてがみ が あると かずの バッジ）
+function hmMini() {
+  const total = S.notes.list.filter(n => n.seen).length, u = hmUnseen().length;
+  if (!total && !u) return '';
+  return `<button class="mini hm-mini ${u ? 'on' : ''}" data-act="${u ? 'hmEnv' : 'hmNote'}" aria-label="${u ? 'おてがみ' : 'はなまるノート'}">${u ? HM_ENV_SVG.replace('width="150" height="112"', 'width="38" height="28"') : hmSvg('hanamaru', 30)}<span>${u ? 'おてがみ' : 'はなまる'}</span>${u ? `<i class="mb">${u}</i>` : ''}</button>`;
+}
 Object.assign(ACT, {
   hmSend: () => { HM = null; hmSendPop(); },
   hmFrom: id => { HM.from = id; hmRefresh(); },
