@@ -1310,6 +1310,31 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
   }
 
+  console.log('25. まいにちの えほん');
+  {
+    const p = await page({ width: 820, height: 1180 });
+    await p.goto(B + 'index.html'); await p.waitForTimeout(400);
+    await p.evaluate(() => { closePop(); S.pet.started = true; save(); render(); });
+    ok(await p.evaluate(() => S.book.open === 0 && /もくひょうを 1つ たっせい/.test(document.querySelector('.bk-card').textContent)), 'はじめは「もくひょうを 1つ たっせい すると よめるよ」');
+    await p.evaluate(() => { dailyOf(S).sansu = 2; save(); render(); });
+    ok(await p.evaluate(() => S.book.open === 1 && document.querySelector('.bk-card').classList.contains('new')), 'もくひょうを 1つ たっせい → 1ページめが ひらく（NEW）');
+    await p.evaluate(() => { closePop(); document.querySelector('[data-act=bkOpen]').click(); }); await p.waitForTimeout(300);
+    ok(await p.evaluate(() => /モコと なぞの たまご/.test(document.getElementById('ov').textContent) && /1 \/ 7/.test(document.getElementById('ov').textContent) && !!document.querySelector('#ov .bk-scene') && document.querySelector('#ov [data-act=bkPage][data-arg="1"]').disabled && /つづきは あした/.test(document.getElementById('ov').textContent)), 'よむ（え・ぶん・つづきは あした）');
+    ok(await p.evaluate(() => { render(); return S.book.open === 1; }), 'おなじ日は もう ひらかない（1日 1ページ）');
+    // 7日 たつと おしまい → ⭐5 → つぎの おはなしへ
+    const fin = await p.evaluate(async () => {
+      const pts = S.points; for (let i = 0; i < 6; i++) { S.book.last = '2000-01-0' + (i + 1); bookUpdate(); }
+      const o = { open: S.book.open }; ACT.bkPage(6); await new Promise(r => setTimeout(r, 1100));
+      o.fin = /おしまい/.test(document.getElementById('ov').textContent) && /まちへ おつかい/.test(document.getElementById('ov').textContent); o.star = S.points === pts + 5;
+      S.book.last = '2000-02-01'; bookUpdate(); o.next = S.book.story === 1 && S.book.open === 1;
+      return o;
+    });
+    ok(fin.open === 7 && fin.fin && fin.star && fin.next, '7ページ → おしまい（⭐5・つぎの おはなしの ちらみ）→ つぎの 日は つぎの おはなし ' + JSON.stringify(fin));
+    await p.evaluate(() => ACT.bkShelf()); await p.waitForTimeout(150);
+    ok(await p.evaluate(() => document.querySelectorAll('#ov .bk-b.done').length === 1 && document.querySelectorAll('#ov .bk-b.now').length === 1 && document.querySelectorAll('#ov .bk-b.lock').length === 1), 'ほんだな（よみおわった・よんでいる・まだ）');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+  }
+
   console.log('22b. たからさがしダンジョン（dungeon/ の たからさがし）');
   {
     const p = await page({ width: 1024, height: 768 });

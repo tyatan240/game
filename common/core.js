@@ -291,7 +291,9 @@ function defState(){return{v:1,t:0,points:0,
   ktypes:Object.fromEntries(KTYPES.map(t=>[t.id,{on:true,pts:t.pts}])),
   etypes:Object.fromEntries(ETYPES.map(t=>[t.id,{on:true,pts:t.pts}])),
   perRound:5,perfect:3,daily:5,sound:true,testScale:1,practiceMul:2,practiceBonus:5,progPts:3,gachaOn:true,gachaCost:100,gachaDaily:0,abcPts:10,goalPts:10,goalAll:50,admin:false},
- lastDay:'',stats:{q:0,ok:0},kstats:{q:0,ok:0},estats:{q:0,ok:0},tests:{},daily:newDaily(''),gacha:{day:'',count:0,pulls:0},looks:{},hw:{},streakGot:[],adminBackup:null,notes:defNotes(),pet:defPet()}}
+ lastDay:'',stats:{q:0,ok:0},kstats:{q:0,ok:0},estats:{q:0,ok:0},tests:{},daily:newDaily(''),gacha:{day:'',count:0,pulls:0},looks:{},hw:{},streakGot:[],adminBackup:null,notes:defNotes(),pet:defPet(),book:defBook()}}
+// まいにちの えほん：story＝いま よんでいる はなしの ばんごう、open＝ひらいた ページの かず、last＝さいごに ページが ひらいた日、seen＝よんだ ページ、rewarded＝⭐を もらった はなし
+function defBook(){return{story:0,open:0,last:'',seen:{},rewarded:[]}}
 // モコの ペット：eggs＝あたためちゅうの たまご、pets＝そだてた ペット、stock＝まだ あげていない ごはん、day＝その日に もらった ごはんの かず
 function defPet(){return{eggs:[],pets:[],stock:0,day:{d:'',earned:0},lastSeen:'',started:false}}
 // はなまるスタンプ（パパ・ママから）：senders＝おくる ひと（さいだい4にん）、list＝おくった スタンプ
@@ -318,6 +320,7 @@ function merge(d){
  if(d.daily&&typeof d.daily==='object') s.daily={...s.daily,...d.daily,got:{...(d.daily.got||{})}};
  if(d.tests&&typeof d.tests==='object') s.tests=d.tests;
  if(Array.isArray(d.streakGot)) s.streakGot=d.streakGot.filter(n=>typeof n==='number');
+ if(d.book&&typeof d.book==='object'){const B=d.book,Q=s.book;for(const k of ['story','open'])if(typeof B[k]==='number')Q[k]=B[k];if(typeof B.last==='string')Q.last=B.last;if(B.seen&&typeof B.seen==='object')Q.seen=B.seen;if(Array.isArray(B.rewarded))Q.rewarded=B.rewarded}
  if(d.pet&&typeof d.pet==='object'){const P=d.pet,Q=s.pet;
   if(Array.isArray(P.eggs))Q.eggs=P.eggs.filter(e=>e&&typeof e.kind==='string');
   if(Array.isArray(P.pets))Q.pets=P.pets.filter(x=>x&&typeof x.kind==='string');

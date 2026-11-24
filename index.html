@@ -96,6 +96,7 @@ a.big{text-align:center;text-decoration:none}
 <script src="common/core.js"></script>
 <script src="common/hanamaru.js"></script>
 <script src="common/pet.js"></script>
+<script src="common/book.js"></script>
 <script>
 /* ---------- がめん ---------- */
 const VIEWS=['home','study','gacha','shop','dress','settings'];
@@ -121,8 +122,9 @@ function render(){
 // おへやの ドア → モコの まち（machi/）
 const DOOR_SVG=`<svg viewBox="0 0 60 92"><rect x="4" y="4" width="52" height="84" rx="8" fill="#c98f55" stroke="#8f5e33" stroke-width="4"/><rect x="12" y="12" width="36" height="30" rx="5" fill="#bfe6ff" stroke="#fff" stroke-width="3"/><rect x="12" y="50" width="36" height="28" rx="4" fill="#b67b45"/><circle cx="44" cy="58" r="4" fill="#ffd34f"/><path d="M30 18 l3 6 6 1 -4.5 4 1 6 -5.5 -3 -5.5 3 1 -6 -4.5 -4 6 -1z" fill="#fff6a8"/></svg>`;
 function home(){
+ bookUpdate(); // もくひょうを 1つ たっせい していたら きょうの えほんの ページが ひらく
  return `<div class="card room">${bubble?`<div class="bubble">${bubble}</div>`:''}${roomSVG(S,homeMood,homeMood==='happy'?'hop':'sway')}<a class="todoor" href="machi/index.html" aria-label="まちへ でる">${DOOR_SVG}<span>まちへ</span></a>${petLayer()}</div>
- ${hmHomeCard()}${petHomeCard()}${goalsCard()}
+ ${hmHomeCard()}${petHomeCard()}${bookHomeCard()}${goalsCard()}
  <button class="big" data-act="go" data-arg="study">おべんきょう する ▶</button>
  <p class="muted">キャラを タップしてみてね</p>`}
 /* ---------- きょうの もくひょう ---------- */
