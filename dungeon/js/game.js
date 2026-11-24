@@ -99,9 +99,26 @@ export function enterFloor(run, floor) {
     }
   }
   unstackBoxes(run);
+  run.rugs = null;
+  if (!isTreasure(run) && floor >= 6 && !BOSS_FLOORS.includes(floor)) placeRugSign(run);
   run.secrets = []; run.traps = []; run.letters = [];
   if (isTreasure(run) && floor > 0 && !BOSS_FLOORS.includes(floor)) { placeSecrets(run); placeTraps(run); }
   run.seen = '0'.repeat(run.map.w * run.map.h); // みえる ところは よびだしがわで updateSeen()
+}
+
+/* ---------- えいごだけの ヒント（えいごの ダンジョン 6かいから）---------- */
+// へやごとに いろの じゅうたん。スタートの へやの かんばん「The stairs are in the GREEN room.」「The key is in the RED room.」
+export const RUG_COLORS = ['red', 'blue', 'yellow', 'green', 'pink', 'purple'];
+function placeRugSign(run) {
+  const rooms = run.map.rooms, cols = [...RUG_COLORS].sort(() => rand() - 0.5);
+  run.rugs = rooms.map((r, i) => cols[i % cols.length]);
+  const roomOf = (x, y) => rooms.findIndex(r => x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h);
+  const key = run.items.find(i => i.id === 'key'), ki = key ? roomOf(key.x, key.y) : -1, si = run.stairs ? roomOf(run.stairs.x, run.stairs.y) : -1;
+  let text = null;
+  if (ki > 0 && rand() < 0.5) text = `The key is in the ${run.rugs[ki].toUpperCase()} room.`;
+  else if (si > 0) text = `The stairs are in the ${run.rugs[si].toUpperCase()} room.`;
+  const c = text && freeCell(run, rooms[0]);
+  if (c) run.items.push({ uid: run.uid++, id: 'sign', x: c[0], y: c[1], text });
 }
 
 /* ---------- かくし部屋（たからさがし）---------- */
@@ -249,7 +266,7 @@ export function act(run, a) {
       h.x = nx; h.y = ny; turn = true; ev.push({ t: 'step' });
       const it = run.items.find(i => i.x === nx && i.y === ny);
       if (it && it.id === 'ltile') { run.items = run.items.filter(i => i !== it); (run.letters = run.letters || []).push({ sid: it.sid, letter: it.letter }); say(`もじ <b class="en">${it.letter}</b> を ひろった！`); ev.push({ t: 'letter', letter: it.letter }); }
-      else if (it && it.id === 'sign') { say(`かんばんに なにか かいてある… <b class="en">${it.text}</b>`); ev.push({ t: 'sign', text: it.text }); }
+      else if (it && it.id === 'sign') { say(`かんばんに なにか かいてある… <b class="en">${it.text}</b>`); if (!it.read) { it.read = true; ev.push({ t: 'sign', text: it.text }); } } // ポップアップは はじめの 1かいだけ（タップで いつでも よめる）
       else if (it && it.id === 'tcard') { run.items = run.items.filter(i => i !== it); ev.push({ t: 'msg', text: 'たからの カードを みつけた！' }); ev.push({ t: 'treasure', rare: it.rare || 1, src: 'floor' }); }
       else if (it && WORD[it.id].cat === 'equip' && run.inv.some(i => i.id === it.id)) say(`${en(it.id)} は もう もっているよ`);
       else if (it) { if (bagRoom(run, it.id)) { run.items = run.items.filter(i => i !== it); run.inv.push({ uid: it.uid, id: it.id, peek: false }); say(`${en(it.id)} を ひろった！`); ev.push({ t: 'pickup', id: it.id }); }
@@ -500,9 +517,13 @@ function endTurn(run, ev) {
     if (w.move === 'erratic' && rand() < 0.5) dirs = [pick(dirs)];
     else if (d <= (w.sight || 7)) dirs = [...dirs].sort((a, b) => (Math.abs(m.x + a[0] - h.x) + Math.abs(m.y + a[1] - h.y)) - (Math.abs(m.x + b[0] - h.x) + Math.abs(m.y + b[1] - h.y)));
     else if (rand() < 0.6) continue; else dirs = [pick(dirs)];
-    for (const [dx, dy] of dirs) {
-      const nx = m.x + dx, ny = m.y + dy;
-      if (monCan(run, m, nx, ny) && !monAt(run, nx, ny) && !(nx === h.x && ny === h.y) && Math.abs(nx - h.x) + Math.abs(ny - h.y) <= d + (w.move === 'erratic' ? 1 : 0)) { m.x = nx; m.y = ny; break; }
+    for (let step = 0; step < (w.fast ? 2 : 1); step++) { // fast（little bat）は 2ほ うごく
+      const dd = Math.abs(m.x - h.x) + Math.abs(m.y - h.y); if (step && dd <= 1) break;
+      if (step) dirs = rand() < 0.5 ? [...Object.values(DIRS)].sort(() => rand() - 0.5) : [...Object.values(DIRS)].sort((a, b) => (Math.abs(m.x + a[0] - h.x) + Math.abs(m.y + a[1] - h.y)) - (Math.abs(m.x + b[0] - h.x) + Math.abs(m.y + b[1] - h.y)));
+      for (const [dx, dy] of dirs) {
+        const nx = m.x + dx, ny = m.y + dy;
+        if (monCan(run, m, nx, ny) && !monAt(run, nx, ny) && !(nx === h.x && ny === h.y) && Math.abs(nx - h.x) + Math.abs(ny - h.y) <= dd + (w.move === 'erratic' ? 1 : 0)) { m.x = nx; m.y = ny; break; }
+      }
     }
   }
   if (run.tut && h.hp < 1) h.hp = 1; // チュートリアルでは たおれない

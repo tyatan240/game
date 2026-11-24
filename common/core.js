@@ -108,7 +108,8 @@ const ITEMS=[
  /* テスト ごうかくで もらえる アイテム */
  {id:'a_icecream',cat:'acc',name:'アイスクリーム',test:'add1-1'},
  {id:'h_tiara',cat:'hat',name:'ティアラ',test:'add1-2'},
- {id:'h_treasure',cat:'hat',name:'たからさがしの かんむり',reward:'treasure'}, // たからさがしの カード 78まい コンプリートの きねん（おみせには ならばない）
+ {id:'h_treasure',cat:'hat',name:'たからさがしの かんむり',reward:'treasure'},
+ {id:'a_dcape',cat:'acc',name:'ダンジョンの マント',reward:'dungeon'}, // イングリッシュダンジョン 20かい クリアの きねん（おみせには ならばない） // たからさがしの カード 78まい コンプリートの きねん（おみせには ならばない）
  {id:'u_trophy',cat:'furn',name:'きんのトロフィー',test:'add1-3',box:'230 252 50 50'},
  {id:'a_bouquet',cat:'acc',name:'はなたば',test:'add21-1'},
  {id:'o_sailor',cat:'outfit',name:'セーラーふく',test:'add21-2'},
@@ -455,10 +456,11 @@ const ACC_BACK={
 const wingPath=(dir,c1,c2,op)=>{const m=dir<0?'':'transform="translate(200 0) scale(-1 1)"';
  return `<g ${m} opacity="${op}"><path d="M70 176 C30 120 4 130 10 156 C-2 168 10 188 30 186 C20 204 44 214 70 196 Z" fill="${c1}" stroke="${c2}" stroke-width="3" stroke-linejoin="round"/><path d="M66 180 C40 160 26 158 20 162 M66 186 C44 182 34 186 30 190" stroke="${c2}" stroke-width="2" fill="none"/></g>`};
 Object.assign(ACC_BACK,{
+ a_dcape:`<path d="M66 140 Q100 132 134 140 L178 232 Q100 250 22 232 Z" fill="#5a3aa8" stroke="#3a2078" stroke-width="3" stroke-linejoin="round"/><path d="M28 224 Q100 242 172 224" stroke="#ffd34f" stroke-width="5" fill="none"/><path d="M62 142 L50 124 L80 138 M138 142 L150 124 L120 138" fill="#7a5ac8" stroke="#3a2078" stroke-width="3" stroke-linejoin="round"/><path d="M80 150 L50 226 M120 150 L150 226" stroke="#7a5ac8" stroke-width="2.5"/>`,
  a_wings:wingPath(-1,'#fff','#b9d8f5',1)+wingPath(1,'#fff','#b9d8f5',1),
  a_fairy:`<g>${wingPath(-1,'#d9c4ff','#b394f0',.85)}${wingPath(1,'#ffc4e1','#f08aa8',.85)}</g>`
 });
-Object.assign(ACC,{a_wings:'',a_fairy:`<g fill="#fff6a8">${[[30,140],[172,136],[22,190],[180,196]].map(([x,y])=>`<polygon points="${star(x,y,5,2)}"/>`).join('')}</g>`});
+Object.assign(ACC,{a_dcape:`<circle cx="100" cy="152" r="6" fill="#ffd34f" stroke="#c8901a" stroke-width="2"/><circle cx="100" cy="152" r="2.4" fill="#ff5a8a"/>`,a_wings:'',a_fairy:`<g fill="#fff6a8">${[[30,140],[172,136],[22,190],[180,196]].map(([x,y])=>`<polygon points="${star(x,y,5,2)}"/>`).join('')}</g>`});
 Object.assign(OUTFIT,{
  o_kimono:`<path d="M70 160 Q100 152 130 160 L140 220 Q100 228 60 220 Z" fill="#ff8fa3" stroke="#e0607a" stroke-width="3"/>
   <path d="M86 158 L100 182 L114 158" fill="none" stroke="#fff" stroke-width="4"/><path d="M90 158 L100 176 L110 158" fill="none" stroke="#ffd34f" stroke-width="2"/>

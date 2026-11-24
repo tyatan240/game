@@ -365,6 +365,28 @@ Object.assign(WORD_ART, {
   dg_shadowking: c => { ghost(c, '#6a5a8e', true); c.fillStyle = 'rgba(255,80,120,.9)'; [[40, 46], [60, 46]].forEach(([x, y]) => { circle(c, x, y, 3); c.fill(); }); },
 });
 
+// ===== 2ごの なまえの てき：もとの え の いろを かえる（べつの キャンバスで いろを かさねて おぼえておく）=====
+const tintCache = {};
+function tinted(key, base, col, alpha = 0.5, extra) {
+  return c => {
+    let oc = tintCache[key];
+    if (!oc) {
+      oc = document.createElement('canvas'); oc.width = oc.height = 200; const x = oc.getContext('2d'); x.scale(2, 2);
+      WORD_ART[base](x); x.globalCompositeOperation = 'source-atop'; x.globalAlpha = alpha; x.fillStyle = col; x.fillRect(0, 0, 100, 100);
+      x.globalCompositeOperation = 'source-over'; x.globalAlpha = 1; if (extra) extra(x); tintCache[key] = oc;
+    }
+    c.drawImage(oc, 0, 0, 100, 100);
+  };
+}
+const angryMark = x => { x.fillStyle = '#ff3a4a'; x.font = '900 22px sans-serif'; x.fillText('!', 82, 26); x.strokeStyle = '#ff3a4a'; x.lineWidth = 3; x.beginPath(); x.moveTo(10, 24); x.lineTo(20, 18); x.moveTo(12, 32); x.lineTo(22, 30); x.stroke(); };
+Object.assign(WORD_ART, {
+  dg_bigslime: c => { slime(c, '#5aa8f0', '#2a68b8'); c.strokeStyle = INK; c.lineWidth = 3; c.lineCap = 'round'; [[34, 48, 44, 52], [66, 48, 56, 52]].forEach(([a, b, d, e]) => { c.beginPath(); c.moveTo(a, b); c.lineTo(d, e); c.stroke(); }); },
+  dg_bluesnake: tinted('bs', 'dg_snake', '#3a6aff', 0.55),
+  dg_littlebat: tinted('lb', 'dg_bat', '#c88aff', 0.35),
+  dg_angrywolf: tinted('aw', 'dg_wolf', '#ff4a3a', 0.35, angryMark),
+  dg_reddragon: c => dragon(c, '#ff5a4a', '#b82a2a', '#ffd8b8'),
+});
+
 // マップの タイル（キャンバスに じかに かく。T … タイルの おおきさ）
 export function drawTile(c, ch, x, y, T, seen, lit, zone) {
   if (!seen) { c.fillStyle = '#1e1a2a'; c.fillRect(x, y, T, T); return; }

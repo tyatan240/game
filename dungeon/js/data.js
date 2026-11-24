@@ -33,12 +33,18 @@ export const WORDS = [
   { id: 'spider', en: 'spider', ja: 'クモ', cat: 'monster', art: 'dg_spider', hp: 10, atk: 4, exp: 7, move: 'chase', web: true, minFloor: 6, desc: 'いとを だす。あたると つぎの ターン うごけない。' },
   { id: 'bee', en: 'bee', ja: 'ハチ', cat: 'monster', art: 'bee', hp: 8, atk: 4, exp: 7, move: 'erratic', minFloor: 7, desc: 'ぶんぶん とぶ。さされると いたい。' },
   // hard … ふつうの こうげきは 1 しか きかない（まほうで たおす）。こうげきの まほうを おぼえてから でる
-  { id: 'turtle', en: 'turtle', ja: 'カメ', cat: 'monster', art: 'dg_turtle', hp: 10, atk: 3, exp: 10, move: 'slow', hard: 'こうらが かたい（まほうで たおそう）', minFloor: 4, maxFloor: 12, desc: 'こうらが かたくて、ふつうの こうげきは 1 しか きかない。まほうで たおそう。' },
-  { id: 'crab', en: 'crab', ja: 'カニ', cat: 'monster', art: 'dg_crab', hp: 12, atk: 4, exp: 12, move: 'slow', hard: 'こうらが かたい（まほうで たおそう）', minFloor: 9, desc: 'こうらが かたくて、ふつうの こうげきは 1 しか きかない。まほうで たおそう。' },
-  { id: 'snowman', en: 'snowman', ja: 'ゆきだるま', cat: 'monster', art: 'dg_snowman', hp: 16, atk: 6, exp: 16, move: 'slow', hard: 'からだが かたい（まほうで たおそう）', minFloor: 11, maxFloor: 17, desc: 'かたい ゆきで できていて、ふつうの こうげきは 1 しか きかない。まほうで たおそう。' },
-  { id: 'ghost', en: 'ghost', ja: 'おばけ', cat: 'monster', art: 'dg_ghost', hp: 12, atk: 5, exp: 10, move: 'chase', wall: true, minFloor: 11, desc: 'かべを すりぬけて くる。' },
+  { id: 'turtle', en: 'turtle', ja: 'カメ', cat: 'monster', art: 'dg_turtle', hp: 10, atk: 3, exp: 10, move: 'slow', hard: 'こうらが かたい（まほうで たおそう）', weak: 'thunder', minFloor: 4, maxFloor: 12, desc: 'こうらが かたくて、ふつうの こうげきは 1 しか きかない。まほうで たおそう。　weak: thunder' },
+  { id: 'crab', en: 'crab', ja: 'カニ', cat: 'monster', art: 'dg_crab', hp: 12, atk: 4, exp: 12, move: 'slow', hard: 'こうらが かたい（まほうで たおそう）', weak: 'thunder', minFloor: 9, desc: 'こうらが かたくて、ふつうの こうげきは 1 しか きかない。まほうで たおそう。　weak: thunder' },
+  { id: 'snowman', en: 'snowman', ja: 'ゆきだるま', cat: 'monster', art: 'dg_snowman', hp: 16, atk: 6, exp: 16, move: 'slow', hard: 'からだが かたい（まほうで たおそう）', weak: 'fire', minFloor: 11, maxFloor: 17, desc: 'かたい ゆきで できていて、ふつうの こうげきは 1 しか きかない。まほうで たおそう。　weak: fire' },
+  { id: 'ghost', en: 'ghost', ja: 'おばけ', cat: 'monster', art: 'dg_ghost', hp: 12, atk: 5, exp: 10, move: 'chase', wall: true, weak: 'fire', minFloor: 11, desc: 'かべを すりぬけて くる。　weak: fire' },
   { id: 'wolf', en: 'wolf', ja: 'オオカミ', cat: 'monster', art: 'dg_wolf', hp: 18, atk: 6, exp: 13, move: 'chase', sight: 12, minFloor: 13, desc: 'とおくからでも はしって くる。' },
-  { id: 'dragon', en: 'dragon', ja: 'ドラゴン', cat: 'monster', art: 'dg_dragon', hp: 24, atk: 7, exp: 20, move: 'chase', breath: true, minFloor: 16, desc: 'まっすぐ ならぶと、とおくから ほのおを はく。' },
+  { id: 'dragon', en: 'dragon', ja: 'ドラゴン', cat: 'monster', art: 'dg_dragon', hp: 24, atk: 7, exp: 20, move: 'chase', breath: true, weak: 'ice', minFloor: 16, desc: 'まっすぐ ならぶと、とおくから ほのおを はく。　weak: ice' },
+  // ===== 2ごの なまえの つよい てき（11かいから。big・little・blue・red・angry は かんたんな えいごの ことば）=====
+  { id: 'bigslime', en: 'big slime', ja: 'おおきな スライム', cat: 'monster', art: 'dg_bigslime', hp: 30, atk: 7, exp: 18, move: 'slow', size: 1.25, weak: 'fire', minFloor: 11, maxFloor: 16, desc: 'big ＝ おおきい。とても おおきな スライム。　weak: fire' },
+  { id: 'bluesnake', en: 'blue snake', ja: 'あおい へび', cat: 'monster', art: 'dg_bluesnake', hp: 20, atk: 7, exp: 16, move: 'chase', minFloor: 11, desc: 'blue ＝ あお。すばやく かみつく あおい へび。' },
+  { id: 'littlebat', en: 'little bat', ja: 'ちいさな コウモリ', cat: 'monster', art: 'dg_littlebat', hp: 10, atk: 6, exp: 14, move: 'erratic', fast: true, size: 0.75, minFloor: 12, desc: 'little ＝ ちいさい。ちいさくて すばやい（2ほ うごく）。' },
+  { id: 'angrywolf', en: 'angry wolf', ja: 'おこった オオカミ', cat: 'monster', art: 'dg_angrywolf', hp: 26, atk: 9, exp: 22, move: 'chase', sight: 14, minFloor: 15, desc: 'angry ＝ おこっている。とおくからでも はしって くる。' },
+  { id: 'reddragon', en: 'red dragon', ja: 'あかい ドラゴン', cat: 'monster', art: 'dg_reddragon', hp: 34, atk: 10, exp: 28, move: 'chase', breath: true, weak: 'ice', minFloor: 17, desc: 'red ＝ あか。あつい ほのおを はく ドラゴン。　weak: ice' },
   // ===== かくしボス（たからさがし 11かいから。きんの かぎで なぞの とびらを あけると でる。weak の まほうが 2ばい きく）=====
   { id: 'treasuredragon', en: 'treasure dragon', ja: 'たからの ドラゴン', cat: 'monster', art: 'dg_treasuredragon', hp: 140, atk: 11, exp: 80, move: 'chase', breath: true, hboss: true, weak: 'ice', minFloor: 11, desc: 'かくしボス。たからを まもる ドラゴン。　weak: ice' },
   { id: 'crystalgolem', en: 'crystal golem', ja: 'すいしょうの ゴーレム', cat: 'monster', art: 'dg_crystalgolem', hp: 170, atk: 10, exp: 80, move: 'slow', hboss: true, weak: 'thunder', minFloor: 11, desc: 'かくしボス。すいしょうで できた おおきな ゴーレム。　weak: thunder' },

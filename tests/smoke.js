@@ -1111,6 +1111,9 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
       return o;
     });
     ok(Object.values(mech).every(Boolean), 'ice・thunder・wind・light・armor・crab・ghost・spider ' + JSON.stringify(mech));
+    await p.evaluate(() => { const r = __dg.run; __dg.showCard('crab', { mon: { hp: 9, maxhp: 12, atk: 4 } }); });
+    ok(await p.evaluate(() => /weak: thunder/.test(document.getElementById('ov').textContent)), 'てきの カードに えいごだけの「weak: thunder」');
+    await p.evaluate(() => closePop());
     // rope で つぎの かいへ（ボスの かいでは つかえない）
     ok(await p.evaluate(async () => { const r = __dg.run; r.mons = []; r.inv = [{ uid: 821, id: 'rope', peek: false }]; __dg.act({ t: 'use', uid: 821 }); await new Promise(ok => setTimeout(ok, 700)); return r.floor === 7; }), 'rope で つぎの かいへ');
     // あるいても HPは もどらない・ふくろは べつべつ・つよい まほう・そうびの みため
@@ -1205,6 +1208,24 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     await p.click('#ov [data-act=dgTestDone]'); await p.waitForTimeout(800);
     ok(await p.evaluate(p0 => __dg.D.clears === 1 && __dg.run === null && __dg.D.rewarded.clear && /ダンジョン クリア/.test(document.getElementById('ov').textContent) && S.points >= p0 + 10 + 30, pts20), '20かい クリア（はじめては ⭐30）');
     ok(await p.evaluate(() => { const b = document.querySelector('#ov [data-act=dgTitle]').getBoundingClientRect(); return b.top >= 0 && b.bottom <= innerHeight; }), 'ことばが たくさんでも「タイトルへ」が がめんの なかに ある');
+    ok(await p.evaluate(() => S.owned.includes('a_dcape') && /ダンジョンの マント/.test(document.getElementById('ov').textContent)), '20かい クリアの きねん「ダンジョンの マント」（おうちの きせかえ）');
+    // だい3かい：2ごの なまえの てき・えいごだけの ヒント（じゅうたん と かんばん）・weak
+    const v3e = await p.evaluate(async () => {
+      const G = await import('./js/game.js'), { WORD } = await import('./js/data.js'), o = {}; let two = 0, signs = 0, okSign = 0;
+      const twoIds = ['bigslime', 'bluesnake', 'littlebat', 'angrywolf', 'reddragon'];
+      for (let g = 0; g < 40; g++) { const t = G.newRun(false); t.spells = ['fire'];
+        for (const f of [8, 12, 17]) { G.enterFloor(t, f); two += t.mons.filter(m => twoIds.includes(m.id)).length;
+          const sg = t.items.find(i => i.id === 'sign'); if (!sg) continue; signs++;
+          const m = sg.text.match(/^The (stairs are|key is) in the (RED|BLUE|YELLOW|GREEN|PINK|PURPLE) room\.$/); if (!m) continue;
+          const col = m[2].toLowerCase(), ri = t.rugs.indexOf(col), R = t.map.rooms[ri], tgt = m[1] === 'key is' ? t.items.find(i => i.id === 'key') : t.stairs;
+          if (R && tgt && tgt.x >= R.x && tgt.x < R.x + R.w && tgt.y >= R.y && tgt.y < R.y + R.h) okSign++; } }
+      o.two = two > 0; o.sign = signs > 20 && okSign === signs;
+      const t = G.newRun(false); G.enterFloor(t, 3); o.noSignEarly = !t.items.some(i => i.id === 'sign') && !t.rugs;
+      // little bat は 2ほ
+      const r = __dg.run; o.fast = !!WORD.littlebat.fast;
+      return o;
+    });
+    ok(Object.values(v3e).every(Boolean), '2ごの なまえの てき（11かいから）・かんばん「The stairs are in the GREEN room.」と じゅうたんの いろが あう（6かいから） ' + JSON.stringify(v3e));
     // にかいめは せつめいを えらべる・たおれた とき
     await p.evaluate(() => __dg.toTitle()); await p.click('#tGo'); await p.waitForTimeout(200);
     ok(await p.isVisible('#ov [data-act=dgSkipTut]') && await p.isVisible('#ov [data-act=dgTut]'), '2かいめからは せつめいを「みる／とばす」');
