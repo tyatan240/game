@@ -76,16 +76,24 @@ let HM = null;
 function hmSendPop() {
   if (!HM) HM = { from: S.notes.senders[0].id, stamp: 'hanamaru', text: '', day: hmToday() };
   const N = S.notes, today = hmToday(), yday = hmDayOff(-1);
-  showPop(`<div class="hm-send"><h3>💮 はなまるを おくる</h3>
+  showPop(`<div class="hm-send"><div class="hm-body"><h3>💮 はなまるを おくる</h3>
     <div class="hm-lbl">だれから</div><div class="hm-from">${N.senders.map(sd => `<button class="${HM.from === sd.id ? 'on' : ''}" style="--hc:${sd.color}" data-act="hmFrom" data-arg="${sd.id}">${hmEsc(sd.name)}</button>`).join('')}</div>
-    <div class="hm-lbl">スタンプ</div><div class="hm-grid">${HM_STAMPS.map(st => `<button class="${HM.stamp === st.id ? 'on' : ''}" data-act="hmStamp" data-arg="${st.id}" title="${st.name}">${hmSvg(st.id, 52)}</button>`).join('')}</div>
+    <div class="hm-lbl">スタンプ</div><div class="hm-grid">${HM_STAMPS.map(st => `<button class="${HM.stamp === st.id ? 'on' : ''}" data-act="hmStamp" data-arg="${st.id}" title="${st.name}">${hmSvg(st.id, 44)}</button>`).join('')}</div>
     <div class="hm-lbl">ひとこと（なくても いいよ）</div><input id="hmText" maxlength="20" value="${hmEsc(HM.text)}" placeholder="れい：7のだん すごい！" oninput="HM.text=this.value">
     <div class="hm-pre">${HM_PRESETS.map(t => `<button data-act="hmPre" data-arg="${t}">${t}</button>`).join('')}</div>
     <div class="hm-lbl">どの日の がんばりに</div><div class="hm-from">${[[today, 'きょう'], [yday, 'きのう']].map(([d, l]) => `<button class="${HM.day === d ? 'on' : ''}" style="--hc:#7c6cf0" data-act="hmDay" data-arg="${d}">${l}（${hmDayLabel(d)}）</button>`).join('')}</div>
-    <div class="hm-sum" id="hmSum">…</div>
-    <div class="hm-prev">${hmStampBox(HM, 70)}</div>
-    <div class="btns"><button class="big gray" data-act="hmCancel">やめる</button><button class="big" data-act="hmGo">おくる</button></div></div>`);
+    <div class="hm-sum" id="hmSum">…</div></div>
+    <div class="hm-foot"><span class="hm-prev" id="hmPrev">${hmStampBox(HM, 54)}</span><button class="big gray" data-act="hmCancel">やめる</button><button class="big" data-act="hmGo">おくる</button></div></div>`);
   hmDaySummary(HM.day).then(t => { const e = document.getElementById('hmSum'); if (e) e.innerHTML = t; });
+}
+// えらんだ ものを その ばで かえる（がめんを つくりなおさない＝スクロールが もどらない）
+function hmRefresh(sum) {
+  document.querySelectorAll('#ov [data-act=hmFrom]').forEach(b => b.classList.toggle('on', b.dataset.arg === HM.from));
+  document.querySelectorAll('#ov [data-act=hmStamp]').forEach(b => b.classList.toggle('on', b.dataset.arg === HM.stamp));
+  document.querySelectorAll('#ov [data-act=hmDay]').forEach(b => b.classList.toggle('on', b.dataset.arg === HM.day));
+  const t = document.getElementById('hmText'); if (t && t.value !== HM.text) t.value = HM.text;
+  const pv = document.getElementById('hmPrev'); if (pv) pv.innerHTML = hmStampBox(HM, 54);
+  if (sum) hmDaySummary(HM.day).then(x => { const e = document.getElementById('hmSum'); if (e) e.innerHTML = x; });
 }
 // その日の べんきょうの まとめ（学習履歴から）
 async function hmDaySummary(day) {
@@ -174,10 +182,10 @@ function hmHomeCard() {
 
 Object.assign(ACT, {
   hmSend: () => { HM = null; hmSendPop(); },
-  hmFrom: id => { HM.from = id; hmSendPop(); },
-  hmStamp: id => { HM.stamp = id; hmSendPop(); },
-  hmPre: t => { HM.text = t; hmSendPop(); },
-  hmDay: d => { HM.day = d; hmSendPop(); },
+  hmFrom: id => { HM.from = id; hmRefresh(); },
+  hmStamp: id => { HM.stamp = id; hmRefresh(); },
+  hmPre: t => { HM.text = t; hmRefresh(); },
+  hmDay: d => { HM.day = d; hmRefresh(true); },
   hmGo: () => hmGo(),
   hmCancel: () => { HM = null; closePop(); },
   hmClose: () => { closePop(); if (typeof render === 'function') render(); },

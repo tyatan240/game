@@ -140,3 +140,11 @@ h2{font-size:18px;margin:4px 0 10px;color:#c8577f}
 .hm-wk,.hm-cal{grid-template-columns:repeat(7,minmax(0,1fr))}.hm-c{min-width:0;overflow:hidden}.hm-c svg{max-width:100%;height:auto!important}
 .hm-st{border-radius:999px;line-height:0}
 .hm-st i{line-height:1.5}
+/* おくる がめん：たかさに あわせて なかを スクロール、「やめる・おくる」は いつも したに */
+.pop:has(.hm-send){padding:0;overflow:hidden}
+.hm-send{display:flex;flex-direction:column;max-height:calc(100dvh - 40px)}
+.hm-body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 16px 8px}
+.hm-foot{display:flex;align-items:center;gap:8px;padding:10px 12px;border-top:1px solid #f0e6e6;background:#fff}
+.hm-foot .big{flex:1;margin:0;padding:12px 6px;font-size:18px}
+.hm-foot .hm-prev{margin:0;flex:none}
+.hm-foot .hm-st i{bottom:-7px;font-size:10px}
