@@ -1156,6 +1156,7 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     });
     ok(Object.values(farR).every(Boolean), 'とおくの てきに まほう：えんしゅつ・ダメージの あいだは てきが うごかない ' + JSON.stringify(farR));
     // MPを かいふく する たべもの
+    ok(await p.evaluate(() => { const r = __dg.run; r.inv.push({ uid: 7230, id: 'candy', peek: false }, { uid: 7231, id: 'bluepotion', peek: false }, { uid: 7232, id: 'potion', peek: false }); ACT.dgBag('food'); const t = document.getElementById('ov').textContent; r.inv = r.inv.filter(i => ![7230, 7231, 7232].includes(i.uid)); closePop(); return /MP ＋5/.test(t) && /MP ぜんぶ かいふく/.test(t) && /HP・MP ぜんぶ かいふく/.test(t); }), 'たべもの：MP かいふく・くすり にも こうかを ひょうじ');
     ok(await p.evaluate(() => { const r = __dg.run, h = r.hero; h.mp = 1; r.inv.push({ uid: 7220, id: 'juice', peek: false }); __dg.act({ t: 'use', uid: 7220 }); return h.mp === Math.min(h.maxmp, 13) && /MPが/.test(document.getElementById('log').textContent); }), 'juice で MPが かいふく');
     // まほうは まず あたる ところを みせる →「つかう」で つかう。えんしゅつ（spell）が ダメージより さき
     const aimR = await p.evaluate(async () => {

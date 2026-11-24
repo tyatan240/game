@@ -432,6 +432,9 @@ function drawAim(now, t, ox, oy) {
   for (const m of tg.mons) { const cx = ox + (m.x + 0.5) * t, cy = oy + (m.y + 0.5) * t, r = t * (0.55 + Math.sin(now / 140) * 0.06); g.strokeStyle = '#ff3a5a'; g.lineWidth = 3.5; g.beginPath(); g.arc(cx, cy, r, 0, 7); g.stroke(); g.beginPath(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { g.moveTo(cx + dx * r * 0.7, cy + dy * r * 0.7); g.lineTo(cx + dx * r * 1.25, cy + dy * r * 1.25); } g.stroke(); }
 }
 
+// もちものの こうか（みじかく）。たべもの は かいふく りょう、どうぐ は つかいかた
+const USE_NOTE = { potion: 'HP・MP ぜんぶ かいふく', key: 'たからばこを あける', book: 'あたらしい まほうを おぼえる', torch: 'ちずが ぜんぶ みえる', rope: 'つぎの かいへ', feather: 'たおれても 1かい ふっかつ', goldkey: 'きんいろの とびらを あける' };
+const useNote = w => w.use === 'heal' ? `HP ＋${w.val}` : w.use === 'mp' ? (w.val >= 99 ? 'MP ぜんぶ かいふく' : `MP ＋${w.val}`) : USE_NOTE[w.use] || '';
 let bagTab = 'weapon';
 const SLOT_NAME = { weapon: 'ぶき', shield: 'たて', armor: 'よろい' };
 function itemsPop(tab) {
@@ -441,7 +444,7 @@ function itemsPop(tab) {
   const list = run.inv.filter(it => bagOf(it.id) === bagTab), B = BAGS.find(b => b.id === bagTab), grp = B.group;
   const rows = list.map(it => {
     const w = WORD[it.id], eqd = Object.values(run.equip).includes(it.uid), ok = !ti || it.id === want, cls = ti && ok ? 'hint' : '';
-    const stat = w.slot ? `<small>${SLOT_NAME[w.slot]}・${w.atk ? `つよさ ＋${w.atk}` : `まもり ＋${w.def}`}</small>` : w.use === 'heal' ? `<small>HP ＋${w.val}</small>` : '';
+    const stat = w.slot ? `<small>${SLOT_NAME[w.slot]}・${w.atk ? `つよさ ＋${w.atk}` : `まもり ＋${w.def}`}</small>` : `<small>${useNote(w)}</small>`;
     const b = w.slot ? `<button class="${cls}" data-act="dgEquip" data-arg="${it.uid}" ${ok ? '' : 'disabled'}>${eqd ? 'はずす' : 'そうび'}</button>` : w.verb ? `<button class="${cls}" data-act="dgUse" data-arg="${it.uid}" ${ok ? '' : 'disabled'}>${w.verb}</button>` : '';
     return `<div class="irow${eqd ? ' on' : ''}"><span class="ia" data-art="${w.art}"></span><div class="in">${w.en}${eqd ? '<span class="eqm">そうびちゅう</span>' : ''}${stat}</div>${b}${ti ? '' : `<button class="q" data-act="dgLook" data-arg="${it.uid}">？</button>`}</div>`;
   }).join('');
