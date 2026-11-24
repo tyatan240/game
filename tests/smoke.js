@@ -1239,6 +1239,39 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
   }
 
+  console.log('23. はなまるスタンプ（パパ・ママから）');
+  {
+    const p = await page({ width: 820, height: 1180 });
+    await p.goto(B + 'index.html'); await p.waitForTimeout(600); await p.evaluate(() => closePop());
+    ok(await p.evaluate(() => S.notes && S.notes.senders.length === 2 && S.notes.senders[0].name === 'パパ' && S.notes.senders[1].name === 'ママ' && Array.isArray(S.notes.list)), 'はじめは パパ・ママ（ふるい データにも つく）');
+    await p.evaluate(() => go('settings')); await p.waitForTimeout(200);
+    ok(await p.isVisible('[data-act=hmSend]'), 'せってい（おうちのひと よう）に「はなまるを おくる」');
+    await p.click('[data-act=hmSend]'); await p.waitForTimeout(200);
+    ok(await p.evaluate(() => document.querySelectorAll('#ov [data-act=hmStamp]').length === 16), 'スタンプは 16しゅるい');
+    await p.click('#ov [data-act=hmStamp][data-arg=kin]'); await p.click('#ov [data-act=hmPre] >> nth=0'); await p.click('#ov [data-act=hmGo]'); await p.waitForTimeout(150);
+    await p.click('#ov [data-act=hmSend]'); await p.click('#ov [data-act=hmFrom][data-arg=mama]'); await p.click('#ov [data-act=hmStamp][data-arg=heart]'); await p.fill('#hmText', '7のだん すごい！'); await p.click('#ov [data-act=hmGo]'); await p.click('#ov [data-act=hmClose]');
+    ok(await p.evaluate(() => { const L = S.notes.list; return L.length === 2 && L[0].from === 'papa' && L[0].stamp === 'kin' && L[1].from === 'mama' && L[1].text === '7のだん すごい！' && L.every(n => !n.seen); }), 'パパと ママから おくれる（ひとことつき）');
+    const pts = await p.evaluate(() => S.points);
+    // おばあちゃんを ふやす・なまえを かえる
+    await p.click('[data-act=hmAddSender]'); await p.waitForTimeout(100);
+    ok(await p.evaluate(() => S.notes.senders.length === 3 && S.notes.senders[2].name === 'おばあちゃん'), 'おくる ひとを ふやせる（さいだい 4にん）');
+    // こどもが ひらく
+    await p.goto(B + 'index.html'); await p.waitForTimeout(400);
+    for (let k = 0; k < 12; k++) { await p.waitForTimeout(600); const t = await p.evaluate(() => document.getElementById('ov').textContent); if (/おてがみが とどいてるよ/.test(t)) break; await p.evaluate(() => { const b = document.querySelector('#ov .btns button'); if (b) b.click(); else closePop(); }); }
+    ok(await p.evaluate(() => /おてがみが とどいてるよ/.test(document.getElementById('ov').textContent) && /2まい/.test(document.getElementById('ov').textContent)), 'おうちを ひらくと「おてがみが とどいてるよ！」');
+    await p.click('#ov .btns [data-act=hmOpen]'); await p.waitForTimeout(400);
+    ok(await p.evaluate(() => !!document.querySelector('#ov .hm-press svg') && /パパ より/.test(document.getElementById('ov').textContent) && S.notes.list[0].seen), 'スタンプが おされて「パパ より」');
+    await p.click('#ov [data-act=hmNext]'); await p.waitForTimeout(400);
+    ok(await p.evaluate(() => /7のだん すごい！/.test(document.getElementById('ov').textContent) && /ママ より/.test(document.getElementById('ov').textContent)), 'つぎの おてがみ（ママ・ひとこと）');
+    await p.click('#ov [data-act=hmThanks]'); await p.waitForTimeout(200);
+    ok(await p.evaluate(p0 => S.notes.list.every(n => n.seen) && S.points === p0, pts), 'ぜんぶ みた・⭐は ふえない');
+    await p.click('[data-act=hmNote]'); await p.waitForTimeout(200);
+    ok(await p.evaluate(() => document.querySelectorAll('#ov .hm-c.has').length === 1 && /パパ 1こ/.test(document.getElementById('ov').textContent) && /ママ 1こ/.test(document.getElementById('ov').textContent)), 'はなまるノート（カレンダー・パパ ママの かず）');
+    await p.click('#ov .hm-c.has'); await p.waitForTimeout(150);
+    ok(await p.evaluate(() => document.querySelectorAll('#ov .hm-dn').length === 2), 'その日の はなまるを おおきく みる');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+  }
+
   console.log('22b. たからさがしダンジョン（dungeon/ の たからさがし）');
   {
     const p = await page({ width: 1024, height: 768 });

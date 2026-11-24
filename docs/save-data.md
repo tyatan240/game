@@ -63,3 +63,6 @@ core.js を読める部屋は `S.points += n; save();`。
 
 ## イングリッシュダンジョン（`moko-dungeon-v1`）
 localStorage と IndexedDB（`moko-dungeon`/`kv`）。形は `dungeon/README.md`。 たからさがしの カード・かけら・中断は 同じキーの `treasure` に入れる（追加のみ。`save.js` の `defTreasure`/`merge`）。⭐ は `moko-math-v1` の `points` に足すだけ。
+
+## はなまるスタンプ（`moko-math-v1` の `notes`）
+`{ senders:[{id,name,color}], list:[{id,from,stamp,text,day,at,seen,seenAt}] }`。はじめは パパ・ママ。`merge()` で 足りないときは 初期値。スタンプの id（`common/hanamaru.js` の HM_STAMPS）は 変えない。

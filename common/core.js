@@ -291,7 +291,9 @@ function defState(){return{v:1,t:0,points:0,
   ktypes:Object.fromEntries(KTYPES.map(t=>[t.id,{on:true,pts:t.pts}])),
   etypes:Object.fromEntries(ETYPES.map(t=>[t.id,{on:true,pts:t.pts}])),
   perRound:5,perfect:3,daily:5,sound:true,testScale:1,practiceMul:2,practiceBonus:5,progPts:3,gachaOn:true,gachaCost:100,gachaDaily:0,abcPts:10,goalPts:10,goalAll:50,admin:false},
- lastDay:'',stats:{q:0,ok:0},kstats:{q:0,ok:0},estats:{q:0,ok:0},tests:{},daily:newDaily(''),gacha:{day:'',count:0,pulls:0},looks:{},hw:{},streakGot:[],adminBackup:null}}
+ lastDay:'',stats:{q:0,ok:0},kstats:{q:0,ok:0},estats:{q:0,ok:0},tests:{},daily:newDaily(''),gacha:{day:'',count:0,pulls:0},looks:{},hw:{},streakGot:[],adminBackup:null,notes:defNotes()}}
+// はなまるスタンプ（パパ・ママから）：senders＝おくる ひと（さいだい4にん）、list＝おくった スタンプ
+function defNotes(){return{senders:[{id:'papa',name:'パパ',color:'#4a8fe0'},{id:'mama',name:'ママ',color:'#ff6b9a'}],list:[]}}
 function merge(d){
  const s=defState(); if(!d||typeof d!=='object') return s;
  if(typeof d.points==='number') s.points=d.points;
@@ -314,6 +316,9 @@ function merge(d){
  if(d.daily&&typeof d.daily==='object') s.daily={...s.daily,...d.daily,got:{...(d.daily.got||{})}};
  if(d.tests&&typeof d.tests==='object') s.tests=d.tests;
  if(Array.isArray(d.streakGot)) s.streakGot=d.streakGot.filter(n=>typeof n==='number');
+ if(d.notes&&typeof d.notes==='object'){
+  if(Array.isArray(d.notes.senders)&&d.notes.senders.length) s.notes.senders=d.notes.senders.filter(x=>x&&typeof x.id==='string').slice(0,4).map(x=>({id:x.id,name:String(x.name||'').slice(0,8)||'おうちのひと',color:typeof x.color==='string'?x.color:'#4a8fe0'}));
+  if(Array.isArray(d.notes.list)) s.notes.list=d.notes.list.filter(n=>n&&typeof n.stamp==='string'&&typeof n.day==='string')}
  if(d.hw&&typeof d.hw==='object') for(const k in d.hw) if(typeof d.hw[k]==='number') s.hw[k]=d.hw[k];
  if(d.looks&&typeof d.looks==='object') for(const c in d.looks){const l=d.looks[c];if(!ITEM[c]||!l||typeof l!=='object')continue;
   s.looks[c]={};for(const k of LOOK) if(l[k]&&ITEM[l[k]]) s.looks[c][k]=l[k]}
