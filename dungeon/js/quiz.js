@@ -7,7 +7,7 @@ export function quizKind(floor, rand = Math.random) {
   const pool = floor <= 5 ? ['word', 'letter'] : floor <= 10 ? ['word', 'letter', 'order'] : ['letter', 'order', 'riddle'];
   return pool[Math.floor(rand() * pool.length)];
 }
-export const QUIZ_NAME = { word: 'ことばの とびら', letter: 'もじの とびら', order: 'ならべかえの とびら', riddle: 'なぞなぞの とびら' };
+export const QUIZ_NAME = { word: 'ことばの とびら', letter: 'もじの とびら', order: 'ならべかえの とびら', riddle: 'なぞなぞの とびら', collect: 'もじあつめの とびら' };
 
 // なぞなぞ（えいごを よみあげる → えを えらぶ）
 export const RIDDLES = [
@@ -38,7 +38,8 @@ const shuffle = (a, rand) => { a = [...a]; for (let i = a.length - 1; i > 0; i--
 const pick = (a, rand) => a[Math.floor(rand() * a.length)];
 
 // クイズを つくる → { kind, card(こたえの カード), ask, choices, answer, ... }
-export function makeQuiz(kind, rand = Math.random) {
+export function makeQuiz(kind, rand = Math.random, cardId = null) {
+  if (kind === 'collect' && CARD[cardId]) { const card = CARD[cardId]; let tiles = shuffle(card.en.split(''), rand); for (let k = 0; k < 5 && tiles.join('') === card.en; k++) tiles = shuffle(tiles, rand); return { kind, card, tiles, answer: card.en }; } // あつめた もじを ならべる
   if (kind === 'riddle') {
     const r = pick(RIDDLES, rand), card = CARD[r.id];
     const others = shuffle(CARDS.filter(c => c.id !== r.id && c.art !== card.art && c.rare <= 2), rand).slice(0, 2);

@@ -35,7 +35,11 @@ export function giveCard(rare, run) {
       T.badges.push(card.letter); res.badge = true;
       setTimeout(() => X.stars(CARD_STARS.badge, `「${card.letter}」の バッジ！`), 1600);
     }
-    if (cardCount() >= CARD_TOTAL && !T.rewarded.complete) { T.rewarded.complete = true; setTimeout(() => X.stars(CARD_STARS.complete, 'カード コンプリート！'), 2600); }
+    if (cardCount() >= CARD_TOTAL && !T.rewarded.complete) { // 78まい コンプリート：⭐100 と きねんの かんむり（おうちの きせかえ）
+      T.rewarded.complete = true; res.complete = true;
+      try { if (typeof grantItem === 'function') { grantItem('h_treasure'); save(); } } catch (e) { }
+      setTimeout(() => X.stars(CARD_STARS.complete, 'カード コンプリート！'), 2600);
+    }
   }
   if (run) (run.cards = run.cards || []).push(card.id);
   X.save();
@@ -99,12 +103,14 @@ export function flipCard() {
     const msg = document.querySelector('#ov .rv-msg');
     if (msg) msg.innerHTML = `${r.isNew ? '<b class="newb">NEW!</b> ' : ''}<b class="en">${c.en}</b>「${c.ja}」 ${stars(c.rare)} ${RARE_NAME[c.rare]}`
       + (r.isNew ? '' : `<br><small>もう もっている カード → きらきらの かけら ＋${r.shards}</small>`)
-      + (r.badge ? `<br><b class="badgeb">「${c.letter}」の 3まいが そろった！ もじバッジ！</b>` : '');
+      + (r.badge ? `<br><b class="badgeb">「${c.letter}」の 3まいが そろった！ もじバッジ！</b>` : '')
+      + (r.complete ? `<br><b class="badgeb">78まい ぜんぶ そろった！ コンプリート！<br>きねんの「たからさがしの かんむり」を もらったよ（おうちの きせかえ）</b>` : '');
+    if (r.badge || r.complete) { const f = document.querySelector('#ov .reveal'); if (f) f.classList.add('party'); }
     const b = document.querySelector('#ov .rv-btns'); if (b) b.hidden = false;
   }, 550);
 }
 export const revealSay = () => { if (current) X.speak(`${current.card.letter}, ${current.card.en}!`); }; // なんかいでも きける
-export function revealNext() { showing = false; current = null; closePop(); if (queue.length) setTimeout(showReveals, 150); else X.onRevealDone(); }
+export function revealNext() { showing = false; current = null; closePop(); if (queue.length) setTimeout(showReveals, 150); else if (gachaOn) gachaPop(); else X.onRevealDone(); } // ガチャの あとは ガチャの がめんへ
 
 /* ---------- アルバム（カードずかん）---------- */
 let page = 'A';
@@ -153,7 +159,7 @@ export function quizPop(q, done) {
   let body = '';
   if (q.kind === 'word') body = `<div class="qz-art" data-art="${q.card.art}"></div><p>この え は えいごで どれ？</p><div class="qz-ch">${q.choices.map((id, i) => `<button class="big qz-c en" data-act="dgQzAns" data-arg="${i}">${CARD[id].en}</button>`).join('')}</div>`;
   if (q.kind === 'letter') body = `<div class="qz-art" data-art="${q.card.art}"></div><div class="qz-word">${q.shown.replace('_', '<b class="qz-blank">？</b>')}</div><p>はじめの もじは どれ？</p><div class="qz-ch">${q.choices.map((L, i) => `<button class="big qz-l" data-act="dgQzAns" data-arg="${i}">${L}</button>`).join('')}</div>`;
-  if (q.kind === 'order') body = `<div class="qz-art" data-art="${q.card.art}"></div><div class="qz-slots">${q.answer.split('').map(() => '<span></span>').join('')}</div><p>もじを じゅんばんに タップして ことばを つくろう</p><div class="qz-ch">${q.tiles.map((L, i) => `<button class="big qz-l" data-act="dgQzTile" data-arg="${i}">${L}</button>`).join('')}</div><div class="btns"><button class="big gray" data-act="dgQzBack">ひとつ けす</button></div>`;
+  if (q.kind === 'order' || q.kind === 'collect') body = `<div class="qz-art" data-art="${q.card.art}"></div><div class="qz-slots">${q.answer.split('').map(() => '<span></span>').join('')}</div><p>もじを じゅんばんに タップして ことばを つくろう</p><div class="qz-ch">${q.tiles.map((L, i) => `<button class="big qz-l" data-act="dgQzTile" data-arg="${i}">${L}</button>`).join('')}</div><div class="btns"><button class="big gray" data-act="dgQzBack">ひとつ けす</button></div>`;
   if (q.kind === 'riddle') body = `<div class="qz-rid">${q.en}</div><button class="say" data-act="dgQzSay">🔊 もう いちど きく</button><p>なんの こと？ えを えらぼう</p><div class="qz-ch">${q.choices.map((id, i) => `<button class="qz-p" data-act="dgQzAns" data-arg="${i}" data-art="${CARD[id].art}"></button>`).join('')}</div>`;
   showPop(`<div class="quiz">${head}${body}<div class="qz-fb" id="qzfb"></div></div>`);
   document.querySelectorAll('#ov .qz-art[data-art]').forEach(el => el.appendChild(wordArt(el.dataset.art, 96)));
@@ -162,7 +168,7 @@ export function quizPop(q, done) {
 }
 export const quizSay = () => { if (Q && Q.q.kind === 'riddle') X.speak(Q.q.en); };
 export function quizTile(i) {
-  if (!Q || Q.answered || Q.q.kind !== 'order') return;
+  if (!Q || Q.answered || (Q.q.kind !== 'order' && Q.q.kind !== 'collect')) return;
   const b = document.querySelector(`#ov [data-act=dgQzTile][data-arg="${i}"]`); if (!b || b.disabled) return;
   X.sfx.tap(); b.disabled = true; Q.picked.push(+i);
   const slots = document.querySelectorAll('#ov .qz-slots span'); slots[Q.picked.length - 1].textContent = Q.q.tiles[i];
@@ -176,7 +182,7 @@ export function quizBack() {
 export function quizAns(i) {
   if (!Q || Q.answered) return; Q.answered = true;
   const q = Q.q; let ok, user;
-  if (q.kind === 'order') { user = Q.picked.map(k => q.tiles[k]).join(''); ok = user === q.answer; }
+  if (q.kind === 'order' || q.kind === 'collect') { user = Q.picked.map(k => q.tiles[k]).join(''); ok = user === q.answer; }
   else { ok = +i === q.answer; user = q.kind === 'letter' ? q.choices[i] : CARD[q.choices[i]].en;
     document.querySelectorAll('#ov [data-act=dgQzAns]').forEach((b, j) => { b.disabled = true; b.classList.toggle('ok', j === q.answer); b.classList.toggle('ng', j === +i && !ok); }); }
   document.querySelectorAll('#ov [data-act=dgQzTile],#ov [data-act=dgQzBack]').forEach(b => { b.disabled = true; });
@@ -189,3 +195,34 @@ export function quizAns(i) {
 }
 export function quizDone() { if (!Q || !Q.result) return; const { ok, user } = Q.result, { q, done } = Q; Q = null; closePop(); done(ok, q, user); }
 export const quizState = () => Q && Q.q; // テスト よう
+
+/* ---------- かけらの カードガチャ（かけら 10こで 1かい。10かいごとに ★★いじょう かくてい）---------- */
+export const GACHA_COST = 10, GACHA_PITY = 10, GACHA_P = [70, 25, 5];
+let gachaOn = false;
+export const inGacha = () => gachaOn;
+export function gachaPop() {
+  const T = TD(), g = T.gacha, can = T.shards >= GACHA_COST, left = GACHA_PITY - (g.pity % GACHA_PITY);
+  gachaOn = true;
+  showPop(`<div class="gacha"><h3>かけらの カードガチャ</h3>
+    <div class="gc-mach"><div class="gc-glass"><span class="tcard-back b1"></span><span class="tcard-back b2"></span><span class="tcard-back b3"></span></div><div class="gc-base">GACHA</div></div>
+    <div class="gc-shard">きらきらの かけら <b>${T.shards}</b> こ</div>
+    <p class="gc-info">かけら <b>${GACHA_COST}こ</b> で 1かい まわせるよ。<br>${left === 1 ? '<b class="gc-pity">つぎは ★★いじょう かくてい！</b>' : `あと <b>${left}かい</b> で ★★いじょう かくてい！`}</p>
+    <div class="gc-rate">★ ${GACHA_P[0]}%　★★ ${GACHA_P[1]}%　★★★ ${GACHA_P[2]}%</div>
+    <div class="btns" style="flex-direction:column;gap:8px">
+      <button class="big gc-go" data-act="dgGachaGo" ${can ? '' : 'disabled'}>${can ? 'まわす！（かけら 10こ）' : `かけらが たりない（あと ${GACHA_COST - T.shards}こ）`}</button>
+      <button class="big gray" data-act="dgGachaBack">もどる</button></div>
+    <p class="muted">かけらは、もっている カードが また でた ときに もらえるよ（★1こ・★★3こ・★★★10こ）</p></div>`);
+}
+export function gachaGo() {
+  const T = TD(); if (T.shards < GACHA_COST) return;
+  T.shards -= GACHA_COST; T.gacha.pulls++; T.gacha.pity++;
+  let rare;
+  if (T.gacha.pity >= GACHA_PITY) rare = Math.random() < GACHA_P[2] / (GACHA_P[1] + GACHA_P[2]) ? 3 : 2; // かくてい
+  else { const t = Math.random() * 100; rare = t < GACHA_P[2] ? 3 : t < GACHA_P[2] + GACHA_P[1] ? 2 : 1; }
+  if (rare >= 2) T.gacha.pity = 0; lastRare = rare;
+  X.sfx.unlock(); X.save();
+  const el = document.querySelector('#ov .gc-mach'); if (el) el.classList.add('spin');
+  setTimeout(() => { closePop(); giveCard(rare, null); showReveals(); }, 900);
+}
+export const gachaBack = () => { gachaOn = false; };
+let lastRare = 0; export const gachaLast = () => lastRare; // テスト よう

@@ -339,6 +339,32 @@ Object.assign(WORD_ART, {
   },
 });
 
+// ===== たからさがし 第3段階：きんの かぎ・もじの タイル・かんばん・かくしボス =====
+Object.assign(WORD_ART, {
+  dg_goldkey: c => {
+    c.save(); c.shadowColor = '#ffd34f'; c.shadowBlur = 12;
+    c.strokeStyle = '#d8a020'; c.fillStyle = '#ffd34f'; c.lineWidth = 4;
+    circle(c, 34, 36, 18); c.fill(); c.stroke(); circle(c, 34, 36, 8); c.fillStyle = '#fff3a8'; c.fill(); c.stroke();
+    c.fillStyle = '#ffd34f'; rr(c, 46, 31, 42, 10, 3); c.fill(); c.stroke(); rr(c, 72, 41, 7, 14, 2); c.fill(); c.stroke(); rr(c, 82, 41, 6, 10, 2); c.fill(); c.stroke();
+    c.restore(); c.fillStyle = '#fff'; [[20, 20, 4], [58, 22, 3], [24, 60, 3]].forEach(([x, y, r]) => { c.beginPath(); c.moveTo(x, y - r * 2); c.quadraticCurveTo(x, y, x + r * 2, y); c.quadraticCurveTo(x, y, x, y + r * 2); c.quadraticCurveTo(x, y, x - r * 2, y); c.quadraticCurveTo(x, y, x, y - r * 2); c.fill(); });
+  },
+  dg_ltile: c => { c.fillStyle = 'rgba(0,0,0,.15)'; rr(c, 18, 22, 68, 68, 12); c.fill(); c.fillStyle = '#fff4d0'; c.strokeStyle = '#d8a020'; c.lineWidth = 4; rr(c, 14, 16, 68, 68, 12); c.fill(); c.stroke(); },
+  dg_sign: c => {
+    c.fillStyle = '#8a5a3a'; c.fillRect(46, 52, 8, 40);
+    c.fillStyle = '#e8c08a'; c.strokeStyle = '#8a5a3a'; c.lineWidth = 4; rr(c, 12, 18, 76, 42, 6); c.fill(); c.stroke();
+    c.strokeStyle = '#8a5a3a'; c.lineWidth = 3; [30, 40, 50].forEach(y => { c.beginPath(); c.moveTo(22, y); c.lineTo(y === 50 ? 58 : 78, y); c.stroke(); });
+  },
+  dg_treasuredragon: c => { dragon(c, '#ffc83a', '#c8901a', '#fff3c8', true); c.fillStyle = '#ff5a8a'; [[40, 68], [60, 68], [50, 78]].forEach(([x, y]) => { circle(c, x, y, 3.5); c.fill(); }); },
+  dg_crystalgolem: c => {
+    const g = (pts, f) => { c.beginPath(); pts.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.closePath(); c.fillStyle = f; c.fill(); c.strokeStyle = '#4a8ac8'; c.lineWidth = 2.5; c.stroke(); };
+    g([[30, 52], [70, 52], [76, 84], [24, 84]], '#a8e0ff'); g([[14, 50], [30, 46], [28, 78], [12, 74]], '#c8ecff'); g([[86, 50], [70, 46], [72, 78], [88, 74]], '#c8ecff');
+    g([[34, 18], [66, 18], [72, 50], [28, 50]], '#d8f4ff'); g([[44, 6], [50, 0], [56, 6], [50, 18]], '#ff8fd8');
+    c.fillStyle = INK; [[42, 32], [58, 32]].forEach(([x, y]) => { rr(c, x - 4, y - 4, 8, 8, 2); c.fill(); });
+    c.fillStyle = 'rgba(255,255,255,.75)'; [[38, 24], [40, 58], [18, 56]].forEach(([x, y]) => { c.fillRect(x, y, 4, 10); });
+  },
+  dg_shadowking: c => { ghost(c, '#6a5a8e', true); c.fillStyle = 'rgba(255,80,120,.9)'; [[40, 46], [60, 46]].forEach(([x, y]) => { circle(c, x, y, 3); c.fill(); }); },
+});
+
 // マップの タイル（キャンバスに じかに かく。T … タイルの おおきさ）
 export function drawTile(c, ch, x, y, T, seen, lit, zone) {
   if (!seen) { c.fillStyle = '#1e1a2a'; c.fillRect(x, y, T, T); return; }

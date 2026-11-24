@@ -1,6 +1,6 @@
 // ゲームの きまり（ターン・こうげき・てきの うごき・アイテム・まほう）。ひょうじとは べつ
 import { WORD, WORDS, SPELLS, HERO0, LV_EXP, MAX_FLOOR, BOSS_FLOORS, BOSS_OF, MINION_OF, BAGS, BAG_MAX, bagOf } from './data.js';
-import { RARE_BY_DEPTH } from './cards.js';
+import { RARE_BY_DEPTH, CARDS } from './cards.js';
 import { quizKind } from './quiz.js';
 import { genFloor, genTutorial } from './gen.js';
 
@@ -40,7 +40,7 @@ function freeCell(run, room, avoid = []) {
 }
 function spawnMon(run, id, x, y, extra = {}) {
   // つよさは その てきが でて くる かい から すこしずつ あがる（ボスは きまった つよさ）
-  const w = WORD[id], f = Math.max(1, ef(run)), up = w.boss ? 0 : Math.max(0, f - (w.minFloor || 1)), tb = w.boss && isTreasure(run); // たからさがしの ボスは つよめ
+  const w = WORD[id], f = Math.max(1, ef(run)), up = (w.boss || w.hboss) ? 0 : Math.max(0, f - (w.minFloor || 1)), tb = w.boss && isTreasure(run); // たからさがしの ボスは つよめ
   const hp = Math.round(w.hp * (1 + 0.2 * up) * (tb ? 1.3 : 1));
   run.mons.push({ uid: run.uid++, id, x, y, hp, maxhp: hp, atk: w.atk + Math.floor(up / 2) + Math.floor(f / 4) + (tb ? 2 : 0), def: w.def || 0, exp: w.exp + Math.floor(f / 2), tick: 0, ...extra });
 }
@@ -83,7 +83,7 @@ export function enterFloor(run, floor) {
     } else {
       const last = rooms[rooms.length - 1], sc = freeCell(run, last); run.stairs = { x: sc[0], y: sc[1] };
       const canMagic = run.spells.some(s => WORD[s].dmg); // まほうで しか たおせない てきは、こうげきの まほうを おぼえてから
-      const fl = ef(run), mtypes = WORDS.filter(w => w.cat === 'monster' && !w.boss && w.minFloor <= fl && (!w.maxFloor || w.maxFloor >= fl) && (!w.hard || canMagic)).map(w => w.id);
+      const fl = ef(run), mtypes = WORDS.filter(w => w.cat === 'monster' && !w.boss && !w.hboss && w.minFloor <= fl && (!w.maxFloor || w.maxFloor >= fl) && (!w.hard || canMagic)).map(w => w.id);
       for (let i = 0; i < Math.min(8, 3 + floor); i++) { const c = freeCell(run, pick(rooms.slice(1))); if (c) spawnMon(run, pick(mtypes), c[0], c[1]); }
       for (let i = 0; i < 4 + (floor > 2 ? 1 : 0) + (floor > 10 ? 1 : 0); i++) { const c = freeCell(run, pick(rooms)); if (c) run.items.push({ uid: run.uid++, id: rollItem(run), x: c[0], y: c[1] }); }
       // たからばこ と かぎ（たからさがしは 1かいに 0〜2こ）
@@ -99,8 +99,8 @@ export function enterFloor(run, floor) {
     }
   }
   unstackBoxes(run);
-  run.secrets = [];
-  if (isTreasure(run) && floor > 0 && !BOSS_FLOORS.includes(floor)) placeSecrets(run);
+  run.secrets = []; run.traps = []; run.letters = [];
+  if (isTreasure(run) && floor > 0 && !BOSS_FLOORS.includes(floor)) { placeSecrets(run); placeTraps(run); }
   run.seen = '0'.repeat(run.map.w * run.map.h); // みえる ところは よびだしがわで updateSeen()
 }
 
@@ -109,7 +109,8 @@ export function enterFloor(run, floor) {
 //   ひらくまで タイルは '#' の まま。とびらの クイズに せいかい すると openSecret() で ほる
 function placeSecrets(run) {
   const f = run.floor, W = run.map.w, H = run.map.h, tl = run.map.tiles;
-  const n = (rand() < (f <= 5 ? 0.6 : f <= 10 ? 0.8 : 1) ? 1 : 0) + (rand() < (f <= 5 ? 0.1 : f <= 10 ? 0.25 : 0.45) ? 1 : 0);
+  const wantGold = f >= 11 && !run.hbossDone && rand() < 0.4; // かくしボスの なぞの とびら
+  const n = (rand() < (f <= 5 ? 0.6 : f <= 10 ? 0.8 : 1) ? 1 : 0) + (rand() < (f <= 5 ? 0.1 : f <= 10 ? 0.25 : 0.45) ? 1 : 0) + (wantGold ? 1 : 0);
   const isOpen = (x, y) => x >= 0 && y >= 0 && x < W && y < H && tl[y][x] !== '#';
   for (let tries = 0; run.secrets.length < n && tries < 400; tries++) {
     const w = ri(3, 4), h = 3, x = ri(2, W - w - 3), y = ri(2, H - h - 3);
@@ -122,8 +123,47 @@ function placeSecrets(run) {
     const ds = cands.filter(([, , ox, oy]) => isOpen(ox, oy) && !(run.stairs && run.stairs.x === ox && run.stairs.y === oy) && !run.boxes.some(b => b.x === ox && b.y === oy));
     if (!ds.length) continue;
     const [dx, dy] = pick(ds);
-    run.secrets.push({ x, y, w, h, door: { x: dx, y: dy }, open: false, lock: 0, kind: quizKind(f, rand) });
+    run.secrets.push({ x, y, w, h, door: { x: dx, y: dy }, open: false, lock: 0, kind: run.secrets.length === n - 1 && wantGold ? 'gold' : secretKind(f) });
   }
+  for (const s of run.secrets) { if (s.kind === 'hint') setupHint(run, s); if (s.kind === 'collect') setupCollect(run, s); }
+}
+// とびらの しゅるい：クイズ（quiz.js）＋ 11かいから えいごだけの ヒント（いろの たいまつ）・16かいから もじあつめ
+function secretKind(f) {
+  const r = rand();
+  if (f >= 16 && r < 0.25) return 'collect';
+  if (f >= 11 && r < 0.55) return 'hint';
+  return quizKind(f, rand);
+}
+const COLORS = ['red', 'blue', 'yellow'];
+// えいごだけの ヒント：かんばん「Look at the BLUE torch.」と、いろの ちがう たいまつ 3つ（ほんものは とびらの かべ）
+function setupHint(run, s) {
+  const tl = run.map.tiles, W = run.map.w, H = run.map.h, used = new Set([s.door.x + ',' + s.door.y]);
+  const doors = new Set(run.secrets.map(o => o.door.x + ',' + o.door.y));
+  const walls = [];
+  for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
+    if (tl[y][x] !== '#' || doors.has(x + ',' + y)) continue;
+    if (Object.values(DIRS).some(([dx, dy]) => tl[y + dy] && tl[y + dy][x + dx] === '.')) walls.push([x, y]);
+  }
+  const color = pick(COLORS), others = COLORS.filter(c => c !== color);
+  s.color = color; s.torches = [{ x: s.door.x, y: s.door.y, color }];
+  for (const c of others) {
+    const cand = walls.filter(([x, y]) => !used.has(x + ',' + y) && s.torches.every(t => Math.abs(t.x - x) + Math.abs(t.y - y) >= 4) && !run.secrets.some(o => x >= o.x - 1 && x <= o.x + o.w && y >= o.y - 1 && y <= o.y + o.h));
+    if (!cand.length) continue; const [x, y] = pick(cand); used.add(x + ',' + y); s.torches.push({ x, y, color: c });
+  }
+  const c = freeCell(run, pick(run.map.rooms)); if (c) run.items.push({ uid: run.uid++, id: 'sign', x: c[0], y: c[1], text: `Look at the ${color.toUpperCase()} torch.`, sid: run.secrets.indexOf(s) });
+}
+// もじあつめ：ことばの もじを ゆかに ばらまく。ぜんぶ ひろって とびらで ならべる
+function setupCollect(run, s) {
+  const card = pick(CARDS.filter(c => /^[a-z]{3,4}$/.test(c.en) && c.rare <= 2));
+  s.card = card.id; s.word = card.en; const sid = run.secrets.indexOf(s);
+  for (const L of card.en) { const c = freeCell(run, pick(run.map.rooms)); if (c) run.items.push({ uid: run.uid++, id: 'ltile', x: c[0], y: c[1], letter: L, sid }); else run.letters = [...(run.letters || []), { sid, letter: L }]; }
+}
+// わな（たからさがし 11かいから）：おとしあな（したの かいへ）・ねむりの ゆか（2ターン うごけない）。「しらべる」で みつけると もう ひっかからない
+function placeTraps(run) {
+  run.traps = [];
+  if (run.floor < 11) return;
+  const n = 1 + (rand() < 0.5 ? 1 : 0);
+  for (let i = 0; i < n; i++) { const c = freeCell(run, pick(run.map.rooms.slice(1))); if (c && !run.traps.some(t => t.x === c[0] && t.y === c[1])) run.traps.push({ x: c[0], y: c[1], kind: rand() < 0.5 ? 'pit' : 'sleep', found: false }); }
 }
 // せいかい → かくし部屋を ほって なかに たからもの（カードは 1だん ふかい わりあい）
 export function openSecret(run, i) {
@@ -136,9 +176,17 @@ export function openSecret(run, i) {
   run.map.rooms.push({ x: s.x, y: s.y, w: s.w, h: s.h, secret: true });
   const cells = []; for (let y = s.y; y < s.y + s.h; y++) for (let x = s.x; x < s.x + s.w; x++) cells.push([x, y]);
   const free = () => { const c = cells.filter(([x, y]) => !run.items.some(it => it.x === x && it.y === y)); return c.length ? pick(c) : null; };
+  if (s.kind === 'gold') { // なぞの とびら → かくしボス
+    const bid = pick(['treasuredragon', 'crystalgolem', 'shadowking']); spawnMon(run, bid, s.x + (s.w >> 1), s.y + 1, { hboss: true });
+    ev.push({ t: 'secret', i }); ev.push({ t: 'hboss', id: bid }); ev.push({ t: 'msg', text: `${en('goldkey')} で なぞの とびらが ひらいた！ かくしボス ${en(bid)} が あらわれた！` });
+    for (const id of updateSeen(run)) ev.push({ t: 'meet', id });
+    return ev;
+  }
   const nCard = rand() < 0.3 ? 2 : 1;
   for (let k = 0; k < nCard; k++) { const c = free(); if (c) run.items.push({ uid: run.uid++, id: 'tcard', x: c[0], y: c[1], rare: rollRare(run, 1) }); }
   if (rand() < 0.6) { const c = free(); if (c) run.items.push({ uid: run.uid++, id: rollItem(run), x: c[0], y: c[1] }); }
+  // きんの かぎ（11かいから。かくしボスに あう まで）
+  if (run.floor >= 11 && !run.hbossDone && !run.inv.some(it => it.id === 'goldkey') && !run.items.some(it => it.id === 'goldkey') && rand() < 0.35) { const c = free(); if (c) run.items.push({ uid: run.uid++, id: 'goldkey', x: c[0], y: c[1] }); }
   ev.push({ t: 'secret', i }); ev.push({ t: 'msg', text: 'かくし部屋の とびらが ひらいた！ なかに たからが ある！' });
   for (const id of updateSeen(run)) ev.push({ t: 'meet', id });
   return ev;
@@ -146,6 +194,9 @@ export function openSecret(run, i) {
 // まちがい → その とびらは 5ターン しまる
 export function failSecret(run, i) { const s = run.secrets && run.secrets[i]; if (s) s.lock = run.turn + 5; }
 export const secretAt = (run, x, y) => (run.secrets || []).find(s => !s.open && s.door.x === x && s.door.y === y) || null;
+// にせものの たいまつ（えいごだけの ヒント）
+export const decoyAt = (run, x, y) => { for (const s of run.secrets || []) if (!s.open && s.kind === 'hint') { const t = (s.torches || []).find(t => t.x === x && t.y === y && !(t.x === s.door.x && t.y === s.door.y)); if (t) return { s, t }; } return null; };
+export const lettersOf = (run, s) => (run.letters || []).filter(l => l.sid === run.secrets.indexOf(s)).map(l => l.letter);
 
 /* ---------- みえる ところ ---------- */
 export const tileAt = (run, x, y) => (x < 0 || y < 0 || x >= run.map.w || y >= run.map.h) ? '#' : run.map.tiles[y][x];
@@ -189,7 +240,7 @@ export function act(run, a) {
   let turn = false;
   const say = text => ev.push({ t: 'msg', text });
   if (a.t === 'move' && run.stuck > 0 && !monAt(run, h.x + DIRS[a.dir][0], h.y + DIRS[a.dir][1])) {
-    run.stuck--; h.dir = a.dir; turn = true; say(`${en('spider')} の いとで うごけない！`); ev.push({ t: 'bump' });
+    run.stuck--; h.dir = a.dir; turn = true; say(run.stuckWhy === 'sleep' ? 'ぐうぐう…ねむって いて うごけない！' : `${en('spider')} の いとで うごけない！`); if (!run.stuck) run.stuckWhy = null; ev.push({ t: 'bump' });
   } else if (a.t === 'move') {
     h.dir = a.dir; const [dx, dy] = DIRS[a.dir], nx = h.x + dx, ny = h.y + dy, m = monAt(run, nx, ny), b = boxAt(run, nx, ny);
     if (m) { attackMon(run, m, ev); turn = true; }
@@ -197,10 +248,16 @@ export function act(run, a) {
     else if (walkable(run, nx, ny)) {
       h.x = nx; h.y = ny; turn = true; ev.push({ t: 'step' });
       const it = run.items.find(i => i.x === nx && i.y === ny);
-      if (it && it.id === 'tcard') { run.items = run.items.filter(i => i !== it); ev.push({ t: 'msg', text: 'たからの カードを みつけた！' }); ev.push({ t: 'treasure', rare: it.rare || 1, src: 'floor' }); }
+      if (it && it.id === 'ltile') { run.items = run.items.filter(i => i !== it); (run.letters = run.letters || []).push({ sid: it.sid, letter: it.letter }); say(`もじ <b class="en">${it.letter}</b> を ひろった！`); ev.push({ t: 'letter', letter: it.letter }); }
+      else if (it && it.id === 'sign') { say(`かんばんに なにか かいてある… <b class="en">${it.text}</b>`); ev.push({ t: 'sign', text: it.text }); }
+      else if (it && it.id === 'tcard') { run.items = run.items.filter(i => i !== it); ev.push({ t: 'msg', text: 'たからの カードを みつけた！' }); ev.push({ t: 'treasure', rare: it.rare || 1, src: 'floor' }); }
       else if (it && WORD[it.id].cat === 'equip' && run.inv.some(i => i.id === it.id)) say(`${en(it.id)} は もう もっているよ`);
       else if (it) { if (bagRoom(run, it.id)) { run.items = run.items.filter(i => i !== it); run.inv.push({ uid: it.uid, id: it.id, peek: false }); say(`${en(it.id)} を ひろった！`); ev.push({ t: 'pickup', id: it.id }); }
         else say(`「${bagName(it.id)}」が いっぱい（${BAG_MAX[bagOf(it.id)]}こ）。${en(it.id)} は ひろえない`); }
+      const trap = (run.traps || []).find(t => t.x === nx && t.y === ny && !t.found);
+      if (trap) { trap.found = true;
+        if (trap.kind === 'pit') { const d = Math.min(3, h.hp - 1); h.hp -= d; say(`わなだ！ おとしあなに おちた！（HP −${d}）`); ev.push({ t: 'hurt' }); ev.push({ t: 'rope', pit: true }); }
+        else { run.stuck = 2; run.stuckWhy = 'sleep'; say('わなだ！ ねむりの ゆか…ねむって しまった（2ターン うごけない）'); ev.push({ t: 'bump' }); } }
       if (onStairs(run)) ev.push({ t: 'stairs' });
     } else ev.push({ t: 'bump' });
   } else if (a.t === 'attack') {
@@ -208,16 +265,34 @@ export function act(run, a) {
     const [dx, dy] = DIRS[h.dir], m = monAt(run, h.x + dx, h.y + dy) || Object.values(DIRS).map(([ax, ay]) => monAt(run, h.x + ax, h.y + ay)).find(Boolean);
     if (m) { attackMon(run, m, ev); turn = true; } else { say('まえに てきが いないよ'); ev.push({ t: 'swing' }); turn = true; }
   } else if (a.t === 'wait') { turn = true; say('ひとやすみ'); }
-  else if (a.t === 'search') { // しらべる：むいている ほう（または となり）の あやしい かべ → とびらの クイズ。なにも なければ ひとやすみ
-    const [dx, dy] = DIRS[h.dir];
-    let s = secretAt(run, h.x + dx, h.y + dy);
-    if (!s) for (const [d, [ax, ay]] of Object.entries(DIRS)) { s = secretAt(run, h.x + ax, h.y + ay); if (s) { h.dir = d; break; } }
+  else if (a.t === 'search') { // しらべる：むいている ほう（または となり）の あやしい かべ・たいまつ → とびら。わなも みつける。なにも なければ ひとやすみ
+    turn = true;
+    // ちかくの わなを みつける
+    const tr = (run.traps || []).filter(t => !t.found && Math.abs(t.x - h.x) + Math.abs(t.y - h.y) <= 2);
+    tr.forEach(t => { t.found = true; }); if (tr.length) { say(`わなを みつけた！（${tr.map(t => t.kind === 'pit' ? 'おとしあな' : 'ねむりの ゆか').join('・')}）もう ひっかからないよ`); ev.push({ t: 'trapfound' }); }
+    const look = (fn) => { const [dx, dy] = DIRS[h.dir]; let r = fn(h.x + dx, h.y + dy); if (r) return r; for (const [d, [ax, ay]] of Object.entries(DIRS)) { r = fn(h.x + ax, h.y + ay); if (r) { h.dir = d; return r; } } return null; };
+    const s = look((x, y) => secretAt(run, x, y)), dc = !s && look((x, y) => decoyAt(run, x, y));
     ev.push({ t: 'search', x: h.x + DIRS[h.dir][0], y: h.y + DIRS[h.dir][1] });
-    if (s && s.lock > run.turn) { say(`あやしい かべ。…いまは しまっている（あと ${s.lock - run.turn}ターン）`); turn = true; }
-    else if (s) { say('あやしい かべを しらべた！ もじが うかんで きた…'); ev.push({ t: 'quiz', i: run.secrets.indexOf(s), kind: s.kind }); }
-    else {
+    const idx = o => run.secrets.indexOf(o);
+    if (dc) { // ちがう いろの たいまつ
+      if (dc.s.lock > run.turn) say(`たいまつは しずかに もえている…（あと ${dc.s.lock - run.turn}ターン）`);
+      else { dc.s.lock = run.turn + 5; say(`${dc.t.color.toUpperCase()} の たいまつ…ちがう みたい。5ターン まとう`); ev.push({ t: 'hintAns', i: idx(dc.s), ok: false, user: dc.t.color }); }
+    } else if (s && s.lock > run.turn) say(`あやしい かべ。…いまは しまっている（あと ${s.lock - run.turn}ターン）`);
+    else if (s && s.kind === 'gold') {
+      const gk = run.inv.find(it => it.id === 'goldkey');
+      if (gk) { run.inv = run.inv.filter(it => it !== gk); ev.push({ t: 'used', id: 'goldkey', read: !gk.peek }); for (const e of openSecret(run, idx(s))) ev.push(e); turn = false; }
+      else say(`きんいろの なぞの とびら。${en('goldkey')} が あれば あけられる`);
+    } else if (s && s.kind === 'hint') { turn = false; ev.push({ t: 'hintAns', i: idx(s), ok: true, user: s.color }); } // かんばんの いろの たいまつ＝せいかい
+    else if (s && s.kind === 'collect') {
+      const have = lettersOf(run, s), need = s.word.split('');
+      const left = [...have]; const ok = need.every(L => { const k = left.indexOf(L); if (k < 0) return false; left.splice(k, 1); return true; });
+      if (ok) { say('もじが ぜんぶ そろった！ とびらに ならべよう'); ev.push({ t: 'quiz', i: idx(s), kind: 'collect' }); turn = false; }
+      else say(`もじあつめの とびら。もじが たりない（もっている もじ：${have.length ? have.join(' ') : 'なし'}・ぜんぶで ${need.length}こ）`);
+    }
+    else if (s) { say('あやしい かべを しらべた！ もじが うかんで きた…'); ev.push({ t: 'quiz', i: idx(s), kind: s.kind }); turn = false; }
+    else if (!tr.length) {
       const near = (run.secrets || []).some(o => !o.open && Math.abs(o.door.x - h.x) + Math.abs(o.door.y - h.y) <= 4);
-      say(near ? 'この ちかくの かべが あやしい…（ひびの ある かべを しらべよう）' : 'しらべた けど なにも ない（ひとやすみ）'); turn = true;
+      say(near ? 'この ちかくの かべが あやしい…（ひびや たいまつの ある かべを しらべよう）' : 'しらべた けど なにも ない（ひとやすみ）');
     }
   }
   else if (a.t === 'use') turn = useItem(run, a.uid, ev);
@@ -240,6 +315,7 @@ function gainExp(run, n, ev) {
   }
 }
 function hurtMon(run, m, dmg, ev, how = 'hit', note = '', tier = 1) {
+  if (WORD[m.id].weak && WORD[m.id].weak === how) { dmg *= 2; note = '（weak！ よく きいた！）' + note; } // かくしボスの よわい まほうは 2ばい
   dmg = Math.min(dmg, m.hp); const hp0 = m.hp;
   m.hp -= dmg; ev.push({ t: 'fx', kind: how, x: m.x, y: m.y, n: dmg, tier });
   ev.push({ t: 'msg', text: `${en(m.id)} に ${dmg} ダメージ！${note}` });
@@ -248,6 +324,7 @@ function hurtMon(run, m, dmg, ev, how = 'hit', note = '', tier = 1) {
     run.mons = run.mons.filter(x => x !== m);
     ev.push({ t: 'kill', id: m.id, x: m.x, y: m.y, uid: m.uid }); ev.push({ t: 'msg', text: `${en(m.id)} を たおした！` });
     gainExp(run, m.exp, ev);
+    if (WORD[m.id].hboss) { run.hbossDone = true; ev.push({ t: 'msg', text: `かくしボスを たおした！ すごい たからが ある！` }); ev.push({ t: 'treasure', rare: 3, src: 'hboss' }); }
     if (m.boss && isTreasure(run)) { const r3 = run.floor >= MAX_FLOOR ? 0.5 : run.floor >= 10 ? 0.25 : 0.1; ev.push({ t: 'treasure', rare: rand() < r3 ? 3 : 2, src: 'boss' }); } // ボスは ★★いじょう
     if (m.boss) { run.bossDead = true; run.stairs = { x: m.x, y: m.y }; ev.push({ t: 'boss', id: m.id }); ev.push({ t: 'msg', text: `${en('stairs')} が あらわれた！ のると ${run.floor >= MAX_FLOOR ? 'ゴール！' : 'つぎへ すすめるよ'}` }); }
   }
@@ -349,7 +426,7 @@ export function spellTargets(run, id) {
   if (w.kind === 'push') {
     const pool = w.wide ? seen : Object.values(DIRS).map(([dx, dy]) => monAt(run, h.x + dx, h.y + dy)).filter(Boolean);
     const cells = w.wide ? floorCells() : Object.values(DIRS).map(([dx, dy]) => [h.x + dx, h.y + dy]).filter(([x, y]) => tileAt(run, x, y) !== '#');
-    const mons = pool.filter(m => !m.boss);
+    const mons = pool.filter(m => !m.boss && !WORD[m.id].hboss);
     return { cells, mons, text: w.wide ? 'みえる てき ぜんぶを ふきとばす' : 'となりの てきを ふきとばす', none: pool.length ? 'ボスは おもくて ふきとばせない！' : w.wide ? 'ちかくに てきが いないよ' : 'となりに てきが いないよ' };
   }
   return { cells: [], mons: [], text: '' };
@@ -367,7 +444,7 @@ function castSpell(run, id, ev) {
   ev.push({ t: 'msg', text: `モコの まほう ${en(id)}！` });
   ev.push({ t: 'spell', id, fam, tier, kind: w.kind, from: [h.x, h.y], cells: tg.cells, to: tg.mons.map(m => [m.x, m.y]) });
   if (tier >= 2 && (w.kind === 'all' || w.wide)) ev.push({ t: 'fx', kind: 'flash', fam, tier });
-  const freeze = m => { if (!w.freeze || !run.mons.includes(m)) return; if (m.boss) { m.frozen = 1; return; } m.frozen = w.freeze; ev.push({ t: 'msg', text: `${en(m.id)} は こおって うごけない！` }); };
+  const freeze = m => { if (!w.freeze || !run.mons.includes(m)) return; if (m.boss || WORD[m.id].hboss) { m.frozen = 1; return; } m.frozen = w.freeze; ev.push({ t: 'msg', text: `${en(m.id)} は こおって うごけない！` }); };
   if (w.kind === 'self') { const n = Math.min(w.val, h.maxhp - h.hp), hp0 = h.hp; h.hp += n; ev.push({ t: 'fx', kind: 'heal', x: h.x, y: h.y, n }); ev.push({ t: 'msg', text: `${n ? `HPが ${n} かいふく` : 'HPは もう まんたん'}` }); if (n) ev.push({ t: 'msg', text: calc('モコ', hp0, '＋', n), calc: true, heroHp: h.hp }); return true; }
   if (w.kind === 'map') { revealAll(run); ev.push({ t: 'reveal' }); ev.push({ t: 'msg', text: `ちずと ${en('stairs')} が みえた！` }); return true; }
   if (w.kind === 'push') {
@@ -409,7 +486,7 @@ function endTurn(run, ev) {
     };
     if (d === 1) { // こうげき
       hit(m.atk);
-      if (w.web && h.hp > 0 && rand() < 0.4) { run.stuck = 1; ev.push({ t: 'msg', text: `${en(m.id)} の いとが からまった！ つぎは うごけない` }); }
+      if (w.web && h.hp > 0 && rand() < 0.4) { run.stuck = 1; run.stuckWhy = 'web'; ev.push({ t: 'msg', text: `${en(m.id)} の いとが からまった！ つぎは うごけない` }); }
       if (h.hp <= 0) break;
       continue;
     }

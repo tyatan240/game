@@ -39,6 +39,10 @@ export const WORDS = [
   { id: 'ghost', en: 'ghost', ja: 'おばけ', cat: 'monster', art: 'dg_ghost', hp: 12, atk: 5, exp: 10, move: 'chase', wall: true, minFloor: 11, desc: 'かべを すりぬけて くる。' },
   { id: 'wolf', en: 'wolf', ja: 'オオカミ', cat: 'monster', art: 'dg_wolf', hp: 18, atk: 6, exp: 13, move: 'chase', sight: 12, minFloor: 13, desc: 'とおくからでも はしって くる。' },
   { id: 'dragon', en: 'dragon', ja: 'ドラゴン', cat: 'monster', art: 'dg_dragon', hp: 24, atk: 7, exp: 20, move: 'chase', breath: true, minFloor: 16, desc: 'まっすぐ ならぶと、とおくから ほのおを はく。' },
+  // ===== かくしボス（たからさがし 11かいから。きんの かぎで なぞの とびらを あけると でる。weak の まほうが 2ばい きく）=====
+  { id: 'treasuredragon', en: 'treasure dragon', ja: 'たからの ドラゴン', cat: 'monster', art: 'dg_treasuredragon', hp: 140, atk: 11, exp: 80, move: 'chase', breath: true, hboss: true, weak: 'ice', minFloor: 11, desc: 'かくしボス。たからを まもる ドラゴン。　weak: ice' },
+  { id: 'crystalgolem', en: 'crystal golem', ja: 'すいしょうの ゴーレム', cat: 'monster', art: 'dg_crystalgolem', hp: 170, atk: 10, exp: 80, move: 'slow', hboss: true, weak: 'thunder', minFloor: 11, desc: 'かくしボス。すいしょうで できた おおきな ゴーレム。　weak: thunder' },
+  { id: 'shadowking', en: 'shadow king', ja: 'かげの おう', cat: 'monster', art: 'dg_shadowking', hp: 130, atk: 12, exp: 80, move: 'chase', wall: true, hboss: true, weak: 'fire', minFloor: 11, desc: 'かくしボス。かべを すりぬける かげの おう。　weak: fire' },
   { id: 'kingslime', en: 'king slime', ja: 'スライムの おう', cat: 'monster', art: 'dg_kingslime', hp: 58, atk: 5, exp: 30, move: 'chase', boss: true, desc: '5かいの ボス。とても つよい。たおすと かいだんが あらわれる。' },
   { id: 'queenbee', en: 'queen bee', ja: 'ハチの じょおう', cat: 'monster', art: 'dg_queenbee', hp: 60, atk: 6, exp: 60, move: 'chase', boss: true, desc: '10かいの ボス。bee（ハチ）を よぶ。' },
   { id: 'ghostking', en: 'ghost king', ja: 'おばけの おう', cat: 'monster', art: 'dg_ghostking', hp: 90, atk: 8, exp: 90, move: 'chase', wall: true, boss: true, desc: '15かいの ボス。かべを すりぬける。' },
@@ -58,6 +62,9 @@ export const WORDS = [
   { id: 'torch', en: 'torch', ja: 'たいまつ', cat: 'item', art: 'dg_torch', use: 'torch', verb: 'つかう', w: 5, minFloor: 4, desc: 'つかうと この かいの ちずが ぜんぶ みえる。' },
   { id: 'rope', en: 'rope', ja: 'ロープ', cat: 'item', art: 'dg_rope', use: 'rope', verb: 'つかう', w: 3, minFloor: 6, desc: 'つかうと つぎの かいへ のぼれる（ボスの かいでは つかえない）。' },
   { id: 'treasurebox', en: 'treasure box', ja: 'たからばこ', cat: 'item', art: 'dg_box', obj: true, desc: 'key（かぎ）で あけると、なかに アイテムが はいっている。' },
+  { id: 'goldkey', en: 'gold key', ja: 'きんの かぎ', cat: 'item', art: 'dg_goldkey', use: 'goldkey', verb: '', desc: 'gold ＝ きん。きんいろの なぞの とびらを あける かぎ。' },
+  { id: 'ltile', en: 'letter', ja: 'もじの タイル', cat: 'item', art: 'dg_ltile', obj: true, desc: 'もじあつめの タイル。ぜんぶ ひろって とびらで ならべよう。' },
+  { id: 'sign', en: 'sign', ja: 'かんばん', cat: 'item', art: 'dg_sign', obj: true, desc: 'えいごで ヒントが かいてある。' },
   { id: 'tcard', en: 'card', ja: 'カード', cat: 'item', art: 'dg_tcard', obj: true, desc: 'たからさがしの カード。ふむと ひろえる。' },
   { id: 'stairs', en: 'stairs', ja: 'かいだん', cat: 'item', art: 'dg_stairs', obj: true, desc: 'のぼると つぎの かいへ すすめる。' },
   // ===== そうび（slot：weapon／shield）=====

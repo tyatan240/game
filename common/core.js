@@ -108,6 +108,7 @@ const ITEMS=[
  /* テスト ごうかくで もらえる アイテム */
  {id:'a_icecream',cat:'acc',name:'アイスクリーム',test:'add1-1'},
  {id:'h_tiara',cat:'hat',name:'ティアラ',test:'add1-2'},
+ {id:'h_treasure',cat:'hat',name:'たからさがしの かんむり',reward:'treasure'}, // たからさがしの カード 78まい コンプリートの きねん（おみせには ならばない）
  {id:'u_trophy',cat:'furn',name:'きんのトロフィー',test:'add1-3',box:'230 252 50 50'},
  {id:'a_bouquet',cat:'acc',name:'はなたば',test:'add21-1'},
  {id:'o_sailor',cat:'outfit',name:'セーラーふく',test:'add21-2'},
@@ -435,6 +436,7 @@ Object.assign(OUTFIT,{
  o_rainbow:rainbowDress()
 });
 Object.assign(HAT,{
+ h_treasure:`<polygon points="74,66 70,40 84,52 92,34 100,46 108,34 116,52 130,40 126,66" fill="#ffd34f" stroke="#c8901a" stroke-width="3" stroke-linejoin="round"/><rect x="73" y="60" width="54" height="9" rx="3" fill="#ffb020" stroke="#c8901a" stroke-width="2.5"/><circle cx="100" cy="52" r="5" fill="#ff5a8a"/><circle cx="86" cy="58" r="3" fill="#5ab0ff"/><circle cx="114" cy="58" r="3" fill="#5ac87a"/><circle cx="70" cy="40" r="3" fill="#fff3a8"/><circle cx="130" cy="40" r="3" fill="#fff3a8"/><circle cx="92" cy="34" r="2.6" fill="#fff3a8"/><circle cx="108" cy="34" r="2.6" fill="#fff3a8"/>`,
  h_tiara:`<polygon points="80,62 84,48 92,55 100,38 108,55 116,48 120,62" fill="#eef2f8" stroke="#a9b7cc" stroke-width="2.5" stroke-linejoin="round"/><circle cx="100" cy="52" r="5" fill="#ff8fb1"/><circle cx="86" cy="57" r="2.5" fill="#9ad6ff"/><circle cx="114" cy="57" r="2.5" fill="#9ad6ff"/>`,
  h_witch:`<path d="M72 58 L94 10 Q102 2 118 12 L128 58 Z" fill="#8e6be0" stroke="#6a48bd" stroke-width="3" stroke-linejoin="round"/><rect x="74" y="44" width="52" height="9" fill="#ffd34f"/><ellipse cx="100" cy="60" rx="54" ry="10" fill="#8e6be0" stroke="#6a48bd" stroke-width="3"/><polygon points="${star(112,30,7,3)}" fill="#ffd34f"/>`,
  h_chef:`<g fill="#fff" stroke="#d9d0d0" stroke-width="2.5"><circle cx="82" cy="38" r="16"/><circle cx="118" cy="38" r="16"/><circle cx="100" cy="28" r="18"/><rect x="78" y="40" width="44" height="20" rx="4"/></g><line x1="80" y1="48" x2="120" y2="48" stroke="#f0e6e6" stroke-width="2"/>`,
