@@ -91,13 +91,14 @@ export function enterFloor(run, floor) {
       for (let i = 0; i < nBox; i++) {
         // たからばこは みちの でいりぐちを ふさがない ところ（となりに つうろが ない マス）
         const nearDoor = ([x, y]) => Object.values(DIRS).some(([dx, dy]) => tileAt(run, x + dx, y + dy) === ',');
-        const R = pick(rooms.slice(1)), c = freeCell(run, R, cellsOf(R).filter(nearDoor)), k = freeCell(run, pick(rooms));
+        const R = pick(rooms.slice(1)), c = freeCell(run, R, cellsOf(R).filter(nearDoor)), k = c && freeCell(run, pick(rooms), [c]); // かぎは たからばこと おなじ マスに おかない
         if (c && k) { run.boxes.push({ x: c[0], y: c[1], open: false }); run.items.push({ uid: run.uid++, id: 'key', x: k[0], y: k[1] }); }
       }
       // たからさがし：ゆかに カードが おちている ことも ある（★ が おおい）
       if (isTreasure(run) && rand() < 0.2) { const c = freeCell(run, pick(rooms.slice(1))); if (c) run.items.push({ uid: run.uid++, id: 'tcard', x: c[0], y: c[1], rare: rollRare(run, -1) }); }
     }
   }
+  unstackBoxes(run);
   run.secrets = [];
   if (isTreasure(run) && floor > 0 && !BOSS_FLOORS.includes(floor)) placeSecrets(run);
   run.seen = '0'.repeat(run.map.w * run.map.h); // みえる ところは よびだしがわで updateSeen()
@@ -267,6 +268,10 @@ function freeNear(run, x, y) {
     return [nx, ny];
   }
   return [x, y];
+}
+// たからばこの したに アイテムが あったら となりへ うつす（ひろえなく ならない ように。ふるい ほぞんの ぼうけんにも つかう）
+export function unstackBoxes(run) {
+  for (const it of run.items || []) if (run.boxes.some(b => b.x === it.x && b.y === it.y)) { const c = freeNear(run, it.x, it.y); it.x = c[0]; it.y = c[1]; }
 }
 function openBox(run, b, ev) {
   if (b.open) { ev.push({ t: 'msg', text: `${en('treasurebox')} は からっぽ` }); return; }
