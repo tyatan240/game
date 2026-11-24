@@ -56,7 +56,7 @@ function rollItem(run) {
 const learnable = run => SPELLS.filter(s => { const w = WORD[s]; return (!w.minFloor || w.minFloor <= Math.max(1, ef(run))) && (w.tier || 1) <= 1 + Math.max(0, ...run.spells.filter(k => WORD[k].fam === w.fam).map(k => WORD[k].tier || 1)); });
 // ふくろ（そうび・たべもの・ほん/どうぐ）に まだ はいるか
 export const bagCount = (run, bag) => run.inv.filter(i => bagOf(i.id) === bag).length;
-export const bagRoom = (run, id) => bagCount(run, bagOf(id)) < BAG_MAX[bagOf(id)];
+export const bagRoom = (run, id) => id === 'key' || bagCount(run, bagOf(id)) < BAG_MAX[bagOf(id)]; // かぎは ふくろが いっぱいでも ひろえる
 const bagName = id => BAGS.find(b => b.id === bagOf(id)).name;
 export function enterFloor(run, floor) {
   if (run.equip && !('armor' in run.equip)) run.equip.armor = null; // ふるい ほぞんの ぼうけん
@@ -91,13 +91,14 @@ export function enterFloor(run, floor) {
       for (let i = 0; i < nBox; i++) {
         // たからばこは みちの でいりぐちを ふさがない ところ（となりに つうろが ない マス）
         const nearDoor = ([x, y]) => Object.values(DIRS).some(([dx, dy]) => tileAt(run, x + dx, y + dy) === ',');
-        const R = pick(rooms.slice(1)), c = freeCell(run, R, cellsOf(R).filter(nearDoor)), k = freeCell(run, pick(rooms));
+        const R = pick(rooms.slice(1)), c = freeCell(run, R, cellsOf(R).filter(nearDoor)), k = c && freeCell(run, pick(rooms), [c]); // かぎは たからばこと おなじ マスに おかない
         if (c && k) { run.boxes.push({ x: c[0], y: c[1], open: false }); run.items.push({ uid: run.uid++, id: 'key', x: k[0], y: k[1] }); }
       }
       // たからさがし：ゆかに カードが おちている ことも ある（★ が おおい）
       if (isTreasure(run) && rand() < 0.2) { const c = freeCell(run, pick(rooms.slice(1))); if (c) run.items.push({ uid: run.uid++, id: 'tcard', x: c[0], y: c[1], rare: rollRare(run, -1) }); }
     }
   }
+  unstackBoxes(run);
   run.secrets = [];
   if (isTreasure(run) && floor > 0 && !BOSS_FLOORS.includes(floor)) placeSecrets(run);
   run.seen = '0'.repeat(run.map.w * run.map.h); // みえる ところは よびだしがわで updateSeen()
@@ -268,10 +269,14 @@ function freeNear(run, x, y) {
   }
   return [x, y];
 }
+// たからばこの したに アイテムが あったら となりへ うつす（ひろえなく ならない ように。ふるい ほぞんの ぼうけんにも つかう）
+export function unstackBoxes(run) {
+  for (const it of run.items || []) if (run.boxes.some(b => b.x === it.x && b.y === it.y)) { const c = freeNear(run, it.x, it.y); it.x = c[0]; it.y = c[1]; }
+}
 function openBox(run, b, ev) {
   if (b.open) { ev.push({ t: 'msg', text: `${en('treasurebox')} は からっぽ` }); return; }
   const k = run.inv.find(i => i.id === 'key');
-  if (!k) { ev.push({ t: 'msg', text: `${en('treasurebox')} だ。${en('key')} が あれば あけられる` }); ev.push({ t: 'bump' }); return; }
+  if (!k) { const left = run.items.filter(i => i.id === 'key').length; ev.push({ t: 'msg', text: `${en('treasurebox')} だ。${en('key')} が あれば あけられる${left ? `（この かいに ${en('key')} が あと ${left}こ あるよ）` : ''}` }); ev.push({ t: 'bump' }); return; }
   run.inv = run.inv.filter(i => i !== k); b.open = true;
   const got = run.tut ? ['bread', 'shield'] : []; // れんしゅうは きまった もの
   const cr = rand(), cardN = isTreasure(run) ? (cr < 0.1 ? 2 : cr < 0.55 ? 1 : 0) : 0; // たからさがし：はんぶんくらいは カード（ときどき 2まい）＋ アイテム

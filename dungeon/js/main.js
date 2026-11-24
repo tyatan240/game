@@ -1,9 +1,9 @@
 // モコの イングリッシュダンジョン：がめん・そうさ・チュートリアル・ずかん・⭐
 // core.js（S・save・charSVG・showPop・ACT）を つかう。きまりは game.js、えは art.js、ほぞんは save.js
 import { WORD, WORDS, CATS, MAX_FLOOR, STARS, BOSS_FLOORS, TEST_FLOORS, zoneOf, BAGS, GROUPS, bagOf, FAMS } from './data.js';
-import { isTreasure, openSecret, failSecret } from './game.js';
+import { isTreasure, openSecret, failSecret, unstackBoxes } from './game.js';
 import { makeQuiz } from './quiz.js';
-import { initTreasure, treasureUnlocked, cardCount, giveCard, showReveals, flipCard, revealNext, albumPop, cardBig, cardSay, revealPending, quizPop, quizAns, quizTile, quizBack, quizDone, quizSay } from './treasure.js';
+import { initTreasure, treasureUnlocked, cardCount, giveCard, showReveals, flipCard, revealNext, albumPop, cardBig, cardSay, revealPending, revealSay, quizPop, quizAns, quizTile, quizBack, quizDone, quizSay } from './treasure.js';
 import { CARD, CARD_TOTAL, CARD_STARS } from './cards.js';
 import { newRun, act, descend, updateSeen, visible, tileAt, seenAt, onStairs, heroAtk, heroDef, monAt, DIRS, bagCount, spellTargets } from './game.js';
 import { drawTile, drawArt, wordArt } from './art.js';
@@ -453,6 +453,7 @@ function goDown(rope = false) {
   for (const id of updateSeen(run)) meet(id);
   const z = zoneOf(run.floor), newZone = run.floor > 1 && zoneOf(run.floor - 1) !== z;
   logs = []; logGroup++; log(`${run.floor}かいに ついた！${newZone ? `ここは「${z.name}」` : ''}`);
+  if (run.boxes.length) log(`この かいには ${en('treasurebox')} が ${run.boxes.length}こ、${en('key')} も ${run.items.filter(i => i.id === 'key').length}こ あるよ`);
   if (run.power && TEST_FLOORS.includes(run.floor - 1)) log(`ことばの ちから：つよさ ＋${run.power}（${run.floor + 4}かい まで）`);
   if (isTreasure(run)) { if (run.floor > D.treasure.best) D.treasure.best = run.floor; }
   else if (run.floor > D.best) D.best = run.floor;
@@ -694,7 +695,7 @@ function start(tutorial, md = 'english') {
   vis = visible(run); for (const id of updateSeen(run)) meet(id);
   $id('title').classList.add('hide'); persist(); measureView(); camTarget(true); hud();
 }
-function resume(md = 'english') { closePop(); unlockAudio(); curMode = md; run = md === 'treasure' ? D.treasure.run : D.run; if (!run) return; mode = 'play'; logs = []; logGroup++; log(`${run.tut ? 'れんしゅう' : run.floor + 'かい'} から つづき`); tut = run.tut ? { done: {} } : null; vis = visible(run); $id('title').classList.add('hide'); measureView(); camTarget(true); hud(); }
+function resume(md = 'english') { closePop(); unlockAudio(); curMode = md; run = md === 'treasure' ? D.treasure.run : D.run; if (!run) return; unstackBoxes(run); /* まえの ほぞんで かぎが たからばこの したに なっていたら なおす */ mode = 'play'; logs = []; logGroup++; log(`${run.tut ? 'れんしゅう' : run.floor + 'かい'} から つづき`); tut = run.tut ? { done: {} } : null; vis = visible(run); $id('title').classList.add('hide'); measureView(); camTarget(true); hud(); }
 function toTitle() {
   closePop(); stopWalk(); aim = null; aimUI(); mode = 'title'; run = null; tut = null;
   $id('title').classList.remove('hide'); $id('guide').hidden = true;
@@ -773,7 +774,7 @@ Object.assign(ACT, {
   dgAlbumM: () => albumPop(null, 'dgMenu'),
   dgAlbum: L => { sfx.tap(); albumPop(L); },
   dgCardBig: id => cardBig(id), dgCardSay: id => cardSay(id),
-  dgFlip: () => flipCard(), dgRevealNext: () => revealNext(),
+  dgFlip: () => flipCard(), dgRevealNext: () => revealNext(), dgRevealSay: () => revealSay(),
   dgQzAns: i => quizAns(i), dgQzTile: i => quizTile(i), dgQzBack: () => quizBack(), dgQzDone: () => quizDone(), dgQzSay: () => quizSay(),
   dgHome: () => { if (run && run.tut) { run = null; D.run = null; } persist(); flush(D); location.href = '../index.html'; },
 });
