@@ -200,3 +200,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#2a2238;touch-action:n
 .dock .log .calc.mp{color:#7ab0ff}
 @media (max-width:520px){.aim{flex-direction:column;align-items:stretch;gap:6px}.aim .ab button{flex:1}}
 .aim[hidden]{display:none}
+
+/* ことばが たくさんでも ボタンが がめんの そとに でない（ことばの ならびは その なかで スクロール） */
+#ov .pop{max-height:calc(100dvh - 40px);overflow-y:auto;-webkit-overflow-scrolling:touch}
+.wordlist{max-height:32vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:2px}

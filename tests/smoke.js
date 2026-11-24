@@ -1198,12 +1198,13 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     await p.evaluate(() => { closePop(); const r = __dg.run; r.hero.x = r.stairs.x - 3; r.hero.y = r.stairs.y; r.mons = []; const c = __dg.cam(); __dg.tapMap(c.ox + (r.stairs.x + 0.5) * c.t, c.oy + (r.stairs.y + 0.5) * c.t); });
     await p.waitForTimeout(1300);
     ok(await p.evaluate(() => { const r = __dg.run; return r.hero.x === r.stairs.x && r.hero.y === r.stairs.y && /すすむ/.test(document.getElementById('ov').textContent); }), 'ボスの あと：かいだんを タップすると あるいて いって「すすむ？」');
-    await p.evaluate(() => { closePop(); const r = __dg.run; r.hero.x = r.stairs.x; r.hero.y = r.stairs.y; __dg.goDown(); });
+    await p.evaluate(async () => { const { WORDS } = await import('./js/data.js'); closePop(); const r = __dg.run; r.met = WORDS.map(w => w.id); r.hero.x = r.stairs.x; r.hero.y = r.stairs.y; __dg.goDown(); }); // ことばを ぜんぶ であった ことに（クリアがめんが ながく なる）
     ok(await p.evaluate(() => !!__dg.test), '20かいの あとも テスト');
     await p.click('#ov [data-act=dgTestQ]');
     for (let i = 0; i < 5; i++) { await p.click('#ov [data-act=dgAns][data-arg="0"]'); await p.click('#ov [data-act=dgTestNext]'); await p.waitForTimeout(50); }
     await p.click('#ov [data-act=dgTestDone]'); await p.waitForTimeout(800);
     ok(await p.evaluate(p0 => __dg.D.clears === 1 && __dg.run === null && __dg.D.rewarded.clear && /ダンジョン クリア/.test(document.getElementById('ov').textContent) && S.points >= p0 + 10 + 30, pts20), '20かい クリア（はじめては ⭐30）');
+    ok(await p.evaluate(() => { const b = document.querySelector('#ov [data-act=dgTitle]').getBoundingClientRect(); return b.top >= 0 && b.bottom <= innerHeight; }), 'ことばが たくさんでも「タイトルへ」が がめんの なかに ある');
     // にかいめは せつめいを えらべる・たおれた とき
     await p.evaluate(() => __dg.toTitle()); await p.click('#tGo'); await p.waitForTimeout(200);
     ok(await p.isVisible('#ov [data-act=dgSkipTut]') && await p.isVisible('#ov [data-act=dgTut]'), '2かいめからは せつめいを「みる／とばす」');
