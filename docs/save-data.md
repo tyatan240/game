@@ -66,3 +66,6 @@ localStorage と IndexedDB（`moko-dungeon`/`kv`）。形は `dungeon/README.md`
 
 ## はなまるスタンプ（`moko-math-v1` の `notes`）
 `{ senders:[{id,name,color}], list:[{id,from,stamp,text,day,at,seen,seenAt}] }`。はじめは パパ・ママ。`merge()` で 足りないときは 初期値。スタンプの id（`common/hanamaru.js` の HM_STAMPS）は 変えない。
+
+## モコの ペット（`moko-math-v1` の `pet`）
+`{ eggs:[{kind,warm,last,at,first,greeted}], pets:[{id,kind,name,food,form,born,bornDay,lastFed}], stock, day:{d,earned}, lastSeen, started }`。`merge()` で 足りないときは 初期値。kind（cat・bird・dragon）・form（sansu・kokugo・eigo・prog）の id は 変えない。

@@ -148,3 +148,27 @@ h2{font-size:18px;margin:4px 0 10px;color:#c8577f}
 .hm-foot .big{flex:1;margin:0;padding:12px 6px;font-size:18px}
 .hm-foot .hm-prev{margin:0;flex:none}
 .hm-foot .hm-st i{bottom:-7px;font-size:10px}
+
+/* ===== モコの ペット ===== */
+.room .pet-in{position:absolute;transform:translate(-50%,-50%);border:0;background:none;padding:0;line-height:0;cursor:pointer;animation:petbob 2.4s ease-in-out infinite}
+.room .pet-in:nth-of-type(2){animation-delay:.6s}.room .pet-in:nth-of-type(3){animation-delay:1.2s}
+.room .pet-in.egg{animation:petwob 2.6s ease-in-out infinite}.room .pet-in.egg.ready{animation:petwob .5s ease-in-out infinite}
+@keyframes petbob{0%,100%{transform:translate(-50%,-50%)}50%{transform:translate(-50%,-58%)}}
+@keyframes petwob{0%,100%{transform:translate(-50%,-50%) rotate(0)}25%{transform:translate(-50%,-50%) rotate(-6deg)}75%{transform:translate(-50%,-50%) rotate(6deg)}}
+.pet-card{display:flex;align-items:center;gap:10px;width:100%;border:0;font:inherit;text-align:left;cursor:pointer;background:linear-gradient(90deg,#f0fff0,#fff)}
+.pet-card .pet-ct{display:flex;flex-direction:column}.pet-card small{color:#7a8a7a}
+.pet-pop{text-align:center}.pet-pop h3 small{font-size:13px;color:#9a8a8a;display:block}
+.pet-talk{display:inline-block;background:#fff8e0;border:2px solid #ffd34f;border-radius:16px;padding:6px 12px;font-weight:800;position:relative;margin-bottom:4px}
+.pet-talk:after{content:'';position:absolute;left:50%;bottom:-9px;border:8px solid transparent;border-top-color:#ffd34f;border-bottom:0;margin-left:-8px}
+.pet-big{position:relative;display:inline-block}.pet-big.eat svg{animation:peteat .5s ease 2}
+@keyframes peteat{50%{transform:scale(1.08,.92)}}
+.pet-heart{position:absolute;left:50%;top:20%;color:#ff5a8a;font-size:28px;font-weight:900;animation:petheart 1s ease-out forwards}.pet-heart.h2{left:65%;animation-delay:.25s}
+@keyframes petheart{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-50px)}}
+.pet-bar{height:14px;border-radius:999px;background:#f0ece6;overflow:hidden;margin:4px 20px}.pet-bar i{display:block;height:100%;background:linear-gradient(90deg,#8fe0a8,#5ac87a);border-radius:999px}
+.pet-next{font-size:13px;color:#7a8a7a;margin-bottom:6px}
+.pet-crack svg{animation:petwob2 .35s ease-in-out infinite}@keyframes petwob2{25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
+.pet-born svg,.pet-grow .grow svg{animation:petpop .7s cubic-bezier(.2,1.6,.4,1)}@keyframes petpop{from{transform:scale(.3)}to{transform:scale(1)}}
+.pet-hop svg{animation:petbob2 .6s ease-in-out 3}@keyframes petbob2{50%{transform:translateY(-14px)}}
+#petName{width:60%;border:2px solid #e0d4d4;border-radius:12px;padding:8px;font:inherit;font-size:22px;text-align:center}
+.pet-names{display:flex;gap:6px;justify-content:center;margin:8px 0}.pet-names button{border:0;background:#fff3c4;border-radius:999px;padding:6px 12px;font:inherit;font-weight:800}
+.pet-dex{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.pet-dex button{border:2px solid #f0e6e6;background:#fff;border-radius:14px;padding:4px;display:flex;flex-direction:column;align-items:center;font:inherit}.pet-dex small{color:#9a8a8a;font-size:11px}

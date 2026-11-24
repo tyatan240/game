@@ -291,7 +291,9 @@ function defState(){return{v:1,t:0,points:0,
   ktypes:Object.fromEntries(KTYPES.map(t=>[t.id,{on:true,pts:t.pts}])),
   etypes:Object.fromEntries(ETYPES.map(t=>[t.id,{on:true,pts:t.pts}])),
   perRound:5,perfect:3,daily:5,sound:true,testScale:1,practiceMul:2,practiceBonus:5,progPts:3,gachaOn:true,gachaCost:100,gachaDaily:0,abcPts:10,goalPts:10,goalAll:50,admin:false},
- lastDay:'',stats:{q:0,ok:0},kstats:{q:0,ok:0},estats:{q:0,ok:0},tests:{},daily:newDaily(''),gacha:{day:'',count:0,pulls:0},looks:{},hw:{},streakGot:[],adminBackup:null,notes:defNotes()}}
+ lastDay:'',stats:{q:0,ok:0},kstats:{q:0,ok:0},estats:{q:0,ok:0},tests:{},daily:newDaily(''),gacha:{day:'',count:0,pulls:0},looks:{},hw:{},streakGot:[],adminBackup:null,notes:defNotes(),pet:defPet()}}
+// モコの ペット：eggs＝あたためちゅうの たまご、pets＝そだてた ペット、stock＝まだ あげていない ごはん、day＝その日に もらった ごはんの かず
+function defPet(){return{eggs:[],pets:[],stock:0,day:{d:'',earned:0},lastSeen:'',started:false}}
 // はなまるスタンプ（パパ・ママから）：senders＝おくる ひと（さいだい4にん）、list＝おくった スタンプ
 function defNotes(){return{senders:[{id:'papa',name:'パパ',color:'#4a8fe0'},{id:'mama',name:'ママ',color:'#ff6b9a'}],list:[]}}
 function merge(d){
@@ -316,6 +318,11 @@ function merge(d){
  if(d.daily&&typeof d.daily==='object') s.daily={...s.daily,...d.daily,got:{...(d.daily.got||{})}};
  if(d.tests&&typeof d.tests==='object') s.tests=d.tests;
  if(Array.isArray(d.streakGot)) s.streakGot=d.streakGot.filter(n=>typeof n==='number');
+ if(d.pet&&typeof d.pet==='object'){const P=d.pet,Q=s.pet;
+  if(Array.isArray(P.eggs))Q.eggs=P.eggs.filter(e=>e&&typeof e.kind==='string');
+  if(Array.isArray(P.pets))Q.pets=P.pets.filter(x=>x&&typeof x.kind==='string');
+  if(typeof P.stock==='number')Q.stock=P.stock;if(P.day&&typeof P.day==='object')Q.day={d:String(P.day.d||''),earned:+P.day.earned||0};
+  if(typeof P.lastSeen==='string')Q.lastSeen=P.lastSeen;Q.started=!!P.started}
  if(d.notes&&typeof d.notes==='object'){
   if(Array.isArray(d.notes.senders)&&d.notes.senders.length) s.notes.senders=d.notes.senders.filter(x=>x&&typeof x.id==='string').slice(0,4).map(x=>({id:x.id,name:String(x.name||'').slice(0,8)||'おうちのひと',color:typeof x.color==='string'?x.color:'#4a8fe0'}));
   if(Array.isArray(d.notes.list)) s.notes.list=d.notes.list.filter(n=>n&&typeof n.stamp==='string'&&typeof n.day==='string')}

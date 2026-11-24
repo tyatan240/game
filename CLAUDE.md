@@ -20,6 +20,7 @@ parent/         保護者向け 学習レポート（かけ算の確認 → ダ�
 common/learning-history.js 学習履歴の記録API（IndexedDB moko-learning-history）
 common/core.js  共通：保存・ポイント・アイテム定義・キャラ/部屋のSVG・音・ポップアップ
 common/hanamaru.js はなまるスタンプ（パパ・ママから おてがみ・はなまるノート。index.html で使う。docs/daily-fun-spec.md）
+common/pet.js   モコの ペット（たまご → そだてる。index.html で使う。docs/daily-fun-spec.md）
 common/style.css 共通の見た目
 sw.js           Service Worker（全部屋のオフライン用）。sansu/sw.js・program/sw.js は旧版の片付け専用
 manifest.json   ホーム画面アプリ設定（1つだけ）
@@ -38,7 +39,7 @@ docs/           詳細仕様（下記）
 - `docs/abc-world3-spec.md` … ABCぼうけん ワールド3「ことばの まち」の仕様・決定事項（実装済み）
 - `docs/dungeon-spec.md` … モコのイングリッシュダンジョン（英語ローグライク）の仕様 v0.8（第1〜3回 実装済み）
 - `docs/treasure-dungeon-spec.md` … モコの たからさがしダンジョン（英語ダンジョン20階クリア後のカード集め）の仕様 v0.5（第1〜3段階 実装済み）
-- `docs/daily-fun-spec.md` … まいにち あそびたくなる しくみ（ペット・パパママの はなまるスタンプ・まいにち えほん）の仕様 v0.3（② はなまるスタンプ 実装済み。① ペット・③ えほん は つぎ）
+- `docs/daily-fun-spec.md` … まいにち あそびたくなる しくみ（ペット・パパママの はなまるスタンプ・まいにち えほん）の仕様 v0.4（② はなまるスタンプ・① ペット 実装済み。③ えほん は つぎ）
 - `docs/abc-kotoba-mahou-spec.md` … ABCぼうけん「ことばの まほう」＋「くみあわせ」の仕様・決定事項・実装メモ（実装済み）
 
 ## 実行・テスト
