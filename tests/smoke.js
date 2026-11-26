@@ -383,6 +383,46 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     await ctx.close();
   }
 
+  console.log('8i. 🏆テストに もう いちど ごうかく すると ⭐');
+  {
+    const p = await page();
+    await p.goto(B + 'index.html'); await p.waitForTimeout(400);
+    await p.evaluate(() => { closePop(); localStorage.setItem('abc-adventure-v1', JSON.stringify({ v: 1, t: 1, started: true, learned: ['A', 'B', 'C'], words: { apple: { at: 1 } }, stars: 0, starsSent: 0 })); });
+    ok(await p.evaluate(() => S.settings.retestPts === 10), 'せっていの はじめは ⭐10');
+    const res = [];
+    for (const [room, key, g] of [['sansu', 'add1-1', 0], ['kokugo', 'k1yomi-1', 0], ['eigo', 'ealisten-1', 1]]) {
+      await p.goto(B + room + '/index.html#tests'); await p.waitForTimeout(400);
+      await p.evaluate(k => { closePop(); S.tests[k] = { pass: true, best: 1 }; S.settings.goalPts = 0; S.settings.goalAll = 0; save(); }, key);
+      for (const full of [false, true]) {
+        await p.evaluate(() => { S.points = 0; save(); });
+        await p.click(`[data-act=tready][data-arg="${key}"]`); await p.click('#ov [data-act=tstart]');
+        await p.waitForFunction(g => { const t = g ? __eigo.test : test; return t && t.phase === 'run'; }, g, { timeout: 8000 });
+        await p.evaluate(([g, full]) => { const t = g ? __eigo.test : test; t.ok = full ? t.n : t.need; t.i = t.n; t.t0 = performance.now() - t.limit; }, [g, full]);
+        await p.waitForSelector('#ov .pop');
+        res.push([room, full, await p.evaluate(() => S.points), /⭐＋/.test(await p.textContent('#ov'))]);
+        await p.click('#ov [data-act=close] >> nth=0');
+      }
+    }
+    ok(res.every(([, full, pts, shown]) => pts === (full ? 13 : 10) && shown), 'さんすう・こくご・えいご：2かいめ からの ごうかくで ⭐10（ぜんもん せいかいは ＋3）' + JSON.stringify(res));
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+  }
+
+  console.log('8j. イングリッシュダンジョン：よこがめんで やじるし・メッセージ・ボタンが かさならない');
+  {
+    const res = [];
+    for (const [w, h] of [[1180, 820], [1024, 768], [1366, 1024], [800, 600], [700, 520], [820, 1180]]) {
+      const ctx = await browser.newContext({ viewport: { width: w, height: h }, serviceWorkers: 'block' });
+      const p = await ctx.newPage();
+      await p.goto(B + 'dungeon/index.html'); await p.waitForSelector('body[data-ready="1"]', { timeout: 10000 });
+      await p.evaluate(() => { __dg.D.tutDone = true; __dg.start(); }); await p.waitForTimeout(300);
+      res.push([w, h, await p.evaluate(() => { const R = id => document.getElementById(id).getBoundingClientRect(), a = R('pad'), d = R('dock'), c = R('acts');
+        const ov = (x, y) => !(x.right <= y.left || y.right <= x.left || x.bottom <= y.top || y.bottom <= x.top);
+        return !ov(a, d) && !ov(d, c) && !ov(a, c) && d.left >= 0 && d.right <= innerWidth && d.width >= 240; })]);
+      await ctx.close();
+    }
+    ok(res.every(r => r[2]), 'いろいろな がめんの おおきさで かさならない ' + JSON.stringify(res.filter(r => !r[2])));
+  }
+
   console.log('8h. プログラミングの あたらしい しゅるい（むしとり・いろぬり・かぎと とびら）');
   {
     const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 }, serviceWorkers: 'block' });

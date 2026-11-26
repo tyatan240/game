@@ -335,6 +335,7 @@ function settings(){
  <div class="row"><div class="lbl"><b>さんすう テストの せいげんじかん</b><small>きびしい＝0.8ばい／ゆっくり＝1.5ばい</small></div><div class="seg">${[[1.5,'ゆっくり'],[1,'ふつう'],[0.8,'きびしい']].map(([v,l])=>`<button class="${s.testScale===v?'on':''}" data-act="tscale" data-arg="${v}">${l}</button>`).join('')}</div></div>
  <div class="row"><div class="lbl"><b>れんしゅうの ポイント ばいりつ</b><small>テスト形式の れんしゅうで、もんだいごとの ポイント×この ばいりつ</small></div>${stepper('practiceMul','×'+s.practiceMul)}</div>
  <div class="row"><div class="lbl"><b>れんしゅうの ごうかくライン ボーナス</b></div>${stepper('practiceBonus','⭐'+s.practiceBonus)}</div>
+ <div class="row"><div class="lbl"><b>🏆テストに もう いちど ごうかく</b><small>さんすう・こくご・えいご。はじめての ごうかくは アイテム、2かいめ からは この ⭐（ぜんもん せいかいなら ＋ぜんもんせいかい ボーナス）。0 で なし</small></div>${stepper('retestPts','⭐'+s.retestPts)}</div>
  <div class="row"><div class="lbl"><b>🎰 ガチャ</b><small>オフに すると ガチャが まわせなく なります</small></div><button class="sw ${s.gachaOn?'on':''}" data-act="gtg"></button></div>
  <div class="row"><div class="lbl"><b>ガチャ 1かいの ポイント</b></div><div class="step"><button data-act="st" data-arg="gachaCost|-10">−</button><span>⭐${s.gachaCost}</span><button data-act="st" data-arg="gachaCost|10">＋</button></div></div>
  <div class="row"><div class="lbl"><b>ガチャ 1日の かいすう</b><small>0 は せいげん なし</small></div>${stepper('gachaDaily',s.gachaDaily?s.gachaDaily+'かい':'なし')}</div>
@@ -397,7 +398,7 @@ async function fullRestore(){
 document.addEventListener('change',e=>{if(e.target&&e.target.id==='fullin'){const f=e.target.files[0];e.target.value='';if(f)fullPick(f)}});
 const bkEnc=o=>btoa(unescape(encodeURIComponent(JSON.stringify(o))));
 const bkDec=t=>JSON.parse(decodeURIComponent(escape(atob(t.replace(/\s/g,'')))));
-const LIM={perRound:[3,20],perfect:[0,50],daily:[0,50],t:[0,20],practiceMul:[1,5],practiceBonus:[0,50],progPts:[0,10],abcPts:[0,30],goalPts:[0,50],goalAll:[0,200],gachaCost:[10,500],gachaDaily:[0,10]};
+const LIM={perRound:[3,20],perfect:[0,50],daily:[0,50],t:[0,20],practiceMul:[1,5],practiceBonus:[0,50],retestPts:[0,50],progPts:[0,10],abcPts:[0,30],goalPts:[0,50],goalAll:[0,200],gachaCost:[10,500],gachaDaily:[0,10]};
 function stepSet(arg){
  const [k,d]=arg.split('|'),dd=Number(d);
  if(k.startsWith('t:')||k.startsWith('k:')||k.startsWith('e:')){const o=S.settings[{t:'types',k:'ktypes',e:'etypes'}[k[0]]][k.slice(2)];o.pts=Math.max(LIM.t[0],Math.min(LIM.t[1],o.pts+dd))}

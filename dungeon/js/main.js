@@ -41,14 +41,26 @@ function meet(id) {
 function resize() {
   dpr = window.devicePixelRatio || 1; vw = innerWidth; vh = innerHeight;
   cv.width = Math.round(vw * dpr); cv.height = Math.round(vh * dpr);
-  measureView(); camTarget(true);
+  layoutDock(); measureView(); camTarget(true);
+}
+// よこがめん：メッセージの らんを、ほんとうの やじるし・ボタンの いちから きめる（ぜったいに かさならない）。
+// あいだが せまい ときは ボタンの うえに ひろげる
+function layoutDock() {
+  const dk = $id('dock'), pd = $id('pad'), ac = $id('acts'); if (!dk || !pd || !ac) return;
+  dk.classList.remove('dk-up'); dk.style.left = dk.style.right = dk.style.bottom = '';
+  if (innerWidth <= innerHeight) return; // たてがめんは CSS の まま（ボタンの うえ）
+  const pr = pd.getBoundingClientRect(), ar = ac.getBoundingClientRect(), gap = 10;
+  const left = pr.right + gap, right = innerWidth - ar.left + gap;
+  if (innerWidth - left - right >= 260) { dk.style.left = left + 'px'; dk.style.right = right + 'px'; return; }
+  dk.classList.add('dk-up'); // せまい：ボタンより うえに
+  dk.style.left = '8px'; dk.style.right = '8px'; dk.style.bottom = (innerHeight - Math.min(pr.top, ar.top) + gap) + 'px';
 }
 const T = () => Math.max(32, Math.min(56, Math.floor(Math.min(vw / 17, vh / 13)))); // ひろく みえる ように すこし ちいさめ
 // マップの まんなか：うえの ひょうじ（ガイド）と したの ボタンの あいだ
 let viewTop = 70, viewBottom = 0;
 function measureView() {
   const gd = $id('guide'), top = gd && !gd.hidden ? gd.getBoundingClientRect().bottom : document.querySelector('.dtop').getBoundingClientRect().bottom;
-  viewTop = top; viewBottom = $id('dock').getBoundingClientRect().top; // したの らんの うえまでが マップ
+  viewTop = top; viewBottom = Math.min(...['dock', 'pad', 'acts'].map(id => $id(id).getBoundingClientRect().top)); // したの らん・ボタンの うえまでが マップ
 }
 // カメラ：マップは うごかさず、モコが はしに ちかづいた ときだけ ずらす（ぜんぶ はいる ときは ずっと とまったまま）
 let camO = null, camT = null;
@@ -893,6 +905,8 @@ function setupInput() {
   $id('tHow').onclick = () => start(true);
   $id('tTreasure').onclick = () => { unlockAudio(); treasureMenu(); };
   addEventListener('resize', resize);
+  try { document.fonts && document.fonts.ready.then(resize); } catch (e) { } // じが かわると ボタンの おおきさも かわる
+  try { const ro = new ResizeObserver(() => { layoutDock(); measureView(); }); ['pad', 'acts'].forEach(id => ro.observe($id(id))); } catch (e) { }
   addEventListener('pagehide', () => { if (D) { if (run && !run.over) setSlot(run); flush(D); } });
 }
 

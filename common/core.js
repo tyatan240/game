@@ -290,7 +290,7 @@ function defState(){return{v:1,t:0,points:0,
  settings:{types:Object.fromEntries(TYPES.map(t=>[t.id,{on:t.def||t.id.startsWith('add'),pts:t.pts}])),
   ktypes:Object.fromEntries(KTYPES.map(t=>[t.id,{on:true,pts:t.pts}])),
   etypes:Object.fromEntries(ETYPES.map(t=>[t.id,{on:true,pts:t.pts}])),
-  perRound:5,perfect:3,daily:5,sound:true,testScale:1,practiceMul:2,practiceBonus:5,progPts:3,gachaOn:true,gachaCost:100,gachaDaily:0,abcPts:10,goalPts:10,goalAll:50,admin:false},
+  perRound:5,perfect:3,daily:5,sound:true,testScale:1,practiceMul:2,practiceBonus:5,retestPts:10,progPts:3,gachaOn:true,gachaCost:100,gachaDaily:0,abcPts:10,goalPts:10,goalAll:50,admin:false},
  lastDay:'',stats:{q:0,ok:0},kstats:{q:0,ok:0},estats:{q:0,ok:0},tests:{},daily:newDaily(''),gacha:{day:'',count:0,pulls:0},looks:{},hw:{},streakGot:[],adminBackup:null,notes:defNotes(),pet:defPet(),book:defBook()}}
 // まいにちの えほん：story＝いま よんでいる はなしの ばんごう、open＝ひらいた ページの かず、last＝さいごに ページが ひらいた日、seen＝よんだ ページ、rewarded＝⭐を もらった はなし
 function defBook(){return{story:0,open:0,last:'',seen:{},rewarded:[]}}
@@ -306,7 +306,7 @@ function merge(d){
  if(d.equip) for(const k in s.equip) if(d.equip[k]&&ITEM[d.equip[k]]) s.equip[k]=d.equip[k];
  if(Array.isArray(d.furn)) s.furn=d.furn.filter(i=>ITEM[i]);
  const ds=d.settings||{};
- for(const k of ['perRound','perfect','daily','practiceMul','practiceBonus','testScale','progPts','gachaCost','gachaDaily','abcPts','goalPts','goalAll']) if(typeof ds[k]==='number') s.settings[k]=ds[k];
+ for(const k of ['perRound','perfect','daily','practiceMul','practiceBonus','retestPts','testScale','progPts','gachaCost','gachaDaily','abcPts','goalPts','goalAll']) if(typeof ds[k]==='number') s.settings[k]=ds[k];
  if(typeof ds.sound==='boolean') s.settings.sound=ds.sound;
  if(typeof ds.gachaOn==='boolean') s.settings.gachaOn=ds.gachaOn;
  if(typeof ds.admin==='boolean') s.settings.admin=ds.admin;

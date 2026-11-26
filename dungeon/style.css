@@ -381,3 +381,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#2a2238;touch-action:n
 @keyframes party{50%{transform:scale(1.08) rotate(2deg)}}
 .weakb{color:#e07a1a!important}
 .capeb{color:#7c4ac8;font-weight:800;background:#f3ecff;border-radius:12px;padding:6px}
+
+/* よこがめんで せまい とき：メッセージの らんを ボタンの うえに（layoutDock） */
+.dock.dk-up .log{height:4.6em}
+.dock .log div{overflow-wrap:anywhere}
