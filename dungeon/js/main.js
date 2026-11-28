@@ -43,17 +43,12 @@ function resize() {
   cv.width = Math.round(vw * dpr); cv.height = Math.round(vh * dpr);
   layoutDock(); measureView(); camTarget(true);
 }
-// よこがめん：メッセージの らんを、ほんとうの やじるし・ボタンの いちから きめる（ぜったいに かさならない）。
-// あいだが せまい ときは ボタンの うえに ひろげる
+// したの そうさ（#ctrl の grid）：よこで まんなかが せまい とき・たてがめんは、メッセージを ボタンの うえの だんに
 function layoutDock() {
-  const dk = $id('dock'), pd = $id('pad'), ac = $id('acts'); if (!dk || !pd || !ac) return;
-  dk.classList.remove('dk-up'); dk.style.left = dk.style.right = dk.style.bottom = '';
-  if (innerWidth <= innerHeight) return; // たてがめんは CSS の まま（ボタンの うえ）
-  const pr = pd.getBoundingClientRect(), ar = ac.getBoundingClientRect(), gap = 10;
-  const left = pr.right + gap, right = innerWidth - ar.left + gap;
-  if (innerWidth - left - right >= 260) { dk.style.left = left + 'px'; dk.style.right = right + 'px'; return; }
-  dk.classList.add('dk-up'); // せまい：ボタンより うえに
-  dk.style.left = '8px'; dk.style.right = '8px'; dk.style.bottom = (innerHeight - Math.min(pr.top, ar.top) + gap) + 'px';
+  const c = $id('ctrl'), pd = $id('pad'), ac = $id('acts'); if (!c || !pd || !ac) return;
+  const mid = c.clientWidth - pd.offsetWidth - ac.offsetWidth - 20;
+  c.classList.toggle('stack', innerWidth <= innerHeight || mid < 260);
+  c.classList.toggle('narrow', innerWidth > innerHeight && mid < 260);
 }
 const T = () => Math.max(32, Math.min(56, Math.floor(Math.min(vw / 17, vh / 13)))); // ひろく みえる ように すこし ちいさめ
 // マップの まんなか：うえの ひょうじ（ガイド）と したの ボタンの あいだ

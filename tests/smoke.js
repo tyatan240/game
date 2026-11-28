@@ -420,7 +420,7 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
   console.log('8j. イングリッシュダンジョン：よこがめんで やじるし・メッセージ・ボタンが かさならない');
   {
     const res = [];
-    for (const [w, h] of [[1180, 820], [1024, 768], [1366, 1024], [800, 600], [700, 520], [820, 1180]]) {
+    for (const [w, h] of [[1180, 820], [1024, 768], [1366, 1024], [800, 600], [700, 520], [683, 512], [820, 1180], [768, 1024]]) {
       const ctx = await browser.newContext({ viewport: { width: w, height: h }, serviceWorkers: 'block' });
       const p = await ctx.newPage();
       await p.goto(B + 'dungeon/index.html'); await p.waitForSelector('body[data-ready="1"]', { timeout: 10000 });
