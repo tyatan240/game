@@ -192,8 +192,8 @@
 
   // ABCぼうけんの データ（文字・単語・文）を あとから 読みこむ（ES Modules なので dynamic import）
   let ABCD = null;
-  Promise.all([import('../abc/js/data/words.js'), import('../abc/js/data/sentences.js'), import('../abc/js/game/learning.js')])
-    .then(([w, s, l]) => { ABCD = { WORDS: w.WORDS, WORD: w.WORD, FRAMES: s.FRAMES, levelOf: l.levelOf }; const c = $('#encard'); if (c) c.innerHTML = '<h2>🔤 英語の習得状況（ABCぼうけん）</h2>' + english(); })
+  Promise.all([import('../abc/js/data/words.js'), import('../abc/js/data/sentences.js'), import('../abc/js/game/learning.js'), import('../abc/js/game/state.js')])
+    .then(([w, s, l, st]) => { ABCD = { WORDS: w.WORDS, WORD: w.WORD, FRAMES: s.FRAMES, levelOf: l.levelOf, knownOf: st.knownOf }; const c = $('#encard'); if (c) c.innerHTML = '<h2>🔤 英語の習得状況（ABCぼうけん）</h2>' + english(); })
     .catch(() => { ABCD = false; });
   function english() {
     if (ABCD === null) return '<p class="muted">読みこみ中…</p>';
@@ -202,8 +202,8 @@
     if (!d.started && !Object.keys(d.records || {}).length) return '<p class="muted">まだ ABCぼうけん の記録がありません。</p>';
     const { WORDS, WORD, FRAMES, levelOf } = ABCD, recs = d.records || {}, now = Date.now();
     // 学習の記録は ワールドを またいで 1つ（slots の 進み具合は 合算しない）。覚えた単語は いまの進み＋しまってある進み の合計
-    const slots = Object.values(d.slots || {}), known = new Set(Object.keys(d.words || {})), lw = new Set(d.learned || []), ll = new Set(d.lower || []), fr = new Set(Object.keys(d.sentences || {}));
-    for (const s of slots) { Object.keys(s.words || {}).forEach(x => known.add(x)); (s.learned || []).forEach(x => lw.add(x)); (s.lower || []).forEach(x => ll.add(x)); Object.keys(s.sentences || {}).forEach(x => fr.add(x)); }
+    // 「はじめから」で ぼうけんを やりなおしても へらない（いまの進み＋しまってある進み＋これまでの記録。knownOf）
+    const K = ABCD.knownOf(d), known = new Set(K.words), lw = new Set(K.learned), ll = new Set(K.lower), fr = new Set(K.sentences);
     const w1 = WORDS.filter(w => (w.world || 1) === 1 && !w.future), w3 = WORDS.filter(w => w.world === 3);
     const learnedN = ids => ids.filter(id => levelOf(recs[id]) >= 2).length;
     const kpi = (label, n, total, sub) => `<div class="kpi"><span>${label}</span><b>${n} / ${total}</b><small>${sub || ''}</small></div>`;

@@ -92,12 +92,14 @@ import '../abc/js/engine/art3.js';
 import { sayLetter, unlockAudio, setAudioSettings } from '../abc/js/engine/audio.js';
 import { record, newRecord, levelOf, pickTargets } from '../abc/js/game/learning.js';
 import { FRAMES, FRAME } from '../abc/js/data/sentences.js';
+import { knownOf } from '../abc/js/game/state.js';
 
 /* ========== ABCぼうけんの データ ========== */
 const ABC_KEY = 'abc-adventure-v1';
 const abcSave = () => { try { return JSON.parse(localStorage.getItem(ABC_KEY) || 'null') || {}; } catch (e) { return {}; } };
-const learnedLetters = () => (abcSave().learned || []).filter(id => LETTER[id]);
-const learnedWords = () => Object.keys(abcSave().words || {}).filter(id => WORD[id] && !WORD[id].future);
+// ABCぼうけんで これまでに おぼえた もの（「はじめから」でも へらない。knownOf）
+const learnedLetters = () => knownOf(abcSave()).learned.filter(id => LETTER[id]);
+const learnedWords = () => knownOf(abcSave()).words.filter(id => WORD[id] && !WORD[id].future);
 const recKey = (tid, id) => tid.startsWith('ea') ? id : tid === 'ephon' ? 'ph:' + id : tid === 'e3sent' ? 's:' + id : 'w:' + id;
 // がくしゅう きろくを ABCぼうけんの セーブに かく（records だけ。ほかは さわらない）
 function logAbc(key, ok, first) {
@@ -110,7 +112,7 @@ function logAbc(key, ok, first) {
 }
 // ワールド3・はじめの おと
 const W3 = kinds => learnedWords().filter(id => WORD[id].world === 3 && kinds.includes(WORD[id].kind));
-const learnedFrames = () => Object.keys(abcSave().sentences || {}).filter(id => FRAME[id]);
+const learnedFrames = () => knownOf(abcSave()).sentences.filter(id => FRAME[id]);
 const phonWords = () => learnedWords().filter(id => /^[a-z]+$/i.test(WORD[id].word) && WORD[id].kind !== 'number'); // 1ごの ことば（かずは のぞく）
 const POOL = { letters: learnedLetters, words: learnedWords, w3talk: () => W3(['greet', 'feel']), w3count: () => W3(['number', 'color', 'shape']), w3sent: () => learnedFrames().flatMap(f => [f + ':0', f + ':1', f + ':2']), phon: phonWords };
 const avail = t => (POOL[t.need] || learnedWords)().length;
