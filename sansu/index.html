@@ -170,6 +170,7 @@ function finishTest(timeout){
  t.phase='done';stopTest();LH.endSession();
  if(t.prac){
   const okLine=t.ok>=t.need,bonus=okLine?S.settings.practiceBonus:0;
+  if(S.settings.pracGoal)dailyOf(S).sansu++; // きょうの もくひょう（⚙️で オンの ときだけ れんしゅうも かぞえる）
   if(bonus){S.points+=bonus}save();view='tests';render();
   okLine?sBuy():sNg();
   showPop(`${charSVG(S.equip,okLine?'happy':'oops',okLine?'hop':'')}<h3>${timeout?'じかん ぎれ！':'れんしゅう おわり！'}</h3><div>${timeout?`${t.n}もん ちゅう ${t.i}もん まで こたえて ${t.ok}もん せいかい`:`${t.n}もん ちゅう ${t.ok}もん せいかい`}</div>
@@ -181,13 +182,14 @@ function finishTest(timeout){
  const L=TLV[t.lv],it=testItem(t.key),pass=t.ok>=t.need,st=S.tests[t.key]||{},first=pass&&!st.pass;
  dailyOf(S).sansu++; // きょうの もくひょう
  S.tests[t.key]={pass:!!(st.pass||pass),best:Math.max(st.best||0,t.ok)};
- if(first)grantItem(it.id)
+ const again=pass&&!first?(S.settings.retestPts||0)+(t.ok===t.n?S.settings.perfect||0:0):0; // 2かいめ からの ごうかくは ⭐
+ if(first)grantItem(it.id);if(again)S.points+=again
  save();view='tests';render();
  if(pass){sBuy();
   showPop(`<div class="medal">${L.medal}</div><h3>ごうかく！</h3><div>${t.n}もん ちゅう ${t.ok}もん せいかい</div>
   ${first?`<div style="width:110px;margin:8px auto">${it.cat==='furn'||it.cat==='wall'||it.cat==='floor'?thumb(it):charSVG({...S.equip,[it.cat]:it.id},'happy','hop')}</div><div><b>${it.name}</b> を ゲット！</div>
   <div class="btns"><button class="big gray" data-act="close">あとで</button><button class="big" data-act="twear" data-arg="${it.id}">${it.cat==='furn'||it.cat==='wall'||it.cat==='floor'?'おへやを みる':'つけてみる'}</button></div>`
-  :`<div class="btns"><button class="big" data-act="close">OK</button></div>`}`)}
+  :`${again?`<div class="stars" style="margin:8px 0">⭐＋${again}</div><div class="muted">${t.ok===t.n?'ぜんもん せいかい ボーナス つき！':'また ごうかく できたね！'}</div>`:''}<div class="btns"><button class="big" data-act="close">OK</button></div>`}`)}
  else{sNg();
   showPop(`${charSVG(S.equip,'oops')}<h3>${timeout?'じかん ぎれ！':'ざんねん！'}</h3><div>${timeout?`${t.n}もん ちゅう ${t.i}もん まで こたえて `:''}${t.ok}もん せいかい（ごうかくは ${t.need}もん）</div><div class="muted">れんしゅう して また ちょうせん しよう！</div>
   <div class="btns"><button class="big gray" data-act="close">とじる</button><button class="big" data-act="tstart" data-arg="${t.key}">もういちど</button></div>`)}

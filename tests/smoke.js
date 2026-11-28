@@ -230,11 +230,21 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
         await p.waitForSelector('#ov .pop'); await p.click('#ov [data-act=close] >> nth=0');
       }
     }
-    // れんしゅうは かぞえない
+    let d = await daily(); ok(d.sansu === 2 && d.kokugo === 2 && d.eigo === 2, 'テストの かいすう ' + JSON.stringify(d));
+    // テスト形式の れんしゅうも かぞえる
     await p.click('[data-act=tready][data-arg="ealisten-1|p"]'); await p.click('#ov [data-act=tstart]');
     await p.waitForFunction(() => __eigo.test && __eigo.test.phase === 'run', null, { timeout: 8000 });
     await p.evaluate(() => { __eigo.test.t0 = performance.now() - __eigo.test.limit; }); await p.waitForSelector('#ov .pop');
-    let d = await daily(); ok(d.sansu === 2 && d.kokugo === 2 && d.eigo === 2, 'テストの かいすう（れんしゅうは のぞく）' + JSON.stringify(d));
+    d = await daily(); ok(d.eigo === 2, 'れんしゅうは かぞえない（せってい オフ）' + JSON.stringify(d));
+    await p.click('#ov [data-act=close] >> nth=0').catch(() => {});
+    // ⚙️で オンに すると れんしゅうも かぞえる
+    await p.evaluate(() => { S.settings.pracGoal = true; save(); });
+    await p.click('[data-act=tready][data-arg="ealisten-1|p"]'); await p.click('#ov [data-act=tstart]');
+    await p.waitForFunction(() => __eigo.test && __eigo.test.phase === 'run', null, { timeout: 8000 });
+    await p.evaluate(() => { __eigo.test.t0 = performance.now() - __eigo.test.limit; }); await p.waitForSelector('#ov .pop');
+    d = await daily(); ok(d.eigo === 3, 'せってい オンなら れんしゅうも かぞえる ' + JSON.stringify(d));
+    await p.evaluate(() => { S.settings.pracGoal = false; save(); });
+    await p.click('#ov [data-act=close] >> nth=0').catch(() => {});
     // プログラミング
     await p.goto(B + 'program/index.html'); await p.evaluate(() => { openLv(0); prog = [{ t: 'R' }, { t: 'R' }, { t: 'R' }, { t: 'R' }]; render(); run(); });
     await p.waitForSelector('#pop', { timeout: 10000 }); await p.waitForTimeout(600);
@@ -381,6 +391,46 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     const vis = await p.evaluate(() => [...document.querySelectorAll('.pbtn, .big')].every(b => { const r = b.getBoundingClientRect(); return r.bottom <= innerHeight && r.top >= 0; }));
     ok(vis, 'iPad よこで やじるし・じっこうが がめんに おさまる');
     await ctx.close();
+  }
+
+  console.log('8i. 🏆テストに もう いちど ごうかく すると ⭐');
+  {
+    const p = await page();
+    await p.goto(B + 'index.html'); await p.waitForTimeout(400);
+    await p.evaluate(() => { closePop(); localStorage.setItem('abc-adventure-v1', JSON.stringify({ v: 1, t: 1, started: true, learned: ['A', 'B', 'C'], words: { apple: { at: 1 } }, stars: 0, starsSent: 0 })); });
+    ok(await p.evaluate(() => S.settings.retestPts === 10), 'せっていの はじめは ⭐10');
+    const res = [];
+    for (const [room, key, g] of [['sansu', 'add1-1', 0], ['kokugo', 'k1yomi-1', 0], ['eigo', 'ealisten-1', 1]]) {
+      await p.goto(B + room + '/index.html#tests'); await p.waitForTimeout(400);
+      await p.evaluate(k => { closePop(); S.tests[k] = { pass: true, best: 1 }; S.settings.goalPts = 0; S.settings.goalAll = 0; save(); }, key);
+      for (const full of [false, true]) {
+        await p.evaluate(() => { S.points = 0; save(); });
+        await p.click(`[data-act=tready][data-arg="${key}"]`); await p.click('#ov [data-act=tstart]');
+        await p.waitForFunction(g => { const t = g ? __eigo.test : test; return t && t.phase === 'run'; }, g, { timeout: 8000 });
+        await p.evaluate(([g, full]) => { const t = g ? __eigo.test : test; t.ok = full ? t.n : t.need; t.i = t.n; t.t0 = performance.now() - t.limit; }, [g, full]);
+        await p.waitForSelector('#ov .pop');
+        res.push([room, full, await p.evaluate(() => S.points), /⭐＋/.test(await p.textContent('#ov'))]);
+        await p.click('#ov [data-act=close] >> nth=0');
+      }
+    }
+    ok(res.every(([, full, pts, shown]) => pts === (full ? 13 : 10) && shown), 'さんすう・こくご・えいご：2かいめ からの ごうかくで ⭐10（ぜんもん せいかいは ＋3）' + JSON.stringify(res));
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+  }
+
+  console.log('8j. イングリッシュダンジョン：よこがめんで やじるし・メッセージ・ボタンが かさならない');
+  {
+    const res = [];
+    for (const [w, h] of [[1180, 820], [1024, 768], [1366, 1024], [800, 600], [700, 520], [820, 1180]]) {
+      const ctx = await browser.newContext({ viewport: { width: w, height: h }, serviceWorkers: 'block' });
+      const p = await ctx.newPage();
+      await p.goto(B + 'dungeon/index.html'); await p.waitForSelector('body[data-ready="1"]', { timeout: 10000 });
+      await p.evaluate(() => { __dg.D.tutDone = true; __dg.start(); }); await p.waitForTimeout(300);
+      res.push([w, h, await p.evaluate(() => { const R = id => document.getElementById(id).getBoundingClientRect(), a = R('pad'), d = R('dock'), c = R('acts');
+        const ov = (x, y) => !(x.right <= y.left || y.right <= x.left || x.bottom <= y.top || y.bottom <= x.top);
+        return !ov(a, d) && !ov(d, c) && !ov(a, c) && d.left >= 0 && d.right <= innerWidth && d.width >= 240; })]);
+      await ctx.close();
+    }
+    ok(res.every(r => r[2]), 'いろいろな がめんの おおきさで かさならない ' + JSON.stringify(res.filter(r => !r[2])));
   }
 
   console.log('8h. プログラミングの あたらしい しゅるい（むしとり・いろぬり・かぎと とびら）');
@@ -1564,7 +1614,7 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
       const { LETTERS } = await import('./js/data/letters.js'), { speakable } = await import('./js/engine/audio.js');
       return { bad: LETTERS.filter(L => /^[A-Z]$/.test(L.speak)).map(L => L.id), A: speakable('A'), e: speakable('e'), word: speakable('apple') };
     });
-    ok(r.bad.length === 0 && r.A === 'ay' && r.e === 'ee' && r.word === 'apple', 'もじの よみは おおもじ 1つに しない ' + JSON.stringify(r));
+    ok(r.bad.length === 0 && r.A === 'eigh' && r.e === 'ee' && r.word === 'apple', 'もじの よみは おおもじ 1つに しない ' + JSON.stringify(r));
     await p.context().close();
   }
 

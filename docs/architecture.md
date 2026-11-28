@@ -26,7 +26,7 @@
 
 ### さんすう（`sansu/`）・こくご（`kokugo/`）
 - 練習：`perRound` 問。1回目正解で満点、2回目は半分。全問正解ボーナス `perfect`。
-- 🏆テスト：種類×3段階。制限時間＝問題数×`TBASE[種類]`×段階倍率×`testScale`。間違えるとやり直しなし。合格で限定アイテム（`ITEMS` の `test:'種類-段階'`）。前の段階に合格すると次が開く。練習モードはポイント×`practiceMul`、合格ライン到達で `practiceBonus`。
+- 🏆テスト：種類×3段階。制限時間＝問題数×`TBASE[種類]`×段階倍率×`testScale`。間違えるとやり直しなし。合格で限定アイテム（`ITEMS` の `test:'種類-段階'`）。前の段階に合格すると次が開く。練習モードはポイント×`practiceMul`、合格ライン到達で `practiceBonus`。2回目からの合格は ⭐`retestPts`（既定10。全問正解なら＋`perfect`）。
 - こくごの問題データは `kokugo/index.html` 内の `K1`・`K2`（漢字語 [漢字,よみ]）、`KOTOBA`（[問題,正解,誤答…]）、`STORIES`（よみとり）、`KATA_W`（[ひらがな,カタカナ]。誤答は `KATA_MIX` のまぎらわしい字で作る）、`BUN`（いつ・だれが・どこで・どうする の部品）。`makeQ(種類)` が4択を作る。
 
 ### えいご（`eigo/`）
@@ -76,7 +76,7 @@
 
 ## きょうの もくひょう
 - おうちの「おへや」に表示（`goalsCard()`）。目標は core.js の `goals()`：さんすう🏆テスト2回・こくご🏆テスト2回・えいご（ABCぼうけん未クリアなら ぼうけんで★2こ、クリア後は えいご🏆テスト2回）・プログラミング1ステージクリア。
-- 数え方：各部屋の `finishTest`（練習は除く）で `dailyOf(S).sansu++` など。プログラミングは `houseDaily()`、ABC は `house.js` の `sendStars()` が おうちのデータの `daily` を直接増やす。
+- 数え方：各部屋の `finishTest`（テスト形式の練習は ⚙️設定の `pracGoal` がオンのときだけ数える。既定オフ）で `dailyOf(S).sansu++` など。プログラミングは `houseDaily()`、ABC は `house.js` の `sendStars()` が おうちのデータの `daily` を直接増やす。
 - ごほうび：おうちに戻ったとき `goalsCheck()` が達成済み・未受け取りの目標に ⭐`goalPts`（既定10）、全部達成で さらに ⭐`goalAll`（既定50）。`daily.got`・`daily.all` で1回だけ。
 
 ## きょうの おすすめ・がんばり カレンダー（`index.html`）

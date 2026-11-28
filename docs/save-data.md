@@ -20,7 +20,7 @@
   owned: [持っているアイテムid…], equip:{char,outfit,hat,acc,wall,floor}, furn:[置いている家具id…],
   settings:{
     types:{add1:{on,pts},…}, ktypes:{k1yomi:{on,pts},…}, etypes:{ealisten:{on,pts},…},
-    perRound, perfect, daily, sound, testScale, practiceMul, practiceBonus,
+    perRound, perfect, daily, sound, testScale, practiceMul, practiceBonus, retestPts, pracGoal,
     progPts, gachaOn, gachaCost, gachaDaily, abcPts, goalPts, goalAll
   },
   lastDay:'YYYY-M-D'（ログインボーナス）,
