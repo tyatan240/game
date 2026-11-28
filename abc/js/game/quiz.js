@@ -54,4 +54,22 @@ export function lowerQuestion(target, pool, kind, nChoices, rand = Math.random) 
     say: L.speak, voice: L, render: kind === 'upper' ? 'letter' : 'lower', label: id => `${LETTER[id].upper} ${LETTER[id].lower}（${LETTER[id].name}）`,
   };
 }
+// ワールド4：もじの おとの もんだい。sound は こもじ（'s'）、pool は えらべる こもじ
+//   'key'   … おとの ことばを きいて、その はじめの もじを えらぶ（「sun の はじめの おと」）
+//   'first' … えの ことばを きいて、はじめの おとの もじを えらぶ
+//   'last'  … おわりの おと　'mid' … まんなかの おと
+// word：ことばの id（words.js）。こたえの もじは word の なかから きめる
+export function soundQuestion(word, pos, pool, nChoices = 3, rand = Math.random) {
+  const W = WORD[word], w = W.word.toLowerCase();
+  const ans = pos === 'last' ? w[w.length - 1] : pos === 'mid' ? w[Math.floor(w.length / 2)] : w[0];
+  const others = shuffle(pool.filter(x => x !== ans && x.length === 1), rand);
+  const extra = shuffle('abcdefghijklmnopqrstuvwxyz'.split('').filter(x => x !== ans && !pool.includes(x)), rand);
+  const choices = shuffle([ans, ...[...others, ...extra].slice(0, nChoices - 1)], rand).map(x => x.toUpperCase());
+  const where = pos === 'last' ? 'おわり' : pos === 'mid' ? 'まんなか' : 'はじめ';
+  return {
+    kind: 'snd-' + pos, target: ans.toUpperCase(), choices, answer: ans.toUpperCase(), recKey: 'snd:' + ans,
+    prompt: `「${w}」の ${where}の おとは どれかな？`, picture: W.art, voice: W, okVoice: W, render: 'lower',
+    label: id => `${id.toLowerCase()}（${w} の ${where}の おと）`,
+  };
+}
 export { shuffle };

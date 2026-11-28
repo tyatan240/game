@@ -124,6 +124,17 @@ abc/
 - 保存：`abc-adventure-v1` に `sentences:{}` を追加（`state.js` で補う）。
 - タイトル：こもじの もんを クリアすると「ワールド3（ことば）から」（`world3State()`）。おうちの ⚙️設定の **管理者モード** が オンなら、クリア まえでも ワールド2・3 を えらべる（`game/house.js` の `houseAdmin()`）。
 
+## ワールド4「おとの しま」（フォニックス・作成中：エリア1〜2）
+仕様：`docs/abc-world4-spec.md`。こもじの もりの みなみの ふなつきば（`exits` の `needs:{flag:'lowerClear'}`）か、タイトルの「ワールド4」から入る（`world4State()`：ワールド1・2を おえた じょうたい。ワールド3は いらない）。
+- **おと**：`data/phonics.js` の `SOUNDS`（`id`＝こもじ・`kana`＝おとの めやす・`key`＝その おとで はじまる ことば・`area`・`audio`）。iPad の よみあげは もじ1つの おとが にがてなので、**key の ことばを よみあげる**（`ui.sayPhon`）。ろくおんを `audio` に いれれば そちらを つかう。
+- **エリア**：`data/areas/w4beach.js`（おとの はまべ：s a t p i n）・`w4cave.js`（ひびきの ほらあな：c e h r m d）。チャプターは `areas.js` の `w4:true`（`sounds`・`quests`・`gate`）。
+- **せんせい**（NPC の `sounds`）：おとカード（`ui.teachSounds`：もじ・なまえ・おと・ことばの え）→ はじめの おとの クイズ → `S.sounds` に とうろく（★＋2）。2かいめからは おさらい。
+- **クイズ**：`quiz.js` の `soundQuestion(word, 'first'|'last'|'mid', pool)`（ことばを きいて、その ばしょの おとの もじ）。クエストの `on:'phon'`（`rounds`：`{t:'pick', sound, answer, choices}`＝その おとで はじまる えを えらぶ／`{t:'first'|'last'|'mid', word}`）。
+- **もん**（`w4Gate`）：その エリアの おとで はじまる ことば 3もん＋おわりの おと 2もん（`PHON_LAST`）。
+- **え**：`engine/art4.js`（ぶた・イグルー・ぼうし・ペン・とりの す）。ことばは `words.js` の `world:4`（`kind:'phon'`）。
+- 保存：`abc-adventure-v1` に `sounds:[]`・`w4clears` を追加（`state.js` で補う）。きろくは `records['snd:a']`。`knownOf()` に `sounds`（はじめから でも へらない）。ワールドの つづきは `S.slots[4]`。
+- 「つぎは」（`objective()`）は いる ばしょの ワールドで わける（おとの しまでは ワールド4の チャプターだけ）。
+
 ## ワールドごとの つづき（タイトル）
 - ワールド2・3が えらべるように なると（クリア または 管理者モード）、タイトルに ワールドごとの「つづきから」「はじめから」。うえの おおきな「つづきから」は さいごに あそんだ ワールド。
 - いま あそんでいる ワールドの すすみは いままでどおり S の うえ（`hero`・`flags`・`quests` など）。ほかの ワールドの すすみは `S.slots[1|2|3]` に しまう（`state.js` の `snapshot()`／`restore()`。しまう こうもくは `KEEP_ON_REPLAY` いがい）。どの ワールドかは `hero.area` で きめる（`worldOf()`）。

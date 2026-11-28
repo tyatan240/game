@@ -296,3 +296,15 @@ button.frame{border:0;background:#f4f9ff;border-radius:16px;padding:8px 14px;mar
   #title.multi .back{padding:4px 14px;font-size:13px!important}
 }
 .spic canvas{display:block;margin:0 auto}
+
+/* ワールド4「おとの しま」：もじの おとカード */
+.w4sounds{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:6px 0}
+.w4s{border:0;background:#fff7ee;border-radius:18px;padding:8px 10px 10px;min-width:118px;display:flex;flex-direction:column;align-items:center;gap:2px;box-shadow:0 3px 0 #ead8c8;font:inherit;cursor:pointer}
+.w4s .sl{font-size:54px;line-height:1;color:#e0508a;font-family:"Andika","M PLUS Rounded 1c",sans-serif}
+.w4s .kw{font-size:22px;font-weight:800;color:#3f7fc9}
+.w4s .kw em{font-style:normal;color:#e0508a;text-decoration:underline}
+.w4s small{font-size:12px;color:#8a7a7a;line-height:1.4}
+.w4s small b{color:#e0508a;font-size:15px}
+.w4s.pulse{animation:pop .4s}
+.quiz .sndbig{display:block;font-size:56px;color:#e0508a;line-height:1}
+.w4note{font-size:15px;font-weight:800;color:#8a7a7a;margin:4px 0 8px;line-height:1.5}

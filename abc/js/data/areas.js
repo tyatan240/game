@@ -10,6 +10,8 @@ import * as w3market from './areas/w3market.js';
 import * as w3studio from './areas/w3studio.js';
 import * as w3school from './areas/w3school.js';
 import * as w3tower from './areas/w3tower.js';
+import * as w4beach from './areas/w4beach.js';
+import * as w4cave from './areas/w4cave.js';
 
 const mk = (id, name, m) => ({ id, name, MAP: m.MAP, NPCS: m.NPCS, OBJECTS: m.OBJECTS || [], SIGNS: m.SIGNS || [], CHESTS: m.CHESTS || [], entries: m.entries, exits: m.exits || [] });
 export const AREAS = {
@@ -24,8 +26,10 @@ export const AREAS = {
   w3studio: mk('w3studio', 'いろと かたちの こうぼう', w3studio),
   w3school: mk('w3school', 'すきなものの がっこう', w3school),
   w3tower: mk('w3tower', 'ことばの とう', w3tower),
+  w4beach: mk('w4beach', 'おとの はまべ', w4beach),
+  w4cave: mk('w4cave', 'ひびきの ほらあな', w4cave),
 };
-export const ORDER = ['island', 'forest', 'village', 'lake', 'garden', 'lower', 'w3plaza', 'w3market', 'w3studio', 'w3school', 'w3tower'];
+export const ORDER = ['island', 'forest', 'village', 'lake', 'garden', 'lower', 'w3plaza', 'w3market', 'w3studio', 'w3school', 'w3tower', 'w4beach', 'w4cave'];
 
 // チャプター：もじを おぼえる → クエスト → もじの もん（おさらい）→ つぎの エリア
 export const CHAPTERS = [
@@ -42,6 +46,9 @@ export const CHAPTERS = [
   { area: 'w3studio', w3: true, letters: [], words: ['cred', 'cblue', 'cyellow', 'cgreen', 'cpink', 'cwhite', 'circle', 'square', 'triangle', 'star', 'heart'], frames: ['a'], quests: ['w3sign', 'w3color'], gate: 'w3gate3', gateLabel: ['RGB'], next: 'w3school' },
   { area: 'w3school', w3: true, letters: [], words: ['swim', 'run', 'jump', 'sing', 'dance', 'dogs', 'cats'], frames: ['like', 'can'], quests: ['w3friend', 'w3pe'], gate: 'w3gate4', gateLabel: ['like'], next: 'w3tower' },
   { area: 'w3tower', w3: true, letters: [], words: [], frames: ['this'], quests: ['w3tower'], gate: 'w3gate5', gateLabel: ['End'], final: true },
+  // ワールド4「おとの しま」：せんせいに もじの おと（sounds）を ならう → クエスト → もん（おとの おさらい）
+  { area: 'w4beach', w4: true, letters: [], sounds: ['s', 'a', 't', 'p', 'i', 'n'], quests: ['w4hippo'], gate: 'w4gate1', gateLabel: ['s', 'a', 't'], next: 'w4cave' },
+  { area: 'w4cave', w4: true, letters: [], sounds: ['c', 'e', 'h', 'r', 'm', 'd'], quests: ['w4echo'], gate: 'w4gate2', gateLabel: ['c', 'a', 't'] },
 ];
 export const CHAPTER = Object.fromEntries(CHAPTERS.map(c => [c.area, c]));
 

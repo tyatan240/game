@@ -3,6 +3,7 @@ import { portrait, drawCritter, starPath, wordArt } from '../engine/art.js';
 import { sfx, sayLetter } from '../engine/audio.js';
 import { LETTER } from '../data/letters.js';
 import { WORD, WORDS } from '../data/words.js';
+import { SOUND } from '../data/phonics.js';
 import { LEVEL_NAME } from '../game/learning.js';
 import * as input from '../engine/input.js';
 
@@ -318,6 +319,24 @@ export function magic(st, { title = 'ことばを くみあわせよう！', che
       setTimeout(() => { close(); resolve([...sel]); }, 1300);
     };
     draw();
+  });
+}
+
+/* ---------- ワールド4「おとの しま」---------- */
+// もじの おとを ならべて おしえる カード：こもじ・おとの めやす・その おとで はじまる ことば（え）。タップで ことばを よむ
+export const sayPhon = id => { const s = SOUND[id], w = WORD[s.key]; sayLetter({ audio: s.audio, speak: w.speak }); };
+export function teachSounds(ids) {
+  return new Promise(resolve => {
+    const kw = id => { const w = WORD[SOUND[id].key].word.toLowerCase(); return `<em>${w[0]}</em>${w.slice(1)}`; };
+    const el = open(h(`<div class="modal"><div class="card teach w4teach">
+      <div class="small">もじの おと</div>
+      <div class="w4sounds">${ids.map(id => `<button class="w4s" data-id="${id}"><b class="sl">${id}</b><span class="art"></span><span class="kw">${kw(id)}</span><small>なまえ「${LETTER[id.toUpperCase()].name}」<br>おと「<b>${SOUND[id].kana}</b>」</small></button>`).join('')}</div>
+      <div class="w4note">もじには「なまえ」と「おと」が あるよ。タップすると その おとで はじまる ことばが きこえるよ</div>
+      <button class="go">おぼえた！ クイズへ</button></div></div>`), () => done());
+    const done = () => { sfx.tap(); close(); resolve(); };
+    el.querySelectorAll('.w4s').forEach(b => { const s = SOUND[b.dataset.id]; b.querySelector('.art').appendChild(wordArt(WORD[s.key].art, 72)); b.onclick = () => { sfx.tap(); sayPhon(b.dataset.id); b.classList.remove('pulse'); void b.offsetWidth; b.classList.add('pulse'); }; });
+    el.querySelector('.go').onclick = done;
+    setTimeout(() => sayPhon(ids[0]), 400);
   });
 }
 
