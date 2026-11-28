@@ -316,7 +316,7 @@ async function handle(ev, slow) {
     else if (e.t === 'equip') tutFlag('equip', e.id);
     else if (e.t === 'learn') { meet(e.id); sfx.unlock(); speak(WORD[e.id].en); tutFlag('learn', e.id); setTimeout(() => showCard(e.id, { learned: true }), 300); }
     else if (e.t === 'cast') { dexOf(e.id).used++; speak(WORD[e.id].en); tutFlag('cast', e.id); }
-    else if (e.t === 'kill') { sfx.correct(); setTimeout(() => speak(`You beat the ${WORD[e.id].en}!`), 250); tutFlag('kill', e.id); if (slow) { ghosts = ghosts.filter(gh => gh.uid !== e.uid); fx.push({ kind: 'vanish', id: e.id, x: e.x, y: e.y, t0: performance.now() }); } }
+    else if (e.t === 'kill') { sfx.correct(); if (e.star) setTimeout(() => stars(STARS.kill, `${WORD[e.id].en} を たおした！`), 700); setTimeout(() => speak(`You beat the ${WORD[e.id].en}!`), 250); tutFlag('kill', e.id); if (slow) { ghosts = ghosts.filter(gh => gh.uid !== e.uid); fx.push({ kind: 'vanish', id: e.id, x: e.x, y: e.y, t0: performance.now() }); } }
     else if (e.t === 'boss') bossDown(e.id);
     else if (e.t === 'level') { sfx.unlock(); fx.push({ kind: 'heal', x: run.hero.x, y: run.hero.y, n: 'Lv' + e.lv, t0: performance.now() }); }
     else if (e.t === 'hurt') { sfx.bump(); stopWalk(); }

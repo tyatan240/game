@@ -338,7 +338,7 @@ function hurtMon(run, m, dmg, ev, how = 'hit', note = '', tier = 1) {
   ev.push({ t: 'msg', text: calc(WORD[m.id].en, hp0, '−', dmg), calc: true, monUid: m.uid, monHp: m.hp });
   if (m.hp <= 0) {
     run.mons = run.mons.filter(x => x !== m);
-    ev.push({ t: 'kill', id: m.id, x: m.x, y: m.y, uid: m.uid }); ev.push({ t: 'msg', text: `${en(m.id)} を たおした！` });
+    ev.push({ t: 'kill', id: m.id, x: m.x, y: m.y, uid: m.uid, star: !run.tut && !m.boss && !m.hboss && !m.summoned && !m.tame }); ev.push({ t: 'msg', text: `${en(m.id)} を たおした！` });
     gainExp(run, m.exp, ev);
     if (WORD[m.id].hboss) { run.hbossDone = true; ev.push({ t: 'msg', text: `かくしボスを たおした！ すごい たからが ある！` }); ev.push({ t: 'treasure', rare: 3, src: 'hboss' }); }
     if (m.boss && isTreasure(run)) { const r3 = run.floor >= MAX_FLOOR ? 0.5 : run.floor >= 10 ? 0.25 : 0.1; ev.push({ t: 'treasure', rare: rand() < r3 ? 3 : 2, src: 'boss' }); } // ボスは ★★いじょう
@@ -492,7 +492,7 @@ function endTurn(run, ev) {
     m.age = (m.age || 0) + 1;
     // queen bee：ときどき なかまを よぶ
     if (m.id === 'queenbee' && m.age % 6 === 0 && run.mons.filter(x => x.id === 'bee').length < 3) {
-      const c = freeNear(run, m.x, m.y); if (!(c[0] === m.x && c[1] === m.y) && !(c[0] === h.x && c[1] === h.y)) { spawnMon(run, 'bee', c[0], c[1]); ev.push({ t: 'msg', text: `${en(m.id)} が ${en('bee')} を よんだ！` }); }
+      const c = freeNear(run, m.x, m.y); if (!(c[0] === m.x && c[1] === m.y) && !(c[0] === h.x && c[1] === h.y)) { spawnMon(run, 'bee', c[0], c[1], { summoned: true }); ev.push({ t: 'msg', text: `${en(m.id)} が ${en('bee')} を よんだ！` }); }
     }
     const d = Math.abs(m.x - h.x) + Math.abs(m.y - h.y);
     const hit = (pow, how) => {
