@@ -127,5 +127,5 @@ export const LV_EXP = [0, 0, 5, 14, 28, 46, 70, 100, 140, 190, 250, 320, 400, 49
 export const INV_MAX = 24; // ぜんぶの ふくろの ごうけい（ふくろ ごとの かずは BAGS）
 
 // ⭐（moko-math-v1 の points に たす）
-export const STARS = { floor: 1, boss: 10, dex10: 5, testMax: 5, clear: 30, kill: 1 }; // kill：ふつうの てきを 1たい たおすごと（ボス・よばれた てき・れんしゅうは なし）
+export const STARS = { floor: 1, boss: 10, dex10: 5, testMax: 5, clear: 30, kill: 5 }; // kill：ふつうの てきを 1たい たおすごと（ボス・よばれた てき・れんしゅうは なし）
 export const TEST_FLOORS = [5, 10, 15, 20]; // ボスの あとに ふくしゅう テスト（5もん）
