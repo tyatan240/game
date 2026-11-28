@@ -235,7 +235,15 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     await p.click('[data-act=tready][data-arg="ealisten-1|p"]'); await p.click('#ov [data-act=tstart]');
     await p.waitForFunction(() => __eigo.test && __eigo.test.phase === 'run', null, { timeout: 8000 });
     await p.evaluate(() => { __eigo.test.t0 = performance.now() - __eigo.test.limit; }); await p.waitForSelector('#ov .pop');
-    d = await daily(); ok(d.eigo === 3, 'れんしゅうも きょうの もくひょうに かぞえる ' + JSON.stringify(d));
+    d = await daily(); ok(d.eigo === 2, 'れんしゅうは かぞえない（せってい オフ）' + JSON.stringify(d));
+    await p.click('#ov [data-act=close] >> nth=0').catch(() => {});
+    // ⚙️で オンに すると れんしゅうも かぞえる
+    await p.evaluate(() => { S.settings.pracGoal = true; save(); });
+    await p.click('[data-act=tready][data-arg="ealisten-1|p"]'); await p.click('#ov [data-act=tstart]');
+    await p.waitForFunction(() => __eigo.test && __eigo.test.phase === 'run', null, { timeout: 8000 });
+    await p.evaluate(() => { __eigo.test.t0 = performance.now() - __eigo.test.limit; }); await p.waitForSelector('#ov .pop');
+    d = await daily(); ok(d.eigo === 3, 'せってい オンなら れんしゅうも かぞえる ' + JSON.stringify(d));
+    await p.evaluate(() => { S.settings.pracGoal = false; save(); });
     await p.click('#ov [data-act=close] >> nth=0').catch(() => {});
     // プログラミング
     await p.goto(B + 'program/index.html'); await p.evaluate(() => { openLv(0); prog = [{ t: 'R' }, { t: 'R' }, { t: 'R' }, { t: 'R' }]; render(); run(); });
@@ -1606,7 +1614,7 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
       const { LETTERS } = await import('./js/data/letters.js'), { speakable } = await import('./js/engine/audio.js');
       return { bad: LETTERS.filter(L => /^[A-Z]$/.test(L.speak)).map(L => L.id), A: speakable('A'), e: speakable('e'), word: speakable('apple') };
     });
-    ok(r.bad.length === 0 && r.A === 'ay' && r.e === 'ee' && r.word === 'apple', 'もじの よみは おおもじ 1つに しない ' + JSON.stringify(r));
+    ok(r.bad.length === 0 && r.A === 'eigh' && r.e === 'ee' && r.word === 'apple', 'もじの よみは おおもじ 1つに しない ' + JSON.stringify(r));
     await p.context().close();
   }
 

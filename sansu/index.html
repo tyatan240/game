@@ -170,7 +170,7 @@ function finishTest(timeout){
  t.phase='done';stopTest();LH.endSession();
  if(t.prac){
   const okLine=t.ok>=t.need,bonus=okLine?S.settings.practiceBonus:0;
-  dailyOf(S).sansu++; // きょうの もくひょう（れんしゅうも かぞえる）
+  if(S.settings.pracGoal)dailyOf(S).sansu++; // きょうの もくひょう（⚙️で オンの ときだけ れんしゅうも かぞえる）
   if(bonus){S.points+=bonus}save();view='tests';render();
   okLine?sBuy():sNg();
   showPop(`${charSVG(S.equip,okLine?'happy':'oops',okLine?'hop':'')}<h3>${timeout?'じかん ぎれ！':'れんしゅう おわり！'}</h3><div>${timeout?`${t.n}もん ちゅう ${t.i}もん まで こたえて ${t.ok}もん せいかい`:`${t.n}もん ちゅう ${t.ok}もん せいかい`}</div>

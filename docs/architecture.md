@@ -76,7 +76,7 @@
 
 ## きょうの もくひょう
 - おうちの「おへや」に表示（`goalsCard()`）。目標は core.js の `goals()`：さんすう🏆テスト2回・こくご🏆テスト2回・えいご（ABCぼうけん未クリアなら ぼうけんで★2こ、クリア後は えいご🏆テスト2回）・プログラミング1ステージクリア。
-- 数え方：各部屋の `finishTest`（テスト形式の練習も数える。2026-11〜）で `dailyOf(S).sansu++` など。プログラミングは `houseDaily()`、ABC は `house.js` の `sendStars()` が おうちのデータの `daily` を直接増やす。
+- 数え方：各部屋の `finishTest`（テスト形式の練習は ⚙️設定の `pracGoal` がオンのときだけ数える。既定オフ）で `dailyOf(S).sansu++` など。プログラミングは `houseDaily()`、ABC は `house.js` の `sendStars()` が おうちのデータの `daily` を直接増やす。
 - ごほうび：おうちに戻ったとき `goalsCheck()` が達成済み・未受け取りの目標に ⭐`goalPts`（既定10）、全部達成で さらに ⭐`goalAll`（既定50）。`daily.got`・`daily.all` で1回だけ。
 
 ## きょうの おすすめ・がんばり カレンダー（`index.html`）

@@ -6,7 +6,7 @@
 //   audio  … ろくおん ファイルを つかう ときは ここに パスを かく（あれば こちらを ゆうせん）
 //   phonics… フォニックスの おと（あとの ワールドで つかう。もじの なまえとは べつ）
 export const LETTERS = [
-  { id: 'A', upper: 'A', lower: 'a', name: 'エイ', speak: 'ay', phonics: '/æ/', audio: null },
+  { id: 'A', upper: 'A', lower: 'a', name: 'エイ', speak: 'eigh', phonics: '/æ/', audio: null },
   { id: 'B', upper: 'B', lower: 'b', name: 'ビー', speak: 'bee', phonics: '/b/', audio: null },
   { id: 'C', upper: 'C', lower: 'c', name: 'シー', speak: 'see', phonics: '/k/', audio: null },
   { id: 'D', upper: 'D', lower: 'd', name: 'ディー', speak: 'dee', phonics: '/d/', audio: null },

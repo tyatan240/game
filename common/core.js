@@ -255,7 +255,7 @@ const CATS=[['special','✨スペシャル'],['char','🐾キャラ'],['outfit',
 
 /* ---------- じょうたいと ほぞん ---------- */
 /* ---------- きょうの もくひょう ---------- */
-// まいにち リセット。テスト（🏆と テスト形式の れんしゅう）を おわると かぞえる
+// まいにち リセット。テスト（🏆。⚙️で オンなら テスト形式の れんしゅうも）を おわると かぞえる
 function newDaily(day){return{day,sansu:0,kokugo:0,eigo:0,abc:0,prog:0,got:{},all:false}}
 const todayStr=()=>{const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()};
 function dailyOf(st){if(!st.daily||st.daily.day!==todayStr())st.daily=newDaily(todayStr());return st.daily}
@@ -264,9 +264,9 @@ function dailyAdd(k,n=1){dailyOf(S)[k]+=n;save()}
 function abcCleared(){try{const a=JSON.parse(localStorage.getItem('abc-adventure-v1')||'null')||{};return (a.clears||0)>0||!!(a.flags&&a.flags.alphabetClear)}catch(e){return false}}
 function goals(){
  return [
-  {id:'sansu',key:'sansu',need:2,text:'さんすうの 🏆テスト（れんしゅうも OK）を 2かい',href:'sansu/index.html#tests',icon:'✏️'},
-  {id:'kokugo',key:'kokugo',need:2,text:'こくごの 🏆テスト（れんしゅうも OK）を 2かい',href:'kokugo/index.html#tests',icon:'📖'},
-  abcCleared()?{id:'eigo',key:'eigo',need:2,text:'えいごの 🏆テスト（れんしゅうも OK）を 2かい',href:'eigo/index.html#tests',icon:'🔤'}
+  {id:'sansu',key:'sansu',need:2,text:`さんすうの 🏆テスト${S.settings.pracGoal?'（れんしゅうも OK）':''}を 2かい`,href:'sansu/index.html#tests',icon:'✏️'},
+  {id:'kokugo',key:'kokugo',need:2,text:`こくごの 🏆テスト${S.settings.pracGoal?'（れんしゅうも OK）':''}を 2かい`,href:'kokugo/index.html#tests',icon:'📖'},
+  abcCleared()?{id:'eigo',key:'eigo',need:2,text:`えいごの 🏆テスト${S.settings.pracGoal?'（れんしゅうも OK）':''}を 2かい`,href:'eigo/index.html#tests',icon:'🔤'}
    :{id:'eigo',key:'abc',need:2,text:'ABCぼうけんを すすめる（★を 2こ）',href:'abc/index.html',icon:'🗺️'},
   {id:'prog',key:'prog',need:1,text:'プログラミングの ステージを 1かい クリア',href:'program/index.html',icon:'🤖'},
  ]}
@@ -290,7 +290,7 @@ function defState(){return{v:1,t:0,points:0,
  settings:{types:Object.fromEntries(TYPES.map(t=>[t.id,{on:t.def||t.id.startsWith('add'),pts:t.pts}])),
   ktypes:Object.fromEntries(KTYPES.map(t=>[t.id,{on:true,pts:t.pts}])),
   etypes:Object.fromEntries(ETYPES.map(t=>[t.id,{on:true,pts:t.pts}])),
-  perRound:5,perfect:3,daily:5,sound:true,testScale:1,practiceMul:2,practiceBonus:5,retestPts:10,progPts:3,gachaOn:true,gachaCost:100,gachaDaily:0,abcPts:10,goalPts:10,goalAll:50,admin:false},
+  perRound:5,perfect:3,daily:5,sound:true,testScale:1,practiceMul:2,practiceBonus:5,retestPts:10,progPts:3,gachaOn:true,pracGoal:false,gachaCost:100,gachaDaily:0,abcPts:10,goalPts:10,goalAll:50,admin:false},
  lastDay:'',stats:{q:0,ok:0},kstats:{q:0,ok:0},estats:{q:0,ok:0},tests:{},daily:newDaily(''),gacha:{day:'',count:0,pulls:0},looks:{},hw:{},streakGot:[],adminBackup:null,notes:defNotes(),pet:defPet(),book:defBook()}}
 // まいにちの えほん：story＝いま よんでいる はなしの ばんごう、open＝ひらいた ページの かず、last＝さいごに ページが ひらいた日、seen＝よんだ ページ、rewarded＝⭐を もらった はなし
 function defBook(){return{story:0,open:0,last:'',seen:{},rewarded:[]}}
@@ -309,6 +309,7 @@ function merge(d){
  for(const k of ['perRound','perfect','daily','practiceMul','practiceBonus','retestPts','testScale','progPts','gachaCost','gachaDaily','abcPts','goalPts','goalAll']) if(typeof ds[k]==='number') s.settings[k]=ds[k];
  if(typeof ds.sound==='boolean') s.settings.sound=ds.sound;
  if(typeof ds.gachaOn==='boolean') s.settings.gachaOn=ds.gachaOn;
+ if(typeof ds.pracGoal==='boolean') s.settings.pracGoal=ds.pracGoal;
  if(typeof ds.admin==='boolean') s.settings.admin=ds.admin;
  if(Array.isArray(d.adminBackup)) s.adminBackup=d.adminBackup.filter(i=>ITEM[i]);
  if(s.settings.admin){if(!s.adminBackup)s.adminBackup=[...s.owned];s.owned=[...new Set([...s.owned,...ITEMS.map(i=>i.id)])]} // かんりしゃモード：ぜんぶ もっている（もとの もちものは adminBackup）
