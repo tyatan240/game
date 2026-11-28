@@ -2,7 +2,7 @@
 html,body{margin:0;height:100%;background:#fff3ec;touch-action:manipulation}
 body{font-family:"M PLUS Rounded 1c",system-ui,sans-serif;color:#5a4646;-webkit-user-select:none;user-select:none}
 #app{max-width:520px;margin:0 auto;height:100dvh;display:flex;flex-direction:column;background:#fff8f3}
-header{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#ffd9e3;box-shadow:0 2px 0 #f6b9ca}
+header{display:flex;align-items:center;justify-content:space-between;padding:calc(10px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) 10px calc(12px + env(safe-area-inset-left));background:#ffd9e3;box-shadow:0 2px 0 #f6b9ca}
 .pts{background:#fff;border-radius:999px;padding:6px 14px;font-weight:800;font-size:20px;color:#e0719a;min-width:96px;box-shadow:0 2px 0 #f3b3c6}
 .ttl{font-weight:800;font-size:15px;color:#c8577f}
 #tohub{display:flex;align-items:center;justify-content:center;text-decoration:none;background:#fff;border-radius:50%;width:40px;height:40px;font-size:20px;box-shadow:0 2px 0 #f3b3c6}

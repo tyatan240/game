@@ -1622,6 +1622,22 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
   }
 
+  console.log('12c. スマホ：ダンジョンから もどっても したの タブが かくれない（がめんの はしまで えがく ばあいも）');
+  {
+    const pages = ['index.html', 'sansu/index.html', 'kokugo/index.html', 'eigo/index.html', 'program/index.html', 'dungeon/index.html', 'abc/index.html', 'machi/index.html', 'program/build/index.html', 'parent/index.html'];
+    const noCover = pages.filter(u => !/viewport-fit=cover/.test(fs.readFileSync(path.join(__dirname, '..', u), 'utf8').match(/name="viewport"[^>]*/)[0]));
+    ok(noCover.length === 0, 'どの ページも viewport-fit=cover（ページを うつっても はしの すきまが そろう） ' + noCover.join(','));
+    const ctx = await browser.newContext({ viewport: { width: 412, height: 839 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true, serviceWorkers: 'block' });
+    const p = await ctx.newPage(); const cdp = await ctx.newCDPSession(p);
+    let emu = true; try { await cdp.send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 24, bottom: 48 } }); } catch (e) { emu = false; }
+    if (emu) {
+      await p.goto(B + 'dungeon/index.html'); await p.waitForTimeout(400); await p.goto(B + 'index.html'); await p.waitForTimeout(800);
+      const r = await p.evaluate(() => { const n = document.querySelector('nav'), b = n.querySelector('button').getBoundingClientRect(); return { pad: parseFloat(getComputedStyle(n).paddingBottom), btnBottom: Math.round(b.bottom), ih: innerHeight }; });
+      ok(r.pad === 48 && r.btnBottom <= r.ih - 48, 'したの タブの ボタンは ジェスチャーバーの うえに でる ' + JSON.stringify(r));
+    } else ok(true, '（この Chromium は safe-area の エミュレーションが ない ので スキップ）');
+    await ctx.close();
+  }
+
   console.log('12b. ABCぼうけん：「はじめから」でも これまでに おぼえた もじは へらない');
   {
     const p = await page({ width: 1024, height: 768 });
