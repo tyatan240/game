@@ -1142,6 +1142,14 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
       const inv0 = r.inv.length, n0 = r.items.length; __dg.act({ t: 'move', dir });
       const dropped = r.items.slice(n0), bx = r.boxes[r.boxes.length - 1];
       return dropped.length >= 1 && dropped.every(i => !(i.x === h.x && i.y === h.y) && !(i.x === bx.x && i.y === bx.y)) && r.inv.length === inv0 - 1 /* かぎだけ へる */ && /ゆかに でてきた/.test(document.getElementById('log').textContent); }), 'たからばこの なかみは ゆかに でてくる（もちものには はいらない・モコや はこの うえには でない）');
+    // てきを たおすと ⭐1（よばれた てき・ボスは なし）
+    const kill = await p.evaluate(async () => { const r = __dg.run, h = r.hero, p0 = S.points, d = [[1, 0, 'right'], [-1, 0, 'left'], [0, 1, 'down'], [0, -1, 'up']].find(([dx, dy]) => r.map.tiles[h.y + dy][h.x + dx] !== '#' && !r.boxes.some(b => b.x === h.x + dx && b.y === h.y + dy));
+      r.items = r.items.filter(i => !(i.x === h.x + d[0] && i.y === h.y + d[1]));
+      r.mons = [{ uid: 9301, id: 'rat', x: h.x + d[0], y: h.y + d[1], hp: 1, maxhp: 1, atk: 0, exp: 1, tick: 0 }]; h.dir = d[2]; __dg.act({ t: 'attack' });
+      await new Promise(res => setTimeout(res, 1200)); const p1 = S.points;
+      r.mons = [{ uid: 9302, id: 'bee', x: h.x + d[0], y: h.y + d[1], hp: 1, maxhp: 1, atk: 0, exp: 1, tick: 0, summoned: true }]; __dg.act({ t: 'attack' });
+      await new Promise(res => setTimeout(res, 1200)); return { one: p1 - p0, sum: S.points - p1 }; });
+    ok(kill.one === 1 && kill.sum === 0, 'てきを たおすと ⭐1（よばれた てきは なし） ' + JSON.stringify(kill));
     // せんとうは ゆっくり：メッセージと けいさんしきを 1ぎょうずつ、その あいだは うごけない
     await p.evaluate(() => { __dg.fast = false; const r = __dg.run, h = r.hero; r.mons = [{ uid: 901, id: 'rat', x: h.x + 1, y: h.y, hp: 30, maxhp: 30, atk: 1, exp: 1, tick: 0 }]; h.dir = 'right'; window.__x = { hp: h.hp }; __dg.act({ t: 'attack' }); });
     const slow1 = await p.evaluate(() => ({ busy: __dg.busy, again: __dg.act({ t: 'attack' }), lines: document.querySelectorAll('#log div').length, hpShown: document.getElementById('hp').textContent }));
