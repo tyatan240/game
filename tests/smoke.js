@@ -1638,6 +1638,30 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     await ctx.close();
   }
 
+  console.log('14x. まち：おうちに なまえふだ／おへや ＝ えらんだ キャラの まちの いえの なか');
+  {
+    const p = await page({ width: 820, height: 1180 });
+    await p.goto(B + 'index.html'); await p.waitForTimeout(1200);
+    await p.evaluate(() => { closePop(); S.owned.push('c_hamster', 'w_dots', 'u_bed'); S.equip.char = 'c_moko'; S.equip.wall = 'w_cream'; S.furn = []; S.roomOwner = null; S.baseRoom = null; save();
+      localStorage.setItem('moko-town-v1', JSON.stringify({ version: 1, t: 5, townName: 't', objects: [{ id: 'm1', type: 'moko_house', x: 18, y: 18 }, { id: 'o5', type: 'house_basic', x: 12, y: 12, residents: ['c_hamster'], room: { wall: 'w_dots', floor: 'f_wood', furn: ['u_bed'] } }], ground: {} })); });
+    await p.reload(); await p.waitForTimeout(1200);
+    await p.evaluate(() => { closePop(); S.equip.char = 'c_hamster'; save(); render(); });
+    const a = await p.evaluate(() => ({ wall: S.equip.wall, furn: S.furn.join(), owner: S.roomOwner }));
+    ok(a.wall === 'w_dots' && a.furn === 'u_bed' && a.owner === 'o5', 'まちで いえに すむ キャラを えらぶと おへやが その いえの なかに ' + JSON.stringify(a));
+    await p.evaluate(() => { S.equip.floor = 'f_wood'; S.equip.wall = 'w_cream'; save(); render(); });
+    ok(await p.evaluate(() => JSON.parse(localStorage.getItem('moko-town-v1')).objects[1].room.wall) === 'w_cream', 'おへやで かえると まちの いえの なかも かわる');
+    await p.evaluate(() => { const t = JSON.parse(localStorage.getItem('moko-town-v1')); t.objects[1].room.wall = 'w_dots'; t.t = Date.now(); localStorage.setItem('moko-town-v1', JSON.stringify(t)); });
+    await p.reload(); await p.waitForTimeout(1200);
+    ok(await p.evaluate(() => S.equip.wall) === 'w_dots', 'まちで かえた いえの なかは おうちを ひらくと おへやに なる');
+    await p.evaluate(() => { closePop(); S.equip.char = 'c_moko'; save(); render(); });
+    ok(await p.evaluate(() => S.equip.wall === 'w_cream' && S.furn.length === 0 && S.roomOwner === null), 'いえの ない キャラに もどすと もとの おへや');
+    await p.evaluate(() => { S.equip.char = 'c_hamster'; save(); });
+    await p.goto(B + 'machi/index.html'); await p.waitForSelector('body[data-ready="1"]', { timeout: 10000 }); await p.waitForTimeout(400);
+    const names = await p.evaluate(() => Object.fromEntries(__town.town.objects.map(o => [o.type, __town.residentNames(o).join('・')])));
+    ok(names.house_basic === 'ポテ' && names.moko_house === '', 'まちの おうちに すんでいる キャラの なまえ（じぶんの いえが ある キャラは そちらだけ） ' + JSON.stringify(names));
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+  }
+
   console.log('12b. ABCぼうけん：「はじめから」でも これまでに おぼえた もじは へらない');
   {
     const p = await page({ width: 1024, height: 768 });

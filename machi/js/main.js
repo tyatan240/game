@@ -91,6 +91,8 @@ function draw(time) {
       g.restore();
     } else drawPerson(it.p, t);
   }
+  // おうちの なまえふだ（すんでいる キャラの なまえ）
+  for (const it of items) if (it.o) nameTag(it.o, t);
   // プレビュー
   const pv = ui.pending;
   if (pv) {
@@ -119,6 +121,25 @@ function drawLocked(a, t, time) {
   g.beginPath(); { const x = cx - tw / 2, y = cy - bh / 2, r = 14; g.moveTo(x + r, y); g.arcTo(x + tw, y, x + tw, y + bh, r); g.arcTo(x + tw, y + bh, x, y + bh, r); g.arcTo(x, y + bh, x, y, r); g.arcTo(x, y, x + tw, y, r); g.closePath(); } g.fill(); g.stroke();
   g.fillStyle = '#5a7fa8'; g.fillText(label, cx, cy - bh * .2); g.fillStyle = '#9aaebf'; g.font = `800 ${Math.max(11, t * .26)}px "M PLUS Rounded 1c",sans-serif`; g.fillText(sub, cx, cy + bh * .22);
   g.restore();
+}
+
+// すんでいる キャラの なまえ（みじかく：「ハムスターの ポテ」→「ポテ」）。モコの おうちは おうちで えらんだ キャラ
+const shortName = c => (ITEM[c] ? ITEM[c].name : '').split(/\s+/).pop();
+function residentNames(o) {
+  const p = PART[o.type]; if (!p) return [];
+  if (o.type === 'moko_house') return liveIn(avatar()) ? [] : [shortName(avatar())]; // じぶんの いえが ある キャラは そちらに なまえ
+  if (!p.home) return [];
+  return (o.residents || []).filter(owns).slice(0, 2).map(shortName);
+}
+function nameTag(o, t) {
+  const ns = residentNames(o); if (!ns.length || t < 14) return;
+  const [w, h] = sizeOf(o), [cx, cy] = toScreen(o.x + w / 2, o.y + h);
+  const label = ns.join('・'), fs = Math.max(10, Math.min(16, t * .3));
+  g.font = `800 ${fs}px "M PLUS Rounded 1c",sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  const tw = g.measureText(label).width + fs * 1.2, bh = fs * 1.6, x = cx - tw / 2, y = cy + 2, r = bh / 2;
+  g.fillStyle = 'rgba(255,255,255,.95)'; g.strokeStyle = '#f3a6c3'; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + tw, y, x + tw, y + bh, r); g.arcTo(x + tw, y + bh, x, y + bh, r); g.arcTo(x, y + bh, x, y, r); g.arcTo(x, y, x + tw, y, r); g.closePath(); g.fill(); g.stroke();
+  g.fillStyle = '#d04f86'; g.fillText(label, cx, y + bh / 2 + 1);
 }
 
 let activeQuestsCache = [];
@@ -671,7 +692,7 @@ async function start() {
   saveTown(town);
   requestAnimationFrame(t => { last = t; frame(t); });
   // テスト・あとの フェーズ よう
-  window.__town = { get town() { return town; }, cam, ui, people, hist, toScreen, toWorld, setMode, chooseTool, tapBuild, tapView, placePending, buy, toggleResident, saveNow, objectAt, levelInfo, checkLevel, openInside, buyLand, landInfo, setInside, changed, activeQuests, claimQuest, openLooks, hwState, hwCheck, openHomework };
+  window.__town = { get town() { return town; }, residentNames, cam, ui, people, hist, toScreen, toWorld, setMode, chooseTool, tapBuild, tapView, placePending, buy, toggleResident, saveNow, objectAt, levelInfo, checkLevel, openInside, buyLand, landInfo, setInside, changed, activeQuests, claimQuest, openLooks, hwState, hwCheck, openHomework };
   document.body.dataset.ready = '1';
 }
 // ほかの へやで ⭐ が かわったら（core.js の resync から よばれる）
