@@ -1096,6 +1096,45 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
   }
 
+  console.log('20i. ABCぼうけん ワールド4 第2回（つなげの たにま・なかまの むら）');
+  {
+    const p = await page({ width: 1024, height: 768 });
+    await p.goto(B + 'index.html');
+    await p.evaluate(() => { const L = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''); localStorage.setItem('abc-adventure-v1', JSON.stringify({ v: 1, t: 1, started: true, clears: 1, w2clears: 1, stars: 50, starsSent: 50, learned: L, lower: L.map(x => x.toLowerCase()),
+      sounds: 'satpincehrmd'.split(''), flags: { intro: true, bossCleared: true, bridgeOpen: true, alphabetClear: true, lowerClear: true, w4intro: true }, quests: { w4hippo: 'done', w4echo: 'done' },
+      world: { gate: 'open', gate_lower: 'open', gate_w4beach: 'open', gate_w4cave: 'open' }, areas: ['island', 'lower', 'w4beach', 'w4cave'], hero: { x: 30.5, y: 10.8, dir: 'right', area: 'w4cave' } })); });
+    await p.goto(B + 'abc/index.html'); await p.waitForTimeout(600); await p.click('#cont'); await p.waitForTimeout(1200);
+    ok(await p.evaluate(() => /つなげの たにま/.test(__abc.objective().text)), 'ほらあなの もんの つぎは「つなげの たにま」');
+    const seen = {};
+    const drive = async () => { for (let k = 0; k < 400; k++) {
+      if (await p.$('.dlg')) { await p.keyboard.press('Enter'); await p.waitForTimeout(60); continue; }
+      if (await p.$('.w4spell .stile:not([disabled])') && !(await p.$('.w4spell .sslots.merge'))) {
+        seen.spell = true; const s = await p.evaluate(() => window.__abcSpell), filled = await p.$$eval('.w4spell .sslots i.on', x => x.length);
+        const idx = await p.evaluate(ch => [...document.querySelectorAll('.w4spell .stile')].findIndex(b => !b.disabled && b.textContent === ch), s.word[filled]);
+        if (idx >= 0) await p.click(`.w4spell .stile[data-i="${idx}"]`); await p.waitForTimeout(150); continue; }
+      if (await p.$('.quiz .ch')) { const q = await p.evaluate(() => window.__abcQ); seen[q.kind] = true; if (q.kind === 'snd-blend') seen.tiles = await p.$$eval('.quiz .blend i', x => x.length);
+        const bt = await p.$(`.quiz .ch[data-v="${q.answer}"]:not(.ok)`); if (bt) await bt.click(); await p.waitForTimeout(1450); continue; }
+      if (await p.$('.w4teach .go')) { await p.click('.w4teach .go'); continue; }
+      if (await p.$('.notice .go')) { await p.click('.notice .go'); continue; }
+      if (await p.evaluate(() => __abc.mode === 'play')) return; await p.waitForTimeout(120); } };
+    const talk = async id => { await p.evaluate(i => __abc.approach(i), id); await p.keyboard.press('Enter'); await p.waitForTimeout(300); await drive(); };
+    await p.evaluate(() => __abc.goArea('w4valley', 'west')); await p.waitForTimeout(1500); await drive();
+    for (const id of ['w4Frog', 'w4Squirrel', 'w4Bear']) await talk(id);
+    ok(await p.evaluate(() => __abc.S.sounds.join('').endsWith('goulfb') && /モーモ/.test(__abc.objective().text)), 'たにま：g o u l f b の おと → クエストへ');
+    await talk('w4Cow'); await talk('w4Cow');
+    ok(await p.evaluate(() => __abc.S.quests.w4bridge === 'done' && __abc.S.records['rd:log']) && seen['snd-blend'] && seen.tiles === 3, 'つなげて よむ（もじタイルが じゅんに ひかる → えを えらぶ・きろく rd:）');
+    await talk('w4gate3');
+    ok(await p.evaluate(() => __abc.S.world.gate_w4valley === 'open' && /なかまの むら/.test(__abc.objective().text)), 'たにまの もん → なかまの むらへ');
+    await p.evaluate(() => __abc.goArea('w4village', 'west')); await p.waitForTimeout(1500); await drive();
+    for (const id of ['w4Elephant', 'w4Monkey', 'w4Koala']) await talk(id);
+    ok(await p.evaluate(() => ['j', 'z', 'w', 'v', 'y', 'x', 'q', 'k'].every(x => __abc.S.sounds.includes(x)) && __abc.S.records['snd:x']), 'むら：j z w v y x qu k の おと（x は おわりの おと）');
+    for (const id of ['w4Tiger', 'w4Tiger', 'w4Lion', 'w4Lion']) await talk(id);
+    ok(await p.evaluate(() => __abc.S.quests.w4shop === 'done' && __abc.S.quests.w4post === 'done' && __abc.S.records['fam:at'] && __abc.S.records['sp:jet']) && seen['snd-odd'] && seen.spell, 'なかまさがし（fam:）・おとで つくる（もじタイルを ならべる・sp:）');
+    await talk('w4gate4');
+    ok(await p.evaluate(() => __abc.S.world.gate_w4village === 'open' && /じゅんびちゅう/.test(__abc.objective().text) && __abc.S.sounds.length === 26), 'むらの もん（よむ・なかま・つくる）→ つぎは じゅんびちゅう（おと 26こ）');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+  }
+
   console.log('20g. えいごの へや：ワールド3・はじめの おと の れんしゅう／きょうの ふくしゅう／保護者レポートの 英語');
   {
     const p = await page({ width: 820, height: 1180 });

@@ -10,9 +10,9 @@ export const MAP = [
   'T....,..........r..............TTTTTTTTT',
   'T..............................TTTTTTTTT',
   'T..............................TTTTTTTTT',
-  'T....................................TTT',
-  ':::::::::::::::::::::::::::::::::::::TTT',
-  'T....................................TTT',
+  'T.......................................',
+  '::::::::::::::::::::::::::::::::::::::::',
+  'T.......................................',
   'T............r.................TTTTTTTTT',
   'T..............................TTTTTTTTT',
   'T.....,........................TTTTTTTTT',
@@ -23,8 +23,8 @@ export const MAP = [
   'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT',
 ];
 
-export const entries = { west: { x: 1, y: 10, dir: 'right' } };
-export const exits = [{ x: 0, y: 10, to: 'w4beach', entry: 'east' }];
+export const entries = { west: { x: 1, y: 10, dir: 'right' }, east: { x: 38, y: 10, dir: 'left' } };
+export const exits = [{ x: 0, y: 10, to: 'w4beach', entry: 'east' }, { x: 39, y: 10, to: 'w4valley', entry: 'west' }];
 
 export const NPCS = [
   { id: 'w4Owl', kind: 'owl', x: 6, y: 5, name: 'ふくろうの せんせい', sounds: ['c', 'e'] },

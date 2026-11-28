@@ -11,7 +11,7 @@ import { SPELLS } from './data/combos.js';
 import { FRAME, sentenceKey } from './data/sentences.js';
 import { drawStall, drawBoard, drawTower } from './engine/art3.js';
 import './engine/art4.js';
-import { SOUND, SOUNDS, PHON_WORDS, PHON_LAST } from './data/phonics.js';
+import { SOUND, PHON_WORDS, PHON_LAST, CVC, FAM } from './data/phonics.js';
 import { START, ITEMS, INV, STORY, GIFTS } from './data/world1.js';
 import { AREAS, ORDER, CHAPTER, CHAPTERS, WHERE } from './data/areas.js';
 import { W, H, area, setArea, tileAt, isWater, isPath, things, move, facing, heroTile, markPos, exitAt, exitOpen, isOpenGate, vinesKey, solidAt, inside, unstick } from './game/world.js';
@@ -293,7 +293,7 @@ function hud() {
   const ch = CHAPTER[area().id] || CHAPTER.island, lw = S.lower || [];
   const snd = S.sounds || [];
   document.getElementById('slots').innerHTML = ch.w4
-    ? ch.sounds.map(id => `<i class="${snd.includes(id) ? 'got' : ''}">${snd.includes(id) ? id : ''}</i>`).join('') + `<em>おと ${snd.length}</em>`
+    ? ch.sounds.map(id => `<i class="${snd.includes(id) ? 'got' : ''}">${snd.includes(id) ? SOUND[id].label || id : ''}</i>`).join('') + `<em>おと ${snd.length}</em>`
     : ch.w3
     ? (ch.words.length ? `<em>ことば ${ch.words.filter(id => S.words[id]).length}/${ch.words.length}</em>` : `<em>かね ${S.world.bell || 0}/3</em>`)
     : ch.lower
@@ -694,15 +694,15 @@ async function soundTeacher(n) {
     await sayH([[n.name, 'こんにちは！ おとの しまへ ようこそ。'], [n.name, `もじには「なまえ」と「おと」が あるんだよ。${n.sounds.join('・')} の おとを おしえて あげるね！`]]);
     await ui.teachSounds(n.sounds);
     const pool = [...new Set([...S.sounds, ...n.sounds])];
-    await ui.quiz(shuffle(n.sounds).map(id => soundQuestion(SOUND[id].key, 'first', pool, 3)), { title: `${n.name}の クイズ`, onAnswer: answerLog });
+    await ui.quiz(shuffle(n.sounds).map(id => soundQuestion(SOUND[id].key, SOUND[id].pos || 'first', pool, 3)), { title: `${n.name}の クイズ`, onAnswer: answerLog });
     for (const x of n.sounds) if (!S.sounds.includes(x)) S.sounds.push(x);
     S.stars += 2; persist(); await ui.starFly(2, hud);
     await sayH([[n.name, `${n.sounds.join('・')} の おと、おぼえたね！ ことばを きくと、はじめの おとが きこえるよ。`]]);
     if (w4Learned(S, area().id)) await ui.notice('この ばしょの おとを ぜんぶ ならった！', 'こまっている ひとを おとで たすけよう！ うえの「つぎは」を みてね。');
   } else {
     await sayH([[n.name, 'おとの おさらい しよう！']]);
-    const id = n.sounds[(Math.random() * n.sounds.length) | 0], ws = phonWordsFor(id), w = ws[(Math.random() * ws.length) | 0] || SOUND[id].key;
-    await ui.quiz([soundQuestion(w, 'first', S.sounds, 4)], { title: 'おさらい', onAnswer: answerLog });
+    const id = n.sounds[(Math.random() * n.sounds.length) | 0], pos = SOUND[id].pos || 'first', ws = phonWordsFor(id, pos), w = ws[(Math.random() * ws.length) | 0] || SOUND[id].key;
+    await ui.quiz([soundQuestion(w, pos, S.sounds, 4)], { title: 'おさらい', onAnswer: answerLog });
     await sayH([[n.name, 'Good job! よく できました！']]);
   }
 }
@@ -713,11 +713,42 @@ function phonRound(r) {
     return { kind: 'snd-pick', target: r.answer, answer: r.answer, choices: ch, render: 'pic', en: `<span class="sndbig">${r.sound}</span>`, prompt: `「${s.kana}」の おとで はじまる ものは どれ？`,
       voice: WORD[s.key], silent: true, okVoice: WORD[r.answer], recKey: 'snd:' + r.sound, label: id => `${WORD[id].word}（${r.sound} の おと）` };
   }
+  if (r.t === 'blend') return blendQuestion(r.word);
+  if (r.t === 'odd') return oddQuestion(r.words, r.answer);
   return soundQuestion(r.word, r.t, S.sounds || [], 3);
+}
+// つなげて よむ：もじの タイル（おとの めやす つき）を よんで、あう えを えらぶ。まちがえたら ことばを きかせる
+const kanaOf = ch => (SOUND[ch] ? SOUND[ch].kana : '').split('（')[0];
+function blendQuestion(word) {
+  const w = WORD[word].word.toLowerCase();
+  const near = CVC.filter(x => x !== word && WORD[x].word.toLowerCase().split('').filter((c, i) => c === w[i]).length === 2); // 1もじ だけ ちがう ことば
+  const ch = shuffle([word, ...shuffle(near).slice(0, 2), ...shuffle(CVC.filter(x => x !== word && !near.includes(x)))].slice(0, 3));
+  return { kind: 'snd-blend', target: word, answer: word, choices: ch, render: 'pic', en: ui.blendTiles(w, kanaOf), prompt: 'ひかる もじの おとを つなげて よもう。どの え かな？',
+    silent: true, hintVoice: WORD[word], okVoice: WORD[word], recKey: 'rd:' + word, label: id => WORD[id].word.toLowerCase() };
+}
+// なかまさがし：おしりの おとが ちがう ことばを えらぶ（ことばを ぜんぶ よみあげる）
+function oddQuestion(words, answer) {
+  const ch = shuffle(words), fam = FAM(WORD[words.find(x => x !== answer)].word.toLowerCase());
+  return { kind: 'snd-odd', target: answer, answer, choices: ch, render: 'opt', opts: Object.fromEntries(ch.map(id => [id, { art: WORD[id].art, text: WORD[id].word.toLowerCase() }])),
+    prompt: `おしりが「-${fam}」の なかまで ない ものは どれ？`, voice: { speak: ch.map(id => WORD[id].word.toLowerCase()).join('. ') }, okVoice: WORD[answer], recKey: 'fam:' + fam,
+    label: id => `${WORD[id].word.toLowerCase()}（なかまじゃ ない）` };
+}
+// おとで つくる：もじタイル（ことばの もじ＋ほかの もじ 2つ）
+async function spellRound(word) {
+  const w = WORD[word].word.toLowerCase(), pool = (S.sounds || []).filter(x => x.length === 1 && !w.includes(x));
+  const r = await ui.spell({ word: w, art: WORD[word].art, letters: shuffle([...w.split(''), ...shuffle(pool).slice(0, 2)]) });
+  S.records['sp:' + word] = record(getRecord(S, 'sp:' + word), true, r.first); persist();
+}
+// rounds を じゅんに：クイズは まとめて、spell は ひとつずつ
+async function runRounds(rounds, title) {
+  let batch = [];
+  const flush = async () => { if (batch.length) { await ui.quiz(batch, { title, onAnswer: answerLog }); batch = []; } };
+  for (const r of rounds) { if (r.t === 'spell') { await flush(); await spellRound(r.word); } else batch.push(phonRound(r)); }
+  await flush();
 }
 async function w4Step(q, st, o) {
   if (st.pre) await sayH(st.pre);
-  await ui.quiz(st.rounds.map(phonRound), { title: 'おとの クイズ', onAnswer: answerLog });
+  await runRounds(st.rounds, 'おとの クイズ');
   if (st.after) await sayH(st.after);
   await finishStep(q, st);
   return true;
@@ -728,10 +759,21 @@ async function w4Gate(ob) {
   if (!w4Learned(S, ob.area) || !ch.quests.every(id => S.quests[id] === 'done'))
     return sayH([['', `${ob.name}だ。もじが きざまれている。`], ['', 'せんせいに おとを ならって、しまの みんなを たすけたら おさらい できるよ。']]);
   await sayH([['', `${ob.name}が ひかっている！`], ['', 'おとの おさらい！ 5もん こたえよう！']]);
-  // この エリアの おとで はじまる ことば（3もん）と、おわりの おと（2もん）
-  const firsts = shuffle(ch.sounds.flatMap(x => phonWordsFor(x).slice(0, 2))).slice(0, 3);
-  const lasts = shuffle(PHON_LAST.filter(id => (S.sounds || []).includes(WORD[id].word.toLowerCase().slice(-1)))).slice(0, 2);
-  await ui.quiz([...firsts.map(w => soundQuestion(w, 'first', S.sounds, 4)), ...lasts.map(w => soundQuestion(w, 'last', S.sounds, 4))], { title: 'おとの おさらい', onAnswer: answerLog });
+  // もんだいの しゅるいは チャプターの gateQ（なければ はじめの おと 3もん＋おわりの おと 2もん）
+  const kinds = ch.gateQ || ['first', 'first', 'first', 'last', 'last'], known = S.sounds || [];
+  const firsts = shuffle(ch.sounds.flatMap(x => phonWordsFor(x).slice(0, 2)));
+  const lasts = shuffle(PHON_LAST.filter(id => known.includes(WORD[id].word.toLowerCase().slice(-1))));
+  const reads = shuffle(CVC.filter(id => WORD[id].word.toLowerCase().split('').every(c => known.includes(c)))); // ならった おとだけで よめる ことば
+  const fams = Object.values(CVC.reduce((m, id) => { const f = FAM(WORD[id].word.toLowerCase()); (m[f] = m[f] || []).push(id); return m; }, {})).filter(g => g.length >= 3);
+  const rounds = kinds.map(k => {
+    if (k === 'first') return { t: 'first', word: firsts.pop() };
+    if (k === 'last') return { t: 'last', word: lasts.pop() };
+    if (k === 'blend') return { t: 'blend', word: reads.pop() };
+    if (k === 'spell') return { t: 'spell', word: reads.pop() };
+    const g = shuffle(fams[(Math.random() * fams.length) | 0]).slice(0, 3), other = shuffle(CVC.filter(id => !g.includes(id) && FAM(WORD[id].word.toLowerCase()) !== FAM(WORD[g[0]].word.toLowerCase())))[0];
+    return { t: 'odd', words: [...g, other], answer: other };
+  }).filter(r => r.word || r.words);
+  await runRounds(rounds, 'おとの おさらい');
   S.world[key] = 'open'; sfx.unlock(); persist();
   await playFx('burst', 1.0, { c: center(ob) });
   S.stars += 3; persist(); await ui.starFly(3, hud);

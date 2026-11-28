@@ -62,8 +62,9 @@ export function lowerQuestion(target, pool, kind, nChoices, rand = Math.random) 
 export function soundQuestion(word, pos, pool, nChoices = 3, rand = Math.random) {
   const W = WORD[word], w = W.word.toLowerCase();
   const ans = pos === 'last' ? w[w.length - 1] : pos === 'mid' ? w[Math.floor(w.length / 2)] : w[0];
-  const others = shuffle(pool.filter(x => x !== ans && x.length === 1), rand);
-  const extra = shuffle('abcdefghijklmnopqrstuvwxyz'.split('').filter(x => x !== ans && !pool.includes(x)), rand);
+  const same = { c: 'k', k: 'c' }[ans]; // c と k は おなじ おと なので いっしょに ださない
+  const others = shuffle(pool.filter(x => x !== ans && x !== same && x.length === 1), rand);
+  const extra = shuffle('abcdefghijklmnopqrstuvwxyz'.split('').filter(x => x !== ans && x !== same && !pool.includes(x)), rand);
   const choices = shuffle([ans, ...[...others, ...extra].slice(0, nChoices - 1)], rand).map(x => x.toUpperCase());
   const where = pos === 'last' ? 'おわり' : pos === 'mid' ? 'まんなか' : 'はじめ';
   return {

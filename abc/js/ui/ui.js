@@ -129,8 +129,8 @@ export function quiz(qs, { title = 'クイズ', onAnswer = () => {} } = {}) {
       } else {
         if (first) onAnswer(q, false, true);
         first = false; b.disabled = true; b.classList.add('ng'); sfx.wrong();
-        el.querySelector('.fb').innerHTML = '<span class="oops">おしい！ もういちど きいて みよう</span>';
-        setTimeout(play, 500);
+        el.querySelector('.fb').innerHTML = `<span class="oops">${q.hintVoice ? 'おしい！ よみかたを きいて みよう' : 'おしい！ もういちど きいて みよう'}</span>`;
+        setTimeout(() => { if (q.silent && q.hintVoice) sayLetter(q.hintVoice); else play(); }, 500); // ワールド4：よむ もんだいは まちがえたら ことばを きかせる
       }
     };
     show();
@@ -327,16 +327,48 @@ export function magic(st, { title = 'ことばを くみあわせよう！', che
 export const sayPhon = id => { const s = SOUND[id], w = WORD[s.key]; sayLetter({ audio: s.audio, speak: w.speak }); };
 export function teachSounds(ids) {
   return new Promise(resolve => {
-    const kw = id => { const w = WORD[SOUND[id].key].word.toLowerCase(); return `<em>${w[0]}</em>${w.slice(1)}`; };
+    const kw = id => { const w = WORD[SOUND[id].key].word.toLowerCase(); return SOUND[id].pos === 'last' ? `${w.slice(0, -1)}<em>${w.slice(-1)}</em>` : `<em>${w[0]}</em>${w.slice(1)}`; };
     const el = open(h(`<div class="modal"><div class="card teach w4teach">
       <div class="small">もじの おと</div>
-      <div class="w4sounds">${ids.map(id => `<button class="w4s" data-id="${id}"><b class="sl">${id}</b><span class="art"></span><span class="kw">${kw(id)}</span><small>なまえ「${LETTER[id.toUpperCase()].name}」<br>おと「<b>${SOUND[id].kana}</b>」</small></button>`).join('')}</div>
+      <div class="w4sounds">${ids.map(id => `<button class="w4s" data-id="${id}"><b class="sl">${SOUND[id].label || id}</b><span class="art"></span><span class="kw">${kw(id)}</span><small>なまえ「${LETTER[id.toUpperCase()].name}」<br>おと「<b>${SOUND[id].kana}</b>」</small></button>`).join('')}</div>
       <div class="w4note">もじには「なまえ」と「おと」が あるよ。タップすると その おとで はじまる ことばが きこえるよ</div>
       <button class="go">おぼえた！ クイズへ</button></div></div>`), () => done());
     const done = () => { sfx.tap(); close(); resolve(); };
     el.querySelectorAll('.w4s').forEach(b => { const s = SOUND[b.dataset.id]; b.querySelector('.art').appendChild(wordArt(WORD[s.key].art, 72)); b.onclick = () => { sfx.tap(); sayPhon(b.dataset.id); b.classList.remove('pulse'); void b.offsetWidth; b.classList.add('pulse'); }; });
     el.querySelector('.go').onclick = done;
     setTimeout(() => sayPhon(ids[0]), 400);
+  });
+}
+
+// つなげて よむ：もじの タイルに おとの めやすを つけて じゅんに ひからせる（ク・ア・トゥ → cat）
+export const blendTiles = (word, kana) => `<span class="blend">${word.split('').map((ch, i) => `<i style="--d:${(i * 0.7).toFixed(1)}s">${ch}<small>${kana(ch)}</small></i>`).join('')}</span>`;
+// きいた ことばを もじで つくる：ことばを きく → もじを じゅんばんに えらぶ。{ first }（いちども まちがえなかったか）を かえす
+export function spell({ word, art, letters, title = 'おとで つくろう！' }) {
+  return new Promise(resolve => {
+    const w = word.toLowerCase(), voice = { speak: w };
+    let k = 0, first = true;
+    const el = open(h(`<div class="modal"><div class="card magic w4spell"><div class="small">${title}</div><div class="spic"></div>
+      <button class="sound">${SPEAKER_ICON}<span>ことばを きく</span></button>
+      <div class="sslots">${w.split('').map((_, i) => `<i data-k="${i}"></i>`).join('')}</div>
+      <div class="mmsg">&nbsp;</div>
+      <div class="stiles">${letters.map((ch, i) => `<button class="stile" data-i="${i}">${ch}</button>`).join('')}</div></div></div>`), null);
+    el.querySelector('.spic').appendChild(wordArt(art, 96));
+    window.__abcSpell = { word: w, letters }; // じどうテスト よう
+    const play = () => sayLetter(voice);
+    el.querySelector('.sound').onclick = () => { sfx.tap(); play(); };
+    el.querySelectorAll('.stile').forEach(b => b.onclick = () => {
+      if (b.disabled || k >= w.length) return;
+      const ch = letters[+b.dataset.i];
+      if (ch === w[k]) {
+        sfx.tap(); b.disabled = true; b.classList.add('used');
+        const s = el.querySelector(`.sslots i[data-k="${k}"]`); s.textContent = ch; s.classList.add('on'); k++;
+        if (k >= w.length) { sfx.correct(); play(); el.querySelector('.mmsg').innerHTML = `<span class="good">できた！ ${w}</span>`; el.querySelector('.sslots').classList.add('merge'); setTimeout(() => { close(); resolve({ first }); }, 1500); }
+      } else {
+        first = false; sfx.wrong(); b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake');
+        el.querySelector('.mmsg').innerHTML = `<span class="oops">${k + 1}ばんめの おとを よく きいて みよう</span>`; setTimeout(play, 400);
+      }
+    });
+    setTimeout(play, 350);
   });
 }
 
