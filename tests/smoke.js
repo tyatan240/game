@@ -424,10 +424,12 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
       const ctx = await browser.newContext({ viewport: { width: w, height: h }, serviceWorkers: 'block' });
       const p = await ctx.newPage();
       await p.goto(B + 'dungeon/index.html'); await p.waitForSelector('body[data-ready="1"]', { timeout: 10000 });
-      await p.evaluate(() => { __dg.D.tutDone = true; __dg.start(); }); await p.waitForTimeout(300);
+      await p.addStyleTag({ content: 'button{padding:1px 1em}' }); // iPad の Safari の ボタンの よこの すきまを まねる
+      await p.evaluate(() => { __dg.D.tutDone = true; __dg.start(); dispatchEvent(new Event('resize')); }); await p.waitForTimeout(300);
       res.push([w, h, await p.evaluate(() => { const R = id => document.getElementById(id).getBoundingClientRect(), a = R('pad'), d = R('dock'), c = R('acts');
         const ov = (x, y) => !(x.right <= y.left || y.right <= x.left || x.bottom <= y.top || y.bottom <= x.top);
-        return !ov(a, d) && !ov(d, c) && !ov(a, c) && d.left >= 0 && d.right <= innerWidth && d.width >= 240; })]);
+        const btn = [...document.querySelectorAll('#pad button, #acts button')].every(b => !ov(b.getBoundingClientRect(), d));
+        return btn && !ov(a, d) && !ov(d, c) && !ov(a, c) && d.left >= 0 && d.right <= innerWidth && d.width >= 240; })]);
       await ctx.close();
     }
     ok(res.every(r => r[2]), 'いろいろな がめんの おおきさで かさならない ' + JSON.stringify(res.filter(r => !r[2])));
@@ -1132,15 +1134,14 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     await p.evaluate(() => { const r = __dg.run, h = r.hero; for (const d of ['left', 'right']) { const dx = d === 'left' ? -1 : 1; if (r.map.tiles[h.y][h.x + dx] !== '#') { __dg.act({ t: 'move', dir: d }); __dg.act({ t: 'move', dir: d === 'left' ? 'right' : 'left' }); break; } } });
     await p.waitForTimeout(500);
     ok(await p.evaluate(c0 => { const c = __dg.cam(); return Math.round(c.ox) === c0[0] && Math.round(c.oy) === c0[1]; }, camB), 'あるいても マップは うごかない（はしに ちかい ときだけ ずれる）');
-    // もちものが いっぱいで たからばこ → あふれた ぶんは となりの ゆかへ（メッセージつき）
+    // たからばこの なかみは いちど ゆかに でてくる（なにが でたか みえる。ふんで ひろう）
     ok(await p.evaluate(() => { const r = __dg.run, h = r.hero; r.mons = [];
       const d = Object.entries({ right: [1, 0], left: [-1, 0], down: [0, 1], up: [0, -1] }).find(([, [dx, dy]]) => r.map.tiles[h.y + dy][h.x + dx] !== '#' && !r.boxes.some(b => b.x === h.x + dx && b.y === h.y + dy));
       const [dir, [dx, dy]] = d; r.boxes.push({ x: h.x + dx, y: h.y + dy, open: false });
       r.inv = [{ uid: 9100, id: 'key', peek: false }]; let u = 9101; const fill = (id, n) => { for (let i = 0; i < n; i++) r.inv.push({ uid: u++, id, peek: false }); };
-      fill('rope', 7); fill('apple', 10); fill('sword', 5); fill('shield', 5); fill('armor', 5); // ふくろが ぜんぶ いっぱい
-      const n0 = r.items.length; __dg.act({ t: 'move', dir });
-      const dropped = r.items.slice(n0);
-      return dropped.length >= 1 && !(dropped[0].x === h.x && dropped[0].y === h.y) && /もちものが いっぱい/.test(document.getElementById('log').textContent); }), 'もちものが いっぱいの たからばこ → ゆかに おいて おしらせ');
+      const inv0 = r.inv.length, n0 = r.items.length; __dg.act({ t: 'move', dir });
+      const dropped = r.items.slice(n0), bx = r.boxes[r.boxes.length - 1];
+      return dropped.length >= 1 && dropped.every(i => !(i.x === h.x && i.y === h.y) && !(i.x === bx.x && i.y === bx.y)) && r.inv.length === inv0 - 1 /* かぎだけ へる */ && /ゆかに でてきた/.test(document.getElementById('log').textContent); }), 'たからばこの なかみは ゆかに でてくる（もちものには はいらない・モコや はこの うえには でない）');
     // せんとうは ゆっくり：メッセージと けいさんしきを 1ぎょうずつ、その あいだは うごけない
     await p.evaluate(() => { __dg.fast = false; const r = __dg.run, h = r.hero; r.mons = [{ uid: 901, id: 'rat', x: h.x + 1, y: h.y, hp: 30, maxhp: 30, atk: 1, exp: 1, tick: 0 }]; h.dir = 'right'; window.__x = { hp: h.hp }; __dg.act({ t: 'attack' }); });
     const slow1 = await p.evaluate(() => ({ busy: __dg.busy, again: __dg.act({ t: 'attack' }), lines: document.querySelectorAll('#log div').length, hpShown: document.getElementById('hp').textContent }));
@@ -1174,11 +1175,15 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     await p.evaluate(() => { const r = __dg.run; r.hero.x = r.stairs.x; r.hero.y = r.stairs.y; __dg.goDown(); });
     ok(await p.evaluate(() => __dg.run.floor === 5 && __dg.test && __dg.test.qs.length === 5 && /ふくしゅう テスト/.test(document.getElementById('ov').textContent)), '5かいの ボスの あと：ふくしゅう テスト（5もん）');
     await p.click('#ov [data-act=dgTestQ]');
+    let sayOk = true;
     for (let i = 0; i < 5; i++) {
+      // えいごを えらぶ もんだい（ja2en・pic2en）は せんたくしごとに 🔊
+      sayOk = sayOk && await p.evaluate(() => { const q = __dg.test.qs[__dg.test.i], n = document.querySelectorAll('#ov .tq-say').length; return (q.type === 'ja2en' || q.type === 'pic2en') ? n === q.ch.length : n === 0; });
       const k = await p.evaluate(i => { const q = __dg.test.qs[__dg.test.i]; return i < 3 ? q.ch.indexOf(q.id) : q.ch.findIndex(x => x !== q.id); }, i);
       await p.click(`#ov [data-act=dgAns][data-arg="${k}"]`); await p.click('#ov [data-act=dgTestNext]'); await p.waitForTimeout(50);
     }
     ok(await p.evaluate(() => /3 \/ 5/.test(document.getElementById('ov').textContent) && __dg.run.power === 2 && __dg.run.tested === 5), 'テストの けっか 3/5 → ことばの ちから ＋2');
+    ok(sayOk, 'えいごを えらぶ もんだいは せんたくしごとに 🔊（よみが きける）');
     await p.waitForTimeout(700);
     ok(await p.evaluate(p0 => S.points >= p0 + 3, pts5), 'せいかいの かずだけ ⭐');
     const lhN = await p.evaluate(async () => { await LH.flushed(); return (await LH.getAttempts({ subject: 'eigo', topic: 'dungeon' })).length; });

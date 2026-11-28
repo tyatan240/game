@@ -608,8 +608,10 @@ function testQ() {
   const head = `<div class="tq-head">ふくしゅう テスト ${TT.i + 1}/${TT.qs.length}</div>`;
   let ask = '', btns = '';
   if (q.type === 'en2ja') { ask = `<div class="tq-en">${w.en}</div><button class="say" data-act="dgSay" data-arg="${q.id}">🔊 きく</button><p>いみは どれ？</p>`; btns = q.ch.map((id, i) => `<button class="big tq-c" data-act="dgAns" data-arg="${i}">${WORD[id].ja}</button>`).join(''); }
-  if (q.type === 'ja2en') { ask = `<div class="tq-ja">「${w.ja}」</div><p>えいごで どれ？</p>`; btns = q.ch.map((id, i) => `<button class="big tq-c en" data-act="dgAns" data-arg="${i}">${WORD[id].en}</button>`).join(''); }
-  if (q.type === 'pic2en') { ask = `<div class="dart tq-pic"></div><p>この えは えいごで どれ？</p>`; btns = q.ch.map((id, i) => `<button class="big tq-c en" data-act="dgAns" data-arg="${i}">${WORD[id].en}</button>`).join(''); }
+  // えいごの せんたくし：となりの 🔊 で よみを きける（まだ よめなくても えらべる）
+  const enOpt = (id, i) => `<div class="tq-opt"><button class="big tq-c en" data-act="dgAns" data-arg="${i}">${WORD[id].en}</button><button class="tq-say" data-act="dgSay" data-arg="${id}" aria-label="${WORD[id].en} を きく">🔊</button></div>`;
+  if (q.type === 'ja2en') { ask = `<div class="tq-ja">「${w.ja}」</div><p>えいごで どれ？（🔊で よみが きけるよ）</p>`; btns = q.ch.map(enOpt).join(''); }
+  if (q.type === 'pic2en') { ask = `<div class="dart tq-pic"></div><p>この えは えいごで どれ？（🔊で よみが きけるよ）</p>`; btns = q.ch.map(enOpt).join(''); }
   if (q.type === 'snd2pic') { ask = `<button class="say big" data-act="dgSay" data-arg="${q.id}">🔊 もう いちど きく</button><p>きこえた ことばの えは どれ？</p>`; btns = q.ch.map((id, i) => `<button class="tq-p" data-act="dgAns" data-arg="${i}" data-art="${WORD[id].art}"></button>`).join(''); }
   showPop(`<div class="tquiz">${head}${ask}<div class="tq-ch">${btns}</div><div class="tq-fb" id="tqfb"></div></div>`);
   if (q.type === 'pic2en') document.querySelector('#ov .tq-pic').appendChild(wordArt(w.art, 110));
