@@ -382,6 +382,11 @@ html,body{margin:0;height:100%;overflow:hidden;background:#2a2238;touch-action:n
 .weakb{color:#e07a1a!important}
 .capeb{color:#7c4ac8;font-weight:800;background:#f3ecff;border-radius:12px;padding:6px}
 
-/* よこがめんで せまい とき：メッセージの らんを ボタンの うえに（layoutDock） */
-.dock.dk-up .log{height:4.6em}
+/* したの そうさの わく：よこは［やじるし｜メッセージ｜ボタン］、たて・せまい ときは［メッセージ］の したに［やじるし　ボタン］ */
+.ctrl{position:absolute;left:calc(env(safe-area-inset-left) + 12px);right:calc(env(safe-area-inset-right) + 12px);bottom:calc(env(safe-area-inset-bottom) + 12px);z-index:5;display:grid;gap:10px;align-items:end;grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"pad dock acts";pointer-events:none}
+.ctrl>*{pointer-events:auto}
+.ctrl .pad,.ctrl .acts,.ctrl .dock{position:relative;left:auto;right:auto;top:auto;bottom:auto;min-width:0}
+.ctrl .pad{grid-area:pad}.ctrl .dock{grid-area:dock}.ctrl .acts{grid-area:acts}
+.ctrl.stack{left:calc(env(safe-area-inset-left) + 8px);right:calc(env(safe-area-inset-right) + 8px);grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"dock dock dock" "pad . acts"}
+.ctrl.narrow .dock .log{height:4.6em}
 .dock .log div{overflow-wrap:anywhere}
