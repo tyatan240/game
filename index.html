@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>モコの おべんきょうハウス</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -97,6 +97,7 @@ a.big{text-align:center;text-decoration:none}
 <script src="common/hanamaru.js"></script>
 <script src="common/pet.js"></script>
 <script src="common/book.js"></script>
+<script src="common/roomlink.js"></script>
 <script>
 /* ---------- がめん ---------- */
 const VIEWS=['home','study','gacha','shop','dress','settings'];
@@ -106,6 +107,7 @@ if(location.hash==='#dress-room'){view='dress';dressTab='room'}
 function go(v){view=v;history.replaceState(null,'',v==='home'||v==='settings'?location.pathname:'#'+v);render();$('main').scrollTop=0}
 let lastView=null;
 function render(){
+ roomPush(); // おへやを かえたら まちの いえにも（キャラが かわったら へやを いれかえ）
  updPts();
  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.arg===view));
  // タブの よこスクロールの いちを おぼえておく（えらぶたびに ひだりはしに もどらない ように）
@@ -453,8 +455,8 @@ Object.assign(ACT,{
 });
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&$('#gatein'))gateOk()});
 render();
-ready.then(()=>{dailyCheck();goalsCheck();learnLoad();setTimeout(()=>hmCheck(),600);petUpdate().then(()=>setTimeout(()=>petCheck(),900))}); // はなまるの おてがみ（ほかの ポップアップの あと）
-window.addEventListener('pageshow',e=>{if(e.persisted){setTimeout(goalsCheck,300);learnLoad();petUpdate()}}); // べんきょうから もどったら ペットの ごはんを こうしん
+ready.then(()=>{roomPull();render();dailyCheck();goalsCheck();learnLoad();setTimeout(()=>hmCheck(),600);petUpdate().then(()=>setTimeout(()=>petCheck(),900))}); // はなまるの おてがみ（ほかの ポップアップの あと）
+window.addEventListener('pageshow',e=>{if(e.persisted){roomPull();render();setTimeout(goalsCheck,300);learnLoad();petUpdate()}}); // べんきょうから もどったら ペットの ごはんを こうしん
 </script>
 </body>
 </html>
