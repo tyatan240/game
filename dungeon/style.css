@@ -390,3 +390,13 @@ html,body{margin:0;height:100%;overflow:hidden;background:#2a2238;touch-action:n
 .ctrl.stack{left:calc(env(safe-area-inset-left) + 8px);right:calc(env(safe-area-inset-right) + 8px);grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"dock dock dock" "pad . acts"}
 .ctrl.narrow .dock .log{height:4.6em}
 .dock .log div{overflow-wrap:anywhere}
+
+/* ふくしゅう テスト：えいごの せんたくしの となりに 🔊 */
+.tq-opt{display:flex;align-items:stretch;gap:4px}
+.tq-say{border:0;border-radius:14px;background:#6ab0ff;color:#fff;font:inherit;font-size:20px;padding:0 10px;box-shadow:0 3px 0 #3a80d0;min-width:46px}
+.tq-say:active{transform:translateY(2px);box-shadow:none}
+/* iPad の Safari：ボタンの もとの よこの すきまで やじるしが わくから はみでない ように */
+.ctrl .pad{gap:0;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr))}
+.ctrl .pad button{padding:0;min-width:0;min-height:0;-webkit-appearance:none;appearance:none}
+.ctrl .acts{grid-template-columns:repeat(2,minmax(0,1fr))}
+.ctrl .acts button{min-width:0;-webkit-appearance:none;appearance:none}

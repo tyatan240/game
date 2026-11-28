@@ -357,7 +357,7 @@ function freeNear(run, x, y) {
   for (let r = 1; r <= 3; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
     if (Math.abs(dx) + Math.abs(dy) !== r) continue;
     const nx = x + dx, ny = y + dy;
-    if (tileAt(run, nx, ny) === '#' || boxAt(run, nx, ny) || monAt(run, nx, ny) || run.items.some(i => i.x === nx && i.y === ny) || (run.stairs && run.stairs.x === nx && run.stairs.y === ny)) continue;
+    if (tileAt(run, nx, ny) === '#' || boxAt(run, nx, ny) || monAt(run, nx, ny) || run.items.some(i => i.x === nx && i.y === ny) || (run.stairs && run.stairs.x === nx && run.stairs.y === ny) || (run.hero && run.hero.x === nx && run.hero.y === ny)) continue;
     return [nx, ny];
   }
   return [x, y];
@@ -377,16 +377,16 @@ function openBox(run, b, ev) {
   const floor = [];
   for (const id of got) {
     if (WORD[id].cat === 'equip' && run.inv.some(i => i.id === id)) continue; // もう もっている そうびは ふえない
-    if (bagRoom(run, id)) { run.inv.push({ uid: run.uid++, id, peek: false }); continue; }
-    // もちものが いっぱい → モコの まわりの あいている ゆかに おく（ふんだら ひろえる）
-    const c = freeNear(run, run.hero.x, run.hero.y);
+    if (run.tut && bagRoom(run, id)) { run.inv.push({ uid: run.uid++, id, peek: false }); continue; } // れんしゅうは もちものへ（うごける ばしょが きまっている）
+    // はこの まわりの ゆかに いちど でてくる（なにが でたか みえる。ふんだら ひろえる）
+    const c = freeNear(run, b.x, b.y);
     run.items.push({ uid: run.uid++, id, x: c[0], y: c[1] }); floor.push(id);
   }
   ev.push({ t: 'bubble', x: run.hero.x, y: run.hero.y, text: 'Open, treasure box!' }); ev.push({ t: 'open', got }); ev.push({ t: 'used', id: 'key' });
   ev.push({ t: 'msg', text: `${en('key')} で ${en('treasurebox')} を あけた！ ${got.map(en).join(' と ')} が はいっていた！` });
   if (cardN) ev.push({ t: 'msg', text: `たからの カードも ${cardN}まい はいっていた！` });
   for (let i = 0; i < cardN; i++) ev.push({ t: 'treasure', rare: rollRare(run), src: 'box' });
-  if (floor.length) ev.push({ t: 'msg', text: `もちものが いっぱい！ ${floor.map(en).join(' と ')} は ゆかに おいたよ（「${bagName(floor[0])}」）` });
+  if (floor.length) ev.push({ t: 'msg', text: run.tut ? `もちものが いっぱい！ ${floor.map(en).join(' と ')} は ゆかに おいたよ（「${bagName(floor[0])}」）` : `${floor.map(en).join(' と ')} が ゆかに でてきた！ ふんで ひろおう` });
 }
 function useItem(run, uid, ev) {
   const it = run.inv.find(i => i.uid === uid); if (!it) return false;

@@ -3,6 +3,7 @@
 // しゅくだいは かなえてから 1じかん たつと また でる（HW_COOLDOWN）
 import { LETTER } from '../../../abc/js/data/letters.js';
 import { WORD } from '../../../abc/js/data/words.js';
+import { knownOf } from '../../../abc/js/game/state.js';
 
 export const HW_COOLDOWN = 60 * 60 * 1000;
 export const HW_REWARD = 10; // おれいの ⭐
@@ -54,7 +55,7 @@ export const mobEquip = id => ({ char: id, outfit: 'o_none', hat: 'h_none', acc:
 // えいごの しゅくだいが できるか（ABCぼうけんで 3つ いじょう おぼえた しゅるい）
 function abcSave() { try { return JSON.parse(localStorage.getItem('abc-adventure-v1') || 'null') || {}; } catch { return {}; } }
 function eigoTypes() {
-  const a = abcSave(), letters = (a.learned || []).filter(id => LETTER[id]).length, words = Object.keys(a.words || {}).filter(id => WORD[id] && !WORD[id].future).length;
+  const k = knownOf(abcSave()), letters = k.learned.filter(id => LETTER[id]).length, words = k.words.filter(id => WORD[id] && !WORD[id].future).length; // これまでに おぼえた もの（「はじめから」でも へらない）
   return ETYPES.filter(t => S.settings.etypes[t.id].on && (t.need === 'letters' ? letters : t.need === 'words' ? words : 0) >= 3); // ワールド3・はじめの おとは しゅくだいに しない
 }
 function progUnlocked() {

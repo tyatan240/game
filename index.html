@@ -359,8 +359,8 @@ function settings(){
 let bkArm=false;
 /* ---------- まるごと バックアップ（ぜんぶの へやの データ ＋ 学習記録）---------- */
 // 保存キーは そのまま（形は かえない）。ふくげん は かくにん してから、それぞれの キーに かきもどす
-const FULL_KEYS=['moko-math-v1','piko-prog-v1','abc-adventure-v1','robomoko-build-v1','moko-town-v1'];
-const FULL_NAME={'moko-math-v1':'おうち（⭐・もちもの・きせかえ・テスト）','piko-prog-v1':'プログラミング','abc-adventure-v1':'ABCぼうけん','robomoko-build-v1':'ブロックタウン','moko-town-v1':'モコの まち'};
+const FULL_KEYS=['moko-math-v1','piko-prog-v1','abc-adventure-v1','robomoko-build-v1','moko-town-v1','moko-dungeon-v1'];
+const FULL_NAME={'moko-math-v1':'おうち（⭐・もちもの・きせかえ・テスト）','piko-prog-v1':'プログラミング','abc-adventure-v1':'ABCぼうけん','robomoko-build-v1':'ブロックタウン','moko-town-v1':'モコの まち','moko-dungeon-v1':'イングリッシュダンジョン（ずかん・カード）'};
 async function fullSave(){
  save();const data={};
  for(const k of FULL_KEYS){try{const v=k==='moko-math-v1'?S:JSON.parse(localStorage.getItem(k)||'null');if(v)data[k]=v}catch(e){}}
@@ -391,7 +391,7 @@ async function fullRestore(){
   if(k==='moko-math-v1'){S=merge(v);save();continue} // おうちは merge を とおして 2かしょに ほぞん
   if('t' in v||k!=='piko-prog-v1')v.t=now;           // あたらしい ほうが つかわれる ように
   try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}
-  const db={'robomoko-build-v1':'robomoko-build','moko-town-v1':'moko-town'}[k];
+  const db={'robomoko-build-v1':'robomoko-build','moko-town-v1':'moko-town','moko-dungeon-v1':'moko-dungeon'}[k];
   if(db)try{const q=indexedDB.open(db,1);q.onupgradeneeded=()=>q.result.createObjectStore('kv');q.onsuccess=()=>{try{q.result.transaction('kv','readwrite').objectStore('kv').put(v,k)}catch(e){}}}catch(e){}
  }
  let hm='';try{if(P.o.history&&window.LH){const r=await LH.importData(P.o.history);hm=`・学習記録 ${r.added}件`}}catch(e){}
