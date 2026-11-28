@@ -230,11 +230,13 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
         await p.waitForSelector('#ov .pop'); await p.click('#ov [data-act=close] >> nth=0');
       }
     }
-    // れんしゅうは かぞえない
+    let d = await daily(); ok(d.sansu === 2 && d.kokugo === 2 && d.eigo === 2, 'テストの かいすう ' + JSON.stringify(d));
+    // テスト形式の れんしゅうも かぞえる
     await p.click('[data-act=tready][data-arg="ealisten-1|p"]'); await p.click('#ov [data-act=tstart]');
     await p.waitForFunction(() => __eigo.test && __eigo.test.phase === 'run', null, { timeout: 8000 });
     await p.evaluate(() => { __eigo.test.t0 = performance.now() - __eigo.test.limit; }); await p.waitForSelector('#ov .pop');
-    let d = await daily(); ok(d.sansu === 2 && d.kokugo === 2 && d.eigo === 2, 'テストの かいすう（れんしゅうは のぞく）' + JSON.stringify(d));
+    d = await daily(); ok(d.eigo === 3, 'れんしゅうも きょうの もくひょうに かぞえる ' + JSON.stringify(d));
+    await p.click('#ov [data-act=close] >> nth=0').catch(() => {});
     // プログラミング
     await p.goto(B + 'program/index.html'); await p.evaluate(() => { openLv(0); prog = [{ t: 'R' }, { t: 'R' }, { t: 'R' }, { t: 'R' }]; render(); run(); });
     await p.waitForSelector('#pop', { timeout: 10000 }); await p.waitForTimeout(600);

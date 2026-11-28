@@ -323,7 +323,7 @@ function settings(){
  <div class="row"><div class="lbl"><b>ステージの ★1つ あたりの ポイント</b><small>はじめて とった ★ だけ もらえます（1ステージ さいだい ★3）</small></div>${stepper('progPts','⭐'+s.progPts)}</div></div>
  <div class="card"><b>🔤 えいごの もんだいと ポイント</b><div class="muted" style="text-align:left">ABCぼうけんで おぼえた もじ・ことばから でます（3こ いじょう おぼえると あそべます）</div>
  ${ETYPES.map(t=>`<div class="row"><button class="sw ${s.etypes[t.id].on?'on':''}" data-act="etg" data-arg="${t.id}" aria-label="${t.name}"></button><div class="lbl"><b>${t.name}</b><small>れい：${t.ex}</small></div>${stepper('e:'+t.id,'⭐'+s.etypes[t.id].pts)}</div>`).join('')}</div>
- <div class="card"><b>🎯 きょうの もくひょう</b><div class="muted" style="text-align:left">まいにち：さんすう・こくごの 🏆テスト 2かいずつ、えいご（ABCぼうけんを クリアするまでは ぼうけんで ★2こ、クリア後は 🏆テスト 2かい）、プログラミング 1ステージ</div>
+ <div class="card"><b>🎯 きょうの もくひょう</b><div class="muted" style="text-align:left">まいにち：さんすう・こくごの 🏆テスト 2かいずつ（テスト形式の れんしゅうも かぞえます）、えいご（ABCぼうけんを クリアするまでは ぼうけんで ★2こ、クリア後は 🏆テスト 2かい）、プログラミング 1ステージ</div>
  <div class="row"><div class="lbl"><b>もくひょう 1つの ごほうび</b></div>${stepper('goalPts','⭐'+s.goalPts)}</div>
  <div class="row"><div class="lbl"><b>ぜんぶ たっせいの ボーナス</b></div><div class="step"><button data-act="st" data-arg="goalAll|-10">−</button><span>⭐${s.goalAll}</span><button data-act="st" data-arg="goalAll|10">＋</button></div></div></div>
  <div class="card"><b>🔤 えいご（ABCぼうけん）</b>

@@ -255,7 +255,7 @@ const CATS=[['special','✨スペシャル'],['char','🐾キャラ'],['outfit',
 
 /* ---------- じょうたいと ほぞん ---------- */
 /* ---------- きょうの もくひょう ---------- */
-// まいにち リセット。テスト（🏆、れんしゅうは のぞく）を おわると かぞえる
+// まいにち リセット。テスト（🏆と テスト形式の れんしゅう）を おわると かぞえる
 function newDaily(day){return{day,sansu:0,kokugo:0,eigo:0,abc:0,prog:0,got:{},all:false}}
 const todayStr=()=>{const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()};
 function dailyOf(st){if(!st.daily||st.daily.day!==todayStr())st.daily=newDaily(todayStr());return st.daily}
@@ -264,9 +264,9 @@ function dailyAdd(k,n=1){dailyOf(S)[k]+=n;save()}
 function abcCleared(){try{const a=JSON.parse(localStorage.getItem('abc-adventure-v1')||'null')||{};return (a.clears||0)>0||!!(a.flags&&a.flags.alphabetClear)}catch(e){return false}}
 function goals(){
  return [
-  {id:'sansu',key:'sansu',need:2,text:'さんすうの 🏆テストを 2かい',href:'sansu/index.html#tests',icon:'✏️'},
-  {id:'kokugo',key:'kokugo',need:2,text:'こくごの 🏆テストを 2かい',href:'kokugo/index.html#tests',icon:'📖'},
-  abcCleared()?{id:'eigo',key:'eigo',need:2,text:'えいごの 🏆テストを 2かい',href:'eigo/index.html#tests',icon:'🔤'}
+  {id:'sansu',key:'sansu',need:2,text:'さんすうの 🏆テスト（れんしゅうも OK）を 2かい',href:'sansu/index.html#tests',icon:'✏️'},
+  {id:'kokugo',key:'kokugo',need:2,text:'こくごの 🏆テスト（れんしゅうも OK）を 2かい',href:'kokugo/index.html#tests',icon:'📖'},
+  abcCleared()?{id:'eigo',key:'eigo',need:2,text:'えいごの 🏆テスト（れんしゅうも OK）を 2かい',href:'eigo/index.html#tests',icon:'🔤'}
    :{id:'eigo',key:'abc',need:2,text:'ABCぼうけんを すすめる（★を 2こ）',href:'abc/index.html',icon:'🗺️'},
   {id:'prog',key:'prog',need:1,text:'プログラミングの ステージを 1かい クリア',href:'program/index.html',icon:'🤖'},
  ]}
