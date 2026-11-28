@@ -746,20 +746,21 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
       localStorage.setItem('abc-adventure-v1', JSON.stringify({ v: 1, t: 5, started: true, stars: 12, learned: ['A', 'B'] }));
       localStorage.setItem('moko-town-v1', JSON.stringify({ version: 1, t: 5, townName: 'テストの まち', objects: [], ground: { '10,10': 'road_dirt' } }));
       localStorage.setItem('robomoko-build-v1', JSON.stringify({ v: 1, t: 5, world: { size: [16, 12, 16], blocks: [[1, 1, 1, 'wood']] } }));
+      localStorage.setItem('moko-dungeon-v1', JSON.stringify({ v: 1, t: 5, best: 7, dex: { slime: { seen: 1 } }, treasure: { cards: { A1: { n: 1 } } } }));
       await LH.importData({ format: 'moko-learning-history', version: 1, attempts: [{ id: 'x1', ts: Date.now(), questionInstanceId: 'q1', subject: 'sansu', topic: 'add1', isCorrect: true, attemptNumber: 1 }], sessions: [] }); });
     const gate = async () => { await p.evaluate(() => gate()); const [x, y] = (await p.textContent('#ov')).match(/(\d) × (\d)/).slice(1).map(Number); await p.fill('#gatein', String(x * y)); await p.click('#ov [data-act=gateok]'); };
     await gate();
     const [dl] = await Promise.all([p.waitForEvent('download'), p.click('[data-act=fullsave]')]);
     const file = path.join(require('os').tmpdir(), 'moko-full-test.json'); await dl.saveAs(file);
     const js = JSON.parse(fs.readFileSync(file, 'utf8'));
-    ok(js.format === 'moko-house-backup' && Object.keys(js.data).length === 5 && js.data['moko-math-v1'].points === 777 && js.history.attempts.length === 1, 'ぜんぶの へや＋学習記録を 1つの ファイルに 保存');
+    ok(js.format === 'moko-house-backup' && Object.keys(js.data).length === 6 && js.data['moko-dungeon-v1'].best === 7 && js.data['moko-math-v1'].points === 777 && js.history.attempts.length === 1, 'ぜんぶの へや＋学習記録を 1つの ファイルに 保存');
     // こわして から ふくげん
-    await p.evaluate(async () => { S.points = 1; S.owned = S.owned.filter(i => i !== 'h_crown'); save(); ['piko-prog-v1', 'abc-adventure-v1', 'moko-town-v1', 'robomoko-build-v1'].forEach(k => localStorage.removeItem(k)); await LH.clearAll(); });
+    await p.evaluate(async () => { S.points = 1; S.owned = S.owned.filter(i => i !== 'h_crown'); save(); ['piko-prog-v1', 'abc-adventure-v1', 'moko-town-v1', 'robomoko-build-v1', 'moko-dungeon-v1'].forEach(k => localStorage.removeItem(k)); await LH.clearAll(); });
     await p.setInputFiles('#fullin', file); await p.waitForSelector('#ov [data-act=fullyes]');
     ok(/⭐ 777/.test(await p.textContent('#ov')), '復元の まえに 中身を 確認');
     await p.click('#ov [data-act=fullyes]'); await p.waitForTimeout(600);
-    const r = await p.evaluate(async () => ({ pts: S.points, crown: S.owned.includes('h_crown'), prog: JSON.parse(localStorage.getItem('piko-prog-v1')).best[1], abc: JSON.parse(localStorage.getItem('abc-adventure-v1')).stars, town: JSON.parse(localStorage.getItem('moko-town-v1')).townName, build: JSON.parse(localStorage.getItem('robomoko-build-v1')).world.blocks.length, lh: (await LH.getAttempts()).length }));
-    ok(r.pts === 777 && r.crown && r.prog === 2 && r.abc === 12 && r.town === 'テストの まち' && r.build === 1 && r.lh === 1, 'ファイルから ぜんぶ 復元 ' + JSON.stringify(r));
+    const r = await p.evaluate(async () => ({ pts: S.points, crown: S.owned.includes('h_crown'), prog: JSON.parse(localStorage.getItem('piko-prog-v1')).best[1], abc: JSON.parse(localStorage.getItem('abc-adventure-v1')).stars, town: JSON.parse(localStorage.getItem('moko-town-v1')).townName, build: JSON.parse(localStorage.getItem('robomoko-build-v1')).world.blocks.length, dg: JSON.parse(localStorage.getItem('moko-dungeon-v1')).treasure.cards.A1.n, lh: (await LH.getAttempts()).length }));
+    ok(r.pts === 777 && r.crown && r.prog === 2 && r.abc === 12 && r.town === 'テストの まち' && r.build === 1 && r.dg === 1 && r.lh === 1, 'ファイルから ぜんぶ 復元 ' + JSON.stringify(r));
     await p.goto(B + 'machi/index.html'); await p.waitForSelector('body[data-ready="1"]');
     ok(await p.evaluate(() => __town.town.townName === 'テストの まち' && S.points === 777), '復元した まち・⭐が つかわれる');
     await p.goto(B + 'index.html'); await p.waitForTimeout(300); await gate();
