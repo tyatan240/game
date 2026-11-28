@@ -13,7 +13,7 @@ import { drawStall, drawBoard, drawTower } from './engine/art3.js';
 import { START, ITEMS, INV, STORY, GIFTS } from './data/world1.js';
 import { AREAS, ORDER, CHAPTER, CHAPTERS, WHERE } from './data/areas.js';
 import { W, H, area, setArea, tileAt, isWater, isPath, things, move, facing, heroTile, markPos, exitAt, exitOpen, isOpenGate, vinesKey, solidAt, inside, unstick } from './game/world.js';
-import { load, save, replayState, getRecord, world2State, world3State, worldOf, snapshot, restore } from './game/state.js';
+import { load, save, replayState, getRecord, world2State, world3State, worldOf, snapshot, restore, knownOf } from './game/state.js';
 import { record, pickTargets, choiceCount, levelOf } from './game/learning.js';
 import { letterQuestion, wordQuestion, shuffle , lowerQuestion } from './game/quiz.js';
 import { activeQuests, currentStep, stepFor, advance, objective, QUEST, w3Learned } from './game/quests.js';
@@ -733,7 +733,8 @@ function toTitle() {
   titleEl.classList.remove('hide');
   document.getElementById('cont').style.display = S.started ? '' : 'none';
   titleButtons();
-  const cb = document.getElementById('clears'); cb.textContent = S.clears ? `🏆 クリア ${S.clears}かい` : ''; cb.style.display = S.clears ? '' : 'none';
+  const cb = document.getElementById('clears'), kn = knownOf(S).learned.length;
+  cb.textContent = [S.clears ? `🏆 クリア ${S.clears}かい` : '', kn ? `🔤 これまでに おぼえた もじ ${kn}/26` : ''].filter(Boolean).join('　'); cb.style.display = S.clears || kn ? '' : 'none';
   document.getElementById('housePts').textContent = housePoints();
   document.body.classList.add('intitle');
 }
@@ -768,7 +769,7 @@ async function continueWorld(n) {
 async function newWorld(n) {
   unlockAudio();
   const name = WORLDS[n - 1].name;
-  if (hasProgress(n) && !(await ui.confirm(`${name}を はじめから あそぶ？<br><small>${name}の つづきは なくなるよ。<br>ほかの ワールドの つづき・おぼえた もじの きろく・ほし・きがえは のこるよ</small>`, 'はじめから', 'やめる'))) return;
+  if (hasProgress(n) && !(await ui.confirm(`${name}を はじめから あそぶ？<br><small>${name}の ぼうけんは さいしょから（せんせいたちに また あえるよ）。<br>これまでに おぼえた もじ・ことば・ほし・きがえ・ほかの ワールドの つづきは のこるよ</small>`, 'はじめから', 'やめる'))) return;
   stash();
   if (S.slots) delete S.slots[n];
   if (n === 1) { S = replayState(S); return startGame(false); }
@@ -782,7 +783,7 @@ async function newWorld(n) {
 houseReady.then(() => { if (mode === 'title') titleButtons(); });
 async function startGame(fresh, skipAsk = false) {
   unlockAudio();
-  if (fresh && S.started && !skipAsk && !(await ui.confirm('さいしょから ぼうけん する？<br><small>おぼえた もじの きろく・ほし・きがえは のこるよ</small>', 'はじめる', 'やめる'))) return;
+  if (fresh && S.started && !skipAsk && !(await ui.confirm('さいしょから ぼうけん する？<br><small>ぼうけんは さいしょから（せんせいたちに また あえるよ）。<br>これまでに おぼえた もじ・ことば・ほし・きがえは のこるよ</small>', 'はじめる', 'やめる'))) return;
   if (fresh) S = replayState(S);
   titleEl.classList.add('hide'); document.body.classList.remove('intitle');
   S.started = true;

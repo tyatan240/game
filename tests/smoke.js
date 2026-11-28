@@ -1608,6 +1608,23 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
     ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
   }
 
+  console.log('12b. ABCぼうけん：「はじめから」でも これまでに おぼえた もじは へらない');
+  {
+    const p = await page({ width: 1024, height: 768 });
+    await p.goto(B + 'index.html'); await p.waitForTimeout(300);
+    // 1かい クリアした あとに「はじめから」に した データ（learned は 1こ だけ。records には 26もじ）
+    await p.evaluate(() => { const recs = {}; 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(L => recs[L] = { asked: 3, correct: 3, streak: 3, box: 2, last: Date.now() }); recs['w:apple'] = { asked: 2, correct: 2, streak: 2, box: 2, last: Date.now() };
+      localStorage.setItem('abc-adventure-v1', JSON.stringify({ v: 1, t: 1, started: true, clears: 1, learned: ['A'], words: {}, records: recs, stars: 30, starsSent: 30, flags: { intro: true } })); });
+    await p.goto(B + 'abc/index.html'); await p.waitForTimeout(800);
+    ok(/これまでに おぼえた もじ 26\/26/.test(await p.textContent('#clears')), 'タイトルに「これまでに おぼえた もじ 26/26」');
+    const r = await p.evaluate(async () => { const m = await import('./js/game/state.js'); const S = m.load(); const R = m.replayState(S); m.save(R); const d = JSON.parse(localStorage.getItem('abc-adventure-v1'));
+      return { ever: S.ever.learned.length, word: S.ever.words.includes('apple'), keep: d.ever.learned.length, learnedReset: d.learned.length === 0 }; });
+    ok(r.ever === 26 && r.word && r.keep === 26 && r.learnedReset, '「はじめから」で ぼうけんは もどるが、おぼえた もじ（ever）は のこる ' + JSON.stringify(r));
+    await p.goto(B + 'eigo/index.html#tests'); await p.waitForTimeout(600);
+    ok(!!await p.$('[data-act=tready][data-arg="ealisten-1"]'), 'えいごの へやの テストも これまでに おぼえた もじで できる');
+    ok(p.errs.length === 0, 'エラーなし ' + p.errs.join(' / ')); await p.context().close();
+  }
+
   console.log('12a. えいごの こえ（iPad で「Capital A」と よまれない）');
   {
     const p = await page(); await p.goto(B + 'abc/index.html'); await p.waitForTimeout(300);

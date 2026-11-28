@@ -29,6 +29,7 @@ export function defaultState() {
     slots: {},            // ワールドごとの つづき { 1: {ぼうけんの すすみ}, 2: …, 3: … }（いま あそんでいる ワールドの ぶんは うえの こうもくに ある）
     w2clears: 0,          // ワールド2（こもじの もん）を クリアした かいすう（ワールド3を えらべる じょうけん）
     w3clears: 0,          // ワールド3（ことばの とう）を クリアした かいすう
+    ever: { learned: [], lower: [], words: [], sentences: [] }, // これまでに おぼえた もの（はじめから でも きえない。knownOf() で つくる）
     settings: { bgm: true, se: true, voice: true },
   };
 }
@@ -44,17 +45,35 @@ export function load() {
       learned: Array.isArray(d.learned) ? d.learned : [], lower: Array.isArray(d.lower) ? d.lower : [], items: Array.isArray(d.items) ? d.items : [],
       words: { ...d.words }, sentences: { ...d.sentences }, quests: { ...d.quests }, inv: { ...d.inv }, world: { ...d.world },
       combos: Array.isArray(d.combos) ? d.combos : [], areas: Array.isArray(d.areas) ? d.areas : ['meadow'],
-      slots: d.slots && typeof d.slots === 'object' ? { ...d.slots } : {}, w2clears: d.w2clears || (d.flags && d.flags.lowerClear ? 1 : 0) };
+      slots: d.slots && typeof d.slots === 'object' ? { ...d.slots } : {}, w2clears: d.w2clears || (d.flags && d.flags.lowerClear ? 1 : 0),
+      ever: knownOf(d) };
   } catch (e) { return base; }
 }
 
 export function save(st) {
-  st.t = Date.now();
+  st.t = Date.now(); st.ever = knownOf(st);
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(st)); } catch (e) { /* ほぞん できない ときは なにも しない */ }
 }
 
 // もういちど さいしょから：ぼうけんの すすみは もどすが、がくしゅう きろく・ほし・きがえ・せってい・クリア かいすうは のこす
-export const KEEP_ON_REPLAY = ['settings', 'records', 'stars', 'starsSent', 'items', 'wear', 'clears', 'slots', 'w2clears', 'w3clears'];
+export const KEEP_ON_REPLAY = ['settings', 'records', 'stars', 'starsSent', 'items', 'wear', 'clears', 'slots', 'w2clears', 'w3clears', 'ever'];
+
+// これまでに おぼえた もじ・こもじ・ことば・ぶんの かた（いまの すすみ ＋ ほかの ワールドの つづき ＋ ever ＋ がくしゅう きろく）
+//   「はじめから」で ぼうけんの すすみ（learned など）は もどるが、これは へらない。えいごの へや・保護者レポートも これを つかう
+export function knownOf(d) {
+  d = d || {};
+  const L = new Set(), lo = new Set(), W = new Set(), F = new Set();
+  const add = s => { if (!s || typeof s !== 'object') return;
+    (Array.isArray(s.learned) ? s.learned : []).forEach(x => L.add(x)); (Array.isArray(s.lower) ? s.lower : []).forEach(x => lo.add(x));
+    if (Array.isArray(s.words)) s.words.forEach(x => W.add(x)); else Object.keys(s.words || {}).forEach(x => W.add(x));
+    if (Array.isArray(s.sentences)) s.sentences.forEach(x => F.add(x)); else Object.keys(s.sentences || {}).forEach(x => F.add(x)); };
+  add(d); Object.values(d.slots || {}).forEach(add); add(d.ever);
+  // まえに「はじめから」で きえた ぶんは、のこっている がくしゅう きろく（records）から とりもどす
+  for (const k of Object.keys(d.records || {})) {
+    if (/^[A-Z]$/.test(k)) L.add(k); else if (/^l:[A-Z]$/.test(k)) lo.add(k[2].toLowerCase()); else if (k.startsWith('w:')) W.add(k.slice(2)); else if (k.startsWith('s:')) F.add(k.slice(2).split(':')[0]);
+  }
+  return { learned: [...L].sort(), lower: [...lo].sort(), words: [...W], sentences: [...F] };
+}
 
 // ワールドごとの つづき：ぼうけんの すすみ（KEEP_ON_REPLAY いがい）を とりだす／もどす
 const PROGRESS = () => Object.keys(defaultState()).filter(k => !KEEP_ON_REPLAY.includes(k) && k !== 'v' && k !== 't');
