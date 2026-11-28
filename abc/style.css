@@ -296,3 +296,31 @@ button.frame{border:0;background:#f4f9ff;border-radius:16px;padding:8px 14px;mar
   #title.multi .back{padding:4px 14px;font-size:13px!important}
 }
 .spic canvas{display:block;margin:0 auto}
+
+/* ワールド4「おとの しま」：もじの おとカード */
+.w4sounds{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:6px 0}
+.w4s{border:0;background:#fff7ee;border-radius:18px;padding:8px 10px 10px;min-width:118px;display:flex;flex-direction:column;align-items:center;gap:2px;box-shadow:0 3px 0 #ead8c8;font:inherit;cursor:pointer}
+.w4s .sl{font-size:54px;line-height:1;color:#e0508a;font-family:"Andika","M PLUS Rounded 1c",sans-serif}
+.w4s .kw{font-size:22px;font-weight:800;color:#3f7fc9}
+.w4s .kw em{font-style:normal;color:#e0508a;text-decoration:underline}
+.w4s small{font-size:12px;color:#8a7a7a;line-height:1.4}
+.w4s small b{color:#e0508a;font-size:15px}
+.w4s.pulse{animation:pop .4s}
+.quiz .sndbig{display:block;font-size:56px;color:#e0508a;line-height:1}
+.w4note{font-size:15px;font-weight:800;color:#8a7a7a;margin:4px 0 8px;line-height:1.5}
+
+/* ワールド4：つなげて よむ（タイルが じゅんに ひかる）・おとで つくる */
+.quiz .blend{display:flex;gap:8px;justify-content:center;margin:4px 0 8px}
+.quiz .blend i{font-style:normal;display:flex;flex-direction:column;align-items:center;min-width:54px;padding:4px 8px 2px;border-radius:14px;background:#fff7ee;border:3px solid #ead8c8;font-size:44px;font-weight:800;line-height:1.05;color:#3f7fc9;animation:blendlit 2.4s var(--d) both}
+.quiz .blend i small{font-size:13px;color:#e0508a}
+@keyframes blendlit{0%{background:#fff7ee;border-color:#ead8c8}12%{background:#ffe08a;border-color:#ffb020;transform:translateY(-4px)}30%,100%{background:#fff7ee;border-color:#ead8c8;transform:none}}
+.w4spell .spic{display:flex;justify-content:center}
+.w4spell .sound{margin:4px auto}
+.sslots{display:flex;gap:8px;justify-content:center;margin:8px 0}
+.sslots i{font-style:normal;width:56px;height:64px;border-radius:14px;border:3px dashed #c8b8b8;display:flex;align-items:center;justify-content:center;font-size:42px;font-weight:800;color:#3f7fc9;background:#fff}
+.sslots i.on{border-style:solid;border-color:#5ac87a;background:#eafbef}
+.sslots.merge i{border-color:#ffb020;background:#fff3c8}
+.stiles{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.stile{width:60px;height:60px;border:0;border-radius:14px;background:#6ab0ff;color:#fff;font:inherit;font-size:34px;font-weight:800;box-shadow:0 4px 0 #3a80d0;cursor:pointer}
+.stile.used{opacity:.25}
+.stile.shake{animation:shake .4s}

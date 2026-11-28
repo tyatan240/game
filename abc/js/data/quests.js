@@ -224,6 +224,54 @@ export const QUESTS = [
         { art: 'a_jump', ask: 'なにを している？', answer: 'jump', choices: ['jump', 'swim', 'sing'] }, { art: 'a_dance', ask: 'なにを している？', answer: 'dance', choices: ['dance', 'run', 'swim'] }],
       after: [['しまうまの コーチ', 'Good job! げんきいっぱいだね！']], reward: { star: 2 } },
   ] },
+  // ===== ワールド4「おとの しま」（on:'phon'：おとの クイズ。rounds の t：pick＝その おとで はじまる えを えらぶ／first・last・mid＝ことばの はじめ・おわり・まんなかの おと）=====
+  { id: 'w4hippo', title: 'かばさんの おとしもの', requires: { w4: 'w4beach' }, steps: [
+    { id: 'ask', on: 'talk', target: 'w4Hippo', goal: 'かばの カバオに はなしかけよう！', lines: [
+      ['かばの カバオ', 'あっ、こんにちは。ぼくの たからものが はまべに ちらばっちゃったんだ。'],
+      ['かばの カバオ', 'たからものは「おと」で よぶと もどって くるんだって。'],
+      ['かばの カバオ', 'ならった もじの おとで、たからものを さがして くれる？']] },
+    { id: 'find', on: 'phon', target: 'w4Hippo', goal: 'カバオの たからものを おとで さがそう！', pre: [['かばの カバオ', 'もじの おとで はじまる ものを えらんでね！']],
+      rounds: [{ t: 'pick', sound: 's', answer: 'sun', choices: ['sun', 'pig', 'nine'] }, { t: 'pick', sound: 'p', answer: 'pig', choices: ['pig', 'apple', 'ten'] },
+        { t: 'pick', sound: 'n', answer: 'nine', choices: ['nine', 'sun', 'pig'] }, { t: 'pick', sound: 'a', answer: 'apple', choices: ['apple', 'ten', 'pig'] }],
+      after: [['かばの カバオ', 'ぜんぶ もどって きた！ Thank you! もじの おと、ばっちりだね！']], reward: { star: 3 } },
+  ] },
+  { id: 'w4echo', title: 'こだまの まねっこ', requires: { w4: 'w4cave' }, steps: [
+    { id: 'ask', on: 'talk', target: 'w4Echo', goal: 'こだまの チューに はなしかけよう！', lines: [
+      ['こだまの チュー', 'チュー！ ぼくは こだま。ことばの さいごの おとだけ まねっこ するよ。'],
+      ['こだまの チュー', '「cat」……「トゥ」！ どの もじの おとか わかるかな？']] },
+    { id: 'last', on: 'phon', target: 'w4Echo', goal: 'こだまが まねした おわりの おとを あてよう！', pre: [['こだまの チュー', 'ことばを きいて、おわりの おとの もじを えらんでね！']],
+      rounds: [{ t: 'last', word: 'cat' }, { t: 'last', word: 'red' }, { t: 'last', word: 'pen' }],
+      after: [['こだまの チュー', 'すごい！ こんどは まんなかの おとだよ！']] },
+    { id: 'mid', on: 'phon', target: 'w4Echo', goal: 'ことばの まんなかの おとを あてよう！', pre: [['こだまの チュー', 'まんなかの おとは どの もじかな？']],
+      rounds: [{ t: 'mid', word: 'hat' }, { t: 'mid', word: 'pig' }, { t: 'mid', word: 'ten' }],
+      after: [['こだまの チュー', 'チュー！ はじめ・まんなか・おわり、ぜんぶ きけたね！']], reward: { star: 3 } },
+  ] },
+  // ワールド4 第2回（rounds の t：blend＝つなげて よんで えを えらぶ／odd＝なかまで ない ことばを えらぶ／spell＝きいた ことばを もじで つくる）
+  { id: 'w4bridge', title: 'はしの いし', requires: { w4: 'w4valley' }, steps: [
+    { id: 'ask', on: 'talk', target: 'w4Cow', goal: 'うしの モーモに はなしかけよう！', lines: [
+      ['うしの モーモ', 'モー！ たにの はしの いしが ばらばらに なっちゃった。'],
+      ['うしの モーモ', 'いしには ことばが かいてあるの。おとを つなげて よんで、あう えの いしを えらんでね！']] },
+    { id: 'read', on: 'phon', target: 'w4Cow', goal: 'ことばを よんで、はしの いしを えらぼう！', pre: [['うしの モーモ', 'ひかる もじの おとを じゅんばんに つなげてね。']],
+      rounds: [{ t: 'blend', word: 'log' }, { t: 'blend', word: 'bug' }, { t: 'blend', word: 'fan' }, { t: 'blend', word: 'bus' }],
+      after: [['うしの モーモ', 'はしが なおった！ Thank you! じぶんで ことばが よめたね！']], reward: { star: 3 } },
+  ] },
+  { id: 'w4shop', title: 'やたいの なかま', requires: { w4: 'w4village' }, steps: [
+    { id: 'ask', on: 'talk', target: 'w4Tiger', goal: 'やたいの トラに はなしかけよう！', lines: [
+      ['やたいの トラ', 'いらっしゃい！ うちの やたいは「なかま」ごとに しなものを ならべるんだ。'],
+      ['やたいの トラ', 'cat・hat・bat……おしりの おとが おなじ ものが なかま。でも ちがう ものが まざっちゃった！']] },
+    { id: 'odd', on: 'phon', target: 'w4Tiger', goal: 'なかまで ない ものを みつけよう！', pre: [['やたいの トラ', 'おしりが ちがう ものは どれかな？']],
+      rounds: [{ t: 'odd', words: ['cat', 'hat', 'bat', 'dog'], answer: 'dog' }, { t: 'odd', words: ['pen', 'ten', 'hen', 'sun'], answer: 'sun' },
+        { t: 'odd', words: ['pig', 'wig', 'log'], answer: 'log' }, { t: 'odd', words: ['bug', 'mug', 'cup'], answer: 'cup' }],
+      after: [['やたいの トラ', 'ばっちり ならんだ！ おしりの おとを よく きけたね！']], reward: { star: 3 } },
+  ] },
+  { id: 'w4post', title: 'ゆうびんやさんの おてつだい', requires: { w4: 'w4village' }, steps: [
+    { id: 'ask', on: 'talk', target: 'w4Lion', goal: 'ゆうびんやの ライオンに はなしかけよう！', lines: [
+      ['ゆうびんやの ライオン', 'ガオー！ にもつの なふだを かきたいんだけど、もじが わからなくて……。'],
+      ['ゆうびんやの ライオン', 'ことばを きいて、もじを ならべて なふだを つくって くれる？']] },
+    { id: 'spell', on: 'phon', target: 'w4Lion', goal: 'きいた ことばを もじで つくろう！', pre: [['ゆうびんやの ライオン', 'おとを ひとつずつ きいて、もじを えらんでね！']],
+      rounds: [{ t: 'spell', word: 'jet' }, { t: 'spell', word: 'van' }, { t: 'spell', word: 'box' }, { t: 'spell', word: 'web' }],
+      after: [['ゆうびんやの ライオン', 'なふだが できた！ Thank you! きいた ことばを かける なんて すごい！']], reward: { star: 3 } },
+  ] },
   { id: 'w3tower', title: 'ことばの とうの かね', requires: { w3: 'w3tower' }, steps: [
     { id: 'one', on: 'sentence', target: 'w3Guard1', goal: 'ひつじの もんばんに こたえよう！', frame: 'this', want: ['dogs'], picture: 'dog', pre: [['ひつじの もんばん', 'これは なにかな？ えいごで しょうかい してね。']],
       effect: [{ set: ['bell', 1] }], after: [['ひつじの もんばん', 'This is a dog! せいかい！ 1つめの かねが なったよ！']] },

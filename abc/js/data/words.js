@@ -49,5 +49,11 @@ export const WORDS = [
   ...[['swim', 'およぐ', 'およげる'], ['run', 'はしる', 'はしれる'], ['jump', 'ジャンプ', 'ジャンプできる'], ['sing', 'うたう', 'うたえる'], ['dance', 'おどる', 'おどれる']]
     .map(([id, ja, jaCan]) => ({ id, word: id, ja, jaCan, art: 'a_' + id, speak: id, audio: null, learnAt: 'w3Frog', place: 'すきなものの がっこう', magic: 'できる ことを いう ことば', world: 3, kind: 'action' })),
   ...[['dogs', 'dog', 'いぬ'], ['cats', 'cat', 'ねこ']].map(([id, one, ja]) => ({ id, word: id, one, ja, art: id, speak: id, audio: null, learnAt: 'w3Elephant', place: 'すきなものの がっこう', magic: 'すきな ものを いう ことば', world: 3, kind: 'thing' })),
+  // ===== ワールド4「おとの しま」（world:4。word は こもじ。おとの クイズに つかう ことば）=====
+  ...[['pig', 'ぶた'], ['igloo', 'かまくら（イグルー）'], ['egg', 'たまご', 'eggs'], ['hat', 'ぼうし'], ['pen', 'ペン'], ['nest', 'すばこ（とりの す）'],
+    ['goat', 'やぎ'], ['octopus', 'たこ'], ['umbrella', 'かさ'], ['lion', 'ライオン'], ['bat', 'バット'], ['rat', 'ねずみ'], ['fan', 'せんぷうき'], ['van', 'ワゴンしゃ'], ['map', 'ちず'], ['cap', 'ぼうし（キャップ）'],
+    ['hen', 'めんどり'], ['net', 'あみ'], ['jet', 'ジェットき'], ['bed', 'ベッド'], ['wig', 'かつら'], ['log', 'まるた'], ['box', 'はこ'], ['fox', 'きつね'], ['bun', 'まるい パン'], ['bug', 'むし'],
+    ['mug', 'マグカップ'], ['cup', 'カップ'], ['pup', 'こいぬ'], ['bus', 'バス'], ['top', 'こま'], ['web', 'くもの す'], ['zebra', 'しまうま'], ['yoyo', 'ヨーヨー'], ['queen', 'じょおうさま（かんむり）']]
+    .map(([id, ja, art]) => ({ id, word: id, ja, art: art || 'p_' + id, speak: id, audio: null, place: 'おとの しま', world: 4, kind: 'phon' })),
 ];
 export const WORD = Object.fromEntries(WORDS.map(w => [w.id, w]));

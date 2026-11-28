@@ -18,14 +18,16 @@ export const MAP = [
   'T........:T..T.....,...,...:.........TTTTTTT',
   'T........:.................:.b.......TTTTTTT',
   'T....,T..:::::::::::::::::::...,.....TTTTTTT',
-  'T....................................TTTTTTT',
-  'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT',
-  'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT',
+  'T...................:................TTTTTTT',
+  'TTTTTTTTTTTTTTTTTTTT:TTTTTTTTTTTTTTTTTTTTTTT',
+  'TTTTTTTTTTTTTTTTTTTT:TTTTTTTTTTTTTTTTTTTTTTT',
 ];
 
-export const entries = { west: { x: 1, y: 10, dir: 'right' }, east: { x: 42, y: 10, dir: 'left' } };
+export const entries = { west: { x: 1, y: 10, dir: 'right' }, east: { x: 42, y: 10, dir: 'left' }, south: { x: 20, y: 17, dir: 'up' } };
 // ひがしは ワールド3「ことばの まち」（こもじの もんを ひらくと とおれる）
-export const exits = [{ x: 0, y: 10, to: 'garden', entry: 'east2' }, { x: 43, y: 10, to: 'w3plaza', entry: 'west', needs: { flag: 'lowerClear' } }];
+export const exits = [{ x: 0, y: 10, to: 'garden', entry: 'east2' }, { x: 43, y: 10, to: 'w3plaza', entry: 'west', needs: { flag: 'lowerClear' } },
+  // みなみの ふなつきば → ワールド4「おとの しま」
+  { x: 20, y: 19, to: 'w4beach', entry: 'north', needs: { flag: 'lowerClear' } }];
 
 // lower … その せんせいが おしえる こもじ
 export const NPCS = [
@@ -39,6 +41,7 @@ export const OBJECTS = [
   { id: 'lowerGate', kind: 'lettergate', x: 40, y: 9, h: 3, name: 'こもじの もん', area: 'lower' },
 ];
 export const SIGNS = [
+  { id: 'lowerDock', x: 22, y: 17, label: 'ふね', text: ['みなみの ふなつきば。', 'ふねに のると「おとの しま」へ いけるよ（こもじの もんを ひらいたら のれる）。'] },
   { id: 'lowerSign', x: 2, y: 9, label: 'もり', text: ['ここは こもじの もり。', 'おおきな もじ（A）には ちいさな もじ（a）の なかまが いるよ。', 'もりの せんせいたちに こもじを おしえて もらおう！'] },
 ];
 export const CHESTS = [];
