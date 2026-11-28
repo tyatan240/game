@@ -1,5 +1,6 @@
 // ワールド4「おとの しま」：もじの おと（フォニックス）。ついかは ここに かくだけ
 //   id：こもじ  kana：おとの めやす（がめんに だす）  key：その おとで はじまる ことば（words.js の id。え と こえ に つかう）
+//   pos：その おとを ことばの どこで きくか（なし＝はじめ、'mid'＝まんなか、'last'＝おわり）
 //   area：おしえて もらう エリア  audio：ろくおん ファイル（あれば ゆうせん。いまは なし → key の ことばを よみあげる）
 // ※ iPad の よみあげは もじ 1つの おと（/s/ など）を うまく だせない ので、「その おとで はじまる ことば」を いっしょに きかせる（docs/abc-world4-spec.md 5.）
 export const SOUNDS = [
@@ -8,7 +9,7 @@ export const SOUNDS = [
   { id: 'a', kana: 'ア', key: 'apple', area: 'w4beach' },
   { id: 't', kana: 'トゥ', key: 'ten', area: 'w4beach' },
   { id: 'p', kana: 'プ', key: 'pig', area: 'w4beach' },
-  { id: 'i', kana: 'イ', key: 'igloo', area: 'w4beach' },
+  { id: 'i', kana: 'イ', key: 'six', area: 'w4beach', pos: 'mid' }, // igloo は なじみが ないので、しっている six の まんなかの おと
   { id: 'n', kana: 'ンヌ', key: 'nine', area: 'w4beach' },
   // ② ひびきの ほらあな
   { id: 'c', kana: 'ク', key: 'cat', area: 'w4cave' },
@@ -42,5 +43,5 @@ export const PHON_LAST = ['sun', 'cat', 'ten', 'pen', 'red', 'hat', 'nest', 'pig
 export const CVC = ['cat', 'hat', 'bat', 'rat', 'fan', 'van', 'map', 'cap', 'pen', 'ten', 'hen', 'net', 'jet', 'bed', 'red', 'pig', 'wig', 'six', 'dog', 'log', 'box', 'fox', 'top', 'sun', 'bun', 'run', 'bug', 'mug', 'cup', 'pup', 'bus', 'web'];
 // なかま（おしりが おなじ）
 export const FAM = w => w.slice(1);
-export const PHON_WORDS = ['sun', 'apple', 'ten', 'pig', 'igloo', 'nine', 'cat', 'egg', 'hat', 'red', 'milk', 'dog', 'pen', 'honey', 'fish', 'tree', 'bee', 'bird', 'six', 'nest',
+export const PHON_WORDS = ['sun', 'apple', 'ten', 'pig', 'nine', 'cat', 'egg', 'hat', 'red', 'milk', 'dog', 'pen', 'honey', 'fish', 'tree', 'bee', 'bird', 'six', 'nest',
   'goat', 'octopus', 'umbrella', 'lion', 'bat', 'fan', 'van', 'map', 'cap', 'net', 'jet', 'bed', 'wig', 'log', 'box', 'fox', 'bun', 'bug', 'mug', 'cup', 'bus', 'top', 'web', 'zebra', 'yoyo', 'queen', 'hen', 'rat', 'pup'];

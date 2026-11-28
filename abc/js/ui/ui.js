@@ -327,11 +327,11 @@ export function magic(st, { title = 'ことばを くみあわせよう！', che
 export const sayPhon = id => { const s = SOUND[id], w = WORD[s.key]; sayLetter({ audio: s.audio, speak: w.speak }); };
 export function teachSounds(ids) {
   return new Promise(resolve => {
-    const kw = id => { const w = WORD[SOUND[id].key].word.toLowerCase(); return SOUND[id].pos === 'last' ? `${w.slice(0, -1)}<em>${w.slice(-1)}</em>` : `<em>${w[0]}</em>${w.slice(1)}`; };
+    const kw = id => { const w = WORD[SOUND[id].key].word.toLowerCase(), pos = SOUND[id].pos, k = pos === 'last' ? w.length - 1 : pos === 'mid' ? Math.floor(w.length / 2) : 0; return `${w.slice(0, k)}<em>${w[k]}</em>${w.slice(k + 1)}`; };
     const el = open(h(`<div class="modal"><div class="card teach w4teach">
       <div class="small">もじの おと</div>
       <div class="w4sounds">${ids.map(id => `<button class="w4s" data-id="${id}"><b class="sl">${SOUND[id].label || id}</b><span class="art"></span><span class="kw">${kw(id)}</span><small>なまえ「${LETTER[id.toUpperCase()].name}」<br>おと「<b>${SOUND[id].kana}</b>」</small></button>`).join('')}</div>
-      <div class="w4note">もじには「なまえ」と「おと」が あるよ。タップすると その おとで はじまる ことばが きこえるよ</div>
+      <div class="w4note">もじには「なまえ」と「おと」が あるよ。タップすると その おとが はいった ことばが きこえるよ（ピンクの もじが その おと）</div>
       <button class="go">おぼえた！ クイズへ</button></div></div>`), () => done());
     const done = () => { sfx.tap(); close(); resolve(); };
     el.querySelectorAll('.w4s').forEach(b => { const s = SOUND[b.dataset.id]; b.querySelector('.art').appendChild(wordArt(WORD[s.key].art, 72)); b.onclick = () => { sfx.tap(); sayPhon(b.dataset.id); b.classList.remove('pulse'); void b.offsetWidth; b.classList.add('pulse'); }; });

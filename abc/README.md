@@ -134,7 +134,7 @@ abc/
 - **え**：`engine/art4.js`（ぶた・イグルー・ぼうし・ペン・とりの す）。ことばは `words.js` の `world:4`（`kind:'phon'`）。
 - 保存：`abc-adventure-v1` に `sounds:[]`・`w4clears` を追加（`state.js` で補う）。きろくは `records['snd:a']`。`knownOf()` に `sounds`（はじめから でも へらない）。ワールドの つづきは `S.slots[4]`。
 - 「つぎは」（`objective()`）は いる ばしょの ワールドで わける（おとの しまでは ワールド4の チャプターだけ）。
-- **第2回**：`w4valley.js`（つなげの たにま：g o u l f b）・`w4village.js`（なかまの むら：j z w v y x qu k。x は おわりの おと＝`pos:'last'`、qu は `label`）。ほらあなの ひがしに でぐち。
+- **第2回**：`w4valley.js`（つなげの たにま：g o u l f b）・`w4village.js`（なかまの むら：j z w v y x qu k。x は おわりの おと＝`pos:'last'`、qu は `label`。i は six の まんなか＝`pos:'mid'`）。ほらあなの ひがしに でぐち。
   - **つなげて よむ**（`blendQuestion`）：もじタイルに おとの めやす（ク・ア・トゥ）を つけて じゅんに ひからせる（`ui.blendTiles`）→ えを えらぶ。まちがえたら ことばを きかせる（`hintVoice`）。きろく `rd:cat`。
   - **なかまさがし**（`oddQuestion`）：おしりが ちがう ことばを えらぶ（ぜんぶ よみあげる）。きろく `fam:at`。
   - **おとで つくる**（`ui.spell`）：ことばを きいて もじタイルを じゅんに えらぶ（ことばの もじ＋ほかの もじ 2つ）。きろく `sp:jet`。

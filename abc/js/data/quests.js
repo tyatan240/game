@@ -232,7 +232,7 @@ export const QUESTS = [
       ['かばの カバオ', 'ならった もじの おとで、たからものを さがして くれる？']] },
     { id: 'find', on: 'phon', target: 'w4Hippo', goal: 'カバオの たからものを おとで さがそう！', pre: [['かばの カバオ', 'もじの おとで はじまる ものを えらんでね！']],
       rounds: [{ t: 'pick', sound: 's', answer: 'sun', choices: ['sun', 'pig', 'nine'] }, { t: 'pick', sound: 'p', answer: 'pig', choices: ['pig', 'apple', 'ten'] },
-        { t: 'pick', sound: 'n', answer: 'nine', choices: ['nine', 'sun', 'igloo'] }, { t: 'pick', sound: 'a', answer: 'apple', choices: ['apple', 'ten', 'pig'] }],
+        { t: 'pick', sound: 'n', answer: 'nine', choices: ['nine', 'sun', 'pig'] }, { t: 'pick', sound: 'a', answer: 'apple', choices: ['apple', 'ten', 'pig'] }],
       after: [['かばの カバオ', 'ぜんぶ もどって きた！ Thank you! もじの おと、ばっちりだね！']], reward: { star: 3 } },
   ] },
   { id: 'w4echo', title: 'こだまの まねっこ', requires: { w4: 'w4cave' }, steps: [
