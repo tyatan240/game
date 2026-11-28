@@ -175,12 +175,12 @@ function setupCollect(run, s) {
   s.card = card.id; s.word = card.en; const sid = run.secrets.indexOf(s);
   for (const L of card.en) { const c = freeCell(run, pick(run.map.rooms)); if (c) run.items.push({ uid: run.uid++, id: 'ltile', x: c[0], y: c[1], letter: L, sid }); else run.letters = [...(run.letters || []), { sid, letter: L }]; }
 }
-// わな（たからさがし 11かいから）：おとしあな（したの かいへ）・ねむりの ゆか（2ターン うごけない）。「しらべる」で みつけると もう ひっかからない
+// わな（たからさがし 11かいから）：ねむりの ゆか（2ターン うごけない）。おとしあなは なくした（まえの ほぞんに のこっていても ねむりの ゆか として はたらく）。「しらべる」で みつけると もう ひっかからない
 function placeTraps(run) {
   run.traps = [];
   if (run.floor < 11) return;
   const n = 1 + (rand() < 0.5 ? 1 : 0);
-  for (let i = 0; i < n; i++) { const c = freeCell(run, pick(run.map.rooms.slice(1))); if (c && !run.traps.some(t => t.x === c[0] && t.y === c[1])) run.traps.push({ x: c[0], y: c[1], kind: rand() < 0.5 ? 'pit' : 'sleep', found: false }); }
+  for (let i = 0; i < n; i++) { const c = freeCell(run, pick(run.map.rooms.slice(1))); if (c && !run.traps.some(t => t.x === c[0] && t.y === c[1])) run.traps.push({ x: c[0], y: c[1], kind: 'sleep', found: false }); }
 }
 // せいかい → かくし部屋を ほって なかに たからもの（カードは 1だん ふかい わりあい）
 export function openSecret(run, i) {
@@ -272,9 +272,8 @@ export function act(run, a) {
       else if (it) { if (bagRoom(run, it.id)) { run.items = run.items.filter(i => i !== it); run.inv.push({ uid: it.uid, id: it.id, peek: false }); say(`${en(it.id)} を ひろった！`); ev.push({ t: 'pickup', id: it.id }); }
         else say(`「${bagName(it.id)}」が いっぱい（${BAG_MAX[bagOf(it.id)]}こ）。${en(it.id)} は ひろえない`); }
       const trap = (run.traps || []).find(t => t.x === nx && t.y === ny && !t.found);
-      if (trap) { trap.found = true;
-        if (trap.kind === 'pit') { const d = Math.min(3, h.hp - 1); h.hp -= d; say(`わなだ！ おとしあなに おちた！（HP −${d}）`); ev.push({ t: 'hurt' }); ev.push({ t: 'rope', pit: true }); }
-        else { run.stuck = 2; run.stuckWhy = 'sleep'; say('わなだ！ ねむりの ゆか…ねむって しまった（2ターン うごけない）'); ev.push({ t: 'bump' }); } }
+      if (trap) { trap.found = true; trap.kind = 'sleep';
+        { run.stuck = 2; run.stuckWhy = 'sleep'; say('わなだ！ ねむりの ゆか…ねむって しまった（2ターン うごけない）'); ev.push({ t: 'bump' }); } }
       if (onStairs(run)) ev.push({ t: 'stairs' });
     } else ev.push({ t: 'bump' });
   } else if (a.t === 'attack') {
@@ -286,7 +285,7 @@ export function act(run, a) {
     turn = true;
     // ちかくの わなを みつける
     const tr = (run.traps || []).filter(t => !t.found && Math.abs(t.x - h.x) + Math.abs(t.y - h.y) <= 2);
-    tr.forEach(t => { t.found = true; }); if (tr.length) { say(`わなを みつけた！（${tr.map(t => t.kind === 'pit' ? 'おとしあな' : 'ねむりの ゆか').join('・')}）もう ひっかからないよ`); ev.push({ t: 'trapfound' }); }
+    tr.forEach(t => { t.found = true; t.kind = 'sleep'; }); if (tr.length) { say(`わなを みつけた！（ねむりの ゆか${tr.length > 1 ? ' ' + tr.length + 'つ' : ''}）もう ひっかからないよ`); ev.push({ t: 'trapfound' }); }
     const look = (fn) => { const [dx, dy] = DIRS[h.dir]; let r = fn(h.x + dx, h.y + dy); if (r) return r; for (const [d, [ax, ay]] of Object.entries(DIRS)) { r = fn(h.x + ax, h.y + ay); if (r) { h.dir = d; return r; } } return null; };
     const s = look((x, y) => secretAt(run, x, y)), dc = !s && look((x, y) => decoyAt(run, x, y));
     ev.push({ t: 'search', x: h.x + DIRS[h.dir][0], y: h.y + DIRS[h.dir][1] });

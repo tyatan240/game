@@ -1546,12 +1546,13 @@ const ok = (cond, msg) => { console.log((cond ? '  ✔ ' : '  ✘ ') + msg); if 
       r.letters = [{ sid: ci, letter: 'c' }, { sid: ci, letter: 'u' }]; r.mons = []; go(cs.door); let e1 = __dg.act({ t: 'search' }); o.collectWait = !e1.ev.some(e => e.t === 'quiz');
       r.letters.push({ sid: ci, letter: 'p' }); e1 = __dg.act({ t: 'search' }); o.collectQuiz = e1.ev.some(e => e.t === 'quiz' && e.kind === 'collect');
       await new Promise(res => setTimeout(res, 400)); closePop(); __dg.startQuiz(ci); o.collectUI = /もじあつめの とびら/.test(document.getElementById('ov').textContent) && document.querySelectorAll('#ov [data-act=dgQzTile]').length === 3; closePop();
-      // わな：しらべる で みつける・おとしあな・ねむり
+      // わな：しらべる で みつける・ねむり（おとしあなは なし。まえの ほぞんの おとしあなも ねむりに なる）
       r.traps = [{ x: h.x + 1, y: h.y, kind: 'sleep', found: false }]; r.map.tiles[h.y] = r.map.tiles[h.y].slice(0, h.x + 1) + '.' + r.map.tiles[h.y].slice(h.x + 2); r.items = r.items.filter(i => !(i.x === h.x + 1 && i.y === h.y)); r.boxes = r.boxes.filter(b => !(b.x === h.x + 1 && b.y === h.y)); r.secrets = []; r.stairs = null;
       __dg.act({ t: 'search' }); o.trapFound = r.traps[0].found;
       r.traps[0].found = false; const x0 = h.x; __dg.act({ t: 'move', dir: 'right' }); const x1 = h.x; __dg.act({ t: 'move', dir: 'right' }); o.sleep = x1 === x0 + 1 && h.x === x1 && r.stuck === 1;
       r.stuck = 0; r.traps = [{ x: h.x - 1, y: h.y, kind: 'pit', found: false }]; const f0 = r.floor; __dg.act({ t: 'move', dir: 'left' });
-      await new Promise(res => setTimeout(res, 800)); o.pit = __dg.run.floor === f0 + 1;
+      await new Promise(res => setTimeout(res, 800)); o.oldPitSleeps = __dg.run.floor === f0 && r.stuck === 2 && r.traps[0].kind === 'sleep'; r.stuck = 0;
+      const src = await (await fetch('js/game.js')).text(); o.noPitSrc = /function placeTraps/.test(src) && !/'pit'/.test(src.match(/function placeTraps[\s\S]*?\n}/)[0]);
       return o;
     });
     ok(Object.values(p3).every(v => v !== false), 'えいごだけの ヒント（かんばん・いろの たいまつ）・きんの とびら → かくしボス → ★★★・もじあつめ・わな ' + JSON.stringify(p3));
